@@ -1,100 +1,129 @@
+<div align="center">
+
 # AIIT — Azraa Institute of Information Technology
 
-A premium, editorial front-end for AIIT, an international online technology
-institute. Reimagines [aiit.network](https://aiit.network) as a future-tech
-learning platform: intelligent, calm, academic, global.
+The web front-end for **AIIT**, an international online technology institute —
+[aiit.network](https://aiit.network) reimagined as a calm, editorial,
+future-tech learning platform.
 
-Built to **scale as a system** — adding a course, technology domain, webinar,
-resource, instructor or student story is a data change, never a redesign.
+![React](https://img.shields.io/badge/React-18-61DAFB?style=flat-square&logo=react&logoColor=white)
+![TypeScript](https://img.shields.io/badge/TypeScript-5.6-3178C6?style=flat-square&logo=typescript&logoColor=white)
+![Vite](https://img.shields.io/badge/Vite-5-646CFF?style=flat-square&logo=vite&logoColor=white)
+![React Router](https://img.shields.io/badge/React_Router-6-CA4245?style=flat-square&logo=reactrouter&logoColor=white)
+![Vercel](https://img.shields.io/badge/Deploy-Vercel-000000?style=flat-square&logo=vercel&logoColor=white)
 
-## Stack
+</div>
 
-- **React 18 + TypeScript + Vite**
-- **React Router 6** — client routing, lazy-loaded route chunks
-- **react-helmet-async** — per-page SEO + JSON-LD structured data
-- Motion via **CSS + IntersectionObserver** (`prefers-reduced-motion` honoured
-  everywhere). No 3D, no animation library.
-- No UI framework — a hand-built design system.
+---
 
-## Getting started
+The site is built to **scale as a system**: adding a course, technology domain,
+webinar, article, instructor or student story is a data change, never a
+redesign.
+
+## Tech stack
+
+| Area | Choice |
+| --- | --- |
+| Framework | React 18 + TypeScript, bundled with Vite 5 |
+| Routing | React Router 6 — lazy-loaded route chunks |
+| SEO | `react-helmet-async` — per-page metadata + JSON-LD |
+| Styling | Hand-built design system on CSS custom properties; no UI framework |
+| Motion | CSS + `IntersectionObserver`, `prefers-reduced-motion` respected throughout |
+| Content | Markdown blog + typed seed data; no CMS |
+| Hosting | Vercel (static SPA) |
+
+## Quick start
 
 ```bash
 npm install
-npm run dev        # http://localhost:5173
+npm run dev        # dev server → http://localhost:5173
 npm run build      # typecheck + production build → dist/
-npm run preview    # serve the production build
-npm run typecheck
-npm run lint
+npm run preview    # serve the production build locally
+npm run lint       # ESLint
+npm run typecheck  # tsc, no emit
 ```
 
-Requires Node 18+.
+Requires **Node 18+**.
 
-## Architecture
+## Project structure
 
 ```
 src/
-  styles/          tokens.css (the design system), reset, global utilities
-  data/            THE CONTENT LAYER — types + seed data, decoupled from UI
-    types.ts       every content shape (Course, Webinar, Resource, …)
-    courses.ts     course catalogue (mirrors the live aiit.network catalogue)
-    technologies.ts technology domains + course categories
-    webinars.ts    webinar + "Live at AIIT" events (data-driven hero slide)
-    resources.ts   loads the blog from content/posts/*.md at build time
-    testimonials.ts student stories + learner regions
-    faqs.ts, ecosystem.ts, hero.ts, navigation.ts, site.ts
-  content/
-    posts/         THE BLOG — one .md per post (frontmatter + Markdown/HTML body)
-  lib/             hooks + helpers (Seo, useScrollReveal, useCountdown, format…)
-  components/
-    primitives/    Button, Section, Plate (procedural art), SplitStatement
-    layout/        Header (transparent→sticky), MobileMenu, Footer, Layout
-    common/        Countdown, Modal, Field, Stars, NewsletterForm
-    course/        CourseCard, CourseFilters
-    home/          the homepage section components
-  pages/           one file per route; portal/ and auth/ are sub-areas
+├── data/            content layer — typed shapes + seed data, decoupled from the UI
+│   ├── types.ts        every content shape (Course, Webinar, Resource, …)
+│   ├── courses.ts      course catalogue
+│   ├── technologies.ts technology domains + course categories
+│   ├── resources.ts    blog index (frontmatter parsed at build; bodies lazy-loaded)
+│   └── …               webinars, testimonials, faqs, navigation, site, hero
+├── content/posts/   the blog — one Markdown file per article
+├── lib/             hooks + helpers (SEO, scroll reveal, countdown, Markdown renderer)
+├── components/
+│   ├── primitives/     Button, Section, Plate (procedural art)
+│   ├── layout/         Header, Footer, MobileMenu, SiteSearch, AnnouncementBar
+│   ├── common/         Field, NewsletterForm, Countdown, FloatingActions
+│   ├── course/         CourseCard, CourseFilters
+│   └── home/           homepage section components
+├── pages/           one component per route
+│   ├── auth/           login, register, forgot-password
+│   └── portal/         learner portal shell
+└── styles/          tokens.css (design system), reset, global rules
 ```
 
-### The content layer
+### Content layer
 
-Presentation components consume the shapes in `src/data/types.ts` only. To
-connect a CMS or an LMS API, replace the modules in `src/data/` — the UI does
-not change.
+Presentation components consume the types in `src/data/types.ts` only. Swapping
+in a CMS or an LMS API is a matter of replacing the modules in `src/data/` — the
+UI does not change.
 
-**The blog** is self-contained: `src/content/posts/*.md` (frontmatter + a
-Markdown or pasted-HTML body) is the only source of truth, loaded at build time
-by `src/data/resources.ts` and rendered by `src/lib/markdown.ts`. Adding a post
-is adding a file. See `src/content/README.md`.
+The **blog** is self-contained: `src/content/posts/*.md` (frontmatter + a
+Markdown or HTML body) is the single source of truth. It is indexed at build
+time and rendered by a small dependency-free renderer (`src/lib/markdown.ts`).
+Adding an article is adding a file — see
+[`src/content/README.md`](src/content/README.md).
 
 ### Imagery
 
-`Plate` renders deterministic abstract "editorial plates" (computational
-geometry, architectural grids) seeded per item — no stock photography, nothing
-to license, fast. Pass a real image URL as a plate's `source` any time to swap
-it in without touching callers.
+`Plate` renders deterministic "editorial plates" — computational geometry seeded
+per item, so there is no stock photography to license and nothing extra to load.
+Pass a real image URL as a plate's `source` to swap it in without touching call
+sites.
 
 ## Routes
 
 | Path | Page |
-|---|---|
-| `/` | Home — editorial hero slideshow, technology domains, learning ecosystem, courses, webinar, global learners, student stories, resources |
-| `/about` | About + method + ecosystem + AIIT Blueprint |
-| `/courses` | Course discovery — search, filters, sort (URL-synced) |
-| `/courses/:slug` | Course detail — curriculum, outcomes, certification, enrol |
-| `/resources`, `/resources/:slug` | AIIT Resources index + article |
-| `/webinar` | Live at AIIT — featured webinar, agenda, registration, events |
-| `/faqs` | Help centre — searchable, categorised |
-| `/contact` | Contact form + details |
-| `/login`, `/register`, `/forgot-password` | Auth |
-| `/portal`, `/portal/*` | Learner portal shell (dashboard, courses, certificates, …) |
-| `/privacy-policy`, `/terms`, `/affiliate` | Legal |
+| --- | --- |
+| `/` | Home |
+| `/about` | About, method, ecosystem, AIIT Blueprint |
+| `/courses` · `/courses/:slug` | Course discovery (search / filter / sort) · course detail |
+| `/resources` · `/resources/:slug` | AIIT Resources index · article |
+| `/webinar` | Live at AIIT — featured webinar + events |
+| `/faqs` | Help centre (searchable, categorised) |
+| `/instructors` · `/why-join` · `/aiit-blueprint` · `/affiliate` | Editorial pages |
+| `/shop` · `/shop/:slug` | Merchandise catalogue · product detail |
+| `/contact` | Contact form |
+| `/login` · `/register` · `/forgot-password` | Auth |
+| `/portal` · `/portal/*` | Learner portal — dashboard, courses, certificates, assignments, resources, webinars, profile, notifications, settings |
+| `/privacy-policy` · `/terms` | Legal |
 
 ## Deployment
 
-Ships with `vercel.json` (SPA rewrites + asset caching). Any static host works —
+`vercel.json` configures SPA rewrites and asset caching. Any static host works —
 serve `dist/` with a catch-all rewrite to `/index.html`.
 
-## Not yet wired
+## Backend status
 
-Forms (newsletter, contact, webinar registration, auth) validate and show
-success states but post nowhere — connect them to the AIIT backend. The learner
-portal uses placeholder data (`src/pages/portal/mockLearner.ts`).
+The front-end is complete; the backend is not built yet. As a result:
+
+- **Forms** (contact, newsletter, webinar, auth) validate and show success
+  states but do not submit anywhere.
+- **Authentication** is a client-only placeholder; the Google sign-in button is
+  intentionally hidden until an OAuth provider is wired up.
+- **The learner portal** renders fully designed *empty states* from an empty
+  record (`src/pages/portal/learnerData.ts`) — it never displays fabricated
+  progress, grades or certificates.
+
+---
+
+<div align="center">
+<sub>© Azraa Institute of Information Technology · Private and proprietary</sub>
+</div>

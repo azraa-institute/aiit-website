@@ -1,0 +1,103 @@
+.webinar-spot {
+  display: grid;
+  gap: clamp(2rem, 1rem + 4vw, 4.5rem);
+}
+
+@media (min-width: 940px) {
+  .webinar-spot {
+    grid-template-columns: 1.5fr 1fr;
+    align-items: start;
+  }
+}
+
+.webinar-spot__title {
+  margin-top: var(--space-5);
+  font-family: var(--font-display);
+  font-size: var(--fs-display-3);
+  font-weight: var(--fw-display);
+  line-height: 1.05;
+  letter-spacing: var(--tracking-display);
+  max-width: 16ch;
+  text-wrap: balance;
+}
+
+.webinar-spot__summary {
+  margin-top: var(--space-4);
+  font-size: var(--fs-lead);
+  color: var(--fg-soft);
+  max-width: 58ch;
+}
+
+.webinar-spot__facts {
+  margin-top: var(--space-6);
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: var(--space-5);
+  max-width: 460px;
+}
+.webinar-spot__facts dt {
+  font-size: var(--fs-eyebrow);
+  font-weight: 700;
+  letter-spacing: var(--tracking-eyebrow);
+  text-transform: uppercase;
+  color: var(--brass-tint);
+  margin-bottom: 4px;
+}
+.webinar-spot__facts dd {
+  font-size: var(--fs-sm);
+  color: var(--ivory);
+}
+
+.webinar-spot__countdown {
+  margin-top: var(--space-6);
+  padding-top: var(--space-5);
+  border-top: 1px solid var(--line-invert);
+}
+
+.webinar-spot__actions {
+  margin-top: var(--space-6);
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-4);
+}
+
+.webinar-spot__seats {
+  margin-top: var(--space-4);
+  font-size: var(--fs-xs);
+  color: var(--brass-tint);
+}
+
+.webinar-spot__visual {
+  position: relative;
+}
+.webinar-spot__visual .plate {
+  border: 1px solid var(--line-invert);
+  border-radius: var(--radius-md);
+}
+
+.webinar-spot__agenda {
+  margin-top: var(--space-4);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+.webinar-spot__agenda li {
+  font-family: var(--font-display);
+  font-size: var(--fs-body);
+  color: var(--fg-soft);
+  padding-left: var(--space-4);
+  border-left: 1px solid var(--brass);
+}
+
+.webinar-spot__more {
+  margin-top: var(--space-8);
+  padding-top: var(--space-5);
+  border-top: 1px solid var(--line-invert);
+  font-size: var(--fs-sm);
+}
+.webinar-spot__more a {
+  color: var(--brass-tint);
+}
+.webinar-spot__more a:hover {
+  color: var(--ivory);
+}

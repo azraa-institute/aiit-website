@@ -1,0 +1,400 @@
+.floating-actions {
+  position: fixed;
+  right: clamp(0.9rem, 1.6vw, 1.6rem);
+  bottom: clamp(1.1rem, 4vw, 2.1rem);
+  z-index: 80; /* below the mobile menu (200) and any modal (300) */
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: var(--space-4);
+  pointer-events: none;
+}
+
+/* ============================================================
+   WHATSAPP ORB — a compact charcoal disc carrying the official
+   WhatsApp glyph in its own green, ringed by a burgundy hairline
+   and lifted by a slow ambient breath. On pointer-enter or
+   keyboard-focus a slim panel unfurls from *behind* the disc and
+   a clip-wipe brings in the single word "WhatsApp", trailed by a
+   soft light sweep and a green underline. The disc is pinned to
+   the screen edge and never changes the layout, so the control
+   can't shift the page or cause horizontal overflow. Scale,
+   shadow and easing deliberately echo the scroll orb above it.
+   ============================================================ */
+.wa-orb {
+  position: relative;
+  display: block;
+  width: 52px;
+  height: 52px;
+  pointer-events: auto;
+  border-radius: 50%;
+  -webkit-tap-highlight-color: transparent;
+  animation: wa-bounce 3.2s cubic-bezier(0.3, 0.7, 0.4, 1) infinite;
+}
+/* a gentle recurring bounce — at rest for most of the cycle, then a
+   quick double hop to draw the eye without being noisy */
+@keyframes wa-bounce {
+  0%,
+  68%,
+  100% {
+    transform: translateY(0);
+  }
+  78% {
+    transform: translateY(-7px);
+  }
+  86% {
+    transform: translateY(0);
+  }
+  92% {
+    transform: translateY(-3px);
+  }
+  98% {
+    transform: translateY(0);
+  }
+}
+/* hold still while the control is expanded */
+.wa-orb:hover,
+.wa-orb:focus-visible {
+  animation: none;
+}
+
+/* the panel that unfurls from behind the disc */
+.wa-orb__panel {
+  position: absolute;
+  top: 50%;
+  right: 0;
+  z-index: 1;
+  width: 174px;
+  height: 38px;
+  transform: translateY(-50%);
+  overflow: hidden;
+  border-radius: 19px 5px 5px 19px;
+  background: linear-gradient(180deg, #221e1a, #141110);
+  box-shadow:
+    inset 0 1px 0 rgba(150, 34, 32, 0.6),
+    0 2px 8px rgba(20, 17, 15, 0.2),
+    0 14px 30px -12px rgba(20, 17, 15, 0.5);
+  /* 174 (panel) − 52 (disc) = 122px stays clipped behind the disc */
+  clip-path: inset(0 0 0 122px round 19px);
+  transition: clip-path 440ms var(--ease-out);
+}
+/* light sweep that follows the unfurl */
+.wa-orb__panel::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  width: 45%;
+  background: linear-gradient(105deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+  transform: translateX(-160%);
+  transition: transform 620ms var(--ease-out) 40ms;
+  pointer-events: none;
+}
+
+.wa-orb__word {
+  position: absolute;
+  top: 50%;
+  right: 60px;
+  white-space: nowrap;
+  font-family: var(--font-ui);
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  color: var(--paper);
+  opacity: 0;
+  transform: translateY(-50%) translateX(9px);
+  transition:
+    opacity 300ms var(--ease-out) 90ms,
+    transform 400ms var(--ease-out) 90ms;
+}
+.wa-orb__word::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -5px;
+  height: 2px;
+  border-radius: 2px;
+  background: #25d366;
+  transform: scaleX(0);
+  transform-origin: right;
+  transition: transform 360ms var(--ease-out) 150ms;
+}
+
+/* the always-visible disc */
+.wa-orb__disc {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: radial-gradient(circle at 33% 27%, #302b27, #15120f 78%);
+  color: #25d366;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.06),
+    inset 0 0 0 1px rgba(150, 34, 32, 0.55),
+    0 0 0 1px rgba(255, 255, 255, 0.04),
+    0 2px 8px rgba(20, 17, 15, 0.22),
+    0 14px 30px -12px rgba(20, 17, 15, 0.55);
+  transition:
+    transform 300ms var(--ease-out),
+    box-shadow 300ms var(--ease-out);
+}
+/* ambient breath — a soft shadow that very slowly swells and relaxes */
+.wa-orb__disc::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  border-radius: 50%;
+  box-shadow: 0 10px 26px -6px rgba(20, 17, 15, 0.5);
+  animation: wa-breathe 5.5s ease-in-out infinite;
+}
+@keyframes wa-breathe {
+  0%,
+  100% {
+    opacity: 0.5;
+    transform: scale(0.99);
+  }
+  50% {
+    opacity: 0.9;
+    transform: scale(1.04);
+  }
+}
+
+.wa-orb__glyph {
+  transition: transform 300ms var(--ease-out);
+}
+
+/* ---- expanded state: pointer-enter or keyboard focus ---- */
+.wa-orb:hover .wa-orb__panel,
+.wa-orb:focus-visible .wa-orb__panel {
+  clip-path: inset(0 0 0 0 round 19px);
+}
+.wa-orb:hover .wa-orb__panel::before,
+.wa-orb:focus-visible .wa-orb__panel::before {
+  transform: translateX(360%);
+}
+.wa-orb:hover .wa-orb__word,
+.wa-orb:focus-visible .wa-orb__word {
+  opacity: 1;
+  transform: translateY(-50%) translateX(0);
+}
+.wa-orb:hover .wa-orb__word::after,
+.wa-orb:focus-visible .wa-orb__word::after {
+  transform: scaleX(1);
+}
+.wa-orb:hover .wa-orb__disc,
+.wa-orb:focus-visible .wa-orb__disc {
+  transform: scale(1.04);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.09),
+    inset 0 0 0 1.25px rgba(192, 43, 35, 0.75),
+    0 0 0 1px rgba(255, 255, 255, 0.05),
+    0 3px 10px rgba(20, 17, 15, 0.26),
+    0 18px 38px -12px rgba(20, 17, 15, 0.6);
+}
+.wa-orb:hover .wa-orb__disc::after,
+.wa-orb:focus-visible .wa-orb__disc::after {
+  animation-play-state: paused;
+}
+.wa-orb:hover .wa-orb__glyph,
+.wa-orb:focus-visible .wa-orb__glyph {
+  transform: translateX(-2px);
+}
+.wa-orb:active .wa-orb__disc {
+  transform: scale(0.97);
+}
+
+.wa-orb:focus-visible {
+  outline: none;
+}
+.wa-orb:focus-visible .wa-orb__disc {
+  box-shadow:
+    0 0 0 2px var(--paper),
+    0 0 0 3.5px #25d366,
+    inset 0 0 0 1.25px rgba(192, 43, 35, 0.8),
+    0 18px 38px -12px rgba(20, 17, 15, 0.6);
+}
+
+/* "BACK TO TOP" tooltip on the scroll orb, to its left, hover/focus only */
+.floating-actions__tip {
+  position: absolute;
+  top: 50%;
+  right: calc(100% + 12px);
+  transform: translateY(-50%) translateX(4px);
+  padding: 0.4em 0.7em;
+  border-radius: var(--radius-sm);
+  background: var(--ink);
+  color: var(--paper);
+  font-family: var(--font-ui);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  opacity: 0;
+  pointer-events: none;
+  transition:
+    opacity var(--dur-fast) var(--ease-out),
+    transform var(--dur-fast) var(--ease-out);
+}
+
+/* ============================================================
+   SCROLL PROGRESS ORB — the back-to-top control. A dark precision
+   core with a thin outer ring that traces real document scroll
+   position. Deliberately quieter than the WhatsApp button: this is
+   the utility control, WhatsApp stays the stronger conversion action.
+   ============================================================ */
+.scroll-orb {
+  position: relative;
+  pointer-events: none;
+  width: 48px;
+  height: 48px;
+  display: grid;
+  place-items: center;
+  padding: 0;
+  border: none;
+  background: none;
+  cursor: pointer;
+  opacity: 0;
+  transform: translateY(8px);
+  transition:
+    opacity var(--dur-base) var(--ease-out),
+    transform var(--dur-base) var(--ease-out);
+}
+.scroll-orb.is-visible {
+  pointer-events: auto;
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.scroll-orb__ring {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  transform: rotate(-90deg); /* progress starts at 12 o'clock */
+  filter: drop-shadow(0 0 1px rgba(255, 255, 255, 0.5)) drop-shadow(0 1px 3px rgba(20, 17, 15, 0.3));
+}
+.scroll-orb__ring-track,
+.scroll-orb__ring-progress {
+  fill: none;
+  stroke-width: 1.5;
+}
+.scroll-orb__ring-track {
+  stroke: rgba(20, 17, 15, 0.14);
+}
+.scroll-orb__ring-progress {
+  stroke: var(--brass-deep);
+  stroke-linecap: round;
+  transition: stroke-dashoffset 120ms linear, stroke var(--dur-fast) var(--ease-out);
+}
+.scroll-orb:hover .scroll-orb__ring-progress,
+.scroll-orb:focus-visible .scroll-orb__ring-progress {
+  stroke: var(--red);
+}
+
+.scroll-orb__core {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  border-radius: var(--radius-pill);
+  background: var(--ink);
+  color: var(--paper);
+  box-shadow:
+    0 2px 6px rgba(20, 17, 15, 0.18),
+    0 10px 22px -10px rgba(20, 17, 15, 0.5);
+  transition:
+    transform var(--dur-fast) var(--ease-out),
+    box-shadow var(--dur-fast) var(--ease-out);
+}
+.scroll-orb:hover .scroll-orb__core,
+.scroll-orb:focus-visible .scroll-orb__core {
+  transform: scale(1.06);
+  box-shadow:
+    0 3px 8px rgba(20, 17, 15, 0.22),
+    0 14px 28px -10px rgba(20, 17, 15, 0.55);
+}
+.scroll-orb:active .scroll-orb__core {
+  transform: scale(0.98);
+}
+
+.scroll-orb__arrow {
+  transition: transform var(--dur-fast) var(--ease-out);
+}
+.scroll-orb:hover .scroll-orb__arrow,
+.scroll-orb:focus-visible .scroll-orb__arrow {
+  transform: translateY(-3px);
+}
+
+.scroll-orb:focus-visible {
+  outline: none;
+}
+.scroll-orb:focus-visible .scroll-orb__core {
+  box-shadow:
+    0 0 0 3px var(--paper),
+    0 0 0 5px var(--brass),
+    0 10px 22px -10px rgba(20, 17, 15, 0.5);
+}
+
+.scroll-orb:hover .floating-actions__tip,
+.scroll-orb:focus-visible .floating-actions__tip {
+  opacity: 1;
+  transform: translateY(-50%) translateX(0);
+}
+
+@media (hover: none) {
+  /* no hover on touch — keep the compact disc only, never unfurl */
+  .wa-orb__panel {
+    display: none;
+  }
+}
+
+@media (max-width: 560px) {
+  .wa-orb {
+    width: 48px;
+    height: 48px;
+  }
+  .scroll-orb {
+    width: 46px;
+    height: 46px;
+  }
+  .scroll-orb__core {
+    width: 38px;
+    height: 38px;
+  }
+  /* the tooltip is a desktop-hover affordance; skip it on touch */
+  .floating-actions__tip {
+    display: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .wa-orb {
+    animation: none;
+  }
+  .wa-orb__panel,
+  .wa-orb__panel::before,
+  .wa-orb__word,
+  .wa-orb__word::after,
+  .wa-orb__disc,
+  .wa-orb__glyph {
+    transition: none;
+  }
+  .wa-orb__disc::after {
+    animation: none;
+  }
+  .scroll-orb,
+  .scroll-orb__core,
+  .scroll-orb__arrow,
+  .floating-actions__tip,
+  .scroll-orb__ring-progress {
+    transition: none;
+  }
+}

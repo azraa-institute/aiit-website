@@ -1,0 +1,52 @@
+/* ============================================================
+   AIIT RESOURCES — shared editorial atoms
+   Loaded by both the Resources index and the article page.
+   Cormorant Garamond is scoped to these roots only (600/700,
+   never thin) so the all-Georgia rest of the site is untouched.
+   ============================================================ */
+.res-masthead,
+.res-index,
+.res-body,
+.article-shell {
+  --res-serif: 'Cormorant Garamond', Georgia, 'Times New Roman', serif;
+}
+
+.res-tag {
+  font-family: var(--font-ui);
+  font-size: var(--fs-eyebrow);
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--brass-deep);
+}
+
+.res-eyebrow {
+  font-family: var(--font-ui);
+  font-size: var(--fs-eyebrow);
+  font-weight: 700;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+  padding-bottom: var(--space-4);
+  border-bottom: 1px solid var(--line-strong);
+  margin-bottom: clamp(1.5rem, 1rem + 2vw, 2.5rem);
+}
+
+.res-meta {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  font-family: var(--font-ui);
+  font-size: var(--fs-xs);
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+}
+
+.res-dot {
+  width: 3px;
+  height: 3px;
+  border-radius: 50%;
+  background: currentColor;
+  flex-shrink: 0;
+}

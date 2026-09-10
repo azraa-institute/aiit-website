@@ -1,0 +1,22 @@
+{
+  "name": "AIIT — Azraa Institute of Information Technology",
+  "short_name": "AIIT",
+  "description": "International online technology learning platform.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#14110f",
+  "theme_color": "#14110f",
+  "icons": [
+    {
+      "src": "/favicon.png",
+      "sizes": "250x250",
+      "type": "image/png"
+    },
+    {
+      "src": "/apple-touch-icon.png",
+      "sizes": "250x250",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}

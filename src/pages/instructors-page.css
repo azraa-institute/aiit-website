@@ -1,0 +1,461 @@
+/* ============================================================
+   INSTRUCTORS — "The Practitioner Archive"
+
+   A calm charcoal editorial hero opening onto a warm ivory record.
+   Each instructor is a dark monogram "specimen plate" set against
+   indexed metadata; the teaching team's practice fields follow as
+   a connected index below — the practice reading as something that
+   flows down from the people. Typography, indexing, thin rules and
+   light do the work: no cards, no avatars, no stock photography.
+
+   Built on the existing tokens / .section / .container / .eyebrow /
+   [data-reveal] system so it stays part of AIIT.network.
+   ============================================================ */
+
+/* ---------------------------------------------------------------
+   HERO
+   --------------------------------------------------------------- */
+.ins-hero {
+  position: relative;
+  overflow: hidden;
+  border-bottom: 1px solid rgba(192, 43, 35, 0.42);
+  padding-bottom: clamp(3rem, 2rem + 4vw, 5.5rem);
+}
+
+.ins-hero__atmosphere {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+}
+.ins-hero__atmosphere::before {
+  /* fine architectural verticals, faded at the edges */
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image: repeating-linear-gradient(
+    90deg,
+    rgba(244, 239, 231, 0.03) 0,
+    rgba(244, 239, 231, 0.03) 1px,
+    transparent 1px,
+    transparent clamp(72px, 8vw, 108px)
+  );
+  -webkit-mask-image: linear-gradient(90deg, transparent, #000 16%, #000 84%, transparent);
+  mask-image: linear-gradient(90deg, transparent, #000 16%, #000 84%, transparent);
+}
+.ins-hero__atmosphere::after {
+  /* warm light, a whisper of burgundy, and the faintest grain */
+  content: '';
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(44% 60% at 92% -6%, rgba(192, 43, 35, 0.14), transparent 70%),
+    radial-gradient(50% 62% at 0% 108%, rgba(216, 201, 176, 0.06), transparent 72%),
+    radial-gradient(circle at 1px 1px, rgba(244, 239, 231, 0.035) 1px, transparent 0);
+  background-size: auto, auto, 3px 3px;
+}
+
+.ins-hero__inner {
+  position: relative;
+  z-index: 1;
+}
+
+.ins-hero__crumb {
+  font-size: var(--fs-sm);
+  color: var(--fg-faint);
+  margin-bottom: clamp(2.5rem, 6vw, 5rem);
+}
+.ins-hero__crumb ol {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.ins-hero__crumb a {
+  color: var(--fg-faint);
+  transition: color var(--dur-fast) var(--ease-out);
+}
+.ins-hero__crumb a:hover {
+  color: var(--fg);
+}
+.ins-hero__crumb-sep {
+  opacity: 0.55;
+}
+.ins-hero__crumb [aria-current='page'] {
+  color: var(--fg-soft);
+}
+
+.ins-hero__label {
+  color: var(--fg-faint);
+  margin-bottom: clamp(0.85rem, 2vw, 1.35rem);
+}
+
+.ins-hero__title {
+  font-family: var(--font-display);
+  font-weight: var(--fw-display);
+  font-size: var(--fs-display-1);
+  line-height: 0.96;
+  letter-spacing: -0.017em;
+  color: var(--fg);
+}
+
+.ins-hero__intro {
+  margin-top: clamp(1.75rem, 4vw, 2.75rem);
+  max-width: 44ch;
+  font-size: var(--fs-lead);
+  line-height: 1.58;
+  color: var(--fg-muted);
+}
+
+/* ---------------------------------------------------------------
+   ARCHIVE
+   --------------------------------------------------------------- */
+.ins-archive {
+  --plate-col: clamp(240px, 30vw, 380px);
+  --plate-gap: clamp(1.75rem, 5vw, 4rem);
+  background: var(--paper);
+  padding-top: clamp(3rem, 2.25rem + 4vw, 5.5rem);
+  padding-bottom: clamp(3.5rem, 2.5rem + 5vw, 7rem);
+}
+
+.ins-archive__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.ins-p + .ins-p {
+  margin-top: clamp(2.75rem, 6vw, 5rem);
+  padding-top: clamp(2.75rem, 6vw, 5rem);
+  border-top: 1px solid var(--line);
+}
+
+/* ---- one practitioner record ---- */
+.ins-p {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: clamp(1.5rem, 4vw, 2.25rem);
+}
+
+.ins-p__plate {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  display: grid;
+  place-items: center;
+  aspect-ratio: 3 / 2;
+  max-height: 300px;
+  border-radius: var(--radius-md);
+  background: linear-gradient(158deg, #2b2521 0%, #17130f 56%, #110d0a 100%);
+  border: 1px solid rgba(244, 239, 231, 0.1);
+  box-shadow: var(--shadow-soft);
+  transition:
+    transform var(--dur-base) var(--ease-out),
+    box-shadow var(--dur-base) var(--ease-out);
+}
+.ins-p__plate::after {
+  /* fine inner frame */
+  content: '';
+  position: absolute;
+  inset: 9px;
+  border: 1px solid rgba(244, 239, 231, 0.09);
+  border-radius: calc(var(--radius-md) - 3px);
+  pointer-events: none;
+}
+.ins-p__plate::before {
+  /* burgundy edge accent */
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 20%;
+  bottom: 20%;
+  width: 3px;
+  background: var(--red);
+  transition:
+    top var(--dur-slow) var(--ease-out),
+    bottom var(--dur-slow) var(--ease-out);
+}
+.ins-p__plate-light {
+  position: absolute;
+  inset: -34% -12% auto -12%;
+  z-index: -1;
+  height: 74%;
+  background: radial-gradient(58% 100% at 30% 0%, rgba(192, 43, 35, 0.26), transparent 70%);
+  filter: blur(10px);
+  opacity: 0.85;
+  transition:
+    opacity var(--dur-slow) var(--ease-out),
+    transform var(--dur-slow) var(--ease-out);
+}
+.ins-p__monogram {
+  font-family: var(--font-display);
+  font-weight: var(--fw-display);
+  font-size: clamp(3.5rem, 2.4rem + 8vw, 6.5rem);
+  line-height: 1;
+  letter-spacing: 0.02em;
+  color: var(--ivory);
+  transition: transform var(--dur-slow) var(--ease-out);
+}
+.ins-p__plate-index {
+  position: absolute;
+  top: clamp(0.85rem, 2vw, 1.35rem);
+  left: clamp(0.85rem, 2vw, 1.35rem);
+  font-size: var(--fs-xs);
+  letter-spacing: 0.14em;
+  color: var(--brass-tint);
+  font-variant-numeric: tabular-nums;
+}
+.ins-p__plate-foot {
+  position: absolute;
+  left: clamp(0.85rem, 2vw, 1.35rem);
+  right: clamp(0.85rem, 2vw, 1.35rem);
+  bottom: clamp(0.85rem, 2vw, 1.35rem);
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+.ins-p__plate-foot::before {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: rgba(244, 239, 231, 0.16);
+}
+.ins-p__plate-tag {
+  font-size: var(--fs-xs);
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: rgba(244, 239, 231, 0.55);
+  white-space: nowrap;
+}
+
+.ins-p__meta {
+  align-self: start;
+}
+.ins-p__marker {
+  display: flex;
+  align-items: baseline;
+  gap: clamp(var(--space-3), 1.5vw, var(--space-4));
+  margin-bottom: clamp(0.4rem, 1.5vw, 0.9rem);
+}
+.ins-p__marker-num {
+  font-family: var(--font-display);
+  font-weight: var(--fw-display);
+  font-size: clamp(2.4rem, 1.7rem + 3vw, 4.4rem);
+  line-height: 0.78;
+  color: rgba(20, 17, 15, 0.12);
+  font-variant-numeric: tabular-nums;
+  transition: color var(--dur-base) var(--ease-out);
+}
+.ins-p__marker-label {
+  align-self: center;
+  color: var(--fg-muted);
+}
+.ins-p__name {
+  font-family: var(--font-display);
+  font-weight: var(--fw-display);
+  font-size: clamp(2.1rem, 1.45rem + 2.7vw, 3.7rem);
+  line-height: 1.04;
+  letter-spacing: -0.014em;
+  color: var(--fg);
+  transition: transform var(--dur-base) var(--ease-out);
+}
+.ins-p__role {
+  margin-top: var(--space-3);
+  font-size: var(--fs-sm);
+  letter-spacing: var(--tracking-wide);
+  text-transform: uppercase;
+  color: var(--brass-deep);
+}
+.ins-p__bio {
+  margin-top: clamp(1rem, 2.5vw, 1.6rem);
+  max-width: 44ch;
+  font-size: var(--fs-lead);
+  line-height: 1.62;
+  color: var(--fg-soft);
+}
+.ins-p__rule {
+  display: block;
+  height: 2px;
+  width: clamp(60px, 12vw, 124px);
+  margin-top: clamp(1.35rem, 3vw, 2rem);
+  background: var(--red);
+  transform: scaleX(0);
+  transform-origin: left;
+  transition:
+    transform var(--dur-slow) var(--ease-out),
+    width var(--dur-base) var(--ease-out);
+}
+.ins-p.is-visible .ins-p__rule {
+  transform: scaleX(1);
+}
+
+/* hover — restrained editorial response */
+.ins-p:hover .ins-p__plate {
+  transform: translateY(-3px);
+  box-shadow: var(--shadow-lift);
+}
+.ins-p:hover .ins-p__plate-light {
+  opacity: 1;
+  transform: translateX(7%) scale(1.06);
+}
+.ins-p:hover .ins-p__plate::before {
+  top: 8%;
+  bottom: 8%;
+}
+.ins-p:hover .ins-p__monogram {
+  transform: translateY(-4px);
+}
+.ins-p:hover .ins-p__name {
+  transform: translateX(5px);
+}
+.ins-p:hover .ins-p__marker-num {
+  color: rgba(192, 43, 35, 0.22);
+}
+.ins-p:hover .ins-p__rule {
+  width: clamp(88px, 15vw, 168px);
+}
+
+@media (min-width: 700px) {
+  .ins-p {
+    grid-template-columns: var(--plate-col) minmax(0, 1fr);
+    gap: var(--plate-gap);
+    align-items: center;
+  }
+  .ins-p__plate {
+    aspect-ratio: 4 / 5;
+    max-height: none;
+  }
+}
+
+/* ---------------------------------------------------------------
+   FIELDS — the connected practice index, reading as something that
+   flows down from the practitioner record above it.
+   --------------------------------------------------------------- */
+.ins-fields {
+  position: relative;
+  margin-top: clamp(2.75rem, 6vw, 4.5rem);
+  max-width: 600px;
+}
+/* the line descending from the record into the fields spine */
+.ins-fields::before {
+  content: '';
+  position: absolute;
+  left: 3px;
+  bottom: 100%;
+  width: 1px;
+  height: clamp(1.75rem, 5vw, 3.25rem);
+  background: linear-gradient(180deg, transparent, var(--line-strong));
+}
+.ins-fields__heading {
+  color: var(--fg-muted);
+  margin-bottom: clamp(1rem, 3vw, 1.75rem);
+}
+.ins-fields__list {
+  position: relative;
+  list-style: none;
+  margin: 0;
+  padding: 0 0 0 22px;
+}
+.ins-fields__list::before {
+  /* spine */
+  content: '';
+  position: absolute;
+  left: 3px;
+  top: 18px;
+  bottom: 18px;
+  width: 1px;
+  background: linear-gradient(
+    180deg,
+    transparent,
+    var(--line-strong) 12%,
+    var(--line-strong) 88%,
+    transparent
+  );
+}
+.ins-fields__item {
+  position: relative;
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-4);
+  padding-block: clamp(0.7rem, 1.6vw, 1rem);
+  opacity: 0;
+  transform: translateX(-10px);
+  transition:
+    opacity var(--dur-base) var(--ease-out),
+    transform var(--dur-base) var(--ease-out);
+  transition-delay: calc(var(--i, 0) * 80ms + 120ms);
+}
+.ins-fields.is-visible .ins-fields__item {
+  opacity: 1;
+  transform: none;
+}
+.ins-fields__item + .ins-fields__item {
+  border-top: 1px solid var(--line);
+}
+.ins-fields__item::before {
+  /* node on the spine */
+  content: '';
+  position: absolute;
+  left: -22px;
+  top: 0.7em;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--paper);
+  border: 1px solid var(--line-strong);
+}
+.ins-fields__item:first-child::before {
+  background: var(--red);
+  border-color: var(--red);
+  box-shadow: 0 0 0 3px rgba(192, 43, 35, 0.1);
+  animation: ins-node 4.6s ease-in-out infinite;
+}
+@keyframes ins-node {
+  0%,
+  100% {
+    box-shadow: 0 0 0 3px rgba(192, 43, 35, 0.1);
+  }
+  50% {
+    box-shadow: 0 0 0 6px rgba(192, 43, 35, 0.05);
+  }
+}
+.ins-fields__index {
+  flex-shrink: 0;
+  font-size: var(--fs-xs);
+  letter-spacing: 0.08em;
+  color: var(--fg-faint);
+  font-variant-numeric: tabular-nums;
+}
+.ins-fields__name {
+  font-family: var(--font-display);
+  font-size: var(--fs-subhead);
+  line-height: 1.2;
+  color: var(--fg-soft);
+}
+
+/* ---------------------------------------------------------------
+   REDUCED MOTION
+   --------------------------------------------------------------- */
+@media (prefers-reduced-motion: reduce) {
+  .ins-p__plate,
+  .ins-p__plate::before,
+  .ins-p__plate-light,
+  .ins-p__monogram,
+  .ins-p__name,
+  .ins-p__marker-num,
+  .ins-p__rule,
+  .ins-fields__item {
+    transition: none;
+  }
+  .ins-p__rule {
+    transform: none;
+  }
+  .ins-fields__item {
+    opacity: 1;
+    transform: none;
+  }
+  .ins-fields__item:first-child::before {
+    animation: none;
+  }
+}

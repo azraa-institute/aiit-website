@@ -1,0 +1,513 @@
+/* ============================================================
+   AIIT RESOURCES — "Technology Intelligence" — index / front page
+   Shared atoms (.res-tag, .res-meta, .res-eyebrow, .res-dot,
+   --res-serif) live in resources-editorial.css.
+   ============================================================ */
+@import './resources-editorial.css';
+
+.res-stream__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+/* ---------- 01 · Masthead ---------- */
+.res-masthead {
+  padding-block: clamp(2rem, 1.4rem + 3vw, 3.75rem) clamp(1.5rem, 1rem + 2.5vw, 2.75rem);
+}
+.res-masthead__inner {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+}
+
+.res-kicker {
+  display: block;
+  font-family: var(--font-ui);
+  font-size: var(--fs-eyebrow);
+  font-weight: 700;
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+  color: var(--brass-deep);
+}
+
+.res-masthead__title {
+  display: flex;
+  flex-direction: column;
+  margin-top: clamp(0.6rem, 0.4rem + 1vw, 1.1rem);
+  font-family: var(--res-serif);
+  font-weight: 700;
+  line-height: 0.94;
+  letter-spacing: -0.02em;
+  color: var(--ink);
+  font-size: clamp(2.6rem, 1.6rem + 5.2vw, 5.4rem);
+}
+.res-masthead__title-2 {
+  margin-left: clamp(0.75rem, 6vw, 4rem);
+  font-weight: 600;
+  font-style: italic;
+  color: var(--brass-deep);
+}
+.res-masthead__title--field {
+  display: block;
+  margin-left: 0;
+  font-size: clamp(2.2rem, 1.5rem + 3.6vw, 4.2rem);
+  font-weight: 600;
+  line-height: 1.02;
+  font-style: normal;
+  color: var(--ink);
+  text-wrap: balance;
+  max-width: 20ch;
+}
+
+.res-masthead__lede {
+  margin-top: clamp(0.85rem, 0.6rem + 1vw, 1.35rem);
+  max-width: 52ch;
+  font-family: var(--font-ui);
+  font-size: var(--fs-lead);
+  line-height: 1.5;
+  color: var(--ink-soft);
+}
+
+.res-masthead__back {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin-top: var(--space-4);
+  font-family: var(--font-ui);
+  font-size: var(--fs-sm);
+  color: var(--ink-muted);
+  background: none;
+  border: none;
+  cursor: pointer;
+  transition: color var(--dur-fast) var(--ease-out);
+}
+.res-masthead__back:hover,
+.res-masthead__back:focus-visible {
+  color: var(--ink);
+  outline: none;
+}
+
+/* Prominent, obvious way in for readers who know what they want. */
+.res-search {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-3);
+  margin-top: clamp(1.25rem, 1rem + 1.5vw, 1.9rem);
+  padding: 0.7rem 1.15rem;
+  font-family: var(--font-ui);
+  font-size: var(--fs-sm);
+  color: var(--ink-soft);
+  background: var(--surface-raised);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-pill);
+  cursor: pointer;
+  transition:
+    color var(--dur-fast) var(--ease-out),
+    border-color var(--dur-fast) var(--ease-out),
+    background var(--dur-fast) var(--ease-out);
+}
+.res-search svg {
+  color: var(--brass-deep);
+}
+.res-search:hover,
+.res-search:focus-visible {
+  color: var(--ink);
+  border-color: var(--brass);
+  background: var(--accent-wash);
+  outline: none;
+}
+@media (max-width: 560px) {
+  .res-search {
+    align-self: stretch;
+    justify-content: center;
+  }
+}
+
+/* ---------- 02 · Editorial index ---------- */
+.res-index {
+  position: relative;
+  border-block: 1px solid var(--line-strong);
+}
+.res-index__inner {
+  display: flex;
+  gap: clamp(1.25rem, 0.5rem + 2.5vw, 3rem);
+  padding-block: var(--space-4);
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.res-index__inner::-webkit-scrollbar {
+  display: none;
+}
+/* right-edge fade so it's obvious the row scrolls on narrow screens */
+@media (max-width: 900px) {
+  .res-index::after {
+    content: '';
+    position: absolute;
+    top: 1px;
+    bottom: 1px;
+    right: 0;
+    width: clamp(2rem, 12vw, 4rem);
+    background: linear-gradient(90deg, transparent, var(--paper));
+    pointer-events: none;
+  }
+}
+.res-index__item {
+  position: relative;
+  flex-shrink: 0;
+  padding-bottom: 2px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  white-space: nowrap;
+  font-family: var(--font-ui);
+  font-size: var(--fs-sm);
+  color: var(--ink-muted);
+  transition: color var(--dur-fast) var(--ease-out);
+}
+.res-index__item::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  bottom: -1px;
+  width: 100%;
+  height: 1px;
+  background: currentColor;
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform var(--dur-base) var(--ease-out);
+}
+.res-index__item:hover,
+.res-index__item:focus-visible {
+  color: var(--ink);
+  outline: none;
+}
+.res-index__item:hover::after,
+.res-index__item:focus-visible::after {
+  transform: scaleX(1);
+}
+.res-index__item[data-active] {
+  color: var(--brass-deep);
+}
+.res-index__item[data-active]::after {
+  transform: scaleX(1);
+  background: var(--brass);
+}
+
+/* ---------- The composed front page ---------- */
+.res-body {
+  padding-block: clamp(2.5rem, 1.8rem + 4vw, 4.5rem) clamp(3.5rem, 2.5rem + 6vw, 7rem);
+}
+.res-body a {
+  color: inherit;
+  text-decoration: none;
+}
+
+/* dim the field the reader isn't pointing at */
+.res-lead,
+.res-feature,
+.res-stream li {
+  transition: opacity var(--dur-base) var(--ease-out);
+}
+[data-dim='true'] {
+  opacity: 0.32;
+}
+
+/* ---------- 03 · Lead story ---------- */
+.res-lead {
+  display: grid;
+  gap: clamp(1.25rem, 0.5rem + 3vw, 3rem);
+}
+@media (min-width: 860px) {
+  .res-lead {
+    grid-template-columns: 1.06fr 0.94fr;
+    align-items: center;
+  }
+}
+.res-lead__media {
+  position: relative;
+  overflow: hidden;
+}
+.res-lead__media .plate {
+  border-radius: var(--radius-md);
+}
+.res-lead__media .plate img,
+.res-feature__media .plate img,
+.res-row__media .plate img {
+  transition: transform var(--dur-cinematic) var(--ease-out);
+}
+.res-lead:hover .res-lead__media .plate img,
+.res-lead:focus-visible .res-lead__media .plate img {
+  transform: scale(1.045);
+}
+.res-lead__marker {
+  position: absolute;
+  top: -5px;
+  left: -5px;
+  width: 10px;
+  height: 10px;
+  border: 1px solid var(--brass);
+  background: var(--paper);
+}
+.res-lead__copy {
+  align-self: center;
+}
+.res-lead__title {
+  margin-block: var(--space-3) var(--space-4);
+  font-family: var(--res-serif);
+  font-weight: 600;
+  font-size: clamp(2rem, 1.3rem + 3.1vw, 3.7rem);
+  line-height: 1.06;
+  letter-spacing: -0.015em;
+  color: var(--ink);
+  text-wrap: balance;
+  max-width: 22ch;
+  transition: color var(--dur-fast) var(--ease-out);
+}
+.res-lead:hover .res-lead__title,
+.res-lead:focus-visible .res-lead__title {
+  color: var(--brass-deep);
+}
+.res-lead__deck {
+  margin-bottom: var(--space-5);
+  max-width: 46ch;
+  font-family: var(--font-ui);
+  font-size: var(--fs-lead);
+  line-height: 1.58;
+  color: var(--ink-soft);
+}
+.res-lead__go {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin-left: auto;
+  color: var(--brass-deep);
+  opacity: 0;
+  transform: translateX(-6px);
+  transition:
+    opacity var(--dur-fast) var(--ease-out),
+    transform var(--dur-base) var(--ease-out);
+}
+.res-lead:hover .res-lead__go,
+.res-lead:focus-visible .res-lead__go {
+  opacity: 1;
+  transform: none;
+}
+
+/* ---------- 04 · Secondary features ---------- */
+.res-secondary {
+  display: grid;
+  gap: clamp(1.75rem, 1rem + 3vw, 3rem);
+  margin-top: clamp(2.75rem, 2rem + 4vw, 4.5rem);
+}
+@media (min-width: 720px) {
+  .res-secondary {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+.res-feature__media {
+  overflow: hidden;
+  margin-bottom: var(--space-4);
+}
+.res-feature__media .plate {
+  border-radius: var(--radius-md);
+}
+.res-feature:hover .res-feature__media .plate img,
+.res-feature:focus-visible .res-feature__media .plate img {
+  transform: scale(1.04);
+}
+.res-feature__title {
+  margin-block: var(--space-3) var(--space-2);
+  font-family: var(--res-serif);
+  font-weight: 600;
+  font-size: clamp(1.5rem, 1.1rem + 1.7vw, 2.15rem);
+  line-height: 1.1;
+  letter-spacing: -0.01em;
+  color: var(--ink);
+  text-wrap: balance;
+  transition: color var(--dur-fast) var(--ease-out);
+}
+.res-feature:hover .res-feature__title,
+.res-feature:focus-visible .res-feature__title {
+  color: var(--brass-deep);
+}
+.res-feature__deck {
+  margin-bottom: var(--space-3);
+  max-width: 44ch;
+  font-family: var(--font-ui);
+  font-size: var(--fs-sm);
+  line-height: 1.55;
+  color: var(--ink-soft);
+}
+
+/* ---------- 05 · The list ---------- */
+.res-stream {
+  margin-top: clamp(2.75rem, 2rem + 5vw, 5rem);
+}
+.res-stream__head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-4);
+  margin-bottom: var(--space-2);
+}
+.res-stream__total {
+  font-family: var(--font-ui);
+  font-size: var(--fs-xs);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+}
+.res-row {
+  display: grid;
+  align-items: center;
+  grid-template-columns: 9rem minmax(0, 1fr) auto 64px 1.1rem;
+  gap: clamp(0.75rem, 2vw, 1.75rem);
+  padding: clamp(0.9rem, 1.6vw, 1.35rem) var(--space-3);
+  margin-inline: calc(-1 * var(--space-3));
+  border-top: 1px solid var(--line);
+  border-radius: var(--radius-xs);
+  transition: background var(--dur-fast) var(--ease-out);
+}
+.res-stream__list li:last-child .res-row {
+  border-bottom: 1px solid var(--line);
+}
+.res-row:hover,
+.res-row:focus-visible {
+  background: var(--accent-wash);
+  outline: none;
+}
+.res-row__tag {
+  overflow: hidden;
+  letter-spacing: 0.08em;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+.res-row__title {
+  min-width: 0;
+  font-family: var(--res-serif);
+  font-weight: 600;
+  font-size: clamp(1.12rem, 1rem + 0.7vw, 1.42rem);
+  line-height: 1.18;
+  color: var(--ink);
+  transition: color var(--dur-fast) var(--ease-out);
+}
+.res-row:hover .res-row__title,
+.res-row:focus-visible .res-row__title {
+  color: var(--brass-deep);
+}
+.res-row__meta {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-family: var(--font-ui);
+  font-size: var(--fs-xs);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+  white-space: nowrap;
+}
+.res-row__media {
+  width: 64px;
+  overflow: hidden;
+  border-radius: var(--radius-sm);
+}
+.res-row:hover .res-row__media .plate img,
+.res-row:focus-visible .res-row__media .plate img {
+  transform: scale(1.06);
+}
+.res-row__arrow {
+  color: var(--brass-deep);
+  opacity: 0;
+  transform: translateX(-5px);
+  transition:
+    opacity var(--dur-fast) var(--ease-out),
+    transform var(--dur-base) var(--ease-out);
+}
+.res-row:hover .res-row__arrow,
+.res-row:focus-visible .res-row__arrow {
+  opacity: 1;
+  transform: none;
+}
+
+@media (max-width: 820px) {
+  .res-row {
+    grid-template-columns: minmax(0, 1fr) 52px;
+    gap: var(--space-2) var(--space-4);
+  }
+  .res-row__arrow {
+    display: none;
+  }
+  .res-row__tag {
+    grid-column: 1;
+    grid-row: 1;
+  }
+  .res-row__title {
+    grid-column: 1;
+    grid-row: 2;
+  }
+  .res-row__meta {
+    grid-column: 1;
+    grid-row: 3;
+    margin-top: 2px;
+  }
+  .res-row__media {
+    grid-column: 2;
+    grid-row: 1 / span 3;
+    width: 52px;
+    align-self: start;
+  }
+}
+@media (max-width: 460px) {
+  .res-row {
+    grid-template-columns: 1fr;
+  }
+  .res-row__media {
+    display: none;
+  }
+}
+
+.res-stream__more {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-3);
+  margin-top: var(--space-6);
+  padding: 0.75rem 1.4rem;
+  font-family: var(--font-ui);
+  font-size: var(--fs-sm);
+  color: var(--ink);
+  background: none;
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-pill);
+  cursor: pointer;
+  transition:
+    border-color var(--dur-fast) var(--ease-out),
+    background var(--dur-fast) var(--ease-out);
+}
+.res-stream__more:hover,
+.res-stream__more:focus-visible {
+  border-color: var(--brass);
+  background: var(--accent-wash);
+  outline: none;
+}
+.res-stream__more svg {
+  color: var(--brass-deep);
+}
+
+.res-body__foot {
+  margin-top: clamp(3rem, 6vw, 5rem);
+  padding-top: var(--space-6);
+  border-top: 1px solid var(--line-strong);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .res-lead__media .plate img,
+  .res-feature__media .plate img,
+  .res-row__media .plate img {
+    transition: none;
+  }
+  .res-lead__go,
+  .res-row__arrow {
+    transition: none;
+  }
+}

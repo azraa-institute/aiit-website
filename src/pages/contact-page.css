@@ -1,0 +1,74 @@
+.contact-page {
+  display: grid;
+  gap: clamp(2.5rem, 1.5rem + 5vw, 6rem);
+  align-items: start;
+}
+@media (min-width: 900px) {
+  .contact-page {
+    grid-template-columns: 1.5fr 1fr;
+  }
+}
+
+.contact-page__form {
+  display: grid;
+  gap: var(--space-5);
+}
+.contact-page__row {
+  display: grid;
+  gap: var(--space-5);
+}
+@media (min-width: 560px) {
+  .contact-page__row {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+.contact-page__done {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+.contact-page__done p:not(.heading) {
+  color: var(--fg-muted);
+  max-width: 46ch;
+}
+.contact-page__done a {
+  text-decoration: underline;
+}
+
+.contact-page__details {
+  display: grid;
+  gap: var(--space-6);
+  padding-top: var(--space-4);
+  border-top: 2px solid var(--ink);
+}
+.contact-page__details h2 {
+  font-size: var(--fs-eyebrow);
+  font-weight: var(--fw-strong);
+  letter-spacing: var(--tracking-eyebrow);
+  text-transform: uppercase;
+  color: var(--fg-faint);
+  margin-bottom: var(--space-2);
+}
+/* Direct children only — the deeply-nested SocialLinks anchors below stay
+   on their own platform-brand hover colours instead of this flat one. */
+.contact-page__details > div > a {
+  font-family: var(--font-display);
+  font-size: var(--fs-subhead);
+}
+.contact-page__details > div > a:hover {
+  color: var(--brass-deep);
+}
+.contact-page__details address {
+  font-style: normal;
+  color: var(--fg-soft);
+  line-height: 1.7;
+}
+.contact-page__social {
+  margin-top: var(--space-1);
+}
+.contact-page__social .social-links__link {
+  width: 38px;
+  height: 38px;
+  border: 1px solid var(--line-strong);
+}

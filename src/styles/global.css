@@ -1,0 +1,502 @@
+@import './tokens.css';
+@import './reset.css';
+
+body {
+  background: var(--bg);
+  color: var(--fg);
+  font-family: var(--font-ui);
+  font-size: var(--fs-body);
+  font-weight: var(--fw-body);
+  line-height: var(--lh-body);
+  text-rendering: optimizeLegibility;
+  font-kerning: normal;
+  /* Georgia ships old-style (text) figures by default; use lining figures
+     site-wide for consistent, modern number rendering in prices, data,
+     dates and running copy alike. */
+  font-variant-numeric: lining-nums;
+  overflow-x: clip;
+  /* Belt-and-braces with the html rule: no top/bottom rubber-band that
+     would open a gap between the fixed header and the hero. */
+  overscroll-behavior-y: none;
+  /* Auto-hyphenation is off by default site-wide (see notes below on the
+     justify block that used to live here) — `manual` is the CSS default,
+     so ordinary words only ever break at a real hyphen already in the text. */
+  -webkit-hyphens: manual;
+  hyphens: manual;
+}
+
+/* ============================================================
+   TYPOGRAPHY PRIMITIVES
+   ============================================================ */
+
+.display-1,
+.display-2,
+.display-3 {
+  font-family: var(--font-display);
+  font-weight: var(--fw-display);
+  line-height: var(--lh-tight);
+  letter-spacing: var(--tracking-display);
+  text-wrap: balance;
+}
+
+.display-1 {
+  font-size: var(--fs-display-1);
+}
+.display-2 {
+  font-size: var(--fs-display-2);
+}
+.display-3 {
+  font-size: var(--fs-display-3);
+}
+
+.heading {
+  font-family: var(--font-display);
+  font-size: var(--fs-heading);
+  font-weight: var(--fw-medium);
+  line-height: var(--lh-snug);
+  letter-spacing: var(--tracking-display);
+  text-wrap: balance;
+}
+
+.subhead {
+  font-family: var(--font-display);
+  font-size: var(--fs-subhead);
+  font-weight: var(--fw-medium);
+  line-height: var(--lh-snug);
+}
+
+.editorial {
+  font-family: var(--font-display);
+  font-size: var(--fs-display-3);
+  font-weight: var(--fw-display);
+  line-height: 1.26;
+  letter-spacing: var(--tracking-display);
+  text-wrap: balance;
+}
+
+.editorial em,
+.display-1 em,
+.display-2 em,
+.display-3 em {
+  font-style: italic;
+  font-weight: var(--fw-display);
+}
+
+.lead {
+  font-size: var(--fs-lead);
+  font-weight: var(--fw-body);
+  line-height: 1.55;
+  color: var(--fg-soft);
+  max-width: 52ch;
+}
+
+.eyebrow {
+  font-family: var(--font-ui);
+  font-size: var(--fs-eyebrow);
+  font-weight: 700;
+  letter-spacing: var(--tracking-eyebrow);
+  text-transform: uppercase;
+  color: var(--fg-muted);
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.eyebrow::before {
+  content: '';
+  width: 28px;
+  height: 2px;
+  background: currentColor;
+  opacity: 0.85;
+}
+
+.eyebrow--plain::before {
+  display: none;
+}
+
+.prose {
+  max-width: var(--container-text);
+  font-size: var(--fs-lead);
+  font-weight: var(--fw-body);
+  line-height: var(--lh-body);
+  color: var(--fg-soft);
+}
+
+/* ------------------------------------------------------------
+   Body copy site-wide: left-aligned, ragged right, no forced
+   hyphenation (see `body` above — `hyphens: manual` is already the
+   default there; `overflow-wrap: break-word` is the only defensive
+   rule left, so a genuinely unbreakable long token — a URL, say —
+   still wraps instead of overflowing its box).
+
+   Previously this block set `text-align: justify` + `hyphens: auto`
+   site-wide. CSS's justify implementation has no real line-breaking
+   optimiser (unlike print), so it distributes ALL of a line's slack
+   into word gaps — brutal in the site's many narrow columns (course
+   cards, list items, sidebar text): gaps measured up to 12x the
+   font's natural space width. `hyphens: auto` was compounding it,
+   splitting ordinary words (e.g. "career", "learning") that had no
+   need to break, on both justified AND left-aligned text alike. Left
+   + manual matches how most editorial sites (NYT, Stripe, Apple)
+   actually set body copy, and reads as ragged-right, not "broken".
+   ------------------------------------------------------------ */
+.layout__main p,
+.prose,
+.prose li,
+.page-banner__intro,
+.section-heading__intro,
+.lead {
+  text-align: left;
+  overflow-wrap: break-word;
+}
+
+/* ------------------------------------------------------------
+   Justify — opted in per element, not a site-wide default.
+   Re-tested every long-form paragraph on the site (real word-gap
+   measurements against each font's natural space width, not a visual
+   guess) after the width fixes above landed. The deciding factor is
+   column width: at ~1000px+ (FAQ answers, page banners, the Blueprint
+   page's two lead paragraphs) justify measured cleanly, average gaps
+   mostly 1.0-1.7x natural space. At `.prose`'s narrower 720px reading
+   column (legal pages, blog articles) and `.course-detail__prose`
+   (~840px) it did not — gaps up to 2.7-3.7x, the same "few words per
+   line" problem the site-wide rule above was removed for. Those stay
+   left. `hyphens: auto` made no measurable difference on any of these
+   at their current widths, so it stays off (manual) — no reason to
+   reintroduce that risk for zero benefit.
+   ------------------------------------------------------------ */
+.faqs-page__item p,
+p.page-banner__intro,
+.blueprint__lead > p,
+.blueprint__visa p {
+  text-align: justify;
+  text-justify: inter-word;
+}
+@media (max-width: 640px) {
+  /* Same columns, much narrower on a phone — the exact condition that
+     makes CSS justify look bad. Left-align below the breakpoint. */
+  .faqs-page__item p,
+  p.page-banner__intro,
+  .blueprint__lead > p,
+  .blueprint__visa p {
+    text-align: left;
+  }
+}
+
+.page-banner__intro,
+.section-heading__intro {
+  font-weight: var(--fw-medium);
+}
+
+/* Centred section intros stay centred (a left-aligned section heading
+   --start keeps its intro left, which is already the default above). */
+.section-heading:not(.section-heading--start) .section-heading__intro,
+.section-heading--center p {
+  text-align: center;
+}
+
+.prose > * + * {
+  margin-top: 1.4em;
+}
+
+.prose h2 {
+  font-family: var(--font-display);
+  font-size: var(--fs-heading);
+  font-weight: var(--fw-strong);
+  margin-top: 2em;
+  line-height: var(--lh-snug);
+}
+
+.prose h3 {
+  font-family: var(--font-display);
+  font-size: var(--fs-subhead);
+  font-weight: var(--fw-strong);
+  margin-top: 1.6em;
+}
+
+.prose a:not(.btn) {
+  color: var(--accent-strong);
+  font-weight: var(--fw-medium);
+  text-decoration: underline;
+  text-decoration-color: var(--brass-tint);
+  text-underline-offset: 3px;
+  text-decoration-thickness: 1px;
+  transition:
+    text-decoration-color var(--dur-fast) var(--ease-out),
+    text-decoration-thickness var(--dur-fast) var(--ease-out);
+}
+.prose a:not(.btn):hover,
+.prose a:not(.btn):focus-visible {
+  text-decoration-color: var(--brass);
+  text-decoration-thickness: 2px;
+}
+
+.prose ul,
+.prose ol {
+  padding-left: 1.3em;
+}
+
+.prose li + li {
+  margin-top: 0.5em;
+}
+
+.prose blockquote {
+  border-left: 2px solid var(--accent);
+  padding-left: var(--space-5);
+  font-family: var(--font-display);
+  font-size: var(--fs-subhead);
+  font-style: italic;
+  color: var(--fg);
+}
+
+/* ============================================================
+   LAYOUT UTILITIES
+   ============================================================ */
+
+.container {
+  width: 100%;
+  max-width: var(--container);
+  margin-inline: auto;
+  padding-inline: var(--gutter);
+}
+
+.container--wide {
+  max-width: var(--container-wide);
+}
+
+.container--text {
+  max-width: var(--container-text);
+}
+
+.section {
+  padding-block: var(--section-y);
+  position: relative;
+}
+
+.section--lg {
+  padding-block: var(--section-y-lg);
+}
+
+.section--tight {
+  padding-block: clamp(3rem, 2rem + 4vw, 5rem);
+}
+
+.section--ink {
+  background: var(--ink);
+  color: var(--ivory);
+}
+
+.section--ivory {
+  background: var(--ivory);
+}
+
+.section--hairline-top {
+  border-top: 1px solid var(--hairline);
+}
+
+.stack {
+  display: flex;
+  flex-direction: column;
+}
+
+.stack > * + * {
+  margin-top: var(--flow, var(--space-4));
+}
+
+.grid {
+  display: grid;
+  gap: var(--gutter);
+}
+
+/* ------------------------------------------------------------
+   Intrinsic-size hardening.
+   Grid/flex children default to min-width:auto, letting wide or
+   non-wrapping content (flex-wrap rows, long words, media) inflate
+   a track past the viewport. Reset it, and make lone grid columns
+   flexible + shrinkable. Multi-column layouts set their own
+   grid-template-columns and are unaffected.
+   ------------------------------------------------------------ */
+main :where(section, div, article, aside, form, ul, ol) {
+  min-width: 0;
+}
+
+.section > .container,
+.section > .container--wide,
+.section > .container--text {
+  min-width: 0;
+}
+
+.visually-hidden {
+  position: absolute !important;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+}
+
+.skip-link {
+  position: absolute;
+  left: var(--space-4);
+  top: var(--space-4);
+  transform: translateY(-160%);
+  background: var(--ink);
+  color: var(--ivory);
+  padding: var(--space-3) var(--space-5);
+  border-radius: var(--radius-sm);
+  z-index: var(--z-toast);
+  transition: transform var(--dur-base) var(--ease-out);
+}
+
+.skip-link:focus {
+  transform: translateY(0);
+}
+
+/* ============================================================
+   SCROLL REVEAL
+   ============================================================ */
+
+[data-reveal] {
+  opacity: 0;
+  transform: translateY(28px);
+  transition:
+    opacity var(--dur-slow) var(--ease-out),
+    transform var(--dur-slow) var(--ease-out);
+  transition-delay: var(--reveal-delay, 0ms);
+  will-change: opacity, transform;
+}
+
+[data-reveal].is-visible {
+  opacity: 1;
+  transform: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  [data-reveal] {
+    opacity: 1 !important;
+    transform: none !important;
+    transition: none !important;
+  }
+}
+
+/* ============================================================
+   SHARED SMALL COMPONENTS
+   ============================================================ */
+
+.hairline {
+  border: 0;
+  border-top: 1px solid var(--hairline);
+  margin: 0;
+}
+
+.tag {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: var(--fs-xs);
+  font-weight: 700;
+  letter-spacing: var(--tracking-wide);
+  text-transform: uppercase;
+  color: var(--fg);
+  padding: var(--space-1) var(--space-3);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-pill);
+}
+
+.tag--accent {
+  color: var(--accent-strong);
+  border-color: var(--brass);
+  background: rgba(154, 123, 79, 0.1);
+}
+
+.tag--live {
+  color: #fff;
+  background: var(--brass-deep);
+  border-color: transparent;
+}
+
+.tag--live::before {
+  content: '';
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: currentColor;
+  animation: pulse 2s var(--ease-in-out) infinite;
+}
+
+@keyframes pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.3;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tag--live::before {
+    animation: none;
+  }
+}
+
+.index-num {
+  font-family: var(--font-display);
+  font-size: var(--fs-subhead);
+  font-weight: var(--fw-medium);
+  color: var(--accent-strong);
+  font-variant-numeric: lining-nums tabular-nums;
+}
+
+/* Counters and numbered labels: keep the digits on a shared advance width. */
+.index-num,
+.hero__counter,
+.countdown__value,
+.course-detail__stats dd {
+  font-variant-numeric: lining-nums tabular-nums;
+}
+
+/* ---- Filter chips (shared: courses, resources, FAQs) ---- */
+.filter-group {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+.filter-group__label {
+  font-size: var(--fs-eyebrow);
+  font-weight: 700;
+  letter-spacing: var(--tracking-eyebrow);
+  text-transform: uppercase;
+  color: var(--fg-muted);
+}
+.filter-group__chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.chip {
+  padding: 0.5rem 0.9rem;
+  font-size: var(--fs-sm);
+  font-weight: var(--fw-body);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-pill);
+  color: var(--fg-soft);
+  transition:
+    border-color var(--dur-fast) var(--ease-out),
+    color var(--dur-fast) var(--ease-out),
+    background var(--dur-fast) var(--ease-out);
+}
+.chip:hover {
+  border-color: var(--fg-muted);
+  color: var(--fg);
+}
+.chip--active {
+  background: var(--ink);
+  border-color: var(--ink);
+  color: var(--paper);
+}

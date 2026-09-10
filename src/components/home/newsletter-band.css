@@ -1,0 +1,42 @@
+/* Admissions-red band — the one deliberately loud surface on the home page. */
+.newsletter-band-section.section--ink {
+  background: var(--red-deep);
+  color: var(--ivory);
+}
+.newsletter-band-section .newsletter-form__field {
+  border-bottom-color: rgba(246, 241, 231, 0.55);
+}
+.newsletter-band-section .newsletter-form__field input::placeholder {
+  color: rgba(246, 241, 231, 0.82);
+}
+
+.newsletter-band {
+  display: grid;
+  gap: var(--space-6);
+  align-items: center;
+}
+
+@media (min-width: 860px) {
+  .newsletter-band {
+    grid-template-columns: 1fr auto;
+    gap: var(--space-8);
+  }
+}
+
+.newsletter-band__title {
+  font-family: var(--font-display);
+  font-size: var(--fs-heading);
+  font-weight: var(--fw-display);
+  letter-spacing: var(--tracking-display);
+}
+
+.newsletter-band__sub {
+  margin-top: var(--space-3);
+  color: var(--fg-muted);
+  font-size: var(--fs-sm);
+  max-width: 60ch;
+}
+
+.newsletter-band__form {
+  min-width: min(420px, 100%);
+}

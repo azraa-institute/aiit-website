@@ -1,0 +1,372 @@
+/* ============================================================
+   AUTH — Sign In / Sign Up / Lost Password
+   Split composition: the AIIT learners photo anchors one side,
+   a distinct premium card carries the form on the other.
+   ============================================================ */
+
+.auth {
+  min-height: 100svh;
+  display: grid;
+  grid-template-columns: 1fr;
+  /* warm ground so the white card reads as a lifted object */
+  background: var(--bg-alt);
+}
+
+/* ---- Desktop: true split ---- */
+@media (min-width: 1024px) {
+  .auth {
+    grid-template-columns: minmax(0, 1.02fr) minmax(0, 1fr);
+  }
+}
+
+/* ============================================================
+   THE PHOTO PANEL
+   ============================================================ */
+.auth__aside {
+  position: relative;
+  display: none;
+  background: var(--ink);
+  color: var(--ivory);
+  overflow: hidden;
+  isolation: isolate;
+}
+@media (min-width: 1024px) {
+  .auth__aside {
+    display: block;
+  }
+}
+
+.auth__aside-art {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  border-radius: 0;
+}
+.auth__aside-art img {
+  /* keep the faces high in the frame, leaving the lower third for the copy */
+  object-position: 50% 22%;
+}
+
+/* readability scrim + brand warmth, keyed to where the text sits */
+.auth__aside::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  background:
+    linear-gradient(
+      180deg,
+      rgba(20, 17, 15, 0.32) 0%,
+      rgba(20, 17, 15, 0.18) 40%,
+      rgba(20, 17, 15, 0.86) 100%
+    ),
+    radial-gradient(130% 60% at 16% 10%, rgba(20, 17, 15, 0.4), transparent 62%);
+}
+
+.auth__aside-inner {
+  position: relative;
+  z-index: 2;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  gap: var(--space-8);
+  padding: clamp(2rem, 3.6vw, 3.75rem);
+}
+
+.auth__aside-copy {
+  display: grid;
+  gap: var(--space-4);
+}
+.auth__aside-statement {
+  font-family: var(--font-display);
+  font-size: var(--fs-display-3);
+  font-weight: var(--fw-medium);
+  line-height: 1.08;
+  letter-spacing: var(--tracking-display);
+  max-width: 14ch;
+  text-wrap: balance;
+  text-shadow: 0 1px 32px rgba(20, 17, 15, 0.5);
+}
+.auth__progression {
+  font-size: var(--fs-eyebrow);
+  letter-spacing: var(--tracking-eyebrow);
+  text-transform: uppercase;
+  color: var(--brass-tint);
+}
+
+/* ============================================================
+   BRAND MARKS
+   ============================================================ */
+.auth__brand {
+  display: inline-flex;
+  align-items: center;
+}
+/* The card carries the AIIT mark on every breakpoint. */
+.auth__card > .auth__brand {
+  margin-bottom: var(--space-6);
+  color: var(--ink);
+}
+
+/* ============================================================
+   THE FORM SIDE + CARD
+   ============================================================ */
+.auth__main {
+  display: grid;
+  place-items: center;
+  padding: clamp(1.5rem, 4vw, 4rem) var(--gutter);
+}
+
+.auth__card {
+  width: 100%;
+  max-width: 452px;
+  background: var(--surface);
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-lift);
+  padding: clamp(1.75rem, 1rem + 2.4vw, 2.75rem);
+}
+
+.auth__head {
+  display: grid;
+  gap: var(--space-3);
+}
+.auth__title {
+  font-family: var(--font-display);
+  font-size: var(--fs-heading);
+  font-weight: var(--fw-medium);
+  line-height: 1.1;
+  letter-spacing: var(--tracking-display);
+}
+.auth__intro {
+  color: var(--fg-muted);
+  font-size: var(--fs-sm);
+  line-height: 1.55;
+}
+
+/* ---- Social sign-in (Google + Apple) ---- */
+.auth__social {
+  margin-top: var(--space-6);
+  display: grid;
+  gap: var(--space-3);
+}
+.auth__provider {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: 0.62rem 0.9rem;
+  font-size: var(--fs-sm);
+  font-weight: var(--fw-strong);
+  color: var(--fg);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  transition:
+    border-color var(--dur-fast) var(--ease-out),
+    background var(--dur-fast) var(--ease-out),
+    box-shadow var(--dur-fast) var(--ease-out);
+}
+.auth__provider:hover {
+  border-color: var(--fg-muted);
+  background: var(--ivory);
+}
+.auth__provider:focus-visible {
+  outline: none;
+  border-color: var(--brass);
+  box-shadow: 0 0 0 3px rgba(154, 123, 79, 0.16);
+}
+/* Rounded brand mark */
+.auth__provider-mark {
+  flex-shrink: 0;
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  border-radius: var(--radius-pill);
+  background: #fff;
+  box-shadow: inset 0 0 0 1px var(--line);
+}
+.auth__provider-mark--apple {
+  color: var(--ink);
+}
+.auth__provider-label {
+  flex: 1;
+  text-align: center;
+  /* offset the leading mark + gap so the label stays optically centred */
+  margin-right: calc(30px + var(--space-3));
+}
+
+/* ---- Divider ---- */
+.auth__divider {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  margin: var(--space-5) 0 var(--space-2);
+  font-size: var(--fs-xs);
+  color: var(--fg-faint);
+  text-transform: uppercase;
+  letter-spacing: var(--tracking-wide);
+}
+.auth__divider::before,
+.auth__divider::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--hairline);
+}
+
+/* ---- Form ---- */
+.auth__form {
+  margin-top: var(--space-4);
+  display: grid;
+  gap: var(--space-4);
+}
+.auth__row {
+  display: grid;
+  gap: var(--space-4);
+}
+@media (min-width: 460px) {
+  .auth__row {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+/* Form-level validation banner — one consistent place for errors */
+.auth__alert {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-2);
+  padding: 0.7rem 0.85rem;
+  border-radius: var(--radius-sm);
+  background: #fdf1ef;
+  border: 1px solid #e6b4ad;
+  color: #8a1c15;
+  font-size: var(--fs-sm);
+  line-height: 1.45;
+}
+.auth__alert svg {
+  flex-shrink: 0;
+  margin-top: 0.15em;
+}
+
+.auth__aux {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: var(--space-4);
+  font-size: var(--fs-sm);
+  flex-wrap: wrap;
+}
+.auth__aux a {
+  color: var(--brass-deep);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.auth__aux a:hover {
+  color: var(--ink);
+}
+.auth__check {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-2);
+  color: var(--fg-muted);
+  font-size: var(--fs-sm);
+  line-height: 1.5;
+}
+.auth__check input {
+  margin-top: 0.15em;
+  flex-shrink: 0;
+  accent-color: var(--brass);
+}
+.auth__check a {
+  color: var(--brass-deep);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+/* ---- Footer ---- */
+.auth__footer {
+  margin-top: var(--space-6);
+  padding-top: var(--space-5);
+  border-top: 1px solid var(--hairline);
+  font-size: var(--fs-sm);
+  color: var(--fg-muted);
+}
+.auth__footer a {
+  color: var(--ink);
+  font-weight: var(--fw-medium);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+/* ---- Lost-password success ---- */
+.auth__done {
+  margin-top: var(--space-6);
+  padding: var(--space-5);
+  background: var(--ivory);
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius-md);
+  font-size: var(--fs-sm);
+  color: var(--fg-soft);
+  line-height: 1.6;
+}
+
+/* ============================================================
+   TABLET & MOBILE — the photo becomes a banner, the card lifts
+   over it rather than the desktop layout just shrinking.
+   ============================================================ */
+@media (max-width: 1023px) {
+  .auth {
+    grid-template-columns: 1fr;
+    grid-template-rows: auto 1fr;
+  }
+  .auth__aside {
+    display: block;
+    min-height: clamp(184px, 42vw, 300px);
+  }
+  .auth__aside-art img {
+    object-position: 50% 30%;
+  }
+  .auth__aside-inner {
+    justify-content: flex-end;
+    padding: clamp(1.25rem, 5vw, 2.25rem);
+    padding-bottom: clamp(3.25rem, 11vw, 4.5rem);
+    gap: var(--space-3);
+  }
+  .auth__progression {
+    display: none;
+  }
+  .auth__aside-statement {
+    font-size: var(--fs-subhead);
+    max-width: 26ch;
+  }
+
+  .auth__main {
+    place-items: start center;
+    padding-top: 0;
+    padding-bottom: clamp(2rem, 8vw, 4rem);
+  }
+  .auth__card {
+    position: relative;
+    z-index: 3;
+    margin-top: clamp(-2.75rem, -6vw, -1.75rem);
+  }
+}
+
+@media (max-width: 460px) {
+  .auth__card {
+    padding: 1.4rem 1.15rem;
+    border-radius: var(--radius-md);
+  }
+  .auth__aux {
+    justify-content: flex-start;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .auth__provider {
+    transition: none;
+  }
+}

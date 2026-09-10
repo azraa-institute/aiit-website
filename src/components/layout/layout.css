@@ -1,0 +1,48 @@
+.layout {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+.layout__main {
+  flex: 1;
+  /* Non-hero pages sit below the fixed announcement bar + header. */
+  padding-top: calc(var(--ab-h) + var(--header-h));
+}
+
+.layout--hero .layout__main {
+  padding-top: 0;
+}
+
+/* A plain inner page banner used by non-hero pages. */
+.page-banner {
+  padding-block: clamp(3rem, 2rem + 5vw, 6rem) clamp(2.5rem, 2rem + 3vw, 4rem);
+  border-bottom: 1px solid var(--hairline);
+}
+
+.page-banner__eyebrow {
+  margin-bottom: var(--space-4);
+}
+
+.page-banner__title {
+  font-family: var(--font-display);
+  font-size: var(--fs-display-2);
+  font-weight: var(--fw-display);
+  line-height: 1.12;
+  letter-spacing: var(--tracking-display);
+  max-width: 18ch;
+  text-wrap: balance;
+}
+
+.page-banner__intro {
+  margin-top: var(--space-5);
+  /* No ch-cap — the .container--wide it sits inside (1480px) is already a
+     sensible bound. A cap on top of that left it filling barely 70% of the
+     banner on every interior page (About, Courses, FAQs, Webinar, Contact,
+     Shop, Instructors, Why Join, Blueprint, Affiliate all share this rule),
+     reading as text stopping short with room clearly left over. */
+  font-size: var(--fs-lead);
+  font-weight: var(--fw-body);
+  color: var(--fg-soft);
+  line-height: 1.55;
+}

@@ -1,0 +1,108 @@
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.field__label {
+  font-size: var(--fs-xs);
+  font-weight: 700;
+  letter-spacing: var(--tracking-wide);
+  text-transform: uppercase;
+  color: var(--fg);
+}
+
+.field__control {
+  width: 100%;
+  padding: 0.85rem 1rem;
+  font-family: var(--font-ui);
+  font-size: var(--fs-body);
+  color: var(--fg);
+  background: var(--surface);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-sm);
+  transition:
+    border-color var(--dur-fast) var(--ease-out),
+    box-shadow var(--dur-fast) var(--ease-out);
+}
+.on-ink .field__control {
+  background: rgba(244, 239, 231, 0.06);
+  border-color: var(--line-invert);
+}
+
+.field__control::placeholder {
+  color: var(--fg-faint);
+}
+
+.field__control:focus {
+  outline: none;
+  border-color: var(--brass);
+  box-shadow: 0 0 0 3px rgba(154, 123, 79, 0.16);
+}
+
+.field__control--area {
+  resize: vertical;
+  min-height: 110px;
+}
+
+.field__select-wrap {
+  position: relative;
+}
+.field__select-wrap select {
+  appearance: none;
+  padding-right: 2.5rem;
+  cursor: pointer;
+}
+.field__chevron {
+  position: absolute;
+  right: 1rem;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--fg-muted);
+  pointer-events: none;
+}
+
+.field__password {
+  position: relative;
+}
+.field__password .field__control {
+  padding-right: 3rem;
+}
+.field__reveal {
+  position: absolute;
+  right: 0.5rem;
+  top: 50%;
+  transform: translateY(-50%);
+  display: grid;
+  place-items: center;
+  width: 2.25rem;
+  height: 2.25rem;
+  border-radius: var(--radius-sm);
+  color: var(--fg-muted);
+  background: none;
+  border: none;
+  cursor: pointer;
+  transition: color var(--dur-fast) var(--ease-out);
+}
+.field__reveal:hover,
+.field__reveal:focus-visible {
+  color: var(--fg);
+}
+.field__reveal svg {
+  display: block;
+}
+
+.field__hint {
+  font-size: var(--fs-xs);
+  color: var(--fg-muted);
+}
+
+.field__error {
+  font-size: var(--fs-xs);
+  font-weight: var(--fw-medium);
+  color: #971f19;
+}
+
+.field--error .field__control {
+  border-color: #971f19;
+}

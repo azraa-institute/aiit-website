@@ -1,0 +1,239 @@
+.faqs-page {
+  display: grid;
+  gap: clamp(2rem, 1rem + 4vw, 4rem);
+  align-items: start;
+}
+@media (min-width: 900px) {
+  .faqs-page {
+    grid-template-columns: 260px 1fr;
+  }
+  .faqs-page__side {
+    position: sticky;
+    top: calc(var(--header-h) + var(--space-5));
+  }
+}
+
+.faqs-page__search {
+  width: 100%;
+  padding: 0.75rem 1rem;
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-sm);
+  font-size: var(--fs-sm);
+  margin-bottom: var(--space-5);
+  background: var(--surface);
+  transition: border-color var(--dur-fast) var(--ease-out), box-shadow var(--dur-fast) var(--ease-out);
+}
+.faqs-page__search:focus {
+  outline: none;
+  border-color: var(--brass);
+  box-shadow: 0 0 0 3px var(--accent-wash);
+}
+
+/* ---- Category nav — soft boxes, gradient fill when active ---- */
+.faqs-page__cats {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+.faqs-page__cat {
+  text-align: left;
+  padding: var(--space-3) var(--space-4);
+  font-size: var(--fs-sm);
+  color: var(--fg-muted);
+  background: var(--surface);
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius-md);
+  transition:
+    color var(--dur-fast) var(--ease-out),
+    border-color var(--dur-fast) var(--ease-out),
+    background var(--dur-fast) var(--ease-out),
+    transform var(--dur-fast) var(--ease-out),
+    box-shadow var(--dur-fast) var(--ease-out);
+}
+.faqs-page__cat:hover {
+  color: var(--fg);
+  border-color: var(--brass-tint);
+  background: var(--accent-wash);
+  transform: translateX(2px);
+}
+.faqs-page__cat.is-active {
+  color: #fff;
+  font-weight: var(--fw-strong);
+  border-color: transparent;
+  background: linear-gradient(135deg, var(--red) 0%, var(--brass-deep) 100%);
+  box-shadow: var(--shadow-soft);
+}
+
+/* ---- FAQ list ---- */
+.faqs-page__list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.faqs-page__item {
+  position: relative;
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius-md);
+  background: var(--surface);
+  overflow: hidden;
+  transition:
+    border-color var(--dur-base) var(--ease-out),
+    box-shadow var(--dur-base) var(--ease-out),
+    transform var(--dur-base) var(--ease-out);
+}
+.faqs-page__item:hover {
+  border-color: var(--brass-tint);
+  box-shadow: var(--shadow-soft);
+  transform: translateY(-1px);
+}
+.faqs-page__item[data-open] {
+  border-color: var(--red-tint);
+  box-shadow: var(--shadow-lift);
+  /* subtle gradient wash across the whole card once open */
+  background: linear-gradient(135deg, var(--surface) 0%, var(--ivory) 120%);
+}
+/* left accent bar — grows in on open */
+.faqs-page__item::before {
+  content: '';
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 3px;
+  background: linear-gradient(180deg, var(--red) 0%, var(--brass-deep) 100%);
+  transform: scaleY(0);
+  transform-origin: top;
+  transition: transform var(--dur-base) var(--ease-out);
+}
+.faqs-page__item[data-open]::before {
+  transform: scaleY(1);
+}
+
+.faqs-page__q {
+  margin: 0;
+  font: inherit;
+}
+.faqs-page__summary {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4);
+  padding: var(--space-5);
+  cursor: pointer;
+  text-align: left;
+  background: none;
+  border: none;
+  font-family: var(--font-display);
+  font-size: var(--fs-subhead);
+  font-weight: var(--fw-medium);
+  letter-spacing: var(--tracking-display);
+  color: var(--fg);
+  transition: color var(--dur-fast) var(--ease-out);
+}
+.faqs-page__item:hover .faqs-page__summary,
+.faqs-page__item[data-open] .faqs-page__summary {
+  color: var(--red-deep);
+}
+
+/* icon badge — circular, gradient fill once open */
+.faqs-page__icon {
+  flex-shrink: 0;
+  display: grid;
+  place-items: center;
+  width: 2rem;
+  height: 2rem;
+  border-radius: var(--radius-pill);
+  color: var(--fg-muted);
+  background: var(--accent-wash);
+  transition:
+    background var(--dur-base) var(--ease-out),
+    color var(--dur-base) var(--ease-out),
+    transform var(--dur-base) var(--ease-out);
+}
+.faqs-page__item:hover .faqs-page__icon {
+  background: var(--accent-wash-strong);
+  color: var(--brass-deep);
+}
+.faqs-page__item[data-open] .faqs-page__icon {
+  background: linear-gradient(135deg, var(--red) 0%, var(--brass-deep) 100%);
+  color: #fff;
+  transform: rotate(45deg);
+}
+.faqs-page__icon svg {
+  display: block;
+}
+
+/* animated collapse — grid-rows trick, no JS height measuring */
+.faqs-page__panel {
+  display: grid;
+  grid-template-rows: 0fr;
+  transition: grid-template-rows var(--dur-base) var(--ease-out);
+}
+.faqs-page__item[data-open] .faqs-page__panel {
+  grid-template-rows: 1fr;
+}
+.faqs-page__panel-inner {
+  overflow: hidden;
+  /* Closed answers are pulled out of the accessibility tree and tab order —
+     `visibility: hidden` does that while still allowing the height collapse to
+     animate. Held visible until the collapse finishes, then hidden. */
+  visibility: hidden;
+  transition: visibility 0s linear var(--dur-base);
+}
+.faqs-page__item[data-open] .faqs-page__panel-inner {
+  visibility: visible;
+  transition: visibility 0s;
+}
+.faqs-page__item p {
+  margin: 0;
+  padding: 0 var(--space-5) var(--space-5);
+  /* No ch-cap — the card itself is already the sensible bound. */
+  color: var(--ink-soft);
+  line-height: var(--lh-body);
+}
+
+.faqs-page__empty {
+  padding: var(--space-7) 0;
+  color: var(--fg-muted);
+}
+.faqs-page__empty a {
+  text-decoration: underline;
+}
+
+/* ---- Contact box — the site's cool accent (slate), for contrast against
+   the warm red/brass used throughout the accordion above. Uses the .on-ink
+   utility (see FaqsPage.tsx) so text/link colours invert automatically. ---- */
+.faqs-page__contact {
+  margin-top: var(--space-7);
+  padding: var(--space-6);
+  border-radius: var(--radius-lg);
+  background: linear-gradient(135deg, var(--slate-deep) 0%, var(--ink) 100%);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  box-shadow: var(--shadow-lift);
+}
+.faqs-page__contact p {
+  font-family: var(--font-display);
+  font-size: var(--fs-subhead);
+  color: var(--fg);
+}
+.faqs-page__hours {
+  font-size: var(--fs-xs);
+  color: var(--fg-muted);
+}
+.faqs-page__contact .btn--link {
+  align-self: flex-start;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .faqs-page__icon,
+  .faqs-page__item,
+  .faqs-page__cat,
+  .faqs-page__panel {
+    transition: none;
+  }
+  .faqs-page__panel-inner {
+    transition: visibility 0s;
+  }
+}

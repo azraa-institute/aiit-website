@@ -1,0 +1,41 @@
+.courses-page {
+  display: grid;
+  gap: clamp(2rem, 1rem + 4vw, 4rem);
+  align-items: start;
+}
+
+@media (min-width: 1000px) {
+  .courses-page {
+    grid-template-columns: 320px 1fr;
+  }
+  .courses-page__filters {
+    position: sticky;
+    top: calc(var(--header-h) + var(--space-5));
+  }
+}
+
+.courses-page__grid {
+  display: grid;
+  gap: clamp(2rem, 1rem + 3vw, 3rem) clamp(1.5rem, 1rem + 1.5vw, 2.5rem);
+}
+@media (min-width: 640px) {
+  .courses-page__grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+/* Third column only once there is genuinely room for it alongside the
+   320px filter rail — otherwise cards get crushed below a usable width. */
+@media (min-width: 1500px) {
+  .courses-page__grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+.courses-page__empty {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--space-4);
+  padding: var(--space-8) 0;
+  color: var(--fg-muted);
+}

@@ -1,0 +1,185 @@
+/* ============================================================
+   AIIT DESIGN SYSTEM — TOKENS
+   Editorial intelligence + technological precision.
+   ============================================================ */
+
+:root {
+  /* ---- Color: neutrals ---- */
+  /* Kept deliberately deep. "Muted" is a controlled darker value, never a
+     low-opacity wash — secondary text still has to read cleanly. */
+  --ink: #14110f; /* warm near-black */
+  --ink-soft: #241f1c; /* strong secondary — body copy, leads */
+  --ink-muted: #4a443c; /* metadata, captions — still ~8:1 on paper */
+  --ink-faint: #6a6157; /* quietest tier — labels; ~5.4:1, passes AA */
+
+  --paper: #fbf8f2; /* warm white */
+  --ivory: #f4efe7;
+  --ivory-deep: #eae3d6;
+  --surface: #ffffff;
+
+  /* ---- Color: accents ----
+     The whole system is black + warm cream + ONE metallic accent (brass).
+     Slate is a rarely-used secondary. Nothing is bright or saturated. */
+  --brass: #9a7b4f; /* primary muted-bronze accent */
+  --brass-deep: #7d6340;
+  --brass-tint: #d8c9b0;
+  --slate: #566b6a; /* secondary muted slate-teal — sparing use */
+  --slate-deep: #3f5150;
+
+  /* AIIT brand red — reserved for announcements and admissions calls-to-action.
+     Warm, confident, never fire-engine. */
+  --red: #c02b23;
+  --red-deep: #97211c;
+  --red-tint: #e7b7b1;
+
+  /* Accent used as a surface tint: hover backgrounds, selected rows, small
+     fills. Brass at low alpha so it reads as a warm wash, never a colour block. */
+  --accent-wash: rgba(154, 123, 79, 0.1);
+  --accent-wash-strong: rgba(154, 123, 79, 0.17);
+  /* Warm stone — for raised panels (dropdown, search) that need to sit a shade
+     apart from the cream page without becoming a different colour. */
+  --surface-raised: #f6f0e3;
+
+  /* ---- Lines & depth ---- */
+  --line: rgba(20, 17, 15, 0.14);
+  --line-strong: rgba(20, 17, 15, 0.28);
+  --line-invert: rgba(244, 239, 231, 0.18);
+  --shadow-soft: 0 1px 2px rgba(20, 17, 15, 0.04), 0 12px 32px -12px rgba(20, 17, 15, 0.12);
+  --shadow-lift: 0 2px 6px rgba(20, 17, 15, 0.06), 0 28px 60px -20px rgba(20, 17, 15, 0.22);
+  /* Layered, close-range depth for menus — reads as "lifted a few millimetres",
+     not "floating box". */
+  --shadow-panel: 0 0 0 1px rgba(20, 17, 15, 0.06), 0 2px 5px -2px rgba(20, 17, 15, 0.14),
+    0 14px 34px -16px rgba(20, 17, 15, 0.28);
+
+  /* ---- Semantic (light context, the default) ---- */
+  --bg: var(--paper);
+  --bg-alt: var(--ivory);
+  --fg: var(--ink);
+  --fg-soft: var(--ink-soft);
+  --fg-muted: var(--ink-muted);
+  --fg-faint: var(--ink-faint);
+  --hairline: var(--line);
+  --accent: var(--brass);
+  --accent-strong: var(--brass-deep); /* accent used as text on light */
+  --accent-fg: #ffffff;
+
+  /* ---- Type weight ----
+     Georgia ships only Regular (400) and Bold (700). The hierarchy is carried
+     by size, leading and spacing — NOT by a wall of bold. Regular Georgia is
+     already sturdy and confident; 700 is reserved for genuine emphasis and for
+     small uppercase functional labels that need presence at their size. */
+  --fw-body: 400;
+  --fw-medium: 400; /* headings / titles — Georgia regular reads as editorial display */
+  --fw-strong: 700;
+  --fw-display: 400;
+
+  /* ---- Typography ----
+     One typeface across the whole site: Georgia, the site's signature serif.
+     Native system font — no web-font request. */
+  --font-display: Georgia, 'Times New Roman', 'Times', serif;
+  --font-ui: Georgia, 'Times New Roman', 'Times', serif;
+  /* One deliberate accent typeface — Cormorant Garamond italic, the family
+     the display scale below was originally tuned against. Used in exactly
+     one place (the homepage "learner's journey" section) as a sophisticated
+     script accent, never for body copy or as a second UI font. */
+  --font-accent: 'Cormorant Garamond', Georgia, 'Times New Roman', serif;
+
+  /* Fluid display scale (clamp: min, vw, max).
+     Trimmed ~7% from the Cormorant scale — Georgia's tall x-height reads
+     roughly one step larger at the same pixel size. */
+  --fs-display-1: clamp(2.7rem, 1.55rem + 5.9vw, 6.75rem);
+  --fs-display-2: clamp(2.25rem, 1.45rem + 4.1vw, 4.7rem);
+  --fs-display-3: clamp(1.9rem, 1.45rem + 2.3vw, 3.15rem);
+  --fs-heading: clamp(1.6rem, 1.28rem + 1.4vw, 2.25rem);
+  --fs-subhead: clamp(1.22rem, 1.06rem + 0.66vw, 1.55rem);
+
+  /* Text scale. */
+  --fs-lead: clamp(1.125rem, 1.05rem + 0.34vw, 1.34rem);
+  --fs-body: 1.0625rem;
+  --fs-sm: 0.9375rem;
+  --fs-xs: 0.8125rem;
+  --fs-eyebrow: 0.75rem;
+
+  --lh-tight: 1.1;
+  --lh-snug: 1.26;
+  --lh-body: 1.62;
+
+  --tracking-eyebrow: 0.2em;
+  --tracking-wide: 0.06em;
+  --tracking-display: -0.005em;
+
+  /* ---- Spacing scale (8px base) ---- */
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-3: 0.75rem;
+  --space-4: 1rem;
+  --space-5: 1.5rem;
+  --space-6: 2rem;
+  --space-7: 3rem;
+  --space-8: 4rem;
+  --space-9: 6rem;
+  --space-10: 8rem;
+  --space-11: 12rem;
+
+  /* Section rhythm.
+     Trimmed from clamp(4.5rem, 3rem + 7vw, 9rem) / clamp(6rem, 3rem + 10vw, 13rem)
+     — with `size="lg"` used for most sections across the site, the old values
+     stacked to 350-450px of empty space between consecutive sections on every
+     page (measured on home, about, webinar, why-join). Roughly a quarter
+     tighter here, applied once at the token, keeps the same relative
+     default-vs-lg hierarchy without that much dead space repeating down
+     every page. */
+  --section-y: clamp(3.5rem, 2.25rem + 5.5vw, 7rem);
+  --section-y-lg: clamp(4.5rem, 2.75rem + 7vw, 9.5rem);
+
+  /* ---- Layout ---- */
+  --container: 1280px;
+  --container-wide: 1480px;
+  --container-text: 720px;
+  --gutter: clamp(1.25rem, 0.5rem + 3vw, 4rem);
+  --nav-h: 76px;
+  --header-h: 76px;
+  --ab-h: 2.5rem; /* top announcement bar */
+
+  /* ---- Radius ---- */
+  --radius-xs: 2px;
+  --radius-sm: 4px;
+  --radius-md: 8px;
+  --radius-lg: 14px;
+  --radius-pill: 999px;
+
+  /* ---- Motion ---- */
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
+  --dur-fast: 180ms;
+  --dur-base: 320ms;
+  --dur-slow: 640ms;
+  --dur-cinematic: 1200ms;
+
+  /* ---- Z-index ---- */
+  --z-header: 100;
+  --z-menu: 200;
+  --z-modal: 300;
+  --z-toast: 400;
+
+  color-scheme: light;
+}
+
+/* Dark / inverted context — applied via .on-ink utility, not the whole page.
+   Secondary tiers are SOLID warm tints, not translucent ivory — no text
+   dissolving into the artwork behind it. */
+.on-ink {
+  --bg: var(--ink);
+  --bg-alt: var(--ink-soft);
+  --fg: var(--ivory);
+  --fg-soft: #f1ece2;
+  --fg-muted: #d7cfc0;
+  --fg-faint: #ada493;
+  --hairline: var(--line-invert);
+  --accent: var(--brass-tint);
+  --accent-strong: var(--brass-tint);
+  --accent-fg: var(--ink);
+  --accent-wash: rgba(216, 201, 176, 0.14);
+  --accent-wash-strong: rgba(216, 201, 176, 0.22);
+  color-scheme: dark;
+}

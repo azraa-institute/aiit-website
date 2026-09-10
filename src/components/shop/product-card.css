@@ -1,0 +1,94 @@
+.product-card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.product-card__media {
+  position: relative;
+  display: block;
+  aspect-ratio: 1;
+  background: var(--surface);
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+}
+.product-card__media img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  padding: var(--space-4);
+  transition: transform var(--dur-slow) var(--ease-out);
+}
+.product-card:hover .product-card__media img {
+  transform: scale(1.04);
+}
+
+.product-card__sale {
+  position: absolute;
+  left: var(--space-3);
+  top: var(--space-3);
+  font-size: var(--fs-xs);
+  font-weight: var(--fw-strong);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: #fff;
+  background: var(--brass-deep);
+  padding: 2px 8px;
+  border-radius: var(--radius-xs);
+}
+
+.product-card__cat {
+  font-size: var(--fs-eyebrow);
+  letter-spacing: var(--tracking-wide);
+  text-transform: uppercase;
+  color: var(--fg-faint);
+}
+
+.product-card__title {
+  font-family: var(--font-display);
+  font-size: var(--fs-subhead);
+  font-weight: var(--fw-medium);
+  line-height: 1.18;
+}
+.product-card:hover .product-card__title a {
+  color: var(--brass-deep);
+}
+
+.product-card__price {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-2);
+}
+.product-card__was {
+  font-size: var(--fs-sm);
+  color: var(--fg-faint);
+  text-decoration: line-through;
+}
+.product-card__now {
+  font-family: var(--font-display);
+  font-size: var(--fs-subhead);
+  font-weight: var(--fw-medium);
+}
+
+.product-card__cta {
+  align-self: flex-start;
+  display: inline-block;
+  margin-top: var(--space-2);
+  font-size: var(--fs-xs);
+  font-weight: var(--fw-strong);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  padding: 0.6rem 1.1rem;
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-sm);
+  transition:
+    background var(--dur-fast) var(--ease-out),
+    color var(--dur-fast) var(--ease-out),
+    border-color var(--dur-fast) var(--ease-out);
+}
+.product-card__cta:hover {
+  background: var(--ink);
+  color: var(--paper);
+  border-color: var(--ink);
+}

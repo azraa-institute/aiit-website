@@ -1,0 +1,64 @@
+.social-links {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.social-links__link {
+  /* the platform's own colour, revealed on hover */
+  --sl-hover: currentColor;
+  display: inline-grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  border-radius: var(--radius-pill);
+  color: inherit;
+  border: 1px solid transparent;
+  transition:
+    background var(--dur-fast) var(--ease-out),
+    color var(--dur-fast) var(--ease-out),
+    border-color var(--dur-fast) var(--ease-out);
+}
+.social-links__link[data-platform='facebook'] {
+  --sl-hover: #1877f2;
+}
+.social-links__link[data-platform='youtube'] {
+  --sl-hover: #ff0033;
+}
+.social-links__link[data-platform='instagram'] {
+  --sl-hover: #e4405f;
+}
+.social-links__link[data-platform='x'] {
+  /* X's mark is monochrome — present it as ink on light grounds; dark-ground
+     variants below flip it to ivory so it never fades into the background. */
+  --sl-hover: var(--ink);
+}
+
+.social-links__link:hover,
+.social-links__link:focus-visible {
+  color: var(--sl-hover);
+  background: rgba(244, 239, 231, 0.1);
+  outline: none;
+}
+
+/* Footer / dark-ground variant: outlined chips at rest, brand colour on hover */
+.social-links--footer .social-links__link {
+  border-color: var(--line-invert);
+  color: var(--fg-muted);
+}
+.social-links--footer .social-links__link[data-platform='x'] {
+  /* dark ground — X's mark presents white */
+  --sl-hover: var(--ivory);
+}
+.social-links--footer .social-links__link:hover,
+.social-links--footer .social-links__link:focus-visible {
+  border-color: currentColor;
+  color: var(--sl-hover);
+  background: rgba(244, 239, 231, 0.08);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .social-links__link {
+    transition: none;
+  }
+}

@@ -1,0 +1,53 @@
+/* Shared styling for Section headings + small editorial primitives. */
+
+.section-heading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: var(--space-4);
+  max-width: 64ch;
+  margin-inline: auto;
+}
+
+.section-heading--center {
+  align-items: center;
+  text-align: center;
+  margin-inline: auto;
+}
+
+.section-heading--start {
+  align-items: flex-start;
+  text-align: left;
+  margin-inline: 0;
+  /* Was 44rem (704px) — inside a wide section container that reads as much
+     narrower than intended, with the intro paragraph stopping well short of
+     the available width. 62rem keeps a comfortable line length while using
+     the space it's actually sitting in. */
+  max-width: 62rem;
+}
+/* Left-aligned heading: title sits at section-heading scale (not the larger
+   display scale) so it lands cleanly on one or two lines above left-aligned
+   content, and the intro runs to a comfortable measure. */
+.section-heading--start .section-heading__title {
+  align-self: stretch;
+  font-size: var(--fs-heading);
+}
+.section-heading--start .section-heading__intro {
+  align-self: stretch;
+  max-width: none; /* fill the heading column, matching the title width */
+}
+
+.section-heading__title {
+  font-size: var(--fs-display-3);
+  font-weight: var(--fw-display);
+}
+
+.section-heading__intro {
+  max-width: 54ch;
+  color: var(--fg-soft);
+}
+
+.section-heading--center .section-heading__intro {
+  margin-inline: auto;
+}

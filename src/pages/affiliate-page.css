@@ -1,0 +1,737 @@
+/* ============================================================
+   AFFILIATE PROGRAM — an original AIIT signature section.
+   Two typefaces scoped to this page only: Cormorant Garamond (upright,
+   600/700) for editorial headings, Inter for interface text and the
+   numeral-heavy calculator (see index.html for the font loads; every
+   other page stays on native Georgia).
+   ============================================================ */
+
+.affiliate-page-title,
+.affiliate-hero__title,
+.affiliate-section-title,
+.affiliate-close-statement,
+.pathway__title {
+  font-family: 'Cormorant Garamond', var(--font-display);
+}
+/* Big numerals stay on Inter, not Cormorant — these are financial/interface
+   data (calculator payout, rate figures), and Cormorant's numeral glyphs
+   don't carry proper tabular-figure support: pairing it with
+   `font-variant-numeric: tabular-nums` rendered "$10" as "$I O". Inter is
+   built for exactly this. */
+.affiliate-hero__intro,
+.affiliate-section-intro,
+.affiliate-rate__kicker,
+.affiliate-rate__label,
+.affiliate-rate__value,
+.pathway__kicker,
+.pathway__body,
+.pathway-flow,
+.calculator__amount,
+.calculator__slider-label,
+.calculator__rate,
+.calculator__scale,
+.process__index,
+.process__body {
+  font-family: 'Inter', var(--font-ui);
+}
+
+/* ============================================================
+   01 · HERO
+   ============================================================ */
+.affiliate-hero {
+  position: relative;
+  overflow: hidden;
+}
+.affiliate-hero__atmosphere {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(46% 60% at 8% 10%, rgba(192, 43, 35, 0.12), transparent 70%),
+    radial-gradient(40% 55% at 96% 85%, rgba(154, 123, 79, 0.1), transparent 70%);
+}
+.affiliate-hero__grid {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  gap: clamp(2.5rem, 5vw, 4rem);
+  align-items: center;
+}
+@media (min-width: 960px) {
+  .affiliate-hero__grid {
+    grid-template-columns: 1.05fr 0.95fr;
+  }
+}
+
+.affiliate-hero__eyebrow {
+  margin-bottom: var(--space-4);
+}
+.affiliate-hero__title {
+  font-weight: 700;
+  font-size: clamp(2.5rem, 1.9rem + 3.2vw, 4.4rem);
+  line-height: 1.06;
+  letter-spacing: -0.01em;
+  color: var(--ivory);
+  text-wrap: balance;
+}
+.affiliate-hero__intro {
+  margin-top: var(--space-5);
+  max-width: 46ch;
+  font-size: clamp(1.05rem, 0.95rem + 0.3vw, 1.2rem);
+  line-height: 1.6;
+  color: var(--fg-soft);
+}
+.affiliate-hero__cta-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+  margin-top: var(--space-6);
+}
+
+/* ---- The network visual ---- */
+.affiliate-hero__visual {
+  position: relative;
+}
+.affiliate-network {
+  width: 100%;
+  height: auto;
+  overflow: visible;
+}
+.affiliate-network--flow {
+  display: none;
+}
+@media (max-width: 640px) {
+  .affiliate-network--radial {
+    display: none;
+  }
+  .affiliate-network--flow {
+    display: block;
+    max-width: 20rem;
+    margin: 0 auto;
+  }
+}
+.affiliate-network__line {
+  stroke: rgba(244, 239, 231, 0.22);
+  stroke-width: 1;
+  stroke-dasharray: 340;
+  stroke-dashoffset: 340;
+  transition: stroke-dashoffset 1.1s var(--ease-out);
+}
+.affiliate-network[data-active] .affiliate-network__line {
+  stroke-dashoffset: 0;
+}
+.affiliate-network__flow {
+  stroke: var(--brass-tint);
+  stroke-width: 1.4;
+  stroke-linecap: round;
+  stroke-dasharray: 4 22;
+  opacity: 0;
+}
+.affiliate-network[data-active] .affiliate-network__flow {
+  opacity: 0.7;
+  animation: affiliate-flow 2.6s linear infinite;
+}
+@keyframes affiliate-flow {
+  to {
+    stroke-dashoffset: -260;
+  }
+}
+.affiliate-network__center circle {
+  fill: rgba(192, 43, 35, 0.16);
+  stroke: var(--red);
+  stroke-width: 1.4;
+}
+.affiliate-network__center text {
+  font-family: 'Inter', var(--font-ui);
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  fill: var(--ivory);
+}
+.affiliate-network__node {
+  opacity: 0;
+  transform: scale(0.6);
+  transform-box: fill-box;
+  transform-origin: center;
+  transition:
+    opacity var(--dur-slow) var(--ease-out),
+    transform var(--dur-slow) var(--ease-out);
+}
+.affiliate-network[data-active] .affiliate-network__node {
+  opacity: 1;
+  transform: scale(1);
+}
+.affiliate-network__node circle:first-child {
+  fill: var(--brass-tint);
+}
+.affiliate-network__ring {
+  fill: none;
+  stroke: rgba(216, 201, 176, 0.35);
+  stroke-width: 1;
+  animation: affiliate-pulse 3s var(--ease-in-out) infinite;
+}
+@keyframes affiliate-pulse {
+  0%,
+  100% {
+    opacity: 0.5;
+    r: 22;
+  }
+  50% {
+    opacity: 0.15;
+    r: 27;
+  }
+}
+.affiliate-network__node text {
+  font-family: 'Inter', var(--font-ui);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  fill: var(--fg-faint);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .affiliate-network__line,
+  .affiliate-network__node {
+    transition: none;
+  }
+  .affiliate-network[data-active] .affiliate-network__line {
+    stroke-dashoffset: 0;
+  }
+  .affiliate-network[data-active] .affiliate-network__node {
+    opacity: 1;
+    transform: none;
+  }
+  .affiliate-network__flow,
+  .affiliate-network__ring,
+  .affiliate-network[data-active] .affiliate-network__flow {
+    animation: none;
+    opacity: 0;
+  }
+}
+
+/* Shared section title/intro used across 02-05 */
+.affiliate-section-title {
+  margin-top: var(--space-3);
+  font-weight: 700;
+  font-size: clamp(1.7rem, 1.4rem + 1.4vw, 2.5rem);
+  line-height: 1.12;
+  letter-spacing: -0.008em;
+  color: var(--fg);
+  max-width: 18ch;
+}
+.affiliate-section-intro {
+  margin-top: var(--space-3);
+  max-width: 56ch;
+  font-size: var(--fs-body);
+  line-height: 1.6;
+  color: var(--fg-soft);
+}
+
+/* ============================================================
+   02 · EARNING POTENTIAL
+   ============================================================ */
+.affiliate-rates {
+  margin-top: clamp(2.5rem, 4vw, 4rem);
+  display: flex;
+  align-items: flex-end;
+  flex-wrap: wrap;
+  gap: clamp(1rem, 3vw, 2.5rem);
+}
+.affiliate-rates__arrow {
+  align-self: center;
+  font-size: 1.3rem;
+  color: var(--fg-faint);
+  margin-bottom: var(--space-6);
+}
+@media (max-width: 640px) {
+  .affiliate-rates__arrow {
+    display: none;
+  }
+}
+
+.affiliate-rate {
+  opacity: 0;
+  transform: translateY(16px);
+  transition:
+    opacity var(--dur-slow) var(--ease-out),
+    transform var(--dur-slow) var(--ease-out);
+}
+.affiliate-rates[data-active] .affiliate-rate {
+  opacity: 1;
+  transform: none;
+}
+@media (prefers-reduced-motion: reduce) {
+  .affiliate-rate {
+    transition: none;
+  }
+}
+.affiliate-rate__kicker {
+  font-size: var(--fs-eyebrow);
+  font-weight: 600;
+  letter-spacing: var(--tracking-eyebrow);
+  text-transform: uppercase;
+  color: var(--fg-faint);
+}
+.affiliate-rate__value {
+  margin-top: var(--space-2);
+  font-weight: 700;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+  color: var(--fg);
+}
+.affiliate-rate__value span {
+  font-size: 0.5em;
+  vertical-align: text-top;
+  opacity: 0.6;
+}
+.affiliate-rate__label {
+  margin-top: var(--space-2);
+  max-width: 22ch;
+  font-size: var(--fs-xs);
+  color: var(--fg-muted);
+}
+
+.affiliate-rate--creator .affiliate-rate__value {
+  font-size: clamp(2.5rem, 1.8rem + 3vw, 3.6rem);
+}
+.affiliate-rate--direct .affiliate-rate__value {
+  font-size: clamp(3.2rem, 2.2rem + 4.2vw, 4.8rem);
+}
+.affiliate-rate--milestone {
+  position: relative;
+  padding: var(--space-4) var(--space-5);
+  border-radius: var(--radius-lg);
+  background: linear-gradient(150deg, rgba(192, 43, 35, 0.08), rgba(154, 123, 79, 0.06));
+  border: 1px solid rgba(192, 43, 35, 0.18);
+}
+.affiliate-rate--milestone .affiliate-rate__value {
+  font-size: clamp(3.6rem, 2.3rem + 5.4vw, 5.6rem);
+  background: linear-gradient(135deg, var(--red-deep), var(--brass-deep));
+  background-clip: text;
+  -webkit-background-clip: text;
+  color: transparent;
+}
+.affiliate-rate--milestone .affiliate-rate__kicker {
+  color: var(--red-deep);
+}
+
+/* ============================================================
+   03 · TWO WAYS TO EARN
+   ============================================================ */
+.pathways {
+  margin-top: clamp(2.5rem, 4vw, 4rem);
+  display: grid;
+  gap: clamp(1.5rem, 3vw, 2.5rem);
+  grid-template-columns: 1fr;
+}
+@media (min-width: 900px) {
+  .pathways {
+    grid-template-columns: 1.1fr 0.9fr;
+  }
+}
+
+.pathway {
+  padding: clamp(1.75rem, 2.5vw, 2.5rem);
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--hairline);
+  background: var(--surface);
+  transition:
+    opacity var(--dur-base) var(--ease-out),
+    border-color var(--dur-base) var(--ease-out),
+    box-shadow var(--dur-base) var(--ease-out);
+}
+.pathways[data-hovered]:not([data-hovered='0']) .pathway--0,
+.pathways[data-hovered]:not([data-hovered='1']) .pathway--1 {
+  opacity: 0.55;
+}
+.pathway:hover,
+.pathway:focus-within {
+  border-color: var(--pathway-accent, var(--brass));
+  box-shadow: var(--shadow-soft);
+}
+.pathway--0 {
+  --pathway-accent: var(--brass-deep);
+}
+.pathway--1 {
+  --pathway-accent: var(--slate-deep);
+}
+
+.pathway__kicker {
+  font-size: var(--fs-eyebrow);
+  font-weight: 600;
+  letter-spacing: var(--tracking-eyebrow);
+  text-transform: uppercase;
+  color: var(--pathway-accent, var(--brass-deep));
+}
+.pathway__title {
+  margin: var(--space-2) 0 var(--space-3);
+  font-weight: 700;
+  font-size: clamp(1.35rem, 1.15rem + 0.9vw, 1.75rem);
+  line-height: 1.15;
+  color: var(--fg);
+}
+.pathway__body {
+  font-size: var(--fs-sm);
+  line-height: 1.6;
+  color: var(--fg-soft);
+}
+
+/* [role='list'] bumps specificity to beat the global [role=list]{padding:0} reset. */
+.pathway-flow[role='list'] {
+  margin-top: var(--space-5);
+  padding-top: var(--space-4);
+  border-top: 1px solid var(--hairline);
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: var(--fs-xs);
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  color: var(--fg-muted);
+}
+.pathway-flow li {
+  padding: 0.35em 0.7em;
+  border-radius: var(--radius-pill);
+  border: 1px solid var(--line);
+}
+.pathway-flow li + li::before {
+  content: '→';
+  margin-right: var(--space-2);
+  color: var(--fg-faint);
+}
+.pathway-flow__reward {
+  color: #fff;
+  background: var(--pathway-accent, var(--brass-deep));
+  border-color: transparent;
+}
+
+/* ============================================================
+   04 · CALCULATOR
+   ============================================================ */
+.calculator {
+  padding: clamp(2rem, 4vw, 3.5rem);
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--hairline);
+  background: linear-gradient(155deg, var(--surface), var(--ivory));
+  display: grid;
+  gap: clamp(2rem, 4vw, 3rem);
+}
+@media (min-width: 900px) {
+  .calculator {
+    grid-template-columns: 0.9fr 1.1fr;
+    align-items: center;
+  }
+  .calculator__slider {
+    grid-column: 1 / -1;
+  }
+}
+
+.calculator__figure {
+  text-align: right;
+}
+@media (max-width: 899px) {
+  .calculator__figure {
+    text-align: left;
+  }
+}
+.calculator__amount {
+  font-weight: 700;
+  font-size: clamp(3.4rem, 2.2rem + 6vw, 6.5rem);
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+  color: var(--fg);
+}
+.calculator__currency {
+  font-size: 0.5em;
+  vertical-align: text-top;
+  color: var(--fg-faint);
+}
+.calculator__rate {
+  margin-top: var(--space-2);
+  font-size: var(--fs-xs);
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  color: var(--brass-deep);
+}
+
+.calculator__slider-label {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  font-size: var(--fs-sm);
+  font-weight: 600;
+  color: var(--fg-soft);
+  margin-bottom: var(--space-3);
+}
+.calculator__slider-label strong {
+  font-size: var(--fs-heading);
+  font-variant-numeric: tabular-nums;
+  color: var(--fg);
+}
+
+.calculator__slider input[type='range'] {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+  height: 6px;
+  border-radius: var(--radius-pill);
+  background: linear-gradient(
+    90deg,
+    var(--brass) 0%,
+    var(--brass) var(--fill, 8%),
+    var(--line-strong) var(--fill, 8%),
+    var(--line-strong) 100%
+  );
+  cursor: pointer;
+}
+.calculator__slider input[type='range']::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: var(--surface);
+  border: 3px solid var(--brass-deep);
+  box-shadow: var(--shadow-soft);
+  transition: transform var(--dur-fast) var(--ease-out);
+}
+.calculator__slider input[type='range']:active::-webkit-slider-thumb {
+  transform: scale(1.15);
+}
+.calculator__slider input[type='range']::-moz-range-thumb {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: var(--surface);
+  border: 3px solid var(--brass-deep);
+  box-shadow: var(--shadow-soft);
+}
+.calculator__scale {
+  display: flex;
+  justify-content: space-between;
+  margin-top: var(--space-2);
+  font-size: var(--fs-xs);
+  color: var(--fg-faint);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .calculator__slider input[type='range']::-webkit-slider-thumb {
+    transition: none;
+  }
+}
+
+/* ============================================================
+   05 · THE PROCESS
+   ============================================================ */
+/* [role='list'] bumps specificity — the global `[role=list]{padding:0}` reset
+   (added so screen readers still announce role="list" on a list-styled <ol>)
+   otherwise wins over a bare .process and zeroes this padding-left. */
+.process[role='list'] {
+  margin-top: clamp(2.5rem, 4vw, 4rem);
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: clamp(2rem, 4vw, 3rem);
+  padding-left: clamp(2.5rem, 4vw, 3.5rem);
+}
+.process::before {
+  content: '';
+  position: absolute;
+  left: calc(clamp(2.5rem, 4vw, 3.5rem) / 2 - 0.5px);
+  top: 10px;
+  bottom: 10px;
+  width: 1px;
+  background: var(--line-strong);
+}
+.process__step {
+  position: relative;
+}
+.process__index {
+  position: absolute;
+  left: calc(clamp(2.5rem, 4vw, 3.5rem) * -1);
+  top: 0;
+  width: clamp(2.5rem, 4vw, 3.5rem);
+  display: grid;
+  place-items: center;
+  font-family: 'Cormorant Garamond', var(--font-display);
+  font-weight: 700;
+  font-size: var(--fs-subhead);
+  color: var(--fg-faint);
+  transition:
+    color var(--dur-base) var(--ease-out),
+    transform var(--dur-base) var(--ease-out);
+  transition-delay: var(--step-delay, 0ms);
+}
+.process__step[data-active] .process__index {
+  color: var(--brass-deep);
+  transform: scale(1.15);
+}
+.process__step::after {
+  content: '';
+  position: absolute;
+  left: calc(clamp(2.5rem, 4vw, 3.5rem) * -1 + clamp(2.5rem, 4vw, 3.5rem) / 2 - 4px);
+  top: 4px;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--surface);
+  border: 1px solid var(--line-strong);
+  transition:
+    background var(--dur-base) var(--ease-out),
+    border-color var(--dur-base) var(--ease-out),
+    box-shadow var(--dur-base) var(--ease-out);
+  transition-delay: var(--step-delay, 0ms);
+}
+.process__step[data-active]::after {
+  background: var(--brass);
+  border-color: var(--brass);
+  box-shadow: 0 0 0 4px var(--accent-wash);
+}
+.process__body {
+  opacity: 0.45;
+  transform: translateX(6px);
+  transition:
+    opacity var(--dur-slow) var(--ease-out),
+    transform var(--dur-slow) var(--ease-out);
+  transition-delay: var(--step-delay, 0ms);
+}
+.process__step[data-active] .process__body {
+  opacity: 1;
+  transform: none;
+}
+.process__body h3 {
+  font-family: var(--font-display);
+  font-size: var(--fs-subhead);
+  font-weight: var(--fw-medium);
+}
+.process__body p {
+  margin-top: var(--space-2);
+  font-size: var(--fs-sm);
+  color: var(--fg-soft);
+  line-height: 1.55;
+  max-width: 52ch;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .process__index,
+  .process__step::after,
+  .process__body {
+    transition: none;
+  }
+}
+
+/* ============================================================
+   06 · READ THE AGREEMENT
+   ============================================================ */
+.affiliate-agreement {
+  display: grid;
+  gap: clamp(1.5rem, 3vw, 2.25rem);
+  padding: clamp(1.75rem, 1rem + 3vw, 2.75rem);
+  border: 1px solid var(--line-strong);
+  border-left: 3px solid var(--red);
+  border-radius: var(--radius-lg);
+  background: var(--surface-raised);
+}
+@media (min-width: 820px) {
+  .affiliate-agreement {
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+    gap: clamp(2rem, 5vw, 4rem);
+  }
+}
+.affiliate-agreement__title {
+  margin-top: var(--space-2);
+  max-width: none;
+}
+.affiliate-agreement__copy .affiliate-section-intro {
+  max-width: 54ch;
+}
+.affiliate-agreement__action {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--space-3);
+}
+@media (min-width: 820px) {
+  .affiliate-agreement__action {
+    align-items: flex-end;
+    text-align: right;
+    flex-shrink: 0;
+  }
+}
+.affiliate-agreement__meta {
+  font-size: var(--fs-xs);
+  letter-spacing: var(--tracking-wide);
+  text-transform: uppercase;
+  color: var(--fg-faint);
+}
+
+/* ============================================================
+   07 · FINAL CTA + application form
+   ============================================================ */
+.affiliate-close-statement {
+  font-weight: 700;
+  font-size: clamp(2.2rem, 1.6rem + 3vw, 4rem);
+  line-height: 1.05;
+  letter-spacing: -0.01em;
+  color: var(--ivory);
+  text-transform: uppercase;
+  margin-bottom: clamp(2.5rem, 4vw, 4rem);
+}
+
+.affiliate__apply {
+  display: grid;
+  gap: clamp(2rem, 1rem + 4vw, 4rem);
+}
+@media (min-width: 900px) {
+  .affiliate__apply {
+    grid-template-columns: 1fr 1.1fr;
+    align-items: start;
+  }
+}
+.affiliate__apply h2 {
+  font-family: var(--font-display);
+  font-size: var(--fs-display-3);
+  font-weight: var(--fw-display);
+  letter-spacing: var(--tracking-display);
+}
+.affiliate__apply > div > p {
+  margin-top: var(--space-4);
+  color: var(--fg-soft);
+}
+.affiliate__code strong {
+  color: var(--brass-tint);
+}
+.affiliate__form {
+  display: grid;
+  gap: var(--space-4);
+}
+@media (min-width: 560px) {
+  .affiliate__form {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .affiliate__form > .field:nth-child(7),
+  .affiliate__form > .affiliate__agree,
+  .affiliate__form > .btn,
+  .affiliate__form > .affiliate__disclaimer {
+    grid-column: 1 / -1;
+  }
+}
+.affiliate__agree {
+  display: flex;
+  gap: var(--space-2);
+  font-size: var(--fs-sm);
+  color: var(--fg-soft);
+}
+.affiliate__disclaimer {
+  font-size: var(--fs-xs);
+  color: var(--fg-faint);
+}
+.affiliate__thanks {
+  color: var(--fg-soft);
+  font-size: var(--fs-lead);
+  line-height: 1.6;
+  max-width: 46ch;
+}

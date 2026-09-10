@@ -1,0 +1,388 @@
+/* ---- Header shell ---- */
+.site-header {
+  position: fixed;
+  inset: var(--ab-h) 0 auto 0;
+  z-index: var(--z-header);
+  background: var(--paper);
+  border-bottom: 1px solid transparent;
+  transition:
+    background var(--dur-base) var(--ease-out),
+    border-color var(--dur-base) var(--ease-out),
+    box-shadow var(--dur-base) var(--ease-out),
+    color var(--dur-base) var(--ease-out);
+}
+
+/* On scroll: solid black bar with light content. */
+.site-header--scrolled {
+  background: var(--ink);
+  color: var(--ivory);
+  border-bottom-color: rgba(244, 239, 231, 0.12);
+  box-shadow: 0 10px 30px -12px rgba(20, 17, 15, 0.45);
+}
+
+.site-header--transparent {
+  background: transparent;
+  color: var(--ivory);
+  text-shadow: 0 1px 10px rgba(20, 17, 15, 0.45);
+}
+
+/* A menu / search / dropdown is open on a light bar: hint the seam. */
+.site-header--menu-open:not(.site-header--scrolled) {
+  border-bottom-color: var(--line);
+}
+
+.site-header__inner {
+  height: var(--nav-h);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-6);
+}
+
+.site-header__brand {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+}
+.site-header__brand .aiit-logo {
+  height: 38px;
+}
+@media (max-width: 520px) {
+  .site-header__brand .aiit-logo {
+    height: 30px;
+  }
+}
+
+/* ---- Desktop nav ---- */
+.site-header__nav {
+  display: none;
+}
+
+.site-header__nav > ul {
+  display: flex;
+  gap: clamp(0.75rem, 0.3rem + 1.4vw, 2rem);
+}
+
+.site-header__item {
+  position: relative;
+}
+
+.site-header__link {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  height: var(--nav-h);
+  padding-inline: 2px;
+  font-size: var(--fs-sm);
+  font-weight: var(--fw-medium);
+  letter-spacing: 0.015em;
+  white-space: nowrap;
+  color: inherit;
+  position: relative;
+  transition:
+    color var(--dur-fast) var(--ease-out),
+    letter-spacing var(--dur-base) var(--ease-out);
+}
+
+/* Brass rule, grown from the centre, riding the header's bottom edge. */
+.site-header__link::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 18px;
+  height: 1.5px;
+  background: var(--brass);
+  transform: scaleX(0);
+  transform-origin: center;
+  transition: transform var(--dur-base) var(--ease-out);
+}
+.site-header--scrolled .site-header__link::after,
+.site-header--transparent .site-header__link::after {
+  background: var(--brass-tint);
+}
+.site-header__item:hover .site-header__link::after,
+.site-header__item.is-open .site-header__link::after,
+.site-header__link:focus-visible::after,
+.site-header__link.is-active::after {
+  transform: scaleX(1);
+}
+.site-header__item:hover .site-header__link,
+.site-header__item.is-open .site-header__link {
+  letter-spacing: 0.03em;
+}
+
+/* Dropdown caret */
+.site-header__caret {
+  flex-shrink: 0;
+  opacity: 0.55;
+  transition:
+    transform var(--dur-base) var(--ease-out),
+    opacity var(--dur-fast) var(--ease-out);
+}
+.site-header__item:hover .site-header__caret,
+.site-header__item.is-open .site-header__caret {
+  opacity: 0.9;
+}
+.site-header__item.is-open .site-header__caret {
+  transform: rotate(180deg);
+}
+
+/* ---- Dropdown panel ---- */
+.site-header__panel {
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  transform: translate(-50%, -6px);
+  width: max-content;
+  min-width: 300px;
+  max-width: min(380px, calc(100vw - 2 * var(--gutter)));
+  background: var(--surface-raised);
+  border: 1px solid var(--line);
+  border-top: 2px solid var(--brass);
+  border-radius: 0 0 var(--radius-md) var(--radius-md);
+  box-shadow: var(--shadow-panel);
+  color: var(--ink);
+  opacity: 0;
+  visibility: hidden;
+  transition:
+    opacity var(--dur-fast) var(--ease-out),
+    transform var(--dur-base) var(--ease-out),
+    visibility var(--dur-base);
+}
+.site-header__item.is-open .site-header__panel {
+  opacity: 1;
+  visibility: visible;
+  transform: translate(-50%, 0);
+}
+/* Keep the right-hand panels inside the viewport (align to the trigger's
+   right edge instead of centring). */
+.site-header__nav > ul > li:nth-last-child(-n + 2) .site-header__panel {
+  left: auto;
+  right: 0;
+  transform: translate(0, -6px);
+}
+.site-header__nav > ul > li:nth-last-child(-n + 2).is-open .site-header__panel {
+  transform: translate(0, 0);
+}
+
+.site-header__panel-inner {
+  padding: var(--space-4) var(--space-3) var(--space-3);
+}
+
+.site-header__panel-label {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: 0 var(--space-3) var(--space-3);
+  font-size: var(--fs-eyebrow);
+  font-weight: var(--fw-strong);
+  letter-spacing: var(--tracking-eyebrow);
+  text-transform: uppercase;
+  color: var(--fg-faint);
+}
+.site-header__panel-label::before {
+  content: '';
+  width: 16px;
+  height: 1.5px;
+  background: var(--brass);
+}
+
+.site-header__panel-link {
+  position: relative;
+  display: block;
+  padding: var(--space-3) var(--space-3);
+  border-radius: var(--radius-sm);
+  color: var(--ink);
+  transition: background var(--dur-fast) var(--ease-out);
+}
+.site-header__panel-link::before {
+  content: '';
+  position: absolute;
+  left: 3px;
+  top: 18%;
+  bottom: 18%;
+  width: 2px;
+  border-radius: 2px;
+  background: var(--brass);
+  transform: scaleY(0);
+  transform-origin: center;
+  transition: transform var(--dur-fast) var(--ease-out);
+}
+.site-header__panel-link:hover,
+.site-header__panel-link:focus-visible {
+  background: var(--accent-wash);
+  outline: none;
+}
+.site-header__panel-link:hover::before,
+.site-header__panel-link:focus-visible::before,
+.site-header__panel-link.is-current::before {
+  transform: scaleY(1);
+}
+
+.site-header__panel-link-label {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  font-size: var(--fs-sm);
+  font-weight: var(--fw-medium);
+  color: var(--ink);
+}
+.site-header__panel-link.is-current .site-header__panel-link-label {
+  color: var(--accent-strong);
+}
+
+.site-header__panel-arrow {
+  flex-shrink: 0;
+  color: var(--brass-deep);
+  opacity: 0;
+  transform: translateX(-5px);
+  transition:
+    opacity var(--dur-fast) var(--ease-out),
+    transform var(--dur-base) var(--ease-out);
+}
+.site-header__panel-link:hover .site-header__panel-arrow,
+.site-header__panel-link:focus-visible .site-header__panel-arrow,
+.site-header__panel-link.is-current .site-header__panel-arrow {
+  opacity: 0.75;
+  transform: translateX(0);
+}
+
+.site-header__panel-link-desc {
+  display: block;
+  margin-top: 3px;
+  font-size: var(--fs-xs);
+  line-height: 1.4;
+  color: var(--ink-muted);
+}
+
+/* ---- Actions ---- */
+.site-header__actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.site-header__search-toggle {
+  display: inline-grid;
+  place-items: center;
+  width: 38px;
+  height: 38px;
+  border-radius: var(--radius-pill);
+  color: inherit;
+  transition:
+    background var(--dur-fast) var(--ease-out),
+    color var(--dur-fast) var(--ease-out);
+}
+.site-header__search-toggle:hover {
+  background: var(--accent-wash);
+  color: var(--brass-deep);
+}
+.site-header--scrolled .site-header__search-toggle:hover,
+.site-header--transparent .site-header__search-toggle:hover {
+  color: var(--ivory);
+}
+
+.site-header__login {
+  display: none;
+  font-size: var(--fs-sm);
+  font-weight: var(--fw-medium);
+  position: relative;
+}
+.site-header__login::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -3px;
+  height: 1px;
+  background: currentColor;
+  transform: scaleX(0);
+  transform-origin: center;
+  transition: transform var(--dur-base) var(--ease-out);
+}
+.site-header__login:hover {
+  color: var(--brass-deep);
+}
+.site-header__login:hover::after {
+  transform: scaleX(1);
+}
+.site-header.on-ink .site-header__login:hover {
+  color: #fff;
+}
+
+.site-header__social {
+  display: none;
+}
+/* Slightly tighter than the default 34px chips so the bar stays compact */
+.site-header__social .social-links__link {
+  width: 32px;
+  height: 32px;
+}
+/* On the dark bars (scrolled / transparent) X's monochrome mark presents
+   white, like the other icons reveal their brand colour. */
+.site-header--scrolled .site-header__social .social-links__link[data-platform='x'],
+.site-header--transparent .site-header__social .social-links__link[data-platform='x'] {
+  --sl-hover: var(--ivory);
+}
+
+.site-header__burger {
+  display: inline-flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 5px;
+  width: 40px;
+  height: 40px;
+  align-items: flex-end;
+}
+.site-header__burger span {
+  display: block;
+  height: 1.5px;
+  background: currentColor;
+  transition: width var(--dur-base) var(--ease-out);
+}
+.site-header__burger span:first-child {
+  width: 22px;
+}
+.site-header__burger span:last-child {
+  width: 14px;
+}
+.site-header__burger:hover span:last-child {
+  width: 22px;
+}
+
+@media (min-width: 1160px) {
+  .site-header__nav {
+    display: block;
+  }
+  .site-header__login {
+    display: inline-flex;
+  }
+  .site-header__social {
+    display: flex;
+  }
+  .site-header__burger {
+    display: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .site-header,
+  .site-header__link,
+  .site-header__link::after,
+  .site-header__login::after,
+  .site-header__caret,
+  .site-header__panel,
+  .site-header__panel-link,
+  .site-header__panel-link::before,
+  .site-header__panel-arrow,
+  .site-header__search-toggle,
+  .site-header__burger span {
+    transition: none;
+  }
+  .site-header__item:hover .site-header__link,
+  .site-header__item.is-open .site-header__link {
+    letter-spacing: 0.015em;
+  }
+}

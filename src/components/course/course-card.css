@@ -1,0 +1,439 @@
+@property --cc-ring-angle {
+  syntax: '<angle>';
+  inherits: false;
+  initial-value: 0deg;
+}
+
+.course-card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  /* Per-domain accent, set inline by the component. Falls back to brass. */
+  --card-accent: var(--brass);
+}
+
+/* ============================================================
+   THE MEDIA PLATE — a premium, physical "mirror card"
+   The rounded plate is the interactive object; the text below
+   stays editorial and unboxed. Layers, ring, sheen and a very
+   small pointer tilt give it depth without glassmorphism.
+   ============================================================ */
+
+.course-card__media-link {
+  position: relative;
+  display: block;
+  isolation: isolate;
+  border-radius: var(--radius-sm);
+  /* Layers, ring and lift need to escape the box. The image zoom is
+     still clipped by .plate's own overflow:hidden. */
+  overflow: visible;
+  transform: perspective(1100px) rotateX(calc(var(--cc-ry, 0) * 1deg))
+    rotateY(calc(var(--cc-rx, 0) * 1deg));
+  transition: transform var(--dur-slow) var(--ease-out);
+}
+.course-card:hover .course-card__media-link,
+.course-card:focus-within .course-card__media-link {
+  transform: perspective(1100px) rotateX(calc(var(--cc-ry, 0) * 1deg))
+    rotateY(calc(var(--cc-rx, 0) * 1deg)) translateY(-6px);
+}
+
+/* The media surface itself */
+.course-card__media {
+  position: relative;
+  z-index: 1;
+}
+.course-card__media-link .plate,
+.course-card__media-link img {
+  transition: transform var(--dur-cinematic) var(--ease-out);
+}
+.course-card:hover .course-card__media-link .plate,
+.course-card:hover .course-card__media-link img,
+.course-card:focus-within .course-card__media-link .plate,
+.course-card:focus-within .course-card__media-link img {
+  transform: scale(1.02);
+}
+
+/* ---- Depth: cards stacked underneath (from the reference) ---- */
+.course-card__stack {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  border-radius: var(--radius-sm);
+  background: var(--ivory-deep);
+  box-shadow: inset 0 0 0 1px var(--hairline);
+  opacity: 0;
+  transform: translateY(2px) scale(0.99);
+  transition:
+    transform var(--dur-slow) var(--ease-out),
+    opacity var(--dur-slow) var(--ease-out);
+  pointer-events: none;
+}
+.course-card__stack::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: inherit;
+  box-shadow: inset 0 0 0 1px var(--hairline);
+  transition: transform var(--dur-slow) var(--ease-out);
+}
+.course-card:hover .course-card__stack,
+.course-card:focus-within .course-card__stack {
+  opacity: 1;
+  transform: translateY(8px) scale(0.945);
+}
+.course-card:hover .course-card__stack::before,
+.course-card:focus-within .course-card__stack::before {
+  transform: translateY(8px) scale(0.965);
+}
+.on-ink .course-card__stack,
+.on-ink .course-card__stack::before {
+  background: var(--ink-soft);
+}
+
+/* ---- Dimensional shadow + soft accent bloom ---- */
+.course-card__media-link::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  border-radius: var(--radius-sm);
+  opacity: 0;
+  transition:
+    opacity var(--dur-slow) var(--ease-out),
+    box-shadow var(--dur-slow) var(--ease-out);
+  pointer-events: none;
+}
+.course-card:hover .course-card__media-link::before,
+.course-card:focus-within .course-card__media-link::before {
+  opacity: 1;
+  box-shadow:
+    0 20px 44px -20px color-mix(in srgb, var(--card-accent) 55%, transparent),
+    0 8px 18px -10px rgba(20, 17, 15, 0.28);
+}
+
+/* ---- The animated colour ring, following the rounded corners ---- */
+.course-card__media-link::after {
+  content: '';
+  position: absolute;
+  inset: -1.5px;
+  z-index: 2;
+  border-radius: calc(var(--radius-sm) + 1.5px);
+  padding: 1.5px;
+  background: conic-gradient(
+    from var(--cc-ring-angle),
+    color-mix(in srgb, var(--card-accent) 12%, transparent) 0deg,
+    color-mix(in srgb, var(--card-accent) 78%, transparent) 90deg,
+    var(--card-accent) 150deg,
+    color-mix(in srgb, var(--card-accent) 30%, transparent) 250deg,
+    color-mix(in srgb, var(--card-accent) 12%, transparent) 360deg
+  );
+  -webkit-mask:
+    linear-gradient(#000 0 0) content-box,
+    linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask:
+    linear-gradient(#000 0 0) content-box,
+    linear-gradient(#000 0 0);
+  mask-composite: exclude;
+  opacity: 0;
+  transition: opacity var(--dur-slow) var(--ease-out);
+  pointer-events: none;
+}
+.course-card:hover .course-card__media-link::after,
+.course-card:focus-within .course-card__media-link::after {
+  opacity: 1;
+  animation: cc-ring-travel 1.1s var(--ease-out);
+}
+@keyframes cc-ring-travel {
+  from {
+    --cc-ring-angle: 0deg;
+  }
+  to {
+    --cc-ring-angle: 360deg;
+  }
+}
+
+/* ---- Reflective sheen + cursor-following highlight ---- */
+.course-card__sheen {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity var(--dur-base) var(--ease-out);
+}
+.course-card:hover .course-card__sheen,
+.course-card:focus-within .course-card__sheen {
+  opacity: 1;
+}
+/* soft, diffuse reflection that tracks the pointer */
+.course-card__sheen::before {
+  content: '';
+  position: absolute;
+  inset: -40%;
+  background: radial-gradient(
+    circle at var(--cc-px, 50%) var(--cc-py, 0%),
+    rgba(255, 255, 255, 0.24),
+    rgba(255, 255, 255, 0.06) 32%,
+    transparent 62%
+  );
+  mix-blend-mode: soft-light;
+}
+/* a single pane of light passing across the surface on enter */
+.course-card__sheen::after {
+  content: '';
+  position: absolute;
+  top: -60%;
+  left: -80%;
+  width: 55%;
+  height: 220%;
+  background: linear-gradient(
+    100deg,
+    transparent,
+    rgba(255, 255, 255, 0.16) 44%,
+    rgba(255, 255, 255, 0.28) 50%,
+    rgba(255, 255, 255, 0.1) 56%,
+    transparent
+  );
+  transform: translateX(0) rotate(9deg);
+  filter: blur(6px);
+  opacity: 0;
+}
+.course-card:hover .course-card__sheen::after {
+  animation: cc-sweep 0.9s var(--ease-out);
+}
+@keyframes cc-sweep {
+  from {
+    transform: translateX(0) rotate(9deg);
+    opacity: 0;
+  }
+  25% {
+    opacity: 1;
+  }
+  to {
+    transform: translateX(380%) rotate(9deg);
+    opacity: 0;
+  }
+}
+
+.course-card__num {
+  position: absolute;
+  left: var(--space-3);
+  top: var(--space-3);
+  z-index: 3;
+  padding: var(--space-1) var(--space-2);
+  background: var(--paper);
+  border-radius: var(--radius-xs);
+  font-size: var(--fs-xs);
+}
+
+.course-card__body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  flex: 1;
+}
+
+.course-card__meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+
+.course-card__category {
+  font-size: var(--fs-eyebrow);
+  font-weight: 700;
+  letter-spacing: var(--tracking-wide);
+  text-transform: uppercase;
+  color: var(--fg-muted);
+  transition: color var(--dur-base) var(--ease-out);
+}
+.course-card:hover .course-card__category,
+.course-card:focus-within .course-card__category {
+  color: color-mix(in srgb, var(--card-accent) 78%, var(--ink));
+}
+
+.course-card__title {
+  font-family: var(--font-display);
+  font-size: var(--fs-subhead);
+  font-weight: var(--fw-medium);
+  line-height: 1.16;
+  letter-spacing: var(--tracking-display);
+  transition: transform var(--dur-base) var(--ease-out);
+}
+.course-card:hover .course-card__title,
+.course-card:focus-within .course-card__title {
+  transform: translateY(-1px);
+}
+.course-card__title a {
+  background-image: linear-gradient(var(--accent), var(--accent));
+  background-size: 0% 1px;
+  background-repeat: no-repeat;
+  background-position: 0 100%;
+  transition: background-size var(--dur-base) var(--ease-out);
+  padding-bottom: 2px;
+}
+.course-card:hover .course-card__title a,
+.course-card:focus-within .course-card__title a {
+  background-size: 100% 1px;
+}
+.course-card__title a:focus-visible {
+  outline: 2px solid var(--card-accent);
+  outline-offset: 3px;
+  border-radius: var(--radius-xs);
+}
+
+.course-card__summary {
+  font-size: var(--fs-sm);
+  color: var(--fg-soft);
+  line-height: 1.55;
+}
+
+.course-card__facts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2) var(--space-5);
+  padding-block: var(--space-3);
+  border-top: 1px solid var(--hairline);
+  margin-top: auto;
+}
+/* Keep each value on a single line; if all three facts don't fit across
+   the card, a whole fact wraps to the next row rather than a value
+   splitting mid-phrase ("3 Months (120 / Hours)"). */
+.course-card__facts dd {
+  white-space: nowrap;
+}
+.course-card__facts dt {
+  font-size: var(--fs-eyebrow);
+  font-weight: var(--fw-strong);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--fg-muted);
+  margin-bottom: 2px;
+}
+.course-card__facts dd {
+  font-size: var(--fs-sm);
+  font-weight: var(--fw-medium);
+}
+
+.course-card__foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  flex-wrap: wrap;
+}
+
+.course-card__price {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-2);
+}
+.course-card__was {
+  font-size: var(--fs-xs);
+  color: var(--fg-muted);
+  text-decoration: line-through;
+}
+.course-card__now {
+  font-family: var(--font-display);
+  font-size: var(--fs-subhead);
+  font-weight: var(--fw-medium);
+}
+.course-card__off {
+  font-size: var(--fs-xs);
+  font-weight: var(--fw-strong);
+  color: var(--accent-strong);
+}
+
+.course-card__instructor {
+  font-size: var(--fs-xs);
+  color: var(--fg-muted);
+}
+
+/* Feature layout */
+.course-card--feature .course-card__title {
+  font-size: var(--fs-heading);
+}
+.course-card--feature .course-card__summary {
+  font-size: var(--fs-body);
+  max-width: 46ch;
+}
+
+/* List layout — plain, compact row; no mirror interaction */
+.course-card--list {
+  flex-direction: row;
+  align-items: center;
+  gap: var(--space-5);
+  padding-block: var(--space-5);
+  border-top: 1px solid var(--hairline);
+}
+.course-card--list .course-card__media-link {
+  width: 132px;
+  flex-shrink: 0;
+  transform: none;
+}
+.course-card--list:hover .course-card__media-link {
+  transform: none;
+}
+.course-card--list .course-card__facts {
+  border: 0;
+  padding: 0;
+  margin: 0;
+}
+@media (max-width: 640px) {
+  .course-card--list {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .course-card--list .course-card__media-link {
+    width: 100%;
+  }
+}
+
+/* ============================================================
+   TOUCH — do not depend on hover. Cards look complete at rest;
+   pointer tilt is already gated to mouse in the component.
+   ============================================================ */
+@media (hover: none) {
+  .course-card__sheen {
+    display: none;
+  }
+  .course-card__media-link,
+  .course-card:hover .course-card__media-link {
+    transform: none;
+  }
+}
+
+/* ============================================================
+   REDUCED MOTION — keep only a quiet colour ring + text colour.
+   No tilt, no moving reflections, no stacked-layer travel.
+   ============================================================ */
+@media (prefers-reduced-motion: reduce) {
+  .course-card__media-link,
+  .course-card:hover .course-card__media-link,
+  .course-card:focus-within .course-card__media-link,
+  .course-card__title,
+  .course-card:hover .course-card__title,
+  .course-card__media-link .plate,
+  .course-card__media-link img,
+  .course-card:hover .course-card__media-link .plate,
+  .course-card:hover .course-card__media-link img {
+    transform: none !important;
+    transition: none !important;
+    animation: none !important;
+  }
+  .course-card__sheen {
+    display: none;
+  }
+  .course-card__stack {
+    display: none;
+  }
+  .course-card__media-link::after {
+    animation: none !important;
+    transition: opacity var(--dur-base) linear;
+  }
+}

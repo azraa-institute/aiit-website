@@ -1,0 +1,617 @@
+/* ============================================================
+   AIIT BLUEPRINT — "your academic passport." An original visual
+   language: a single branching pathway (not a map), an editorial
+   destination list, a numbered global-pathway sequence, and an
+   archival document treatment for the visa notice. Cormorant
+   Garamond is scoped to this page only (see index.html), same
+   pattern as the Affiliate and homepage-transition pages.
+   ============================================================ */
+
+.blueprint-hero-title,
+.blueprint-hero__title,
+.blueprint-dest__name,
+.blueprint-journey__word,
+.blueprint-notice__title,
+.blueprint-journey__sub em {
+  font-family: 'Cormorant Garamond', var(--font-display);
+}
+
+/* ---- 01 · Hero ---- */
+.blueprint-hero {
+  position: relative;
+  overflow: hidden;
+}
+.blueprint-hero__atmosphere {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(48% 42% at 92% 6%, rgba(192, 43, 35, 0.12), transparent 70%),
+    radial-gradient(42% 36% at 2% 98%, rgba(154, 123, 79, 0.08), transparent 72%);
+}
+.blueprint-hero__grid {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  gap: clamp(2.5rem, 5vw, 4rem);
+  align-items: center;
+}
+@media (min-width: 960px) {
+  .blueprint-hero__grid {
+    grid-template-columns: 1.1fr 0.9fr;
+  }
+}
+.blueprint-hero__title {
+  margin-top: var(--space-4);
+  font-weight: 700;
+  font-size: clamp(2.6rem, 1.9rem + 3.6vw, 4.7rem);
+  line-height: 1.05;
+  letter-spacing: -0.01em;
+  color: var(--ivory);
+}
+.blueprint-hero__title-accent {
+  background: linear-gradient(120deg, var(--red) 15%, var(--red-tint) 90%);
+  background-clip: text;
+  -webkit-background-clip: text;
+  color: transparent;
+}
+.blueprint-hero__intro {
+  margin-top: var(--space-4);
+  max-width: 46ch;
+  font-size: clamp(1.02rem, 0.94rem + 0.3vw, 1.15rem);
+  line-height: 1.65;
+  color: var(--fg-soft);
+}
+.blueprint-hero__cta-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+  margin-top: var(--space-6);
+}
+.blueprint-hero__visual {
+  display: flex;
+  justify-content: center;
+}
+
+/* ---- Statistics — editorial data points, not cards ---- */
+.blueprint-stats {
+  display: flex;
+  gap: clamp(2rem, 4vw, 3.5rem);
+  margin-top: clamp(2.5rem, 4vw, 3.5rem);
+  padding-top: var(--space-5);
+  border-top: 1px solid var(--line-invert);
+}
+.blueprint-stats__item {
+  position: relative;
+}
+.blueprint-stats__item:first-child {
+  padding-right: clamp(2rem, 4vw, 3.5rem);
+  border-right: 1px solid var(--line-invert);
+}
+.blueprint-stats__value {
+  font-family: 'Inter', var(--font-ui);
+  font-weight: 700;
+  font-size: clamp(2.2rem, 1.6rem + 3vw, 3.4rem);
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+  color: var(--ivory);
+}
+/* p.* ties specificity with the global .layout__main p rule, which
+   otherwise wins over a bare class and forces mid-word breaks here. */
+p.blueprint-stats__label {
+  margin-top: var(--space-2);
+  font-size: var(--fs-xs);
+  font-weight: 600;
+  letter-spacing: var(--tracking-eyebrow);
+  text-transform: uppercase;
+  /* a short label, not body copy — the site-wide .layout__main p rule
+     allows mid-word breaks under space pressure; that reads as broken
+     here ("COUNTRIE" / "S"), so opt back out. */
+  overflow-wrap: normal;
+  word-break: keep-all;
+  color: var(--fg-faint);
+}
+
+/* ---- The pathway SVG (hero visual) ---- */
+.blueprint-pathway {
+  width: 100%;
+  max-width: 260px;
+  height: auto;
+  overflow: visible;
+}
+.blueprint-pathway__spine-line {
+  stroke: rgba(244, 239, 231, 0.28);
+  stroke-width: 1.4;
+  stroke-dasharray: 220;
+  stroke-dashoffset: 220;
+  transition: stroke-dashoffset 0.9s var(--ease-out);
+}
+.blueprint-pathway[data-active] .blueprint-pathway__spine-line {
+  stroke-dashoffset: 0;
+}
+.blueprint-pathway__branch {
+  fill: none;
+  stroke: rgba(216, 201, 176, 0.4);
+  stroke-width: 1.1;
+  stroke-dasharray: 420;
+  stroke-dashoffset: 420;
+  transition: stroke-dashoffset 1.1s var(--ease-out);
+}
+.blueprint-pathway[data-active] .blueprint-pathway__branch {
+  stroke-dashoffset: 0;
+}
+.blueprint-pathway__node {
+  opacity: 0;
+  transform: scale(0.7);
+  transform-box: fill-box;
+  transform-origin: center;
+  transition:
+    opacity var(--dur-slow) var(--ease-out),
+    transform var(--dur-slow) var(--ease-out);
+}
+.blueprint-pathway[data-active] .blueprint-pathway__node {
+  opacity: 1;
+  transform: scale(1);
+}
+.blueprint-pathway__node circle {
+  fill: var(--brass-tint);
+}
+.blueprint-pathway__node:last-of-type circle {
+  fill: var(--red);
+  r: 6;
+}
+.blueprint-pathway__node text {
+  font-family: 'Inter', var(--font-ui);
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0.01em;
+  fill: var(--fg-muted);
+}
+.blueprint-pathway__node:last-of-type text {
+  fill: var(--ivory);
+  font-weight: 600;
+}
+.blueprint-pathway__dest {
+  opacity: 0;
+  transform: scale(0.6);
+  transform-box: fill-box;
+  transform-origin: center;
+  transition:
+    opacity var(--dur-slow) var(--ease-out),
+    transform var(--dur-slow) var(--ease-out);
+}
+.blueprint-pathway[data-active] .blueprint-pathway__dest {
+  opacity: 1;
+  transform: scale(1);
+}
+.blueprint-pathway__dest-ring {
+  fill: none;
+  stroke: rgba(192, 43, 35, 0.4);
+  stroke-width: 1;
+}
+.blueprint-pathway__dest-dot {
+  fill: var(--red-tint);
+}
+.blueprint-pathway__dest text {
+  font-family: 'Inter', var(--font-ui);
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  fill: var(--ivory);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .blueprint-pathway__spine-line,
+  .blueprint-pathway__branch,
+  .blueprint-pathway__node,
+  .blueprint-pathway__dest {
+    transition: none;
+  }
+  .blueprint-pathway[data-active] .blueprint-pathway__spine-line,
+  .blueprint-pathway[data-active] .blueprint-pathway__branch {
+    stroke-dashoffset: 0;
+  }
+  .blueprint-pathway[data-active] .blueprint-pathway__node,
+  .blueprint-pathway[data-active] .blueprint-pathway__dest {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* ---- 02 · Destinations — an editorial list, not five cards ---- */
+.blueprint-dest {
+  margin-top: clamp(2rem, 4vw, 3rem);
+  display: flex;
+  flex-direction: column;
+}
+.blueprint-dest > li {
+  border-top: 1px solid var(--line-strong);
+}
+.blueprint-dest > li:last-child {
+  border-bottom: 1px solid var(--line-strong);
+}
+.blueprint-dest__row {
+  display: flex;
+  align-items: baseline;
+  gap: clamp(var(--space-3), 3vw, var(--space-6));
+  padding-block: clamp(1.15rem, 1vh + 1rem, 1.85rem);
+  cursor: pointer;
+  transition: opacity var(--dur-base) var(--ease-out);
+}
+/* Quiet by default (desaturated, dimmed) — the row's own hover state, not
+   a separate image effect, brings it to full colour. Keeps the list
+   reading as a unified editorial system rather than a photo gallery. */
+.blueprint-dest__photo {
+  align-self: center;
+  flex-shrink: 0;
+  width: clamp(56px, 8vw, 92px);
+  height: auto;
+  aspect-ratio: 4 / 3;
+  object-fit: cover;
+  border-radius: var(--radius-md);
+  filter: grayscale(1);
+  opacity: 0.75;
+  transition:
+    filter var(--dur-base) var(--ease-out),
+    opacity var(--dur-base) var(--ease-out),
+    transform var(--dur-base) var(--ease-out);
+}
+.blueprint-dest__row:hover .blueprint-dest__photo,
+.blueprint-dest__row:focus-visible .blueprint-dest__photo {
+  filter: grayscale(0);
+  opacity: 1;
+  transform: scale(1.04);
+}
+.blueprint-dest__index {
+  flex-shrink: 0;
+  font-size: 0.8rem;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.08em;
+  color: var(--fg-faint);
+}
+.blueprint-dest__name {
+  flex: 1;
+  font-weight: var(--fw-medium);
+  font-size: clamp(1.7rem, 1.35rem + 2.4vw, 2.6rem);
+  letter-spacing: var(--tracking-display);
+  color: var(--fg);
+  transition:
+    color var(--dur-base) var(--ease-out),
+    transform var(--dur-base) var(--ease-out);
+}
+.blueprint-dest__row:hover .blueprint-dest__name,
+.blueprint-dest__row:focus-visible .blueprint-dest__name {
+  color: var(--red-deep);
+  transform: translateX(8px);
+}
+.blueprint-dest__flag {
+  flex-shrink: 0;
+  font-size: 1.3rem;
+  opacity: 0.85;
+}
+.blueprint-dest__arrow {
+  flex-shrink: 0;
+  color: var(--red);
+  opacity: 0;
+  transform: translateX(-6px);
+  transition:
+    opacity var(--dur-base) var(--ease-out),
+    transform var(--dur-base) var(--ease-out);
+}
+.blueprint-dest__row:hover .blueprint-dest__arrow,
+.blueprint-dest__row:focus-visible .blueprint-dest__arrow {
+  opacity: 1;
+  transform: none;
+}
+.blueprint-dest__row:focus-visible {
+  outline: none;
+}
+
+/* ---- 03 / 06 · The staged journeys (Learn→Globalize, and support) ---- */
+.blueprint-journey {
+  display: flex;
+  flex-wrap: wrap;
+  margin-top: clamp(3rem, 5vw, 5rem);
+}
+.blueprint-journey__stage {
+  display: flex;
+  align-items: center;
+}
+.blueprint-journey__content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-3);
+  text-align: center;
+}
+.blueprint-journey__index {
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  color: var(--red);
+}
+.blueprint-journey__icon {
+  display: grid;
+  place-items: center;
+  width: 68px;
+  height: 68px;
+  border-radius: 50%;
+  border: 1px solid var(--line-strong);
+  background: var(--surface);
+  color: var(--brass-deep);
+}
+.blueprint-journey__word {
+  font-weight: var(--fw-medium);
+  font-size: clamp(1.35rem, 1.1rem + 1.2vw, 1.85rem);
+  letter-spacing: var(--tracking-display);
+  color: var(--fg);
+}
+.blueprint-journey__sep {
+  flex-shrink: 0;
+  color: var(--fg-faint);
+  padding-inline: clamp(0.75rem, 2.5vw, 2rem);
+}
+
+.blueprint-journey--primary {
+  flex-wrap: nowrap;
+  align-items: flex-start;
+  overflow-x: auto;
+  gap: 0;
+}
+.blueprint-journey--primary .blueprint-journey__stage {
+  flex-shrink: 0;
+}
+
+.blueprint-journey__sub {
+  margin-top: clamp(2.5rem, 4vw, 4rem);
+  font-size: var(--fs-lead);
+  color: var(--fg-soft);
+}
+.blueprint-journey__sub em {
+  font-style: italic;
+  font-weight: 600;
+  color: var(--red-deep);
+}
+
+/* Secondary (support) sequence — quieter, smaller, still connected */
+.blueprint-journey--secondary {
+  flex-wrap: wrap;
+  row-gap: var(--space-6);
+}
+.blueprint-journey--secondary .blueprint-journey__icon--sm {
+  width: 48px;
+  height: 48px;
+  color: var(--fg-muted);
+}
+.blueprint-journey--secondary .blueprint-journey__word--sm {
+  font-family: var(--font-ui);
+  font-size: var(--fs-sm);
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  color: var(--fg-soft);
+  max-width: 12ch;
+}
+.blueprint-journey__sep--sm svg {
+  width: 14px;
+  height: 9px;
+}
+
+@media (max-width: 760px) {
+  .blueprint-journey--primary {
+    flex-direction: column;
+    align-items: flex-start;
+    overflow-x: visible;
+    gap: var(--space-6);
+  }
+  .blueprint-journey--primary .blueprint-journey__stage {
+    flex-direction: column;
+    align-items: flex-start;
+    width: 100%;
+  }
+  .blueprint-journey--primary .blueprint-journey__content {
+    flex-direction: row;
+    text-align: left;
+  }
+  .blueprint-journey--primary .blueprint-journey__sep {
+    padding-inline: 0;
+    padding-block: var(--space-3);
+    margin-left: 33px;
+  }
+  .blueprint-journey--primary .blueprint-journey__sep svg {
+    transform: rotate(90deg);
+  }
+}
+
+/* ---- Shared section title/body used by 04–06 ---- */
+.blueprint-section-title {
+  margin-top: var(--space-3);
+  font-weight: 700;
+  font-size: clamp(1.7rem, 1.4rem + 1.4vw, 2.5rem);
+  line-height: 1.15;
+  letter-spacing: -0.008em;
+  color: var(--fg);
+  max-width: 20ch;
+}
+.blueprint-section-body {
+  margin-top: var(--space-4);
+  max-width: 50ch;
+  font-size: var(--fs-body);
+  line-height: 1.65;
+  color: var(--fg-soft);
+}
+.blueprint-section-body--wide {
+  max-width: 62ch;
+}
+
+/* ---- 04 / 05 · Foundation + Study pathways (paired text/diagram) ---- */
+.blueprint-foundation {
+  display: grid;
+  gap: clamp(2.5rem, 5vw, 4rem);
+  align-items: center;
+}
+@media (min-width: 900px) {
+  .blueprint-foundation {
+    grid-template-columns: 1.15fr 0.85fr;
+  }
+  .blueprint-foundation--reverse {
+    grid-template-columns: 0.85fr 1.15fr;
+  }
+  .blueprint-foundation--reverse .blueprint-foundation__text {
+    order: 2;
+  }
+}
+
+.blueprint-foundation__diagram {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-4);
+  padding: clamp(2rem, 4vw, 3rem);
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--hairline);
+  background: linear-gradient(160deg, var(--surface), var(--paper));
+}
+.blueprint-foundation__inputs,
+.blueprint-foundation__outputs {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: var(--space-2);
+}
+.blueprint-foundation__inputs span,
+.blueprint-foundation__outputs span {
+  padding: var(--space-2) var(--space-4);
+  border-radius: var(--radius-pill);
+  border: 1px solid var(--line);
+  font-size: var(--fs-xs);
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  color: var(--fg-muted);
+  background: var(--ivory);
+}
+.blueprint-foundation__outputs span {
+  border-color: var(--red);
+  color: var(--red-deep);
+  font-weight: 700;
+  background: rgba(192, 43, 35, 0.06);
+}
+.blueprint-foundation__connector {
+  color: var(--line-strong);
+}
+
+/* ---- 05 · Compact fan-out echo (one AIIT node → five destinations) ---- */
+.blueprint-fanout {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-4);
+  padding: clamp(2rem, 4vw, 3rem);
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--hairline);
+  background: linear-gradient(160deg, var(--ivory), var(--surface));
+}
+.blueprint-fanout__origin {
+  font-family: 'Inter', var(--font-ui);
+  font-weight: 700;
+  font-size: var(--fs-sm);
+  letter-spacing: 0.1em;
+  color: var(--red-deep);
+}
+.blueprint-fanout__line {
+  width: 1px;
+  height: 28px;
+  background: repeating-linear-gradient(180deg, var(--line-strong) 0 4px, transparent 4px 8px);
+}
+.blueprint-fanout__chips {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: var(--space-3);
+}
+.blueprint-fanout__chips span {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  border: 1px solid var(--line);
+  background: var(--paper);
+  font-size: 1.2rem;
+}
+
+/* ---- 07 · Visa notice — a deliberately different visual world:
+   a premium, contemporary echo of an archival academic notice. ---- */
+.blueprint-notice {
+  padding-block: clamp(3rem, 6vw, 5.5rem);
+  background: var(--paper);
+}
+.blueprint-notice__sheet {
+  position: relative;
+  padding: clamp(2rem, 5vw, 3.5rem);
+  background: #f7f1e6;
+  background-image: radial-gradient(circle at 1px 1px, rgba(20, 17, 15, 0.045) 1px, transparent 0);
+  background-size: 3px 3px;
+  border: 1px solid rgba(20, 17, 15, 0.14);
+  box-shadow:
+    0 1px 0 rgba(20, 17, 15, 0.06) inset,
+    0 18px 40px -24px rgba(20, 17, 15, 0.35);
+}
+.blueprint-notice__sheet::before,
+.blueprint-notice__sheet::after {
+  content: '';
+  position: absolute;
+  left: clamp(1.25rem, 4vw, 2.25rem);
+  right: clamp(1.25rem, 4vw, 2.25rem);
+  height: 1px;
+  background: rgba(20, 17, 15, 0.3);
+}
+.blueprint-notice__sheet::before {
+  top: clamp(1.25rem, 4vw, 2.25rem);
+}
+.blueprint-notice__sheet::after {
+  top: calc(clamp(1.25rem, 4vw, 2.25rem) + 5px);
+}
+p.blueprint-notice__label {
+  margin-top: clamp(2.25rem, 6vw, 3.5rem);
+  font-family: var(--font-ui);
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  overflow-wrap: normal;
+  word-break: keep-all;
+  color: var(--red-deep);
+}
+.blueprint-notice__title {
+  margin-top: var(--space-3);
+  font-weight: 700;
+  font-size: clamp(1.55rem, 1.3rem + 1.1vw, 2.1rem);
+  letter-spacing: -0.005em;
+  color: var(--ink);
+}
+.blueprint-notice__body {
+  margin-top: var(--space-4);
+  padding-top: var(--space-4);
+  border-top: 1px solid rgba(20, 17, 15, 0.16);
+  font-family: var(--font-ui);
+  font-size: var(--fs-body);
+  line-height: 1.7;
+  color: var(--ink-soft);
+}
+
+/* .blueprint__closing itself carries no width rule — SectionHeading already
+   applies its own centred 64ch cap internally, so an extra one on the
+   wrapper just fought that instead of doing anything useful. */
+.blueprint__closing .btn {
+  margin-top: var(--space-5);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .blueprint-dest__name,
+  .blueprint-dest__arrow,
+  .blueprint-dest__row,
+  .blueprint-dest__photo {
+    transition: none;
+  }
+}

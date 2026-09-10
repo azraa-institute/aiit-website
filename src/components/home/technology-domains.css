@@ -1,0 +1,420 @@
+/* ============================================================
+   OUR FOCUS AREAS — an original AIIT signature section.
+   Dark (.on-ink) base preserved throughout; every gradient/glow here is a
+   local, section-scoped accent, not a new sitewide colour.
+   ============================================================ */
+
+.tech-focus {
+  position: relative;
+  overflow: hidden;
+  /* Fallback so --item-glow always resolves to something, even before an
+     element's own [data-domain] rule below applies it. */
+  --item-glow: var(--brass-tint);
+  --item-glow-wash: var(--accent-wash);
+}
+
+/* ---- Per-domain accent identity — restrained, atmosphere-only tones ----
+   Reused for both the nav item's active marker and the panel's glow, via
+   [data-domain] on each. Kept local to this section, not promoted to
+   tokens.css — these are a special-case accent set, not new brand colours. */
+.tech-focus [data-domain='artificial-intelligence'] {
+  --item-glow: var(--red);
+  --item-glow-wash: rgba(192, 43, 35, 0.16);
+}
+.tech-focus [data-domain='data-science'] {
+  --item-glow: var(--brass-tint);
+  --item-glow-wash: rgba(154, 123, 79, 0.18);
+}
+.tech-focus [data-domain='cloud-computing'] {
+  --item-glow: #7fa0c2;
+  --item-glow-wash: rgba(61, 89, 117, 0.2);
+}
+.tech-focus [data-domain='quantum-computing'] {
+  --item-glow: #ad96cc;
+  --item-glow-wash: rgba(92, 74, 116, 0.2);
+}
+.tech-focus [data-domain='edge-computing'] {
+  --item-glow: #d98f8f;
+  --item-glow-wash: rgba(122, 42, 48, 0.2);
+}
+
+/* ---- Atmosphere: soft colour pools + a whisper of technical grid,
+   sitting behind everything. Low alpha throughout — depth, not decoration. */
+.tech-focus__atmosphere {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(46% 55% at 10% 6%, rgba(192, 43, 35, 0.1), transparent 70%),
+    radial-gradient(42% 50% at 94% 18%, rgba(61, 89, 117, 0.09), transparent 70%),
+    radial-gradient(48% 55% at 78% 96%, rgba(92, 74, 116, 0.08), transparent 70%),
+    repeating-linear-gradient(
+      90deg,
+      rgba(244, 239, 231, 0.025) 0,
+      rgba(244, 239, 231, 0.025) 1px,
+      transparent 1px,
+      transparent 64px
+    ),
+    repeating-linear-gradient(
+      0deg,
+      rgba(244, 239, 231, 0.025) 0,
+      rgba(244, 239, 231, 0.025) 1px,
+      transparent 1px,
+      transparent 64px
+    );
+}
+
+.tech-focus__container {
+  position: relative;
+  z-index: 1;
+}
+
+/* ---- Header: the shared `.section-heading--start` caps the whole heading
+   block at 62rem. In this section the header sits above a full-width
+   two-column body (nav + panel, ~1400px), so that cap leaves the intro
+   sentence wrapping early with a wide empty gutter to its right. Let the
+   heading — and its intro — run to the section's own column width here. ---- */
+.tech-focus__heading.section-heading--start {
+  max-width: none;
+}
+
+/* ---- Header accent — a quiet gradient mark beside the eyebrow label ---- */
+.tech-focus__heading .eyebrow {
+  position: relative;
+}
+.tech-focus__heading .eyebrow::after {
+  content: '';
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--red), var(--brass-tint));
+  box-shadow: 0 0 10px 1px rgba(192, 43, 35, 0.5);
+}
+
+/* ============================================================
+   BODY — nav (left) + glass panel (right)
+   ============================================================ */
+
+.tech-focus__body {
+  margin-top: clamp(2.5rem, 1.5rem + 4vw, 4.5rem);
+  display: grid;
+  gap: clamp(2rem, 1rem + 4vw, 3rem);
+  align-items: start;
+}
+
+@media (min-width: 900px) {
+  .tech-focus__body {
+    grid-template-columns: minmax(280px, 0.82fr) 1.35fr;
+  }
+}
+
+/* ---- Nav: a connected pathway of five selectors ---- */
+.tech-focus__list {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  padding-left: 26px;
+}
+
+/* the spine — one fine line running through all five stops */
+.tech-focus__list::before {
+  content: '';
+  position: absolute;
+  left: 4px;
+  top: 22px;
+  bottom: 22px;
+  width: 1px;
+  background: linear-gradient(
+    180deg,
+    transparent,
+    var(--line-invert) 8%,
+    var(--line-invert) 92%,
+    transparent
+  );
+}
+
+.tech-focus__item {
+  position: relative;
+}
+
+/* the node on the spine for this stop */
+.tech-focus__item::before {
+  content: '';
+  position: absolute;
+  left: -26px;
+  top: 50%;
+  width: 9px;
+  height: 9px;
+  transform: translateY(-50%);
+  border-radius: 50%;
+  background: var(--ink-soft);
+  border: 1px solid var(--line-invert);
+  transition:
+    background var(--dur-base) var(--ease-out),
+    border-color var(--dur-base) var(--ease-out),
+    box-shadow var(--dur-base) var(--ease-out),
+    transform var(--dur-base) var(--ease-out);
+}
+.tech-focus__item.is-active::before {
+  background: var(--item-glow);
+  border-color: var(--item-glow);
+  box-shadow: 0 0 0 5px var(--item-glow-wash);
+  transform: translateY(-50%) scale(1.15);
+}
+
+.tech-focus__btn {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  padding: var(--space-4) var(--space-3);
+  border-radius: var(--radius-md);
+  text-align: left;
+  color: var(--fg-muted);
+  transition:
+    color var(--dur-base) var(--ease-out),
+    background var(--dur-base) var(--ease-out);
+}
+.tech-focus__btn:hover,
+.tech-focus__btn.is-active {
+  color: var(--ivory);
+  background: var(--item-glow-wash);
+}
+.tech-focus__btn:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px var(--item-glow);
+}
+
+.tech-focus__index {
+  flex-shrink: 0;
+  font-size: var(--fs-xs);
+  letter-spacing: 0.1em;
+  color: var(--fg-faint);
+  transition: color var(--dur-base) var(--ease-out);
+}
+.tech-focus__btn.is-active .tech-focus__index {
+  color: var(--item-glow);
+}
+
+.tech-focus__icon {
+  flex-shrink: 0;
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  border-radius: var(--radius-pill);
+  color: var(--fg-faint);
+  background: rgba(244, 239, 231, 0.04);
+  border: 1px solid var(--line-invert);
+  transition:
+    color var(--dur-base) var(--ease-out),
+    border-color var(--dur-base) var(--ease-out),
+    transform var(--dur-base) var(--ease-out);
+}
+.tech-focus__btn:hover .tech-focus__icon,
+.tech-focus__btn.is-active .tech-focus__icon {
+  color: var(--item-glow);
+  border-color: var(--item-glow-wash);
+  transform: scale(1.06);
+}
+
+.tech-focus__label {
+  font-family: var(--font-display);
+  font-size: clamp(1.15rem, 0.98rem + 0.85vw, 1.5rem);
+  font-weight: var(--fw-medium);
+  line-height: 1.15;
+  letter-spacing: var(--tracking-display);
+}
+
+/* ---- Glass panel ---- */
+.tech-focus__panel {
+  position: sticky;
+  top: calc(var(--header-h) + var(--space-5));
+}
+
+.tech-focus__glass {
+  position: relative;
+  border-radius: var(--radius-lg);
+  border: 1px solid rgba(244, 239, 231, 0.14);
+  background: linear-gradient(155deg, rgba(36, 31, 28, 0.62), rgba(20, 17, 15, 0.42));
+  backdrop-filter: blur(20px) saturate(1.08);
+  -webkit-backdrop-filter: blur(20px) saturate(1.08);
+  box-shadow:
+    0 30px 70px -30px rgba(0, 0, 0, 0.55),
+    inset 0 1px 0 rgba(255, 255, 255, 0.07);
+  overflow: hidden;
+  transition:
+    border-color var(--dur-slow) var(--ease-out),
+    box-shadow var(--dur-slow) var(--ease-out);
+}
+/* atmospheric glow behind the illustration, shifts colour per domain */
+.tech-focus__glass::before {
+  content: '';
+  position: absolute;
+  inset: -15% -10% auto -10%;
+  height: 65%;
+  background: radial-gradient(60% 100% at 32% 0%, var(--item-glow-wash), transparent 72%);
+  filter: blur(6px);
+  pointer-events: none;
+  transition: background var(--dur-slow) ease;
+}
+
+.tech-focus__visual {
+  position: relative;
+  aspect-ratio: 3 / 2;
+  border-bottom: 1px solid rgba(244, 239, 231, 0.1);
+}
+.focus-visual {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+.focus-visual__pulse circle {
+  animation: focus-pulse 2.6s var(--ease-in-out) infinite;
+  transform-origin: center;
+  transform-box: fill-box;
+}
+@keyframes focus-pulse {
+  0%,
+  100% {
+    opacity: 0.55;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.35);
+  }
+}
+
+.tech-focus__detail {
+  position: relative;
+  padding: clamp(1.5rem, 1rem + 2vw, 2.25rem);
+  animation: focus-fade-up var(--dur-slow) var(--ease-out);
+}
+@keyframes focus-fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+}
+
+.tech-focus__eyebrow {
+  font-size: var(--fs-eyebrow);
+  font-weight: 700;
+  letter-spacing: var(--tracking-eyebrow);
+  text-transform: uppercase;
+  color: var(--item-glow);
+  margin-bottom: var(--space-2);
+}
+.tech-focus__tagline {
+  font-family: var(--font-display);
+  font-size: var(--fs-subhead);
+  font-weight: var(--fw-display);
+  color: var(--ivory);
+  margin-bottom: var(--space-3);
+}
+.tech-focus__summary {
+  color: var(--fg-soft);
+  font-size: var(--fs-sm);
+  line-height: 1.6;
+  margin-bottom: var(--space-4);
+}
+.tech-focus__soon {
+  font-size: var(--fs-sm);
+  font-style: italic;
+  color: var(--fg-faint);
+}
+
+.tech-focus__more {
+  margin-top: var(--space-7);
+  font-size: var(--fs-sm);
+  color: var(--fg-faint);
+}
+.tech-focus__more a {
+  color: var(--brass-tint);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+/* ============================================================
+   MOBILE / TABLET — the nav becomes a horizontal, scroll-snap strip of
+   pills sitting above the panel. Not a compressed desktop layout.
+   ============================================================ */
+@media (max-width: 899px) {
+  .tech-focus__nav {
+    margin: 0 calc(var(--gutter) * -1);
+    padding-inline: var(--gutter);
+    overflow-x: auto;
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+  }
+  .tech-focus__nav::-webkit-scrollbar {
+    display: none;
+  }
+  .tech-focus__list {
+    flex-direction: row;
+    gap: var(--space-3);
+    padding-left: 0;
+    padding-bottom: var(--space-2);
+  }
+  .tech-focus__list::before {
+    /* the spine reads horizontally instead of vertically at this width */
+    inset: auto 22px auto 22px;
+    top: 50%;
+    left: 0;
+    right: 0;
+    bottom: auto;
+    height: 1px;
+    width: auto;
+    background: linear-gradient(
+      90deg,
+      transparent,
+      var(--line-invert) 8%,
+      var(--line-invert) 92%,
+      transparent
+    );
+  }
+  .tech-focus__item::before {
+    left: 50%;
+    top: -10px;
+    transform: translateX(-50%);
+  }
+  .tech-focus__item.is-active::before {
+    transform: translateX(-50%) scale(1.15);
+  }
+  .tech-focus__btn {
+    flex: 0 0 auto;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--space-2);
+    width: 168px;
+    scroll-snap-align: start;
+  }
+  .tech-focus__nav {
+    scroll-snap-type: x proximity;
+  }
+  .tech-focus__label {
+    font-size: 1.1rem;
+  }
+  .tech-focus__panel {
+    position: static;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tech-focus__detail {
+    animation: none;
+  }
+  .tech-focus__glass,
+  .tech-focus__item::before,
+  .tech-focus__btn,
+  .tech-focus__index,
+  .tech-focus__icon {
+    transition: none;
+  }
+  .focus-visual__pulse circle {
+    animation: none;
+  }
+}

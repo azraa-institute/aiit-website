@@ -1,0 +1,37 @@
+.stars {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: var(--fs-sm);
+  color: var(--fg-muted);
+}
+
+.stars__track {
+  position: relative;
+  display: inline-block;
+  line-height: 1;
+  letter-spacing: 0.1em;
+}
+
+.stars__glyphs {
+  color: var(--line-strong);
+}
+
+.stars__fill {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  color: var(--brass);
+}
+
+.stars__value {
+  font-weight: var(--fw-medium);
+  color: var(--fg);
+  font-variant-numeric: tabular-nums;
+}
+
+.stars__count {
+  font-weight: var(--fw-body);
+  color: var(--fg-muted);
+}

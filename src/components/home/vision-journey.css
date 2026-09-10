@@ -1,0 +1,336 @@
+/* ============================================================
+   THE LEARNER'S JOURNEY — signature editorial composition.
+   Scoped entirely to this one section. Four milestones alternate between
+   the bold display serif and an italic accent face (Cormorant Garamond —
+   see tokens.css), stepping toward the AIIT launch film on the right. A
+   full-width close breaks out of the two-column grid beneath it.
+   ============================================================ */
+
+.vision-journey {
+  --vj-fs: clamp(2.3rem, 1.35rem + 4.35vw, 4.35rem);
+  --vj-step: clamp(1rem, 4vw, 4.5rem);
+
+  display: grid;
+  gap: clamp(1.75rem, 4vw, 3rem) 0;
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-areas:
+    'eyebrow'
+    'words'
+    'statement'
+    'figure';
+}
+
+@media (min-width: 900px) {
+  .vision-journey {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 0.98fr);
+    column-gap: clamp(1.5rem, 3vw, 3rem);
+    row-gap: clamp(1.5rem, 3vw, 2.75rem);
+    align-items: start;
+    grid-template-areas:
+      'eyebrow   figure'
+      'words     figure'
+      'statement figure';
+  }
+}
+
+.vision-journey__eyebrow {
+  grid-area: eyebrow;
+  margin: 0;
+}
+
+/* ---- The four-milestone composition ---- */
+.vision-journey__words {
+  grid-area: words;
+  margin: 0;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  padding-bottom: clamp(1.25rem, 2.5vw, 2rem);
+  border-bottom: 1px solid var(--hairline);
+}
+
+.vision-journey__word {
+  position: relative;
+  display: flex;
+  align-items: baseline;
+  gap: 0.5em;
+  font-family: var(--font-display);
+  font-weight: var(--fw-display);
+  font-size: var(--vj-fs);
+  line-height: 1.05;
+  letter-spacing: -0.015em;
+  color: var(--fg);
+  white-space: nowrap;
+  margin-left: calc(var(--vj-step) * var(--vj-shift, 0));
+}
+
+.vision-journey__mark {
+  font-family: var(--font-ui);
+  font-size: 0.19em;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  color: var(--fg-faint);
+  transform: translateY(-0.3em);
+}
+.vision-journey__word.is-accent .vision-journey__mark {
+  color: var(--red-tint);
+}
+
+/* The two structural steps — bold display serif, uppercase. */
+.vision-journey__word:nth-child(1) {
+  --vj-shift: 0;
+  font-size: calc(var(--vj-fs) * 0.92);
+}
+.vision-journey__word:nth-child(3) {
+  --vj-shift: 1.85;
+  font-size: calc(var(--vj-fs) * 0.92);
+}
+
+/* The two achievement/aspiration beats — italic accent face, warm red,
+   a touch larger to sit at equal visual weight against the bold serif. */
+.vision-journey__word.is-accent {
+  font-family: var(--font-accent);
+  font-weight: 600;
+  font-style: italic;
+  letter-spacing: -0.008em;
+  color: var(--red-deep);
+}
+.vision-journey__word:nth-child(2) {
+  --vj-shift: 1.05;
+  font-size: calc(var(--vj-fs) * 1.05);
+}
+/* Globalize. — the destination — arrives flush right, meeting the film. */
+.vision-journey__word:nth-child(4) {
+  align-self: stretch;
+  justify-content: flex-end;
+  margin-left: 0;
+  font-size: calc(var(--vj-fs) * 1.05);
+}
+
+/* ---- The film: the destination ---- */
+.vision-journey__figure {
+  grid-area: figure;
+  position: relative;
+  margin: 0;
+  overflow: hidden;
+  border-radius: var(--radius-lg);
+  border: 1px solid rgba(20, 17, 15, 0.09);
+  /* 16:9 for the embedded video — the player fills the frame edge to edge with
+     no letterboxing, and YouTube serves the highest quality the frame size and
+     connection allow. */
+  aspect-ratio: 16 / 9;
+  background: var(--ink);
+  isolation: isolate;
+  box-shadow:
+    0 1px 2px rgba(20, 17, 15, 0.05),
+    0 3px 10px -4px rgba(20, 17, 15, 0.18),
+    0 32px 64px -28px rgba(20, 17, 15, 0.4),
+    0 40px 88px -36px rgba(192, 43, 35, 0.18);
+  transition: box-shadow var(--dur-slow) var(--ease-out);
+}
+.vision-journey__player {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+}
+.vision-journey__figure img,
+.vision-journey__player iframe {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  border: 0;
+  object-fit: cover;
+}
+/* Once the film ends, retire the player so the call to action owns the frame
+   (and no cross-origin iframe fights the overlay for the top layer). */
+.vision-journey__figure[data-ended] .vision-journey__player {
+  visibility: hidden;
+}
+
+@media (min-width: 900px) {
+  .vision-journey__figure {
+    /* the destination — centred against the words / statement stack so
+       the video sits level with the middle of the composition */
+    align-self: center;
+  }
+}
+
+/* ---- End-of-film call to action ---- */
+.vision-journey__cta {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: center;
+  gap: var(--space-3);
+  padding: clamp(1.4rem, 1rem + 2.5vw, 2.75rem);
+  color: var(--ivory);
+  background:
+    linear-gradient(180deg, rgba(20, 17, 15, 0.9), rgba(20, 17, 15, 0.97)),
+    radial-gradient(120% 80% at 18% 12%, rgba(154, 123, 79, 0.32), transparent 60%);
+  animation: vj-cta-in var(--dur-slow) var(--ease-out) both;
+}
+@keyframes vj-cta-in {
+  from {
+    opacity: 0;
+    transform: scale(1.015);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+.vision-journey__cta-kicker {
+  font-size: var(--fs-eyebrow);
+  letter-spacing: var(--tracking-eyebrow);
+  text-transform: uppercase;
+  color: var(--brass-tint);
+}
+.vision-journey__cta-title {
+  font-family: var(--font-display);
+  font-size: var(--fs-heading);
+  font-weight: var(--fw-medium);
+  line-height: 1.1;
+  letter-spacing: var(--tracking-display);
+  max-width: 16ch;
+  text-wrap: balance;
+}
+.vision-journey__cta-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+  margin-top: var(--space-2);
+}
+.vision-journey__replay {
+  margin-top: var(--space-1);
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: var(--fs-xs);
+  font-weight: var(--fw-strong);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--brass-tint);
+  transition: color var(--dur-fast) var(--ease-out);
+}
+.vision-journey__replay:hover {
+  color: var(--ivory);
+}
+
+@media (max-width: 560px) {
+  .vision-journey__cta-actions {
+    flex-direction: column;
+    align-items: stretch;
+    width: 100%;
+  }
+  .vision-journey__cta-actions .btn {
+    width: 100%;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .vision-journey__cta {
+    animation: none;
+  }
+}
+
+/* ---- Secondary statement — completes the message ----
+   (scoped so it outranks the site-wide `.layout__main p` justify rule) */
+.vision-journey .vision-journey__statement {
+  grid-area: statement;
+  display: flex;
+  flex-direction: column;
+  font-family: var(--font-display);
+  font-size: clamp(1.3rem, 0.9rem + 1.5vw, 1.9rem);
+  line-height: 1.32;
+  letter-spacing: -0.006em;
+  color: var(--fg);
+  text-align: left;
+  -webkit-hyphens: manual;
+  hyphens: manual;
+}
+.vision-journey .vision-journey__statement span:nth-child(2) {
+  margin-left: 0.55em;
+  font-weight: var(--fw-strong);
+}
+.vision-journey .vision-journey__statement span:nth-child(3) {
+  margin-left: 1.3em;
+}
+.vision-journey__support {
+  font-family: var(--font-accent);
+  font-style: italic;
+  font-weight: 600;
+  font-size: 1.08em;
+  color: var(--red-deep);
+}
+
+/* ============================================================
+   FULL-WIDTH CLOSE — outside the two-column grid entirely, so the
+   description reads across the section instead of sitting inside the
+   typography column.
+   ============================================================ */
+.vision-journey__close {
+  margin-top: clamp(2.5rem, 5vw, 4rem);
+  padding-top: clamp(1.75rem, 3.5vw, 2.75rem);
+  border-top: 1px solid var(--hairline);
+  display: grid;
+  gap: var(--space-3);
+}
+.vision-journey__close-kicker {
+  font-family: var(--font-ui);
+  font-size: var(--fs-eyebrow);
+  font-weight: 700;
+  letter-spacing: var(--tracking-eyebrow);
+  text-transform: uppercase;
+  color: var(--red-deep);
+  text-align: left;
+}
+.vision-journey__close-body {
+  /* No ch-cap — the .container--wide it already sits inside (1480px) is
+     the sensible bound; an extra cap on top of that just left the text
+     stopping well short of the space actually available (see the global
+     typography investigation earlier in this project for why that pattern
+     is worth avoiding everywhere). */
+  font-size: clamp(1.05rem, 0.95rem + 0.4vw, 1.2rem);
+  line-height: 1.62;
+  color: var(--fg-soft);
+  text-align: left;
+  -webkit-hyphens: manual;
+  hyphens: manual;
+}
+
+/* ---- Mobile / tablet: recompose, keep the character ----
+   Order becomes eyebrow → words → statement → figure (video), matching
+   the brief's intended reading order — the film lands as the payoff
+   just before the full-width close, not squeezed between the words. */
+@media (max-width: 899px) {
+  .vision-journey {
+    --vj-step: clamp(0.5rem, 3vw, 1.4rem);
+  }
+  .vision-journey__word:nth-child(1),
+  .vision-journey__word:nth-child(3) {
+    font-size: calc(var(--vj-fs) * 0.86);
+  }
+  .vision-journey__word:nth-child(2) {
+    --vj-shift: 0.9;
+  }
+  /* on a single column GLOBALIZE steps like the rest, not flush-right */
+  .vision-journey__word:nth-child(4) {
+    align-self: flex-start;
+    justify-content: flex-start;
+    margin-left: calc(var(--vj-step) * 1.8);
+  }
+}
+
+@media (max-width: 460px) {
+  .vision-journey {
+    --vj-fs: clamp(1.9rem, 1.1rem + 4.6vw, 2.85rem);
+  }
+  .vision-journey__word {
+    white-space: normal;
+  }
+}

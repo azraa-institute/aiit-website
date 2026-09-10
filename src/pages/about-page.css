@@ -1,0 +1,92 @@
+.about-page__intro {
+  display: grid;
+  gap: clamp(2rem, 1rem + 4vw, 4rem);
+  align-items: center;
+}
+@media (min-width: 900px) {
+  .about-page__intro {
+    grid-template-columns: 1fr 1.1fr;
+  }
+}
+.about-page__photo {
+  width: 100%;
+  border-radius: var(--radius-md);
+  aspect-ratio: 3 / 2;
+  object-fit: cover;
+}
+.about-page__mission-text {
+  font-size: var(--fs-lead);
+  line-height: var(--lh-body);
+  color: var(--ink-soft);
+  max-width: 56ch;
+}
+.about-page__cta-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+  margin-top: var(--space-5);
+}
+.about-page__global {
+  margin-top: var(--space-6);
+  padding-top: var(--space-5);
+  border-top: 1px solid var(--hairline);
+  font-size: var(--fs-sm);
+  color: var(--fg-soft);
+  line-height: 1.65;
+  max-width: 68ch;
+}
+.about-page__global strong {
+  color: var(--fg);
+}
+
+.about-page__block {
+  /* No ch-cap — was stopping this block at 45% of its wide ivory-section
+     container. The kicker/heading/body inside are short enough on their
+     own not to need one. */
+  margin-bottom: var(--space-8);
+}
+.about-page__block h2 {
+  margin: var(--space-3) 0;
+  font-family: var(--font-display);
+  font-size: var(--fs-heading);
+  font-weight: var(--fw-medium);
+  letter-spacing: var(--tracking-display);
+}
+.about-page__block p:last-child {
+  color: var(--fg-soft);
+  line-height: 1.65;
+}
+
+.about-page__domains {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+}
+.about-page__domains a {
+  font-size: var(--fs-sm);
+  padding: var(--space-2) var(--space-4);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-pill);
+  transition:
+    background var(--dur-fast) var(--ease-out),
+    color var(--dur-fast) var(--ease-out);
+}
+.about-page__domains a:hover {
+  background: var(--ink);
+  color: var(--paper);
+}
+
+.about-page__final {
+  /* No ch-cap — SectionHeading already applies its own centred 64ch cap
+     internally, so an extra one on the wrapper just fought that (matching
+     the .blueprint__closing fix). Centred flex instead of the old implicit
+     left/"start" alignment, so the button lines up under the heading
+     rather than drifting to the block edge. */
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+.about-page__final .btn {
+  margin-top: var(--space-5);
+}

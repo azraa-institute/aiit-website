@@ -1,0 +1,463 @@
+/* ============================================================
+   OUR REVIEWS — a premium editorial "student voices" environment:
+   a warm ivory review panel resting on a light coffee-brown carved
+   wood surface, spotlit by a single warm beam that visibly points
+   down at the card. Everything functional (arrows, dots, progress,
+   keyboard, auto-advance) is untouched — only the visual system
+   changes.
+   ============================================================ */
+
+.stories-env {
+  position: relative;
+  overflow: hidden;
+}
+
+/* the heading sits above the beam's brightest point — a text-shadow
+   keeps it reading cleanly regardless of exactly what grain/light
+   falls behind it */
+.stories-env .eyebrow,
+.stories-env .section-heading__title {
+  text-shadow:
+    0 1px 3px rgba(15, 9, 4, 0.7),
+    0 2px 14px rgba(20, 12, 5, 0.55);
+}
+
+.stories {
+  position: relative;
+  z-index: 1;
+  margin-top: clamp(2.5rem, 1.5rem + 4vw, 4.5rem);
+  max-width: 60rem;
+  margin-inline: auto;
+  padding-inline: clamp(0rem, -1rem + 6vw, 3.75rem);
+}
+
+/* ---- The carved-wood environment — a lighter coffee-brown surface
+   (not a stock photo) with a genuine relief grain: an SVG turbulence
+   field lit from two opposing angles via feDiffuseLighting, so the
+   grain reads as physically carved rather than a flat brown image.
+   A few faint plank seams and a soft vignette finish the surface. ---- */
+.stories-env__atmosphere {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background-image:
+    /* plank seams — thin carved grooves, dark-then-light per seam */
+    repeating-linear-gradient(
+      90deg,
+      transparent 0px,
+      transparent 358px,
+      rgba(20, 12, 5, 0.45) 358px,
+      rgba(20, 12, 5, 0.45) 359.5px,
+      rgba(255, 248, 232, 0.4) 359.5px,
+      rgba(255, 248, 232, 0.4) 361px,
+      transparent 361px,
+      transparent 362px
+    ),
+    /* carved grain — cool counter-shadow pass */
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='1600' height='900'%3E%3Cfilter id='woodShade' x='0' y='0' width='100%25' height='100%25' primitiveUnits='userSpaceOnUse'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.0022 0.06' numOctaves='6' seed='41' stitchTiles='stitch' result='t'/%3E%3CfeDiffuseLighting in='t' lighting-color='%23281a0d' surfaceScale='3.2' diffuseConstant='1.25' result='lit'%3E%3CfeDistantLight azimuth='50' elevation='48'/%3E%3C/feDiffuseLighting%3E%3CfeColorMatrix in='lit' type='matrix' values='0.55 0 0 0 0  0 0.55 0 0 0  0 0 0.55 0 0  0.4 0.4 0.4 0 0'/%3E%3C/filter%3E%3Crect width='1600' height='900' filter='url(%23woodShade)'/%3E%3C/svg%3E"),
+    /* carved grain — warm highlight pass */
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='1600' height='900'%3E%3Cfilter id='woodLit' x='0' y='0' width='100%25' height='100%25' primitiveUnits='userSpaceOnUse'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.0022 0.06' numOctaves='6' seed='41' stitchTiles='stitch' result='t'/%3E%3CfeDiffuseLighting in='t' lighting-color='%23fff3dd' surfaceScale='3.2' diffuseConstant='1.25' result='lit'%3E%3CfeDistantLight azimuth='230' elevation='48'/%3E%3C/feDiffuseLighting%3E%3CfeColorMatrix in='lit' type='matrix' values='0.55 0 0 0 0  0 0.55 0 0 0  0 0 0.55 0 0  0.4 0.4 0.4 0 0'/%3E%3C/filter%3E%3Crect width='1600' height='900' filter='url(%23woodLit)'/%3E%3C/svg%3E"),
+    /* soft vignette so the edges recede a touch */
+    radial-gradient(65% 60% at 50% 42%, transparent 45%, rgba(20, 12, 5, 0.3) 100%),
+    /* base coffee-brown wood tone — light, not dark espresso */
+    linear-gradient(160deg, #8f6f45 0%, #6f4e2e 48%, #4c3520 100%);
+  background-repeat: repeat, no-repeat, no-repeat, no-repeat, no-repeat;
+  background-size:
+    auto 100%,
+    100% 100%,
+    100% 100%,
+    100% 100%,
+    100% 100%;
+  background-blend-mode: overlay, multiply, soft-light, normal, normal;
+}
+
+/* ---- The spotlight — a single warm beam that visibly points down
+   at the review card, like a gallery light on a carved wood plaque.
+   A slow sway + breathing pulse keeps it alive; base aim nudges
+   slightly per active review. Transform + opacity only. ---- */
+.stories-env__spotlight {
+  position: absolute;
+  z-index: 0;
+  /* starts below the heading, so the beam's brightest point never
+     sits directly behind the eyebrow/title */
+  top: clamp(5.5rem, 3rem + 8vw, 8rem);
+  left: calc(50% + var(--light-x, 0%));
+  width: 0;
+  height: 100%;
+  pointer-events: none;
+  transition: left 1.4s var(--ease-out);
+}
+.stories-env__beam {
+  position: absolute;
+  top: -8%;
+  left: 0;
+  width: 46rem;
+  height: 46rem;
+  transform: translateX(-50%) rotate(-2deg);
+  transform-origin: 50% 0%;
+  clip-path: polygon(47.5% 0%, 52.5% 0%, 84% 100%, 16% 100%);
+  background: linear-gradient(
+    180deg,
+    rgba(255, 246, 222, 0.55) 0%,
+    rgba(255, 235, 190, 0.24) 45%,
+    rgba(255, 224, 160, 0) 85%
+  );
+  mix-blend-mode: screen;
+  filter: blur(3px);
+  animation: beam-sway 11s ease-in-out infinite;
+}
+.stories-env__source {
+  position: absolute;
+  top: -6%;
+  left: 0;
+  width: 4rem;
+  height: 4rem;
+  transform: translate(-50%, -50%);
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(255, 250, 235, 0.85), rgba(255, 250, 235, 0) 70%);
+  mix-blend-mode: screen;
+  filter: blur(3px);
+}
+.stories-env__pool {
+  position: absolute;
+  top: 38%;
+  left: 0;
+  width: 40rem;
+  height: 22rem;
+  transform: translate(-50%, -35%);
+  background: radial-gradient(closest-side, rgba(255, 241, 214, 0.45), rgba(255, 241, 214, 0) 72%);
+  mix-blend-mode: screen;
+  filter: blur(8px);
+  animation: pool-breathe 11s ease-in-out infinite;
+}
+@keyframes beam-sway {
+  0%,
+  100% {
+    transform: translateX(-50%) rotate(-2.4deg);
+    opacity: 0.82;
+  }
+  50% {
+    transform: translateX(-50%) rotate(2.4deg);
+    opacity: 1;
+  }
+}
+@keyframes pool-breathe {
+  0%,
+  100% {
+    opacity: 0.7;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+/* ---- The review card — a crafted ivory panel, not a flat white
+   box: a warm tonal gradient, a soft deep shadow that suggests it
+   sits above the surface, and a faint highlight top-left where the
+   ambient light appears to graze it. ---- */
+.stories__card {
+  position: relative;
+  z-index: 1;
+  margin: 0;
+  display: grid;
+  gap: var(--space-4);
+  padding: clamp(1.75rem, 1rem + 3vw, 3rem);
+  min-height: clamp(19rem, 15rem + 12vw, 24rem);
+  background: linear-gradient(160deg, #faf6ee 0%, #f1e9d9 100%);
+  border: 1px solid rgba(20, 17, 15, 0.08);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-lift);
+  overflow: hidden;
+  animation: story-in var(--dur-slow) var(--ease-out);
+}
+.stories__card::before {
+  /* the light "grazing" the card's top-left corner */
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 60%;
+  height: 45%;
+  background: radial-gradient(ellipse at top left, rgba(255, 250, 240, 0.65), transparent 70%);
+  opacity: 0.7;
+  pointer-events: none;
+}
+.stories__card::after {
+  /* a large, low-opacity editorial quotation mark, behind the copy */
+  content: '\201C';
+  position: absolute;
+  top: -0.35em;
+  left: clamp(0.75rem, 1.5vw, 1.5rem);
+  font-family: 'Cormorant Garamond', var(--font-display);
+  font-size: clamp(7rem, 5rem + 8vw, 11rem);
+  line-height: 1;
+  color: var(--brass-deep);
+  opacity: 0.12;
+  pointer-events: none;
+}
+@keyframes story-in {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+    filter: blur(3px);
+  }
+}
+
+.stories__title {
+  position: relative;
+  font-family: var(--font-display);
+  font-size: var(--fs-subhead);
+  font-weight: var(--fw-strong);
+  line-height: 1.22;
+  letter-spacing: var(--tracking-display);
+  color: var(--ink);
+  animation: story-rise var(--dur-slow) var(--ease-out) both;
+}
+
+.stories__quote {
+  position: relative;
+  margin: 0;
+  flex: 1;
+  animation: story-rise var(--dur-slow) var(--ease-out) both;
+  animation-delay: 60ms;
+}
+.stories .stories__quote p {
+  font-family: var(--font-display);
+  font-size: var(--fs-lead);
+  line-height: 1.55;
+  color: var(--ink-soft);
+  text-align: left;
+  text-wrap: pretty;
+}
+.stories__quote p::before {
+  content: '“';
+  margin-right: 0.05em;
+  color: var(--brass-deep);
+}
+.stories__quote p::after {
+  content: '”';
+  color: var(--brass-deep);
+}
+
+@keyframes story-rise {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+}
+
+.stories__person {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  margin-top: auto;
+  padding-top: var(--space-4);
+  border-top: 1px solid rgba(20, 17, 15, 0.1);
+  animation: story-rise var(--dur-slow) var(--ease-out) both;
+  animation-delay: 120ms;
+}
+.stories__avatar {
+  flex-shrink: 0;
+  display: grid;
+  place-items: center;
+  width: 2.75rem;
+  height: 2.75rem;
+  border-radius: var(--radius-pill);
+  background: linear-gradient(155deg, var(--brass-tint), var(--brass-deep));
+  color: var(--ink);
+  font-family: var(--font-display);
+  font-size: var(--fs-sm);
+  font-weight: var(--fw-strong);
+  letter-spacing: 0.04em;
+  /* a soft warm halo, as though light is falling on the identity */
+  box-shadow:
+    0 0 0 5px rgba(216, 180, 120, 0.14),
+    0 0 22px 3px rgba(216, 180, 120, 0.22);
+}
+.stories__who {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+.stories__name {
+  font-family: var(--font-display);
+  font-size: var(--fs-subhead);
+  font-weight: var(--fw-medium);
+  color: var(--ink);
+}
+.stories__loc {
+  font-size: var(--fs-xs);
+  letter-spacing: var(--tracking-wide);
+  text-transform: uppercase;
+  color: var(--ink-muted);
+}
+
+/* ---- Side arrows — thin, warm-toned, part of the atmosphere
+   rather than bright floating buttons. ---- */
+.stories__arrow {
+  position: absolute;
+  top: calc(50% - 1.6rem);
+  transform: translateY(-50%);
+  z-index: 2;
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  border-radius: var(--radius-pill);
+  border: 1px solid var(--line-invert);
+  background: rgba(244, 239, 231, 0.04);
+  color: var(--fg-soft);
+  transition:
+    background var(--dur-fast) var(--ease-out),
+    border-color var(--dur-fast) var(--ease-out),
+    color var(--dur-fast) var(--ease-out);
+}
+.stories__arrow:hover {
+  background: var(--red);
+  border-color: var(--red);
+  color: var(--ivory);
+}
+.stories__arrow:focus-visible {
+  outline: none;
+  border-color: var(--brass-tint);
+  box-shadow: 0 0 0 3px rgba(216, 180, 120, 0.2);
+}
+.stories__arrow--prev {
+  left: 0;
+}
+.stories__arrow--next {
+  right: 0;
+}
+
+/* ---- Loading progress bar — a warm amber-to-red gradient fill ---- */
+.stories__progress {
+  position: relative;
+  z-index: 1;
+  height: 2px;
+  margin-top: var(--space-4);
+  background: var(--line-invert);
+  border-radius: 2px;
+  overflow: hidden;
+}
+.stories__progress-fill {
+  position: absolute;
+  inset: 0;
+  transform-origin: left;
+  transform: scaleX(0);
+  background: linear-gradient(90deg, var(--brass-tint), var(--red));
+  animation-name: stories-fill;
+  animation-timing-function: linear;
+  animation-fill-mode: both;
+}
+.stories.is-paused .stories__progress-fill {
+  animation-play-state: paused;
+}
+@keyframes stories-fill {
+  from {
+    transform: scaleX(0);
+  }
+  to {
+    transform: scaleX(1);
+  }
+}
+
+/* ---- Dots + counter ---- */
+.stories__controls {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4);
+  flex-wrap: wrap;
+  margin-top: var(--space-4);
+}
+.stories__dots {
+  display: flex;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+}
+.stories__dot {
+  width: 8px;
+  height: 8px;
+  border-radius: var(--radius-pill);
+  border: 1px solid var(--line-invert);
+  transition:
+    background var(--dur-fast) var(--ease-out),
+    border-color var(--dur-fast) var(--ease-out),
+    transform var(--dur-fast) var(--ease-out);
+}
+.stories__dot:hover {
+  border-color: var(--fg-muted);
+}
+.stories__dot.is-active {
+  background: var(--red);
+  border-color: var(--red);
+  transform: scale(1.15);
+}
+.stories__count {
+  font-size: var(--fs-xs);
+  letter-spacing: 0.1em;
+  color: var(--fg-faint);
+  font-variant-numeric: tabular-nums;
+}
+
+@media (max-width: 560px) {
+  .stories {
+    padding-inline: 0;
+  }
+  .stories__arrow {
+    top: auto;
+    bottom: -3.4rem;
+    transform: none;
+  }
+  .stories__arrow--prev {
+    left: 0;
+  }
+  .stories__arrow--next {
+    right: 0;
+  }
+  .stories__controls {
+    justify-content: center;
+    padding-inline: 3rem;
+  }
+  .stories-env__beam,
+  .stories-env__pool {
+    /* a quieter, cheaper glow on small screens */
+    animation-duration: 16s;
+  }
+  .stories-env__beam {
+    width: 30rem;
+    height: 30rem;
+  }
+  .stories-env__pool {
+    width: 24rem;
+    height: 16rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .stories__card {
+    animation: none;
+  }
+  .stories__title,
+  .stories__quote,
+  .stories__person {
+    animation: none;
+    opacity: 1;
+    transform: none;
+  }
+  .stories__progress-fill {
+    animation: none;
+    transform: scaleX(1);
+  }
+  .stories-env__spotlight {
+    transition: none;
+  }
+  .stories-env__beam,
+  .stories-env__pool {
+    animation: none;
+  }
+}

@@ -1,0 +1,138 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#14110f" />
+    <link rel="icon" href="/favicon.ico" sizes="any" />
+    <link rel="icon" type="image/png" href="/favicon.png" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <link rel="manifest" href="/site.webmanifest" />
+    <link
+      rel="preload"
+      as="image"
+      href="/assets/brand/azraa-institute-of-information-technology-official-logo-black.png"
+    />
+    <!-- Cormorant Garamond: italic weights for the homepage "learner's
+         journey" cursive accent; upright 600/700 added for the Affiliate
+         page's editorial headings (bold enough to stay readable at display
+         size — see affiliate-page.css). Inter: the Affiliate page's
+         calculator/data numerals and interface labels read far better in a
+         sans-serif at small sizes than Georgia does; scoped to that one
+         page. Everything else on the site stays on native Georgia. -->
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,600;0,700;1,500;1,600&family=Inter:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      /* Initial paint + branded splash. Plain CSS, no JS, no dependencies —
+         paints with the HTML so first load is a calm AIIT screen, never a
+         blank flash. Removed by the app once the first route renders
+         (see SplashGate in src/App.tsx). */
+      html {
+        background: #fbf8f2;
+      }
+      #splash {
+        position: fixed;
+        inset: 0;
+        z-index: 2147483647;
+        display: grid;
+        place-items: center;
+        background: #fbf8f2;
+        transition: opacity 320ms ease;
+      }
+      #splash.is-out {
+        opacity: 0;
+        pointer-events: none;
+      }
+      #splash > div {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 22px;
+        padding: 24px;
+      }
+      #splash img {
+        display: block;
+        height: 38px;
+        width: auto;
+      }
+      #splash span {
+        position: relative;
+        display: block;
+        width: 128px;
+        height: 2px;
+        overflow: hidden;
+        border-radius: 2px;
+        background: rgba(20, 17, 15, 0.09);
+      }
+      #splash span::after {
+        content: '';
+        position: absolute;
+        inset: 0 auto 0 0;
+        width: 42%;
+        border-radius: inherit;
+        background: linear-gradient(90deg, transparent, #7d6340, transparent);
+        animation: splash-slide 1350ms cubic-bezier(0.65, 0, 0.35, 1) infinite;
+      }
+      @keyframes splash-slide {
+        0% {
+          transform: translateX(-115%);
+        }
+        100% {
+          transform: translateX(340%);
+        }
+      }
+      @media (prefers-reduced-motion: reduce) {
+        #splash {
+          transition: none;
+        }
+        #splash span::after {
+          animation: none;
+          width: 100%;
+          background: rgba(20, 17, 15, 0.2);
+        }
+      }
+    </style>
+    <title>AIIT — Azraa Institute of Information Technology</title>
+    <meta
+      name="description"
+      content="AIIT is an international online technology learning platform. Learn Artificial Intelligence, Data Science, Cloud, Quantum and Edge Computing, earn certificates and prepare for a global tech career."
+    />
+    <meta property="og:title" content="AIIT — Azraa Institute of Information Technology" />
+    <meta
+      property="og:description"
+      content="From Learning Today to Leading Tomorrow. Your Future Has a Source Code."
+    />
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://aiit.network/" />
+    <meta name="twitter:card" content="summary_large_image" />
+  </head>
+  <body>
+    <div id="root"></div>
+    <div id="splash" role="status" aria-label="Loading AIIT">
+      <div>
+        <img
+          src="/assets/brand/azraa-institute-of-information-technology-official-logo-black.png"
+          alt="AIIT — Azraa Institute of Information Technology"
+          width="198"
+          height="38"
+        />
+        <span aria-hidden="true"></span>
+      </div>
+    </div>
+    <script>
+      /* Safety net: never let the splash outlive a broken bootstrap. */
+      setTimeout(function () {
+        var s = document.getElementById('splash');
+        if (!s) return;
+        s.classList.add('is-out');
+        setTimeout(function () {
+          if (s && s.parentNode) s.parentNode.removeChild(s);
+        }, 400);
+      }, 8000);
+    </script>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>

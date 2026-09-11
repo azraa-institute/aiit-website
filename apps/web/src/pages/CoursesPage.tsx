@@ -4,7 +4,7 @@ import { Layout } from '@/components/layout/Layout';
 import { PageBanner } from '@/components/layout/PageBanner';
 import { Seo } from '@/lib/Seo';
 import { useScrollReveal } from '@/lib/useScrollReveal';
-import { COURSES } from '@/data/courses';
+import { useCourseList } from './CoursesPage.data';
 import { CourseCard } from '@/components/course/CourseCard';
 import {
   CourseFilters,
@@ -47,7 +47,11 @@ export default function CoursesPage() {
     [setParams],
   );
 
-  const results = useMemo(() => filterAndSortCourses(COURSES, query), [query]);
+  const courseList = useCourseList();
+  const results = useMemo(
+    () => filterAndSortCourses(courseList.status === 'ready' ? courseList.courses : [], query),
+    [courseList, query],
+  );
   useScrollReveal([results.length, query.domain, query.sort]);
 
   return (
@@ -75,7 +79,19 @@ export default function CoursesPage() {
           </aside>
 
           <div className="courses-page__results">
-            {results.length === 0 ? (
+            {courseList.status === 'loading' ? (
+              <div className="courses-page__empty" role="status">
+                <p className="heading">Loading courses…</p>
+              </div>
+            ) : courseList.status === 'error' ? (
+              <div className="courses-page__empty" role="alert">
+                <p className="heading">Couldn&apos;t load courses.</p>
+                <p>{courseList.error.message}</p>
+                <Button as="button" variant="secondary" onClick={() => window.location.reload()}>
+                  Try again
+                </Button>
+              </div>
+            ) : results.length === 0 ? (
               <div className="courses-page__empty">
                 <p className="heading">No courses match those filters.</p>
                 <p>Try widening the domain or clearing the search term.</p>

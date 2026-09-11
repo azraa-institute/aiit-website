@@ -150,8 +150,10 @@ export function CourseCard({ course, layout = 'grid', index }: CourseCardProps) 
 
         <div className="course-card__foot">
           <div className="course-card__price">
-            {course.priceWas && <span className="course-card__was">{formatPrice(course.priceWas)}</span>}
-            <span className="course-card__now">{formatPrice(course.price)}</span>
+            {course.priceWas && (
+              <span className="course-card__was">{formatPrice(course.priceWas, course.currency)}</span>
+            )}
+            <span className="course-card__now">{formatPrice(course.price, course.currency)}</span>
             {off && <span className="course-card__off">−{off}%</span>}
           </div>
           {course.rating > 0 ? (

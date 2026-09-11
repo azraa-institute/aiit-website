@@ -57,10 +57,12 @@ export interface Course {
   domainId: string | null;
   summary: string;
   description: string;
-  /** Price in cents. null = members / subscription only. 0 = free. */
+  /** Price in cents of `currency`. null = members / subscription only. 0 = free. */
   price: number | null;
-  /** Original price in cents, if discounted. */
+  /** Original price in cents of `currency`, if discounted. */
   priceWas: number | null;
+  /** ISO 4217 code `price`/`priceWas` are expressed in. Defaults to 'USD' when absent -- all static catalogue data here is USD. */
+  currency?: string;
   pricing: PricingModel;
   level: CourseLevel;
   /** Hours of content. */

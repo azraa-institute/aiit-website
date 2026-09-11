@@ -27,6 +27,19 @@ jobs:
       # described in ci.yml, so a plain install is fine here.
       - run: npm install --workspace=apps/api
 
+      # IMPORTANT — one-time manual step before this can succeed:
+      # `prisma migrate deploy` refuses to run against a database that
+      # already has tables in a schema it manages (P3005 "schema is not
+      # empty"). Supabase's `auth` schema always pre-exists, so the very
+      # first run of this workflow against a real Supabase DATABASE_URL
+      # will hit this. Before that first run, baseline it once by hand
+      # (see https://pris.ly/d/migrate-baseline):
+      #   npx prisma db execute --file apps/api/prisma/migrations/20260911000000_init/migration.sql --schema apps/api/prisma/schema.prisma --url "$DATABASE_URL"
+      #   npx prisma migrate resolve --applied 20260911000000_init --schema apps/api/prisma/schema.prisma
+      # After that one-time baseline, plain `migrate deploy` works normally
+      # for every future migration, which is why it's used here rather than
+      # the db-execute/resolve dance ci.yml uses on its always-fresh
+      # ephemeral database.
       - name: Apply pending migrations
         run: npm exec -w apps/api -- prisma migrate deploy
         env:

@@ -65,8 +65,23 @@ jobs:
             psql "postgresql://postgres:postgres@localhost:5432/$db" -c "CREATE TABLE IF NOT EXISTS auth.users (id uuid PRIMARY KEY);"
           done
 
+      # Plain `prisma migrate deploy` refuses to run against a database that
+      # already has tables in a schema it manages (P3005 "schema is not
+      # empty") — and since auth.users must already exist for this
+      # migration's FK to succeed, that guard always fires here (and will
+      # against the real Supabase database too, which always has a
+      # pre-existing auth schema). The standard fix for exactly this
+      # Prisma+Supabase situation: apply the SQL directly, then tell Prisma
+      # to record it as applied (baseline), rather than have `migrate
+      # deploy` apply it itself. See https://pris.ly/d/migrate-baseline —
+      # this is the same P3005 error message's own suggested remedy.
       - name: Apply migrations
-        run: npm exec -w apps/api -- prisma migrate deploy
+        run: |
+          npm exec -w apps/api -- prisma db execute \
+            --file prisma/migrations/20260911000000_init/migration.sql \
+            --schema prisma/schema.prisma
+          npm exec -w apps/api -- prisma migrate resolve \
+            --applied 20260911000000_init
 
       - run: npm run test:e2e --workspace=apps/api
 

@@ -43,10 +43,26 @@ npm run lint       # ESLint
 npm run typecheck  # tsc, no emit
 ```
 
-Requires **Node 18+**.
+Requires **Node 20+**.
+
+This is an npm-workspaces monorepo: `apps/web` is the frontend above, `apps/api`
+is the NestJS backend (Phase 0 foundations — a scaffold with a health check, not
+yet wired to real business logic), `packages/shared` holds types shared by both.
+`npm install`/`npm run dev`/`build`/`lint`/`typecheck` at the repo root operate
+across the whole workspace; `npm run dev:api` starts the API alone.
 
 ## Project structure
 
+```
+azraa-aiit/
+├── apps/web/        the frontend above (moved from the former repo-root src/)
+├── apps/api/        the NestJS API — see apps/api/README or the backend plan
+├── packages/shared/ TypeScript types imported by both apps
+├── docs/            planning documents (local-only, gitignored)
+└── scripts/         repo-level tooling (e.g. docs:pdf)
+```
+
+`apps/web/src/`:
 ```
 src/
 ├── data/            content layer — typed shapes + seed data, decoupled from the UI
@@ -112,7 +128,9 @@ serve `dist/` with a catch-all rewrite to `/index.html`.
 
 ## Backend status
 
-The front-end is complete; the backend is not built yet. As a result:
+The front-end is complete. The backend (`apps/api`) has its Phase 0 foundations —
+a health check, CI/CD, and migration tooling — but no real business endpoints
+yet. As a result:
 
 - **Forms** (contact, newsletter, webinar, auth) validate and show success
   states but do not submit anywhere.

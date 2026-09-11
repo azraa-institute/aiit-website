@@ -62,6 +62,18 @@ jobs:
       - name: Create the shadow database
         run: psql "postgresql://postgres:postgres@localhost:5432/postgres" -c "CREATE DATABASE shadow;"
 
+      # auth.uid() is a Supabase-platform-provided function, real on every
+      # Supabase database, never created by any migration here (see the
+      # comment on is_admin() in the profiles migration) -- so CI's plain
+      # Postgres container needs it stubbed directly, in both the main and
+      # shadow databases, before any migration that calls it can apply.
+      - name: Stub auth.uid() for CI's plain Postgres
+        run: |
+          for db in test shadow; do
+            psql "postgresql://postgres:postgres@localhost:5432/$db" -c 'CREATE SCHEMA IF NOT EXISTS auth;'
+            psql "postgresql://postgres:postgres@localhost:5432/$db" -c 'CREATE OR REPLACE FUNCTION auth.uid() RETURNS uuid LANGUAGE sql STABLE AS $$ SELECT NULL::uuid $$;'
+          done
+
       - name: Apply migrations
         run: npm exec -w apps/api -- prisma migrate deploy
 

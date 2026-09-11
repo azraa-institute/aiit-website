@@ -16,6 +16,13 @@ ALTER TABLE "profiles"
 -- RLS footgun). is_admin_or_instructor is defined here (not with the
 -- catalogue migration that first uses it) since it's the same category of
 -- helper as is_admin -- both belong with the auth/role plumbing.
+--
+-- auth.uid() below is a Supabase-platform-provided function, real on every
+-- Supabase database -- never defined by any migration here (a migration
+-- that created/replaced it would risk overwriting Supabase's real
+-- implementation if it ever ran against production). CI's plain Postgres
+-- has no such function; ci.yml stubs it directly via psql before this
+-- migration runs, entirely outside the migration files.
 CREATE OR REPLACE FUNCTION public.is_admin()
 RETURNS boolean
 LANGUAGE sql SECURITY DEFINER SET search_path = public STABLE AS $$

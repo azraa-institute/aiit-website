@@ -1,7 +1,8 @@
-// Phase 0: deliberately minimal — just enough to prove the migration
-// pipeline works. The full profiles feature (name/avatar/country/prefs,
-// the on_auth_user_created trigger, RLS policies) is Phase 1 Engineer-A
-// work, per backend-implementation-plan.pdf.
+// Phase 1: real auth (profiles + the on_auth_user_created trigger, both
+// with RLS) and a database-backed course catalogue, per
+// backend-implementation-plan.pdf. Curriculum tables (course_modules,
+// lessons, lesson_resources) exist and are RLS'd but seed empty — no
+// course has real curriculum content yet.
 
 generator client {
   provider        = "prisma-client-js"
@@ -49,5 +50,178 @@ model Profile {
   updatedAt           DateTime      @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
 
   @@map("profiles")
+  @@schema("public")
+}
+
+// ---- Catalogue ----
+// Deliberately named CourseLifecycleStatus, not "status" — the frontend's
+// existing CourseStatus type (featured/new/hot/special/coming-soon, see
+// apps/web/src/data/types.ts) is a set of marketing badges, unrelated to
+// publish lifecycle. Renamed to CourseBadge below to keep them distinct.
+
+enum CourseLevel {
+  beginner
+  intermediate
+  advanced
+  all_levels // API response DTO maps this to the frontend's "All levels"
+
+  @@schema("public")
+}
+
+enum PricingModel {
+  paid
+  free
+  subscription
+
+  @@schema("public")
+}
+
+enum CourseBadge {
+  featured
+  new_badge // API response DTO maps this to the frontend's "new"
+  hot
+  special
+  coming_soon // API response DTO maps this to the frontend's "coming-soon"
+
+  @@schema("public")
+}
+
+enum CourseLifecycleStatus {
+  draft
+  published
+
+  @@schema("public")
+}
+
+enum DomainMotif {
+  lattice
+  flow
+  strata
+  field
+  horizon
+  depth
+  mesh
+  signal
+
+  @@schema("public")
+}
+
+model CourseDomain {
+  id         String           @id @default(uuid()) @db.Uuid
+  slug       String           @unique
+  name       String
+  tagline    String
+  summary    String
+  motif      DomainMotif
+  order      Int
+  primary    Boolean          @default(false)
+  image      String
+  categories CourseCategory[]
+  courses    Course[]
+  createdAt  DateTime         @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt  DateTime         @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  @@map("course_domains")
+  @@schema("public")
+}
+
+model CourseCategory {
+  id        String        @id @default(uuid()) @db.Uuid
+  name      String
+  domainId  String?       @map("domain_id") @db.Uuid
+  domain    CourseDomain? @relation(fields: [domainId], references: [id])
+  courses   Course[]
+  createdAt DateTime      @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime      @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  @@map("course_categories")
+  @@schema("public")
+}
+
+model Course {
+  id               String                @id @default(uuid()) @db.Uuid
+  slug             String                @unique
+  title            String
+  categoryId       String                @map("category_id") @db.Uuid
+  category         CourseCategory        @relation(fields: [categoryId], references: [id])
+  domainId         String?               @map("domain_id") @db.Uuid
+  domain           CourseDomain?         @relation(fields: [domainId], references: [id])
+  summary          String
+  description      String
+  priceUsdCents    Int?                  @map("price_usd_cents") // null = members/subscription only; USD is the sole canonical price, no per-currency columns
+  priceWasUsdCents Int?                  @map("price_was_usd_cents")
+  pricing          PricingModel
+  level            CourseLevel
+  durationHours    Int                   @map("duration_hours")
+  durationLabel    String                @map("duration_label")
+  rating           Decimal               @db.Decimal(2, 1)
+  ratingCount      Int                   @map("rating_count")
+  enrolledCount    Int                   @default(0) @map("enrolled_count")
+  badges           CourseBadge[]
+  instructorId     String?               @map("instructor_id") // no FK -- instructors aren't a DB table this phase
+  image            String
+  outcomes         String[]
+  requirements     String[]
+  audience         String[]
+  toolsCovered     String[]              @map("tools_covered")
+  certification    String
+  status           CourseLifecycleStatus @default(draft)
+  publishedAt      DateTime?             @map("published_at") @db.Timestamptz(6)
+  modules          CourseModule[]
+  createdAt        DateTime              @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt        DateTime              @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+  deletedAt        DateTime?             @map("deleted_at") @db.Timestamptz(6)
+
+  @@map("courses")
+  @@schema("public")
+}
+
+// Named CourseModule, not Module -- every NestJS file in this codebase
+// imports Module from @nestjs/common; a same-named Prisma model is a
+// constant footgun even though technically resolvable via aliasing.
+model CourseModule {
+  id        String    @id @default(uuid()) @db.Uuid
+  courseId  String    @map("course_id") @db.Uuid
+  course    Course    @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  title     String
+  order     Int
+  lessons   Lesson[]
+  createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+  deletedAt DateTime? @map("deleted_at") @db.Timestamptz(6)
+
+  @@map("course_modules")
+  @@schema("public")
+}
+
+model Lesson {
+  id              String           @id @default(uuid()) @db.Uuid
+  moduleId        String           @map("module_id") @db.Uuid
+  module          CourseModule     @relation(fields: [moduleId], references: [id], onDelete: Cascade)
+  slug            String           @unique
+  title           String
+  summary         String? // short blurb, safe to expose without enrollment; full body is Phase 2+
+  order           Int
+  durationMinutes Int?             @map("duration_minutes")
+  resources       LessonResource[]
+  createdAt       DateTime         @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt       DateTime         @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+  deletedAt       DateTime?        @map("deleted_at") @db.Timestamptz(6)
+
+  @@map("lessons")
+  @@schema("public")
+}
+
+model LessonResource {
+  id        String   @id @default(uuid()) @db.Uuid
+  lessonId  String   @map("lesson_id") @db.Uuid
+  lesson    Lesson   @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+  title     String
+  url       String
+  order     Int
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  @@map("lesson_resources")
   @@schema("public")
 }

@@ -38,7 +38,9 @@ const COURSE_ROW = {
   ratingCount: 10,
   enrolledCount: 76,
   badges: ['featured', 'new_badge'],
+  instructorId: 'ins-aiit',
   image: '/course.jpg',
+  publishedAt: new Date('2026-06-19T00:00:00.000Z'),
 };
 
 describe('CoursesService', () => {
@@ -115,7 +117,9 @@ describe('CoursesService', () => {
           ratingCount: 10,
           enrolledCount: 76,
           badges: ['featured', 'new'],
+          instructorId: 'ins-aiit',
           image: '/course.jpg',
+          publishedAt: '2026-06-19T00:00:00.000Z',
         },
       ]);
     });

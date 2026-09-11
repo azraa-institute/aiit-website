@@ -54,7 +54,10 @@ export interface CourseListItem {
   ratingCount: number;
   enrolledCount: number;
   badges: CourseBadge[];
+  instructorId: string | null;
   image: string;
+  /** Sort key for "newest"/"oldest" listings; null for a course that hasn't been published. */
+  publishedAt: string | null;
 }
 
 export interface CourseDetail extends CourseListItem {
@@ -64,7 +67,6 @@ export interface CourseDetail extends CourseListItem {
   audience: string[];
   toolsCovered: string[];
   certification: string;
-  publishedAt: string | null;
 }
 
 export interface CurriculumLesson {

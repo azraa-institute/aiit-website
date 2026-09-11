@@ -28,7 +28,9 @@ const COURSE_LIST_SELECT = {
   ratingCount: true,
   enrolledCount: true,
   badges: true,
+  instructorId: true,
   image: true,
+  publishedAt: true,
 } satisfies Prisma.CourseSelect;
 
 const COURSE_DETAIL_SELECT = {
@@ -39,7 +41,6 @@ const COURSE_DETAIL_SELECT = {
   audience: true,
   toolsCovered: true,
   certification: true,
-  publishedAt: true,
 } satisfies Prisma.CourseSelect;
 
 type CourseListRow = Prisma.CourseGetPayload<{ select: typeof COURSE_LIST_SELECT }>;
@@ -81,7 +82,6 @@ export class CoursesService {
       audience: course.audience,
       toolsCovered: course.toolsCovered,
       certification: course.certification,
-      publishedAt: course.publishedAt ? course.publishedAt.toISOString() : null,
     };
   }
 
@@ -131,7 +131,9 @@ export class CoursesService {
       ratingCount: course.ratingCount,
       enrolledCount: course.enrolledCount,
       badges: course.badges.map(mapBadge),
+      instructorId: course.instructorId,
       image: course.image,
+      publishedAt: course.publishedAt ? course.publishedAt.toISOString() : null,
     };
   }
 

@@ -53,35 +53,17 @@ jobs:
 
       - run: npm run test --workspace=apps/api
 
-      # Vanilla Postgres has no auth schema — profiles' FK references
-      # auth.users, which is normally Supabase-managed. Stub it here (in
-      # both the test DB and the shadow DB used by the diff step below) so
-      # the real migration can apply as-is.
-      - name: Bootstrap a stub auth.users
-        run: |
-          psql "postgresql://postgres:postgres@localhost:5432/postgres" -c "CREATE DATABASE shadow;"
-          for db in test shadow; do
-            psql "postgresql://postgres:postgres@localhost:5432/$db" -c "CREATE SCHEMA IF NOT EXISTS auth;"
-            psql "postgresql://postgres:postgres@localhost:5432/$db" -c "CREATE TABLE IF NOT EXISTS auth.users (id uuid PRIMARY KEY);"
-          done
+      # The shadow database used by the diff step below must exist as an
+      # empty Postgres database — Prisma manages schemas/tables inside it
+      # but doesn't create the database itself. The 20260910235959_stub_auth_schema
+      # migration (see prisma/migrations/) creates a minimal auth.users
+      # ahead of the real migration, in both this database and the shadow
+      # one, purely by being replayed in order — no manual seeding needed.
+      - name: Create the shadow database
+        run: psql "postgresql://postgres:postgres@localhost:5432/postgres" -c "CREATE DATABASE shadow;"
 
-      # Plain `prisma migrate deploy` refuses to run against a database that
-      # already has tables in a schema it manages (P3005 "schema is not
-      # empty") — and since auth.users must already exist for this
-      # migration's FK to succeed, that guard always fires here (and will
-      # against the real Supabase database too, which always has a
-      # pre-existing auth schema). The standard fix for exactly this
-      # Prisma+Supabase situation: apply the SQL directly, then tell Prisma
-      # to record it as applied (baseline), rather than have `migrate
-      # deploy` apply it itself. See https://pris.ly/d/migrate-baseline —
-      # this is the same P3005 error message's own suggested remedy.
       - name: Apply migrations
-        run: |
-          npm exec -w apps/api -- prisma db execute \
-            --file prisma/migrations/20260911000000_init/migration.sql \
-            --schema prisma/schema.prisma
-          npm exec -w apps/api -- prisma migrate resolve \
-            --applied 20260911000000_init
+        run: npm exec -w apps/api -- prisma migrate deploy
 
       - run: npm run test:e2e --workspace=apps/api
 

@@ -16,6 +16,7 @@ const docsDir = join(root, 'docs');
 const DOCS = [
   ['production-readiness.html', 'production-readiness.pdf'],
   ['backend-implementation-plan.html', 'backend-implementation-plan.pdf'],
+  ['infrastructure-setup-and-workflow.html', 'infrastructure-setup-and-workflow.pdf'],
 ];
 
 const CHROME_CANDIDATES = [

@@ -13,7 +13,11 @@
     "test:e2e": "jest --config ./test/jest-e2e.json",
     "postinstall": "prisma generate",
     "prisma:validate": "prisma validate",
-    "prisma:format": "prisma format"
+    "prisma:format": "prisma format",
+    "db:seed": "prisma db seed"
+  },
+  "prisma": {
+    "seed": "ts-node --transpile-only prisma/seed.ts"
   },
   "dependencies": {
     "@aiit/shared": "*",

@@ -11,7 +11,8 @@ export interface CurrencyRequestLike {
 
 export interface DisplayPrice {
   currency: string;
-  amount: number;
+  /** Integer amount in the currency's smallest unit (e.g. kobo for NGN, cents for USD) -- mirrors `priceUsdCents`, so the frontend's existing cents-based `formatPrice` needs no changes. */
+  amountCents: number;
 }
 
 interface FxCache {
@@ -49,20 +50,19 @@ export class CurrencyService {
   }
 
   async convert(usdCents: number, currency: string): Promise<DisplayPrice> {
-    const usdAmount = usdCents / 100;
     if (currency === 'USD') {
-      return { currency: 'USD', amount: usdAmount };
+      return { currency: 'USD', amountCents: usdCents };
     }
 
     const rate = await this.getRate(currency);
     if (rate === null) {
-      return { currency: 'USD', amount: usdAmount };
+      return { currency: 'USD', amountCents: usdCents };
     }
 
-    const minorUnits = minorUnitsFor(currency);
-    const factor = 10 ** minorUnits;
-    const amount = Math.round(usdAmount * rate * factor) / factor;
-    return { currency, amount };
+    const usdAmount = usdCents / 100;
+    const factor = 10 ** minorUnitsFor(currency);
+    const amountCents = Math.round(usdAmount * rate * factor);
+    return { currency, amountCents };
   }
 
   private async getRate(currency: string): Promise<number | null> {

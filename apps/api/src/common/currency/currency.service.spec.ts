@@ -48,14 +48,14 @@ describe('CurrencyService', () => {
   describe('convert', () => {
     it('returns USD as-is without hitting the network', async () => {
       const result = await service.convert(1999, 'USD');
-      expect(result).toEqual({ currency: 'USD', amount: 19.99 });
+      expect(result).toEqual({ currency: 'USD', amountCents: 1999 });
       expect(fetchMock).not.toHaveBeenCalled();
     });
 
-    it('converts using a freshly fetched rate', async () => {
+    it('converts using a freshly fetched rate, in the target currency minor units', async () => {
       fetchMock.mockResolvedValueOnce(fetchResponse({ NGN: 1500 }));
       const result = await service.convert(1000, 'NGN');
-      expect(result).toEqual({ currency: 'NGN', amount: 15000 });
+      expect(result).toEqual({ currency: 'NGN', amountCents: 1_500_000 });
       expect(fetchMock).toHaveBeenCalledTimes(1);
     });
 
@@ -66,7 +66,7 @@ describe('CurrencyService', () => {
       now += 60 * 60 * 1000; // +1h, still within TTL
       const result = await service.convert(1000, 'NGN');
 
-      expect(result).toEqual({ currency: 'NGN', amount: 15000 });
+      expect(result).toEqual({ currency: 'NGN', amountCents: 1_500_000 });
       expect(fetchMock).toHaveBeenCalledTimes(1);
     });
 
@@ -78,7 +78,7 @@ describe('CurrencyService', () => {
       fetchMock.mockResolvedValueOnce(fetchResponse({ NGN: 1600 }));
       const result = await service.convert(1000, 'NGN');
 
-      expect(result).toEqual({ currency: 'NGN', amount: 16000 });
+      expect(result).toEqual({ currency: 'NGN', amountCents: 1_600_000 });
       expect(fetchMock).toHaveBeenCalledTimes(2);
     });
 
@@ -90,25 +90,25 @@ describe('CurrencyService', () => {
       fetchMock.mockRejectedValueOnce(new Error('network down'));
       const result = await service.convert(1000, 'NGN');
 
-      expect(result).toEqual({ currency: 'NGN', amount: 15000 });
+      expect(result).toEqual({ currency: 'NGN', amountCents: 1_500_000 });
     });
 
     it('falls back to USD when there is no cache and the fetch fails', async () => {
       fetchMock.mockRejectedValueOnce(new Error('network down'));
       const result = await service.convert(1000, 'NGN');
-      expect(result).toEqual({ currency: 'USD', amount: 10 });
+      expect(result).toEqual({ currency: 'USD', amountCents: 1000 });
     });
 
     it('falls back to USD when the requested currency is missing from the rate table', async () => {
       fetchMock.mockResolvedValueOnce(fetchResponse({ NGN: 1500 }));
       const result = await service.convert(1000, 'XYZ');
-      expect(result).toEqual({ currency: 'USD', amount: 10 });
+      expect(result).toEqual({ currency: 'USD', amountCents: 1000 });
     });
 
-    it('rounds zero-decimal currencies to whole units', async () => {
+    it('accounts for zero-decimal currencies via CURRENCY_MINOR_UNITS', async () => {
       fetchMock.mockResolvedValueOnce(fetchResponse({ JPY: 150.456 }));
       const result = await service.convert(1000, 'JPY');
-      expect(result).toEqual({ currency: 'JPY', amount: 1505 });
+      expect(result).toEqual({ currency: 'JPY', amountCents: 1505 });
     });
   });
 });

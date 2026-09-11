@@ -13,3 +13,5 @@ export interface HealthStatus {
 
 export * from './api';
 export * from './auth';
+export * from './catalogue';
+export * from './enrollment';

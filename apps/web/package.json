@@ -18,6 +18,9 @@
     "react-helmet-async": "^2.0.5",
     "react-router-dom": "^6.30.0"
   },
+  "optionalDependencies": {
+    "@rollup/rollup-linux-x64-gnu": "4.63.1"
+  },
   "devDependencies": {
     "@types/node": "^26.4.1",
     "@types/react": "^18.3.12",

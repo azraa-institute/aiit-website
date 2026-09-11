@@ -23,7 +23,8 @@ jobs:
           node-version: 20
           cache: npm
 
-      # See ci.yml for why this is npm install, not npm ci.
+      # apps/api has no native-binary deps affected by the lockfile issue
+      # described in ci.yml, so a plain install is fine here.
       - run: npm install --workspace=apps/api
 
       - name: Apply pending migrations

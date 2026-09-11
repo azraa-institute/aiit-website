@@ -37,13 +37,15 @@ jobs:
           node-version: 20
           cache: npm
 
-      # npm install, not npm ci: the committed lockfile was generated on
-      # Windows and npm has a longstanding bug (npm/cli#4828) where a
-      # lockfile written on one platform can omit another platform's
-      # optional-dependency entries (rollup's native binary, here) — `npm
-      # ci` trusts the lockfile's platform data as-is and fails on Linux
-      # runners as a result; `npm install` re-resolves it correctly.
-      - run: npm install
+      # The committed lockfile was generated on Windows. npm has a
+      # longstanding bug (npm/cli#4828) where a lockfile written on one
+      # platform can permanently omit another platform's optional-dependency
+      # entries (rollup's native binary, here) — neither `npm ci` nor a
+      # plain `npm install` adds the missing platform's entry on top of an
+      # existing lockfile. Dropping the lockfile forces a full, correct,
+      # platform-aware resolution on this runner instead — the exact remedy
+      # npm's own error message suggests.
+      - run: rm -f package-lock.json && npm install
 
       - run: npm run lint
 

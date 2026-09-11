@@ -89,7 +89,16 @@ jobs:
       # defeats the point of having it. Printed for a human to skim instead.
       # npm exec -w apps/api already runs with cwd apps/api/, so these
       # paths are relative to there, not the repo root.
+      #
+      # continue-on-error: --shadow-database-url fully drops and replays
+      # every migration from scratch before diffing, which wipes the
+      # auth.uid() stub above along with everything else -- and auth.uid()
+      # can't live in a migration file (see the comment on is_admin() in
+      # the profiles migration), so this replay now hits P3006 every run,
+      # not a real diff. Left in for whenever a future fix makes the replay
+      # itself stubbable, rather than deleting the diagnostic outright.
       - name: Prisma migrate diff (informational)
+        continue-on-error: true
         run: >-
           npm exec -w apps/api -- prisma migrate diff
           --from-migrations prisma/migrations

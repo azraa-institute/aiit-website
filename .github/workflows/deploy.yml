@@ -23,7 +23,8 @@ jobs:
           node-version: 20
           cache: npm
 
-      - run: npm ci --workspace=apps/api
+      # See ci.yml for why this is npm install, not npm ci.
+      - run: npm install --workspace=apps/api
 
       - name: Apply pending migrations
         run: npm exec -w apps/api -- prisma migrate deploy

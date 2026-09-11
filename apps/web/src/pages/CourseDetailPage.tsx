@@ -2,7 +2,7 @@ import { useParams, Link, Navigate } from 'react-router-dom';
 import { Layout } from '@/components/layout/Layout';
 import { Seo, organizationLd } from '@/lib/Seo';
 import { useScrollReveal } from '@/lib/useScrollReveal';
-import { getCourse, COURSES } from '@/data/courses';
+import { useCourseDetail, useCourseList } from './CoursesPage.data';
 import { getDomain } from '@/data/technologies';
 import { getInstructor } from '@/data/instructors';
 import { formatPrice, discountPercent, formatEnrollment } from '@/lib/format';
@@ -10,25 +10,54 @@ import { Plate } from '@/components/primitives/Plate';
 import { Button } from '@/components/primitives/Button';
 import { Stars } from '@/components/common/Stars';
 import { CourseCard } from '@/components/course/CourseCard';
+import { RouteFallback } from '@/components/layout/RouteFallback';
 import './course-detail.css';
 
 export default function CourseDetailPage() {
   const { slug } = useParams();
-  const course = slug ? getCourse(slug) : undefined;
-  useScrollReveal([slug]);
+  const courseState = useCourseDetail(slug);
+  const courseListState = useCourseList();
+  useScrollReveal([slug, courseState.status]);
 
-  if (!course) return <Navigate to="/courses" replace />;
+  if (courseState.status === 'loading') {
+    return (
+      <Layout>
+        <RouteFallback />
+      </Layout>
+    );
+  }
 
+  if (courseState.status === 'notFound') {
+    return <Navigate to="/courses" replace />;
+  }
+
+  if (courseState.status === 'error') {
+    return (
+      <Layout>
+        <Seo title="Course" path="/courses" noindex />
+        <div className="section container container--wide course-detail__error" role="alert">
+          <p className="heading">Couldn&apos;t load this course.</p>
+          <p>{courseState.error.message}</p>
+          <Button as="link" to="/courses" variant="secondary">
+            Back to courses
+          </Button>
+        </div>
+      </Layout>
+    );
+  }
+
+  const course = courseState.course;
   const domain = getDomain(course.domainId);
   const instructor = getInstructor(course.instructorId);
   const off = discountPercent(course.price, course.priceWas);
   const comingSoon = course.statuses.includes('coming-soon');
-  const related = COURSES.filter(
-    (c) => c.id !== course.id && c.domainId === course.domainId,
-  ).slice(0, 3);
+  const otherCourses = courseListState.status === 'ready' ? courseListState.courses : [];
+  const related = otherCourses
+    .filter((c) => c.id !== course.id && c.domainId === course.domainId)
+    .slice(0, 3);
   const relatedFallback =
     related.length < 3
-      ? COURSES.filter((c) => c.id !== course.id && !related.includes(c)).slice(0, 3 - related.length)
+      ? otherCourses.filter((c) => c.id !== course.id && !related.includes(c)).slice(0, 3 - related.length)
       : [];
 
   return (
@@ -50,7 +79,7 @@ export default function CourseDetailPage() {
                 offers: {
                   '@type': 'Offer',
                   price: (course.price / 100).toFixed(2),
-                  priceCurrency: 'USD',
+                  priceCurrency: course.currency ?? 'USD',
                 },
               }
             : {}),
@@ -106,8 +135,10 @@ export default function CourseDetailPage() {
                 <Plate source={course.image} seed={course.slug} motif={domain?.motif} ratio={4 / 3} />
                 <div className="course-detail__enroll-body">
                   <div className="course-detail__price">
-                    {course.priceWas && <span className="course-detail__was">{formatPrice(course.priceWas)}</span>}
-                    <span className="course-detail__now">{formatPrice(course.price)}</span>
+                    {course.priceWas && (
+                      <span className="course-detail__was">{formatPrice(course.priceWas, course.currency)}</span>
+                    )}
+                    <span className="course-detail__now">{formatPrice(course.price, course.currency)}</span>
                     {off && <span className="course-detail__off">Save {off}%</span>}
                   </div>
                   {course.pricing === 'subscription' && (

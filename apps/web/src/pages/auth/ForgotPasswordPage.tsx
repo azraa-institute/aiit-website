@@ -4,13 +4,41 @@ import { Link } from 'react-router-dom';
 import { Seo } from '@/lib/Seo';
 import { Button } from '@/components/primitives/Button';
 import { TextField } from '@/components/common/Field';
+import { supabase } from '@/lib/supabaseClient';
 import { AuthLayout } from './AuthLayout';
 
 export default function ForgotPasswordPage() {
+  const [error, setError] = useState<string>();
+  const [submitting, setSubmitting] = useState(false);
   const [sent, setSent] = useState(false);
 
-  function onSubmit(e: FormEvent) {
+  async function onSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
+    const data = new FormData(e.currentTarget);
+    const email = String(data.get('email') ?? '');
+
+    if (!email) {
+      setError('Enter your email address.');
+      return;
+    }
+    if (!supabase) {
+      setError('Password reset is not configured yet.');
+      return;
+    }
+
+    setError(undefined);
+    setSubmitting(true);
+    const { error: resetError } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: `${window.location.origin}/reset-password`,
+    });
+    setSubmitting(false);
+
+    // Don't reveal whether the email exists -- the UI's copy already says
+    // "if an account exists", so surface transport/config errors only.
+    if (resetError) {
+      setError(resetError.message);
+      return;
+    }
     setSent(true);
   }
 
@@ -32,10 +60,15 @@ export default function ForgotPasswordPage() {
             minutes. Check your spam folder if it does not arrive.
           </p>
         ) : (
-          <form className="auth__form" onSubmit={onSubmit}>
+          <form className="auth__form" onSubmit={onSubmit} noValidate>
+            {error && (
+              <p className="auth__alert" role="alert">
+                {error}
+              </p>
+            )}
             <TextField label="Email" name="email" type="email" autoComplete="email" required />
-            <Button as="button" type="submit" size="lg" fullWidth arrow>
-              Send reset link
+            <Button as="button" type="submit" size="lg" fullWidth arrow disabled={submitting}>
+              {submitting ? 'Sending…' : 'Send reset link'}
             </Button>
           </form>
         )}

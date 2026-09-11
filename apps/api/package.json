@@ -13,7 +13,11 @@
     "test:e2e": "jest --config ./test/jest-e2e.json",
     "postinstall": "prisma generate",
     "prisma:validate": "prisma validate",
-    "prisma:format": "prisma format"
+    "prisma:format": "prisma format",
+    "db:seed": "prisma db seed"
+  },
+  "prisma": {
+    "seed": "ts-node --transpile-only prisma/seed.ts"
   },
   "dependencies": {
     "@aiit/shared": "*",
@@ -28,6 +32,7 @@
     "class-transformer": "^0.5.1",
     "class-validator": "^0.14.4",
     "helmet": "^8.3.0",
+    "jsonwebtoken": "^9.0.3",
     "nestjs-pino": "^4.6.1",
     "pino": "^10.3.1",
     "pino-http": "^11.0.0",
@@ -40,6 +45,7 @@
     "@nestjs/testing": "^10.4.22",
     "@types/express": "^5.0.6",
     "@types/jest": "^30.0.0",
+    "@types/jsonwebtoken": "^9.0.10",
     "@types/node": "^26.4.1",
     "@types/supertest": "^7.2.1",
     "@typescript-eslint/eslint-plugin": "^8.18.0",

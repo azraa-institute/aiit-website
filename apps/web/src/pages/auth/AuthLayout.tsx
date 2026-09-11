@@ -10,9 +10,11 @@ interface AuthLayoutProps {
   intro: string;
   children: ReactNode;
   footer: ReactNode;
+  /** Optional provider button(s), e.g. <GoogleAuthButton />. Renders below a divider. */
+  social?: ReactNode;
 }
 
-export function AuthLayout({ title, intro, children, footer }: AuthLayoutProps) {
+export function AuthLayout({ title, intro, children, footer, social }: AuthLayoutProps) {
   return (
     <div className="auth">
       <aside className="auth__aside on-ink">
@@ -42,6 +44,12 @@ export function AuthLayout({ title, intro, children, footer }: AuthLayoutProps) 
             <p className="auth__intro">{intro}</p>
           </header>
           {children}
+          {social && (
+            <>
+              <div className="auth__divider">Or continue with</div>
+              <div className="auth__social">{social}</div>
+            </>
+          )}
           <div className="auth__footer">{footer}</div>
         </div>
       </main>
@@ -92,10 +100,9 @@ function ProviderButton({
 }
 
 /**
- * Social sign-in buttons, intentionally not rendered yet: there is no OAuth
- * provider wired up, and a button that appears to sign you in without one is
- * misleading. Once a provider exists, point `onClick` at it and re-add these
- * with the `.auth__social` / `.auth__divider` markup.
+ * Rendered by LoginPage/RegisterPage via AuthLayout's `social` slot, wired
+ * to supabase.auth.signInWithOAuth({ provider: 'google' }). Errors gracefully
+ * until the Google Cloud / Supabase provider config is in place.
  */
 export function GoogleAuthButton({ onClick }: { onClick?: () => void }) {
   return (

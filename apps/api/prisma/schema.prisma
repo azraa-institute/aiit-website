@@ -4,22 +4,29 @@
 // work, per backend-implementation-plan.pdf.
 
 generator client {
-  provider = "prisma-client-js"
+  provider        = "prisma-client-js"
+  previewFeatures = ["multiSchema"]
 }
 
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
+  schemas  = ["public", "auth"]
 }
 
 enum Role {
   learner
   admin
   instructor
+
+  @@schema("public")
 }
 
 // auth.users is Supabase-managed, not modeled here — the FK to it is raw
-// SQL in the migration, not a Prisma relation (see migration.sql).
+// SQL in the migration, not a Prisma relation (see migration.sql). Even
+// unmodeled, Prisma's multiSchema feature needs `auth` listed above and
+// this model assigned to a schema, or `prisma migrate diff` can't
+// reconcile the cross-schema FK when introspecting the database.
 model Profile {
   id        String   @id @db.Uuid
   role      Role     @default(learner)
@@ -27,4 +34,5 @@ model Profile {
   updatedAt DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
 
   @@map("profiles")
+  @@schema("public")
 }

@@ -44,9 +44,24 @@ jobs:
       # folder.) After that one-time baseline, plain `migrate deploy` works
       # normally for every future migration, which is why it's used here
       # rather than the db-execute/resolve dance ci.yml uses on its
-      # always-fresh ephemeral database. Whenever a new migration is added
-      # later, update this comment isn't needed again — only the very first
-      # deploy against a pre-existing database needs baselining.
+      # always-fresh ephemeral database. (Correction to an earlier version
+      # of this comment: "no new migration will ever need baselining again"
+      # was wrong — see the auth-trigger note below. The baseline problem
+      # is specifically about a migration needing to touch a schema the
+      # connection role doesn't own; it can recur.)
+      #
+      # SECOND one-time step, likely needed the first time this workflow
+      # runs 20260912000001_auth_trigger: that migration creates a TRIGGER
+      # ON auth.users, which (per the same permission restriction proven
+      # above) the pooler role probably can't do either. If this step fails
+      # on that migration specifically: run its two SQL statements by hand
+      # via Supabase Dashboard -> SQL Editor (elevated privileges there),
+      # then:
+      #   npx prisma migrate resolve --applied 20260912000001_auth_trigger --schema apps/api/prisma/schema.prisma
+      # then re-run this workflow. A green CI run on this migration does
+      # NOT predict production success -- CI's ephemeral Postgres owns its
+      # own auth.users as superuser, so CREATE TRIGGER always succeeds
+      # there regardless of what happens against the real database.
       - name: Apply pending migrations
         run: npm exec -w apps/api -- prisma migrate deploy
         env:

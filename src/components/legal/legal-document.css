@@ -1,0 +1,411 @@
+/* ============================================================
+   LEGAL DOCUMENT — a calm, editorial reading experience: a slim
+   collapsible contents rail beside a single, comfortably-measured
+   document sheet. Typography and reading comfort take priority
+   over decoration everywhere in this file.
+   ============================================================ */
+
+.manuscript {
+  background-color: var(--bg);
+  background-image:
+    radial-gradient(ellipse 90% 45% at 50% 0%, rgba(154, 123, 79, 0.06), transparent 60%),
+    radial-gradient(rgba(20, 17, 15, 0.03) 1px, transparent 1px);
+  background-size:
+    100% 100%,
+    3px 3px;
+  padding-bottom: var(--space-10);
+}
+
+/* ---- Cover — restrained, not tall ---- */
+.manuscript__cover {
+  position: relative;
+  padding-block: clamp(2.25rem, 1.75rem + 2.5vw, 3.75rem) clamp(1.75rem, 1.5rem + 1.5vw, 2.5rem);
+  text-align: center;
+  overflow: hidden;
+}
+.manuscript__cover .container {
+  max-width: 700px;
+  position: relative;
+  z-index: 1;
+}
+.manuscript__eyebrow {
+  justify-content: center;
+}
+.manuscript__title {
+  font-family: var(--font-display);
+  font-size: var(--fs-display-3);
+  font-weight: var(--fw-display);
+  letter-spacing: var(--tracking-display);
+  margin-top: var(--space-4);
+}
+.manuscript__intro {
+  margin-top: var(--space-4);
+  font-size: 1.0625rem;
+  color: var(--fg-soft);
+  line-height: 1.6;
+  max-width: 56ch;
+  margin-inline: auto;
+}
+.manuscript__meta {
+  margin-top: var(--space-5);
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-3);
+  font-size: var(--fs-xs);
+  letter-spacing: var(--tracking-wide);
+  text-transform: uppercase;
+  color: var(--fg-faint);
+  padding-top: var(--space-3);
+  border-top: 1px solid var(--hairline);
+}
+
+/* Page mark — abstract, non-illustrative: scope rings (privacy) or
+   ruled document lines (terms). Faint and small, an identity cue,
+   never competing with the title. */
+.manuscript__mark {
+  position: absolute;
+  top: 50%;
+  right: clamp(-2rem, -1rem + -3vw, 1rem);
+  transform: translateY(-50%);
+  width: clamp(140px, 12vw + 80px, 220px);
+  height: clamp(140px, 12vw + 80px, 220px);
+  fill: none;
+  stroke: var(--brass);
+  stroke-width: 1;
+  opacity: 0.1;
+  pointer-events: none;
+}
+.manuscript__cover--terms .manuscript__mark {
+  stroke-width: 1.5;
+}
+@media (max-width: 640px) {
+  .manuscript__mark {
+    opacity: 0.07;
+    right: -3rem;
+  }
+}
+
+/* ---- Two-part composition ----
+   Fixed (non-fr) tracks so the grid sizes to its CONTENT, then
+   justify-content centers that content block on the page — balanced
+   margins, never a narrow column, never a dead zone of unused space.
+   The breakpoint (1200px) is chosen so the document track's floor
+   (800px) always has room once the rail and gap are accounted for. */
+.manuscript__body {
+  display: grid;
+  padding-top: var(--space-6);
+  border-top: 1px solid var(--hairline);
+}
+@media (min-width: 1200px) {
+  .manuscript__body {
+    grid-template-columns: 240px minmax(800px, 960px);
+    justify-content: center;
+    column-gap: clamp(2.5rem, 2vw + 1.5rem, 4rem);
+    align-items: start;
+  }
+}
+
+/* ---- Table of contents ----
+   Mobile/tablet: a sticky, collapsed "On this page" control that
+   expands on demand — never a permanent band of screen space.
+   Desktop (≥1200px): an always-open, quiet vertical rail. */
+.manuscript__toc {
+  position: sticky;
+  top: var(--header-h);
+  z-index: 2;
+  background: var(--bg);
+  margin-inline: calc(var(--gutter) * -1);
+}
+.manuscript__toc-toggle {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  min-height: 48px;
+  padding: var(--space-3) var(--gutter);
+  background: var(--surface);
+  border: none;
+  border-bottom: 1px solid var(--hairline);
+  font-family: var(--font-ui);
+  text-align: left;
+  cursor: pointer;
+}
+.manuscript__toc-toggle-text {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-2);
+  min-width: 0;
+  overflow: hidden;
+}
+.manuscript__toc-toggle-label {
+  flex-shrink: 0;
+  font-size: var(--fs-eyebrow);
+  font-weight: var(--fw-strong);
+  letter-spacing: var(--tracking-eyebrow);
+  text-transform: uppercase;
+  color: var(--brass-deep);
+}
+.manuscript__toc-toggle-current {
+  font-size: var(--fs-sm);
+  color: var(--fg-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.manuscript__toc-chevron {
+  flex-shrink: 0;
+  width: 16px;
+  height: 16px;
+  color: var(--fg-faint);
+  transition: transform var(--dur-fast) var(--ease-out);
+}
+.manuscript__toc-chevron.is-open {
+  transform: rotate(180deg);
+}
+
+.manuscript__toc-panel {
+  display: grid;
+  grid-template-rows: 0fr;
+  background: var(--surface);
+  transition: grid-template-rows var(--dur-base) var(--ease-in-out);
+}
+.manuscript__toc-panel[data-open] {
+  grid-template-rows: 1fr;
+}
+.manuscript__toc-panel-inner {
+  min-height: 0;
+  overflow: hidden;
+  padding-inline: var(--gutter);
+}
+.manuscript__toc-panel[data-open] .manuscript__toc-panel-inner {
+  padding-block: var(--space-4);
+  border-bottom: 1px solid var(--hairline);
+}
+.manuscript__toc-label {
+  font-size: var(--fs-eyebrow);
+  font-weight: var(--fw-strong);
+  letter-spacing: var(--tracking-eyebrow);
+  text-transform: uppercase;
+  color: var(--fg-faint);
+  margin-bottom: var(--space-3);
+}
+.manuscript__toc ol {
+  display: grid;
+  gap: var(--space-1);
+}
+.manuscript__toc a {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-3);
+  min-height: 44px;
+  padding-block: var(--space-2);
+  font-size: var(--fs-sm);
+  color: var(--fg-muted);
+  border-left: 2px solid transparent;
+  padding-left: var(--space-3);
+  transition: color var(--dur-fast) var(--ease-out), border-color var(--dur-fast) var(--ease-out);
+}
+.manuscript__toc a:hover {
+  color: var(--fg);
+  border-left-color: var(--line-strong);
+}
+.manuscript__toc a.is-active {
+  color: var(--accent-strong);
+  border-left-color: var(--brass);
+  font-weight: var(--fw-strong);
+}
+.manuscript__toc-num {
+  flex-shrink: 0;
+  font-family: var(--font-display);
+  font-size: 0.7rem;
+  color: var(--brass);
+}
+
+@media (min-width: 1200px) {
+  .manuscript__toc {
+    top: calc(var(--header-h) + var(--space-6));
+    margin-inline: 0;
+    background: none;
+  }
+  .manuscript__toc-toggle {
+    display: none;
+  }
+  .manuscript__toc-panel {
+    display: block;
+    background: none;
+  }
+  .manuscript__toc-panel-inner {
+    padding-inline: 0;
+  }
+  .manuscript__toc-panel[data-open] .manuscript__toc-panel-inner {
+    padding-block: 0;
+    border-bottom: none;
+  }
+}
+
+/* ---- The document column ---- */
+.manuscript__pages {
+  min-width: 0;
+  padding-top: var(--space-5);
+}
+@media (min-width: 1200px) {
+  .manuscript__pages {
+    padding-top: 0;
+  }
+}
+
+.manuscript__runninghead {
+  display: none;
+}
+@media (min-width: 1200px) {
+  .manuscript__runninghead {
+    display: block;
+    font-size: var(--fs-xs);
+    font-weight: var(--fw-strong);
+    letter-spacing: var(--tracking-wide);
+    text-transform: uppercase;
+    color: var(--fg-faint);
+    margin-bottom: var(--space-4);
+  }
+}
+
+/* ---- The sheet — the document's own page, as a real surface ---- */
+.manuscript__sheet {
+  position: relative;
+  background: var(--surface);
+  border-left: 3px solid var(--brass);
+  border-radius: 0 var(--radius-md) var(--radius-md) 0;
+  box-shadow:
+    var(--shadow-lift),
+    7px 7px 0 -3px var(--ivory-deep),
+    12px 12px 0 -6px var(--ivory);
+  padding: clamp(1.75rem, 1.25rem + 2.5vw, 3.25rem) clamp(1.25rem, 1rem + 1.25vw, 2.25rem);
+}
+
+/* ---- Sections: clauses of a typeset document ---- */
+.manuscript__section {
+  padding-block: clamp(2.25rem, 1.75rem + 2vw, 3.25rem);
+}
+.manuscript__section:first-child {
+  padding-top: 0;
+}
+.manuscript__section + .manuscript__section {
+  border-top: 1px solid var(--hairline);
+}
+
+.manuscript__section-head {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-4);
+}
+.manuscript__folio {
+  flex-shrink: 0;
+  font-family: var(--font-display);
+  font-size: var(--fs-sm);
+  font-weight: var(--fw-strong);
+  letter-spacing: var(--tracking-wide);
+  color: var(--brass);
+}
+.manuscript__heading {
+  font-family: var(--font-display);
+  font-size: var(--fs-heading);
+  font-weight: var(--fw-medium);
+  letter-spacing: var(--tracking-display);
+  line-height: var(--lh-snug);
+  text-wrap: balance;
+}
+
+.manuscript__section-body {
+  margin-top: var(--space-5);
+}
+.manuscript__section-body > * + * {
+  margin-top: 1.25em;
+}
+
+.manuscript__lead,
+.manuscript__section-body > p {
+  font-size: var(--fs-body);
+  line-height: 1.7;
+  color: var(--fg-soft);
+}
+
+.manuscript__group + .manuscript__group {
+  margin-top: var(--space-5);
+}
+.manuscript__group-label {
+  font-size: var(--fs-xs);
+  font-weight: var(--fw-strong);
+  letter-spacing: var(--tracking-wide);
+  text-transform: uppercase;
+  color: var(--brass-deep);
+  margin-bottom: var(--space-2);
+}
+
+.manuscript__list {
+  display: grid;
+  gap: var(--space-3);
+}
+.manuscript__list li {
+  position: relative;
+  padding-left: var(--space-5);
+  font-size: var(--fs-body);
+  line-height: 1.6;
+  color: var(--fg-soft);
+}
+.manuscript__list li::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0.7em;
+  width: 12px;
+  height: 1px;
+  background: var(--accent);
+}
+
+.manuscript__clause {
+  background: var(--surface-raised);
+  border-left: 3px solid var(--brass);
+  border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+  padding: var(--space-4) var(--space-5);
+  font-family: var(--font-ui);
+  font-size: var(--fs-body);
+  font-weight: var(--fw-medium);
+  color: var(--ink);
+  line-height: 1.6;
+}
+.manuscript__clause-label {
+  display: block;
+  font-size: var(--fs-xs);
+  font-weight: var(--fw-strong);
+  letter-spacing: var(--tracking-wide);
+  text-transform: uppercase;
+  color: var(--brass-deep);
+  margin-bottom: var(--space-2);
+}
+
+/* ---- Colophon ---- */
+.manuscript__colophon {
+  margin-top: clamp(2.5rem, 2rem + 2vw, 3.5rem);
+  padding-top: var(--space-6);
+  border-top: 2px solid var(--ink);
+  text-align: center;
+}
+.manuscript__colophon p {
+  font-size: var(--fs-xs);
+  letter-spacing: var(--tracking-wide);
+  text-transform: uppercase;
+  color: var(--fg-faint);
+}
+.manuscript__colophon p:first-child {
+  color: var(--fg-muted);
+  font-weight: var(--fw-strong);
+  margin-bottom: var(--space-2);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .manuscript__toc-panel,
+  .manuscript__toc-chevron {
+    transition: none;
+  }
+}

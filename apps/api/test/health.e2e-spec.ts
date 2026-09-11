@@ -22,4 +22,13 @@ describe('Health (e2e)', () => {
       .expect(200)
       .expect({ status: 'ok', service: 'api' });
   });
+
+  // Only green against a reachable Postgres with the init migration applied
+  // (CI's ephemeral service does this; there is none in a plain local run).
+  it('GET /health/db is ok against a real database', () => {
+    return request(app.getHttpServer())
+      .get('/health/db')
+      .expect(200)
+      .expect({ status: 'ok', service: 'db' });
+  });
 });

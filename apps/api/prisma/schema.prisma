@@ -1,0 +1,30 @@
+// Phase 0: deliberately minimal — just enough to prove the migration
+// pipeline works. The full profiles feature (name/avatar/country/prefs,
+// the on_auth_user_created trigger, RLS policies) is Phase 1 Engineer-A
+// work, per backend-implementation-plan.pdf.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  learner
+  admin
+  instructor
+}
+
+// auth.users is Supabase-managed, not modeled here — the FK to it is raw
+// SQL in the migration, not a Prisma relation (see migration.sql).
+model Profile {
+  id        String   @id @db.Uuid
+  role      Role     @default(learner)
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  @@map("profiles")
+}

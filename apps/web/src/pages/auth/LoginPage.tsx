@@ -1,31 +1,70 @@
 import { useState } from 'react';
 import type { FormEvent } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { Seo } from '@/lib/Seo';
 import { Button } from '@/components/primitives/Button';
 import { TextField, PasswordField } from '@/components/common/Field';
-import { startPortalSession } from '@/lib/session';
-import { AuthLayout } from './AuthLayout';
+import { supabase } from '@/lib/supabaseClient';
+import { AuthLayout, GoogleAuthButton } from './AuthLayout';
+
+interface LocationState {
+  from?: { pathname: string };
+  authError?: string;
+}
 
 export default function LoginPage() {
   const navigate = useNavigate();
-  const [error, setError] = useState<string>();
+  const location = useLocation();
+  const state = location.state as LocationState | null;
+  const [error, setError] = useState<string | undefined>(state?.authError);
+  const [submitting, setSubmitting] = useState(false);
 
-  function onSubmit(e: FormEvent<HTMLFormElement>) {
+  async function onSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
     const data = new FormData(e.currentTarget);
-    if (!data.get('email') || !data.get('password')) {
+    const email = String(data.get('email') ?? '');
+    const password = String(data.get('password') ?? '');
+
+    if (!email || !password) {
       setError('Enter your email and password.');
       return;
     }
-    if (!/.+@.+\..+/.test(String(data.get('email')))) {
+    if (!/.+@.+\..+/.test(email)) {
       setError('Enter a valid email address.');
       return;
     }
+    if (!supabase) {
+      setError('Sign-in is not configured yet.');
+      return;
+    }
+
     setError(undefined);
-    // Wire to the AIIT auth API here.
-    startPortalSession();
-    navigate('/portal');
+    setSubmitting(true);
+    const { error: signInError } = await supabase.auth.signInWithPassword({ email, password });
+    setSubmitting(false);
+
+    if (signInError) {
+      setError(
+        signInError.message.toLowerCase().includes('confirm')
+          ? 'Confirm your email address before signing in -- check your inbox for the link we sent.'
+          : signInError.message,
+      );
+      return;
+    }
+
+    navigate(state?.from?.pathname ?? '/portal', { replace: true });
+  }
+
+  async function onGoogleSignIn() {
+    if (!supabase) {
+      setError('Google sign-in is not configured yet.');
+      return;
+    }
+    const { error: oauthError } = await supabase.auth.signInWithOAuth({
+      provider: 'google',
+      options: { redirectTo: `${window.location.origin}/auth/callback` },
+    });
+    if (oauthError) setError(oauthError.message);
   }
 
   return (
@@ -34,6 +73,7 @@ export default function LoginPage() {
       <AuthLayout
         title="Welcome back"
         intro="Sign in to continue your courses, track progress and access your certificates."
+        social={<GoogleAuthButton onClick={onGoogleSignIn} />}
         footer={
           <>
             No account? <Link to="/register">Sign Up</Link>
@@ -61,8 +101,8 @@ export default function LoginPage() {
           <div className="auth__aux">
             <Link to="/forgot-password">Lost Password?</Link>
           </div>
-          <Button as="button" type="submit" size="lg" fullWidth arrow>
-            Sign In
+          <Button as="button" type="submit" size="lg" fullWidth arrow disabled={submitting}>
+            {submitting ? 'Signing in…' : 'Sign In'}
           </Button>
         </form>
       </AuthLayout>

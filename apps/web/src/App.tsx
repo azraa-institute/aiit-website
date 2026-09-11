@@ -2,6 +2,8 @@ import { lazy, Suspense, useEffect } from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { ScrollToTop } from '@/components/layout/ScrollToTop';
 import { RouteFallback } from '@/components/layout/RouteFallback';
+import { AuthProvider } from '@/lib/AuthContext';
+import { RequireAuth } from '@/components/auth/RequireAuth';
 
 /**
  * Fades out and removes the static #splash overlay (defined in index.html)
@@ -51,6 +53,8 @@ const AffiliatePage = lazy(() => import('@/pages/AffiliatePage'));
 const LoginPage = lazy(() => import('@/pages/auth/LoginPage'));
 const RegisterPage = lazy(() => import('@/pages/auth/RegisterPage'));
 const ForgotPasswordPage = lazy(() => import('@/pages/auth/ForgotPasswordPage'));
+const AuthCallbackPage = lazy(() => import('@/pages/auth/AuthCallbackPage'));
+const ResetPasswordPage = lazy(() => import('@/pages/auth/ResetPasswordPage'));
 const PortalLayout = lazy(() => import('@/pages/portal/PortalLayout'));
 const DashboardPage = lazy(() => import('@/pages/portal/DashboardPage'));
 const MyCoursesPage = lazy(() => import('@/pages/portal/MyCoursesPage'));
@@ -66,7 +70,7 @@ const NotFoundPage = lazy(() => import('@/pages/NotFoundPage'));
 
 export function App() {
   return (
-    <>
+    <AuthProvider>
       <ScrollToTop />
       <Suspense fallback={<RouteFallback />}>
         <SplashGate />
@@ -94,8 +98,17 @@ export function App() {
           <Route path="/login" element={<LoginPage />} />
           <Route path="/register" element={<RegisterPage />} />
           <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+          <Route path="/auth/callback" element={<AuthCallbackPage />} />
+          <Route path="/reset-password" element={<ResetPasswordPage />} />
 
-          <Route path="/portal" element={<PortalLayout />}>
+          <Route
+            path="/portal"
+            element={
+              <RequireAuth>
+                <PortalLayout />
+              </RequireAuth>
+            }
+          >
             <Route index element={<DashboardPage />} />
             <Route path="courses" element={<MyCoursesPage />} />
             <Route path="certificates" element={<CertificatesPage />} />
@@ -113,6 +126,6 @@ export function App() {
           <Route path="*" element={<NotFoundPage />} />
         </Routes>
       </Suspense>
-    </>
+    </AuthProvider>
   );
 }

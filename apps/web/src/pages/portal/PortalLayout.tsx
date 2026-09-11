@@ -1,8 +1,8 @@
 import { Suspense, useEffect, useRef, useState } from 'react';
-import { NavLink, Outlet, Link, Navigate, useNavigate, useLocation } from 'react-router-dom';
+import { NavLink, Outlet, Link, useNavigate, useLocation } from 'react-router-dom';
 import { Seo } from '@/lib/Seo';
 import { cn } from '@/lib/cn';
-import { hasPortalSession, endPortalSession } from '@/lib/session';
+import { useAuth } from '@/lib/AuthContext';
 import { useLockBodyScroll } from '@/lib/useLockBodyScroll';
 import { Logo } from '@/components/layout/Logo';
 import { useLearner, greetingName } from './learnerData';
@@ -46,6 +46,7 @@ const BOTTOM_NAV = [
 export default function PortalLayout() {
   const navigate = useNavigate();
   const location = useLocation();
+  const { signOut } = useAuth();
   const learnerState = useLearner();
   const [menuOpen, setMenuOpen] = useState(false);
   const menuCloseRef = useRef<HTMLButtonElement>(null);
@@ -67,19 +68,14 @@ export default function PortalLayout() {
     return () => window.removeEventListener('keydown', onKey);
   }, [menuOpen]);
 
-  if (!hasPortalSession()) {
-    return <Navigate to="/login" replace />;
-  }
-
   const learner = learnerState.learner;
   const unread = learner?.notifications.filter((n) => !n.read).length ?? 0;
   const firstName = learner ? greetingName(learner) : null;
   const current = NAV.find((n) => (n.end ? location.pathname === n.to : location.pathname.startsWith(n.to)));
   const sectionLabel = current?.label ?? 'Portal';
 
-  function signOut() {
-    endPortalSession();
-    navigate('/login');
+  function handleSignOut() {
+    signOut().then(() => navigate('/login'));
   }
 
   return (
@@ -139,7 +135,7 @@ export default function PortalLayout() {
           ))}
         </nav>
 
-        <button type="button" className="portal-rail__signout" onClick={signOut}>
+        <button type="button" className="portal-rail__signout" onClick={handleSignOut}>
           Sign out
         </button>
       </aside>

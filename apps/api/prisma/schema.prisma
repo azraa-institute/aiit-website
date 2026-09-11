@@ -22,16 +22,31 @@ enum Role {
   @@schema("public")
 }
 
+enum ProfileStatus {
+  active
+  suspended
+  pending_deletion
+
+  @@schema("public")
+}
+
 // auth.users is Supabase-managed, not modeled here — the FK to it is raw
 // SQL in the migration, not a Prisma relation (see migration.sql). Even
 // unmodeled, Prisma's multiSchema feature needs `auth` listed above and
 // this model assigned to a schema, or `prisma migrate diff` can't
 // reconcile the cross-schema FK when introspecting the database.
 model Profile {
-  id        String   @id @db.Uuid
-  role      Role     @default(learner)
-  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
-  updatedAt DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+  id                  String        @id @db.Uuid
+  role                Role          @default(learner)
+  status              ProfileStatus @default(active)
+  name                String?
+  headline            String?
+  country             String?       @db.Char(2) // ISO 3166-1 alpha-2
+  avatarKey           String?       @map("avatar_key") // object-storage key, not a URL
+  preferences         Json          @default("{}")
+  deletionRequestedAt DateTime?     @map("deletion_requested_at") @db.Timestamptz(6)
+  createdAt           DateTime      @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt           DateTime      @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
 
   @@map("profiles")
   @@schema("public")

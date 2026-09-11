@@ -32,14 +32,21 @@ jobs:
       # already has tables in a schema it manages (P3005 "schema is not
       # empty"). Supabase's `auth` schema always pre-exists, so the very
       # first run of this workflow against a real Supabase DATABASE_URL
-      # will hit this. Before that first run, baseline it once by hand
-      # (see https://pris.ly/d/migrate-baseline):
+      # will hit this. Before that first run, baseline BOTH migrations by
+      # hand, in order (see https://pris.ly/d/migrate-baseline):
+      #   npx prisma db execute --file apps/api/prisma/migrations/20260910235959_stub_auth_schema/migration.sql --schema apps/api/prisma/schema.prisma --url "$DATABASE_URL"
       #   npx prisma db execute --file apps/api/prisma/migrations/20260911000000_init/migration.sql --schema apps/api/prisma/schema.prisma --url "$DATABASE_URL"
+      #   npx prisma migrate resolve --applied 20260910235959_stub_auth_schema --schema apps/api/prisma/schema.prisma
       #   npx prisma migrate resolve --applied 20260911000000_init --schema apps/api/prisma/schema.prisma
-      # After that one-time baseline, plain `migrate deploy` works normally
-      # for every future migration, which is why it's used here rather than
-      # the db-execute/resolve dance ci.yml uses on its always-fresh
-      # ephemeral database.
+      # (the stub migration's CREATE ... IF NOT EXISTS is a no-op against
+      # real Supabase, which already has auth.users — it still needs to be
+      # recorded as applied so migration history matches the migrations
+      # folder.) After that one-time baseline, plain `migrate deploy` works
+      # normally for every future migration, which is why it's used here
+      # rather than the db-execute/resolve dance ci.yml uses on its
+      # always-fresh ephemeral database. Whenever a new migration is added
+      # later, update this comment isn't needed again — only the very first
+      # deploy against a pre-existing database needs baselining.
       - name: Apply pending migrations
         run: npm exec -w apps/api -- prisma migrate deploy
         env:

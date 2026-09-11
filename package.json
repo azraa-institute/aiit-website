@@ -4,32 +4,21 @@
   "version": "0.1.0",
   "type": "module",
   "description": "AIIT — Azraa Institute of Information Technology. Premium future-tech learning platform.",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "engines": {
+    "node": ">=20"
+  },
   "scripts": {
-    "dev": "vite",
-    "build": "tsc -b && vite build",
-    "preview": "vite preview",
-    "lint": "eslint . --ext ts,tsx",
-    "typecheck": "tsc -b --noEmit",
+    "dev": "npm run dev --workspace=apps/web",
+    "dev:api": "npm run start:dev --workspace=apps/api",
+    "build": "npm run build --workspaces --if-present",
+    "lint": "npm run lint --workspaces --if-present",
+    "typecheck": "npm run typecheck --workspaces --if-present",
+    "test": "npm run test --workspace=apps/api --if-present",
+    "test:e2e": "npm run test:e2e --workspace=apps/api",
     "docs:pdf": "node scripts/build-docs-pdf.mjs"
-  },
-  "dependencies": {
-    "react": "^18.3.1",
-    "react-dom": "^18.3.1",
-    "react-helmet-async": "^2.0.5",
-    "react-router-dom": "^6.30.0"
-  },
-  "devDependencies": {
-    "@types/node": "^26.4.1",
-    "@types/react": "^18.3.12",
-    "@types/react-dom": "^18.3.1",
-    "@typescript-eslint/eslint-plugin": "^8.18.0",
-    "@typescript-eslint/parser": "^8.18.0",
-    "@vitejs/plugin-react": "^4.3.4",
-    "eslint": "^8.57.1",
-    "eslint-plugin-react-hooks": "^4.6.2",
-    "eslint-plugin-react-refresh": "^0.4.16",
-    "sharp": "^0.35.4",
-    "typescript": "^5.6.3",
-    "vite": "^5.4.11"
   }
 }

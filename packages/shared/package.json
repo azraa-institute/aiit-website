@@ -1,0 +1,19 @@
+{
+  "name": "@aiit/shared",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "description": "Types shared between apps/web and apps/api. Type-only until a real DTO/schema helper is needed — see src/index.ts for why.",
+  "types": "src/index.ts",
+  "exports": {
+    ".": {
+      "types": "./src/index.ts"
+    }
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit -p tsconfig.json"
+  },
+  "devDependencies": {
+    "typescript": "^5.6.3"
+  }
+}

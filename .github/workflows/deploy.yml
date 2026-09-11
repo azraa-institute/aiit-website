@@ -1,0 +1,39 @@
+name: Deploy
+
+# apps/web deploys independently via Vercel's own GitHub integration once
+# its Root Directory is set to apps/web — no step for it here.
+#
+# Single environment for now ("production") — there is no second Render
+# service yet. Add a staging job here once one exists; same shape, different
+# secrets/env.
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  migrate:
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - run: npm ci --workspace=apps/api
+
+      - name: Apply pending migrations
+        run: npm exec -w apps/api -- prisma migrate deploy
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+
+  deploy-api:
+    needs: migrate
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - name: Trigger Render deploy
+        run: curl -fsS -X POST "${{ secrets.RENDER_DEPLOY_HOOK_URL }}"

@@ -73,9 +73,11 @@ jobs:
       - run: npm run build
 
       - name: Prisma migrate diff sanity check
+        # npm exec -w apps/api already runs with cwd apps/api/, so these
+        # paths are relative to there, not the repo root.
         run: >-
           npm exec -w apps/api -- prisma migrate diff
-          --from-migrations apps/api/prisma/migrations
-          --to-schema-datamodel apps/api/prisma/schema.prisma
+          --from-migrations prisma/migrations
+          --to-schema-datamodel prisma/schema.prisma
           --shadow-database-url "$SHADOW_DATABASE_URL"
           --exit-code

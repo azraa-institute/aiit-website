@@ -301,6 +301,21 @@
   text-underline-offset: 3px;
 }
 
+/* ---- Password / magic-link mode toggle ---- */
+.auth__mode-toggle {
+  display: block;
+  width: 100%;
+  margin-top: var(--space-4);
+  text-align: center;
+  font-size: var(--fs-sm);
+  color: var(--brass-deep);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.auth__mode-toggle:hover {
+  color: var(--ink);
+}
+
 /* ---- Lost-password success ---- */
 .auth__done {
   margin-top: var(--space-6);

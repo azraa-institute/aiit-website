@@ -28,6 +28,28 @@
   transform: translateY(1px);
 }
 
+.btn:disabled {
+  cursor: not-allowed;
+  pointer-events: none;
+  opacity: 0.45;
+  transform: none;
+}
+
+.btn__spinner {
+  width: 14px;
+  height: 14px;
+  flex-shrink: 0;
+  border-radius: 50%;
+  border: 2px solid currentColor;
+  border-top-color: transparent;
+  animation: btn-spin 0.7s linear infinite;
+}
+@keyframes btn-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
 .btn--sm {
   padding: 0.6rem 1rem;
   font-size: var(--fs-xs);
@@ -137,5 +159,8 @@
   .btn__arrow,
   .btn--link .btn__label {
     transition: none;
+  }
+  .btn__spinner {
+    animation-duration: 1.4s;
   }
 }

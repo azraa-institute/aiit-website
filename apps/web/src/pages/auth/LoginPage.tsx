@@ -1,11 +1,11 @@
 import { useState } from 'react';
-import type { FormEvent } from 'react';
+import type { ChangeEvent, FocusEvent, FormEvent } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { Seo } from '@/lib/Seo';
 import { Button } from '@/components/primitives/Button';
 import { TextField, PasswordField } from '@/components/common/Field';
 import { supabase } from '@/lib/supabaseClient';
-import { AuthLayout, GoogleAuthButton } from './AuthLayout';
+import { AuthLayout, GoogleAuthButton, AppleAuthButton } from './AuthLayout';
 
 interface LocationState {
   from?: { pathname: string };
@@ -14,28 +14,36 @@ interface LocationState {
 
 type Mode = 'password' | 'magic-link';
 
+const EMAIL_RE = /.+@.+\..+/;
+
 export default function LoginPage() {
   const navigate = useNavigate();
   const location = useLocation();
   const state = location.state as LocationState | null;
   const [mode, setMode] = useState<Mode>('password');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [emailTouched, setEmailTouched] = useState(false);
   const [error, setError] = useState<string | undefined>(state?.authError);
   const [submitting, setSubmitting] = useState(false);
   const [magicLinkSent, setMagicLinkSent] = useState(false);
 
+  const emailValid = EMAIL_RE.test(email.trim());
+  const emailError = emailTouched && email.length > 0 && !emailValid ? 'Enter a valid email address.' : undefined;
+  const canSubmit = mode === 'password' ? emailValid && password.length > 0 : emailValid;
+
+  function onEmailChange(e: ChangeEvent<HTMLInputElement>) {
+    setEmail(e.target.value);
+  }
+  function onEmailBlur(_e: FocusEvent<HTMLInputElement>) {
+    setEmailTouched(true);
+  }
+
   async function onSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
-    const data = new FormData(e.currentTarget);
-    const email = String(data.get('email') ?? '');
+    setEmailTouched(true);
+    if (!canSubmit || submitting) return;
 
-    if (!email) {
-      setError(mode === 'password' ? 'Enter your email and password.' : 'Enter your email address.');
-      return;
-    }
-    if (!/.+@.+\..+/.test(email)) {
-      setError('Enter a valid email address.');
-      return;
-    }
     if (!supabase) {
       setError('Sign-in is not configured yet.');
       return;
@@ -58,12 +66,6 @@ export default function LoginPage() {
       return;
     }
 
-    const password = String(data.get('password') ?? '');
-    if (!password) {
-      setError('Enter your email and password.');
-      return;
-    }
-
     setError(undefined);
     setSubmitting(true);
     const { error: signInError } = await supabase.auth.signInWithPassword({ email, password });
@@ -81,13 +83,13 @@ export default function LoginPage() {
     navigate(state?.from?.pathname ?? '/portal', { replace: true });
   }
 
-  async function onGoogleSignIn() {
+  async function onOAuthSignIn(provider: 'google' | 'apple') {
     if (!supabase) {
-      setError('Google sign-in is not configured yet.');
+      setError('Sign-in is not configured yet.');
       return;
     }
     const { error: oauthError } = await supabase.auth.signInWithOAuth({
-      provider: 'google',
+      provider,
       options: { redirectTo: `${window.location.origin}/auth/callback` },
     });
     if (oauthError) setError(oauthError.message);
@@ -105,7 +107,14 @@ export default function LoginPage() {
       <AuthLayout
         title="Welcome back"
         intro="Sign in to continue your courses, track progress and access your certificates."
-        social={magicLinkSent ? undefined : <GoogleAuthButton onClick={onGoogleSignIn} />}
+        social={
+          magicLinkSent ? undefined : (
+            <>
+              <GoogleAuthButton onClick={() => onOAuthSignIn('google')} />
+              <AppleAuthButton onClick={() => onOAuthSignIn('apple')} />
+            </>
+          )
+        }
         footer={
           <>
             No account? <Link to="/register">Sign Up</Link>
@@ -133,23 +142,34 @@ export default function LoginPage() {
                 {error}
               </p>
             )}
-            <TextField label="Email" name="email" type="email" autoComplete="email" required />
+            <TextField
+              label="Email"
+              name="email"
+              type="email"
+              autoComplete="email"
+              required
+              value={email}
+              onChange={onEmailChange}
+              onBlur={onEmailBlur}
+              error={emailError}
+            />
             {mode === 'password' && (
               <>
-                <PasswordField label="Password" name="password" autoComplete="current-password" required />
+                <PasswordField
+                  label="Password"
+                  name="password"
+                  autoComplete="current-password"
+                  required
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                />
                 <div className="auth__aux">
-                  <Link to="/forgot-password">Lost Password?</Link>
+                  <Link to="/forgot-password">Forgot Password?</Link>
                 </div>
               </>
             )}
-            <Button as="button" type="submit" size="lg" fullWidth arrow disabled={submitting}>
-              {submitting
-                ? mode === 'password'
-                  ? 'Signing in…'
-                  : 'Sending…'
-                : mode === 'password'
-                  ? 'Sign In'
-                  : 'Send magic link'}
+            <Button as="button" type="submit" size="lg" fullWidth arrow disabled={!canSubmit} loading={submitting}>
+              {mode === 'password' ? 'Sign In' : 'Send magic link'}
             </Button>
             <button type="button" className="auth__mode-toggle" onClick={toggleMode}>
               {mode === 'password' ? 'Or sign in with a magic link instead' : 'Or sign in with your password instead'}

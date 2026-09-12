@@ -145,57 +145,46 @@
   line-height: 1.55;
 }
 
-/* ---- Social sign-in (Google + Apple) ---- */
+/* ---- Social sign-in (Google + Apple) ----
+   Icon-only and compact on purpose: the "Or continue with" divider already
+   says what these are, so a full-width labelled button per provider is
+   redundant weight the form doesn't need. */
 .auth__social {
   margin-top: var(--space-6);
-  display: grid;
-  gap: var(--space-3);
+  display: flex;
+  justify-content: center;
+  gap: var(--space-4);
 }
 .auth__provider {
-  width: 100%;
-  display: flex;
-  align-items: center;
-  gap: var(--space-3);
-  padding: 0.62rem 0.9rem;
-  font-size: var(--fs-sm);
-  font-weight: var(--fw-strong);
+  flex-shrink: 0;
+  width: 46px;
+  height: 46px;
+  display: grid;
+  place-items: center;
   color: var(--fg);
   border: 1px solid var(--line-strong);
-  border-radius: var(--radius-sm);
+  border-radius: var(--radius-pill);
   background: var(--surface);
   transition:
     border-color var(--dur-fast) var(--ease-out),
     background var(--dur-fast) var(--ease-out),
-    box-shadow var(--dur-fast) var(--ease-out);
+    box-shadow var(--dur-fast) var(--ease-out),
+    transform var(--dur-fast) var(--ease-out);
+}
+.auth__provider--apple {
+  color: var(--ink);
 }
 .auth__provider:hover {
   border-color: var(--fg-muted);
   background: var(--ivory);
 }
+.auth__provider:active {
+  transform: translateY(1px);
+}
 .auth__provider:focus-visible {
   outline: none;
   border-color: var(--brass);
   box-shadow: 0 0 0 3px rgba(154, 123, 79, 0.16);
-}
-/* Rounded brand mark */
-.auth__provider-mark {
-  flex-shrink: 0;
-  display: grid;
-  place-items: center;
-  width: 30px;
-  height: 30px;
-  border-radius: var(--radius-pill);
-  background: #fff;
-  box-shadow: inset 0 0 0 1px var(--line);
-}
-.auth__provider-mark--apple {
-  color: var(--ink);
-}
-.auth__provider-label {
-  flex: 1;
-  text-align: center;
-  /* offset the leading mark + gap so the label stays optically centred */
-  margin-right: calc(30px + var(--space-3));
 }
 
 /* ---- Divider ---- */

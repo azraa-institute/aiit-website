@@ -5,37 +5,51 @@ import { Seo } from '@/lib/Seo';
 import { Button } from '@/components/primitives/Button';
 import { TextField, PasswordField } from '@/components/common/Field';
 import { supabase } from '@/lib/supabaseClient';
-import { AuthLayout, GoogleAuthButton } from './AuthLayout';
+import { AuthLayout, GoogleAuthButton, AppleAuthButton } from './AuthLayout';
+
+const EMAIL_RE = /.+@.+\..+/;
+const MIN_PASSWORD_LENGTH = 8;
+
+interface TouchedState {
+  firstName?: boolean;
+  lastName?: boolean;
+  email?: boolean;
+  password?: boolean;
+}
 
 export default function RegisterPage() {
+  const [firstName, setFirstName] = useState('');
+  const [lastName, setLastName] = useState('');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [agreed, setAgreed] = useState(false);
+  const [touched, setTouched] = useState<TouchedState>({});
   const [error, setError] = useState<string>();
   const [submitting, setSubmitting] = useState(false);
   const [sent, setSent] = useState(false);
 
+  const emailValid = EMAIL_RE.test(email.trim());
+  const passwordValid = password.length >= MIN_PASSWORD_LENGTH;
+  const canSubmit =
+    firstName.trim().length > 0 && lastName.trim().length > 0 && emailValid && passwordValid && agreed;
+
+  const firstNameError = touched.firstName && firstName.trim().length === 0 ? 'First name is required.' : undefined;
+  const lastNameError = touched.lastName && lastName.trim().length === 0 ? 'Last name is required.' : undefined;
+  const emailError = touched.email && email.length > 0 && !emailValid ? 'Enter a valid email address.' : undefined;
+  const passwordError =
+    touched.password && password.length > 0 && !passwordValid
+      ? `Use at least ${MIN_PASSWORD_LENGTH} characters.`
+      : undefined;
+
+  function markTouched(field: keyof TouchedState) {
+    setTouched((t) => ({ ...t, [field]: true }));
+  }
+
   async function onSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
-    const data = new FormData(e.currentTarget);
-    const firstName = String(data.get('firstName') ?? '');
-    const lastName = String(data.get('lastName') ?? '');
-    const email = String(data.get('email') ?? '');
-    const password = String(data.get('password') ?? '');
+    setTouched({ firstName: true, lastName: true, email: true, password: true });
+    if (!canSubmit || submitting) return;
 
-    if (!firstName || !email || !password) {
-      setError('Please complete the required fields.');
-      return;
-    }
-    if (!/.+@.+\..+/.test(email)) {
-      setError('Enter a valid email address.');
-      return;
-    }
-    if (password.length < 8) {
-      setError('Use a password of at least 8 characters.');
-      return;
-    }
-    if (!data.get('terms')) {
-      setError('Please accept the Terms and Privacy Policy to continue.');
-      return;
-    }
     if (!supabase) {
       setError('Sign-up is not configured yet.');
       return;
@@ -48,7 +62,7 @@ export default function RegisterPage() {
       password,
       options: {
         emailRedirectTo: `${window.location.origin}/auth/callback`,
-        data: { first_name: firstName, last_name: lastName || null },
+        data: { first_name: firstName, last_name: lastName },
       },
     });
     setSubmitting(false);
@@ -60,13 +74,13 @@ export default function RegisterPage() {
     setSent(true);
   }
 
-  async function onGoogleSignIn() {
+  async function onOAuthSignIn(provider: 'google' | 'apple') {
     if (!supabase) {
-      setError('Google sign-in is not configured yet.');
+      setError('Sign-up is not configured yet.');
       return;
     }
     const { error: oauthError } = await supabase.auth.signInWithOAuth({
-      provider: 'google',
+      provider,
       options: { redirectTo: `${window.location.origin}/auth/callback` },
     });
     if (oauthError) setError(oauthError.message);
@@ -78,7 +92,14 @@ export default function RegisterPage() {
       <AuthLayout
         title="Join AIIT."
         intro="Create your AIIT account to enrol in courses, earn certificates and follow the AIIT Blueprint."
-        social={sent ? undefined : <GoogleAuthButton onClick={onGoogleSignIn} />}
+        social={
+          sent ? undefined : (
+            <>
+              <GoogleAuthButton onClick={() => onOAuthSignIn('google')} />
+              <AppleAuthButton onClick={() => onOAuthSignIn('apple')} />
+            </>
+          )
+        }
         footer={
           <>
             Have account? <Link to="/login">Sign In</Link>
@@ -107,26 +128,64 @@ export default function RegisterPage() {
               </p>
             )}
             <div className="auth__row">
-              <TextField label="First name" name="firstName" autoComplete="given-name" required />
-              <TextField label="Last name" name="lastName" autoComplete="family-name" />
+              <TextField
+                label="First name"
+                name="firstName"
+                autoComplete="given-name"
+                required
+                value={firstName}
+                onChange={(e) => setFirstName(e.target.value)}
+                onBlur={() => markTouched('firstName')}
+                error={firstNameError}
+              />
+              <TextField
+                label="Last name"
+                name="lastName"
+                autoComplete="family-name"
+                required
+                value={lastName}
+                onChange={(e) => setLastName(e.target.value)}
+                onBlur={() => markTouched('lastName')}
+                error={lastNameError}
+              />
             </div>
-            <TextField label="Email" name="email" type="email" autoComplete="email" required />
+            <TextField
+              label="Email"
+              name="email"
+              type="email"
+              autoComplete="email"
+              required
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              onBlur={() => markTouched('email')}
+              error={emailError}
+            />
             <PasswordField
               label="Password"
               name="password"
               autoComplete="new-password"
-              hint="At least 8 characters"
               required
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              onBlur={() => markTouched('password')}
+              hint={`At least ${MIN_PASSWORD_LENGTH} characters`}
+              error={passwordError}
             />
             <label className="auth__check">
-              <input type="checkbox" name="terms" required />
+              <input
+                type="checkbox"
+                name="terms"
+                required
+                checked={agreed}
+                onChange={(e) => setAgreed(e.target.checked)}
+              />
               <span>
                 I agree to the <Link to="/terms">Terms and Conditions</Link> and{' '}
                 <Link to="/privacy-policy">Privacy Policy</Link>
               </span>
             </label>
-            <Button as="button" type="submit" size="lg" fullWidth arrow disabled={submitting}>
-              {submitting ? 'Signing up…' : 'Sign Up'}
+            <Button as="button" type="submit" size="lg" fullWidth arrow disabled={!canSubmit} loading={submitting}>
+              Sign Up
             </Button>
           </form>
         )}

@@ -163,9 +163,12 @@ scaffold. Live modules:
 - The **contact, newsletter, and webinar-registration forms** still validate
   and show a success state locally but don't submit anywhere
   (`ContactPage.tsx`, `NewsletterForm.tsx`, `WebinarPage.tsx`).
-- **Google/Apple sign-in** buttons call real Supabase OAuth methods but show a
-  graceful "not configured" error — the providers aren't set up in the
-  Supabase/Google Cloud dashboards yet.
+- **Apple sign-in** is not built — it needs a paid Apple Developer Program
+  membership ($99/yr) and a separate setup (Services ID, private key, JWT
+  client secret) that hasn't started; the button was removed rather than left
+  showing a permanent "not configured" error. Google sign-in is real and
+  configured (Google Cloud project `aiit-auth`, OAuth client, wired into
+  Supabase).
 - **Avatar upload and assignment file attachments** need two Supabase Storage
   buckets (`avatars`, `submissions`) that haven't been created yet; everything
   else in the portal works without them.

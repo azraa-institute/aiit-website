@@ -157,6 +157,9 @@ scaffold. Live modules:
   (curl/Postman) until one is built.
 - **Profile** — `GET/PATCH /me`, `PATCH /me/preferences`, `DELETE /me` (soft
   deletion request).
+- **File storage** — avatar upload/remove and assignment file attachments via
+  Supabase Storage (`avatars` public bucket, `submissions` private bucket),
+  RLS-scoped to each user's own `{userId}/` path prefix.
 
 **Not yet wired to the backend:**
 
@@ -169,9 +172,6 @@ scaffold. Live modules:
   showing a permanent "not configured" error. Google sign-in is real and
   configured (Google Cloud project `aiit-auth`, OAuth client, wired into
   Supabase).
-- **Avatar upload and assignment file attachments** need two Supabase Storage
-  buckets (`avatars`, `submissions`) that haven't been created yet; everything
-  else in the portal works without them.
 - **Payments** — no payment system exists in this codebase. Paid/subscription
   courses show as informational-only on the course page; there is no
   Payment Methods section anywhere in the portal.

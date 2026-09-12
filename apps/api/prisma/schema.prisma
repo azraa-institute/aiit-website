@@ -350,3 +350,90 @@ model LessonResource {
   @@map("lesson_resources")
   @@schema("public")
 }
+
+// ---- Public forms ----
+// All four are anonymous, unauthenticated submissions -- no user_id, no
+// self-select/insert RLS policy (there is no "self" to scope to). The API's
+// service-role connection writes them directly; RLS here is defense-in-depth
+// against direct client access, staff-read-only, matching the pattern
+// already used for admin-only tables elsewhere in this schema.
+// `topic`/`region`/`persona`/`source`/`intent` are plain validated strings,
+// not Postgres enums -- they're staff-triage categorisation only, not
+// referenced by any other table or business rule, so a DTO-level `@IsIn`
+// carries the same safety without a migration every time a category is
+// tweaked.
+
+model ContactMessage {
+  id        String   @id @default(uuid()) @db.Uuid
+  name      String
+  email     String
+  topic     String
+  message   String
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  @@map("contact_messages")
+  @@schema("public")
+}
+
+enum NewsletterStatus {
+  pending
+  confirmed
+  unsubscribed
+
+  @@schema("public")
+}
+
+// Double opt-in: a row is created `pending` with a confirmToken on first
+// signup, flips to `confirmed` when that token is redeemed, and to
+// `unsubscribed` (via the separate unsubscribeToken, valid regardless of
+// status) if the subscriber opts out later. No campaign-sending exists yet
+// -- this only gates whether a future sender may email this address.
+model NewsletterSubscriber {
+  id               String           @id @default(uuid()) @db.Uuid
+  email            String           @unique
+  status           NewsletterStatus @default(pending)
+  confirmToken     String           @unique @map("confirm_token")
+  unsubscribeToken String           @unique @map("unsubscribe_token")
+  confirmedAt      DateTime?        @map("confirmed_at") @db.Timestamptz(6)
+  unsubscribedAt   DateTime?        @map("unsubscribed_at") @db.Timestamptz(6)
+  createdAt        DateTime         @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  @@map("newsletter_subscribers")
+  @@schema("public")
+}
+
+// Unique per (email, webinarSlug) rather than per email alone -- the current
+// registration form only ever submits one featured webinar at a time, but a
+// bare per-email unique would wrongly block someone from registering for a
+// later, different webinar.
+model WebinarRegistration {
+  id          String   @id @default(uuid()) @db.Uuid
+  webinarSlug String   @map("webinar_slug")
+  name        String
+  email       String
+  whatsapp    String?
+  region      String
+  persona     String
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  @@unique([email, webinarSlug])
+  @@map("webinar_registrations")
+  @@schema("public")
+}
+
+model AffiliateApplication {
+  id           String   @id @default(uuid()) @db.Uuid
+  name         String
+  email        String
+  phone        String?
+  handle       String?
+  country      String?
+  city         String?
+  referralCode String?  @map("referral_code")
+  source       String?
+  intent       String?
+  createdAt    DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  @@map("affiliate_applications")
+  @@schema("public")
+}

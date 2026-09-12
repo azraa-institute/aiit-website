@@ -83,6 +83,13 @@
 .field__password .field__control {
   padding-right: 3rem;
 }
+/* Edge injects its own show/hide eye icon into password inputs, which
+   stacks visually with our custom .field__reveal button -- suppress it so
+   only one toggle shows. Chrome/Firefox have no equivalent to suppress. */
+.field__password .field__control::-ms-reveal,
+.field__password .field__control::-ms-clear {
+  display: none;
+}
 .field__reveal {
   position: absolute;
   right: 0.5rem;

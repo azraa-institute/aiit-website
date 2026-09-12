@@ -71,6 +71,10 @@
   color: var(--ink);
 }
 
+.newsletter-form__turnstile {
+  margin-top: var(--space-3);
+}
+
 .newsletter-form__error {
   margin-top: var(--space-3);
   font-size: var(--fs-xs);

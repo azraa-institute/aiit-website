@@ -1,6 +1,8 @@
 import { useState } from 'react';
 import type { FormEvent } from 'react';
 import { cn } from '@/lib/cn';
+import { apiFetch, ApiError } from '@/lib/api';
+import { Turnstile } from './Turnstile';
 import './newsletter-form.css';
 
 interface NewsletterFormProps {
@@ -12,22 +14,35 @@ const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 export function NewsletterForm({ variant = 'inline', className }: NewsletterFormProps) {
   const [email, setEmail] = useState('');
-  const [state, setState] = useState<'idle' | 'error' | 'done'>('idle');
+  const [turnstileToken, setTurnstileToken] = useState('');
+  const [state, setState] = useState<'idle' | 'submitting' | 'error' | 'done'>('idle');
+  const [error, setError] = useState<string>();
 
-  function onSubmit(e: FormEvent) {
+  async function onSubmit(e: FormEvent) {
     e.preventDefault();
     if (!EMAIL_RE.test(email)) {
+      setError('Please enter a valid email address.');
       setState('error');
       return;
     }
-    // Wire to the AIIT audience API / CRM here.
-    setState('done');
+
+    setState('submitting');
+    try {
+      await apiFetch('/newsletter/subscribe', {
+        method: 'POST',
+        body: JSON.stringify({ email, turnstileToken }),
+      });
+      setState('done');
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : 'Could not subscribe you. Please try again.');
+      setState('error');
+    }
   }
 
   if (state === 'done') {
     return (
       <p className={cn('newsletter-form__done', className)}>
-        You&apos;re on the list. Look out for AIIT updates, insights and upcoming webinars.
+        Check your inbox to confirm your subscription to AIIT updates, insights and upcoming webinars.
       </p>
     );
   }
@@ -55,11 +70,16 @@ export function NewsletterForm({ variant = 'inline', className }: NewsletterForm
           }}
           aria-invalid={state === 'error'}
         />
-        <button type="submit">Subscribe</button>
+        <button type="submit" disabled={state === 'submitting' || !turnstileToken}>
+          {state === 'submitting' ? 'Subscribing…' : 'Subscribe'}
+        </button>
+      </div>
+      <div className="newsletter-form__turnstile">
+        <Turnstile onVerify={setTurnstileToken} />
       </div>
       {state === 'error' && (
         <p className="newsletter-form__error" role="alert">
-          Please enter a valid email address.
+          {error}
         </p>
       )}
     </form>

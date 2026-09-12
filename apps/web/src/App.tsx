@@ -50,6 +50,8 @@ const ResourceDetailPage = lazy(() => import('@/pages/ResourceDetailPage'));
 const WebinarPage = lazy(() => import('@/pages/WebinarPage'));
 const FaqsPage = lazy(() => import('@/pages/FaqsPage'));
 const ContactPage = lazy(() => import('@/pages/ContactPage'));
+const NewsletterConfirmPage = lazy(() => import('@/pages/NewsletterConfirmPage'));
+const NewsletterUnsubscribePage = lazy(() => import('@/pages/NewsletterUnsubscribePage'));
 const ShopPage = lazy(() => import('@/pages/ShopPage'));
 const ProductDetailPage = lazy(() => import('@/pages/ProductDetailPage'));
 const InstructorsPage = lazy(() => import('@/pages/InstructorsPage'));
@@ -91,6 +93,8 @@ export function App() {
             <Route path="/webinar" element={<WebinarPage />} />
             <Route path="/faqs" element={<FaqsPage />} />
             <Route path="/contact" element={<ContactPage />} />
+            <Route path="/newsletter/confirm" element={<NewsletterConfirmPage />} />
+            <Route path="/newsletter/unsubscribe" element={<NewsletterUnsubscribePage />} />
             <Route path="/shop" element={<ShopPage />} />
             {/* Legacy slug — the product's slug was corrected. */}
             <Route

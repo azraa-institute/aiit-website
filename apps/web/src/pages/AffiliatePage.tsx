@@ -10,6 +10,8 @@ import { SITE } from '@/data/site';
 import { Section } from '@/components/primitives/Section';
 import { Button } from '@/components/primitives/Button';
 import { TextField, SelectField } from '@/components/common/Field';
+import { Turnstile } from '@/components/common/Turnstile';
+import { apiFetch } from '@/lib/api';
 import { AffiliateNetwork } from './AffiliateNetwork';
 import { cn } from '@/lib/cn';
 import './affiliate-page.css';
@@ -61,9 +63,23 @@ function PathwayFlow({ steps, reward }: { steps: string[]; reward: string }) {
 export default function AffiliatePage() {
   const a = AFFILIATE;
   const [count, setCount] = useState(39);
-  const [done, setDone] = useState(false);
   const [hoveredWay, setHoveredWay] = useState<number | null>(null);
   useScrollReveal();
+
+  const [name, setName] = useState('');
+  const [email, setEmail] = useState('');
+  const [phone, setPhone] = useState('');
+  const [handle, setHandle] = useState('');
+  const [country, setCountry] = useState('');
+  const [city, setCity] = useState('');
+  const [referralCode, setReferralCode] = useState('');
+  const [source, setSource] = useState('');
+  const [intent, setIntent] = useState('');
+  const [agreed, setAgreed] = useState(false);
+  const [turnstileToken, setTurnstileToken] = useState('');
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState<string>();
+  const [done, setDone] = useState(false);
 
   // Tiered, not flat: the first 500 direct referrals earn $7 each; only
   // referrals beyond 500 earn the $10 milestone rate (AFFILIATE.rates) —
@@ -87,10 +103,35 @@ export default function AffiliatePage() {
   const stepRefs = [step1Ref, step2Ref, step3Ref, step4Ref];
   const stepOn = [step1On, step2On, step3On, step4On];
 
-  function onSubmit(e: FormEvent) {
+  async function onSubmit(e: FormEvent) {
     e.preventDefault();
-    setDone(true);
+    setError(undefined);
+    setSubmitting(true);
+    try {
+      await apiFetch('/affiliate-applications', {
+        method: 'POST',
+        body: JSON.stringify({
+          name,
+          email,
+          phone: phone || undefined,
+          handle: handle || undefined,
+          country: country || undefined,
+          city: city || undefined,
+          referralCode: referralCode || undefined,
+          source: source || undefined,
+          intent: intent || undefined,
+          turnstileToken,
+        }),
+      });
+      setDone(true);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Could not submit your application. Please try again.');
+    } finally {
+      setSubmitting(false);
+    }
   }
+
+  const canSubmit = name.trim().length > 0 && email.trim().length > 0 && agreed && turnstileToken.length > 0;
 
   return (
     <Layout>
@@ -325,13 +366,50 @@ export default function AffiliatePage() {
               </p>
             ) : (
               <form className="affiliate__form" onSubmit={onSubmit}>
-                <TextField label="Full name" name="name" required autoComplete="name" />
-                <TextField label="Email address" name="email" type="email" required autoComplete="email" />
-                <TextField label="Phone number" name="phone" autoComplete="tel" />
-                <TextField label="Social media handle (optional)" name="handle" />
-                <TextField label="Country" name="country" />
-                <TextField label="City" name="city" />
-                <TextField label="Coupon code of who referred you" name="ref" placeholder={a.defaultCode} />
+                {error ? (
+                  <p className="auth__alert" role="alert">
+                    {error}
+                  </p>
+                ) : null}
+                <TextField
+                  label="Full name"
+                  name="name"
+                  required
+                  autoComplete="name"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                />
+                <TextField
+                  label="Email address"
+                  name="email"
+                  type="email"
+                  required
+                  autoComplete="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                />
+                <TextField
+                  label="Phone number"
+                  name="phone"
+                  autoComplete="tel"
+                  value={phone}
+                  onChange={(e) => setPhone(e.target.value)}
+                />
+                <TextField
+                  label="Social media handle (optional)"
+                  name="handle"
+                  value={handle}
+                  onChange={(e) => setHandle(e.target.value)}
+                />
+                <TextField label="Country" name="country" value={country} onChange={(e) => setCountry(e.target.value)} />
+                <TextField label="City" name="city" value={city} onChange={(e) => setCity(e.target.value)} />
+                <TextField
+                  label="Coupon code of who referred you"
+                  name="ref"
+                  placeholder={a.defaultCode}
+                  value={referralCode}
+                  onChange={(e) => setReferralCode(e.target.value)}
+                />
                 <SelectField
                   label="How did you hear about us?"
                   name="source"
@@ -341,6 +419,8 @@ export default function AffiliatePage() {
                     { value: 'friend', label: 'Through a Friend' },
                     { value: 'other', label: 'Other' },
                   ]}
+                  value={source}
+                  onChange={(e) => setSource(e.target.value)}
                 />
                 <SelectField
                   label="What would you like to do?"
@@ -351,12 +431,21 @@ export default function AffiliatePage() {
                     { value: 'creators', label: 'Introduce Content Creators' },
                     { value: 'both', label: 'Both' },
                   ]}
+                  value={intent}
+                  onChange={(e) => setIntent(e.target.value)}
                 />
                 <label className="affiliate__agree">
-                  <input type="checkbox" required /> I have read and agree to the AIIT Affiliate
-                  Agreement, including the commission structure and referral terms.
+                  <input
+                    type="checkbox"
+                    required
+                    checked={agreed}
+                    onChange={(e) => setAgreed(e.target.checked)}
+                  />{' '}
+                  I have read and agree to the AIIT Affiliate Agreement, including the commission
+                  structure and referral terms.
                 </label>
-                <Button as="button" type="submit" size="lg" fullWidth arrow>
+                <Turnstile onVerify={setTurnstileToken} />
+                <Button as="button" type="submit" size="lg" fullWidth arrow loading={submitting} disabled={!canSubmit}>
                   Submit application
                 </Button>
                 <p className="affiliate__disclaimer">{a.disclaimer}</p>

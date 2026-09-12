@@ -4,18 +4,52 @@ import { Layout } from '@/components/layout/Layout';
 import { PageBanner } from '@/components/layout/PageBanner';
 import { Seo } from '@/lib/Seo';
 import { SITE } from '@/data/site';
+import { apiFetch } from '@/lib/api';
 import { Button } from '@/components/primitives/Button';
 import { TextField, TextArea, SelectField } from '@/components/common/Field';
 import { SocialLinks } from '@/components/common/SocialLinks';
+import { Turnstile } from '@/components/common/Turnstile';
 import './contact-page.css';
 
+const TOPICS = [
+  { value: '', label: 'Choose a topic' },
+  { value: 'course', label: 'A specific course' },
+  { value: 'enrolment', label: 'Enrolment & payment' },
+  { value: 'blueprint', label: 'AIIT Blueprint / global pathways' },
+  { value: 'webinar', label: 'Webinars & events' },
+  { value: 'partnership', label: 'Partnership or bulk enrolment' },
+  { value: 'other', label: 'Something else' },
+];
+
 export default function ContactPage() {
+  const [name, setName] = useState('');
+  const [email, setEmail] = useState('');
+  const [topic, setTopic] = useState('');
+  const [message, setMessage] = useState('');
+  const [turnstileToken, setTurnstileToken] = useState('');
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState<string>();
   const [done, setDone] = useState(false);
 
-  function onSubmit(e: FormEvent) {
+  async function onSubmit(e: FormEvent) {
     e.preventDefault();
-    setDone(true);
+    setError(undefined);
+    setSubmitting(true);
+    try {
+      await apiFetch('/contact', {
+        method: 'POST',
+        body: JSON.stringify({ name, email, topic, message, turnstileToken }),
+      });
+      setDone(true);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Could not send your message. Please try again.');
+    } finally {
+      setSubmitting(false);
+    }
   }
+
+  const canSubmit =
+    name.trim().length > 0 && email.trim().length > 0 && topic.length > 0 && message.trim().length > 0 && turnstileToken.length > 0;
 
   return (
     <Layout>
@@ -44,26 +78,48 @@ export default function ContactPage() {
               </div>
             ) : (
               <form className="contact-page__form" onSubmit={onSubmit}>
+                {error ? (
+                  <p className="auth__alert" role="alert">
+                    {error}
+                  </p>
+                ) : null}
                 <div className="contact-page__row">
-                  <TextField label="Full name" name="name" required autoComplete="name" />
-                  <TextField label="Email" name="email" type="email" required autoComplete="email" />
+                  <TextField
+                    label="Full name"
+                    name="name"
+                    required
+                    autoComplete="name"
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                  />
+                  <TextField
+                    label="Email"
+                    name="email"
+                    type="email"
+                    required
+                    autoComplete="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                  />
                 </div>
                 <SelectField
                   label="What is this about?"
                   name="topic"
                   required
-                  options={[
-                    { value: '', label: 'Choose a topic' },
-                    { value: 'course', label: 'A specific course' },
-                    { value: 'enrolment', label: 'Enrolment & payment' },
-                    { value: 'blueprint', label: 'AIIT Blueprint / global pathways' },
-                    { value: 'webinar', label: 'Webinars & events' },
-                    { value: 'partnership', label: 'Partnership or bulk enrolment' },
-                    { value: 'other', label: 'Something else' },
-                  ]}
+                  options={TOPICS}
+                  value={topic}
+                  onChange={(e) => setTopic(e.target.value)}
                 />
-                <TextArea label="Message" name="message" required rows={5} />
-                <Button as="button" type="submit" size="lg" arrow>
+                <TextArea
+                  label="Message"
+                  name="message"
+                  required
+                  rows={5}
+                  value={message}
+                  onChange={(e) => setMessage(e.target.value)}
+                />
+                <Turnstile onVerify={setTurnstileToken} />
+                <Button as="button" type="submit" size="lg" arrow loading={submitting} disabled={!canSubmit}>
                   Send message
                 </Button>
               </form>

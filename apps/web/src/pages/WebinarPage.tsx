@@ -10,6 +10,8 @@ import { Plate } from '@/components/primitives/Plate';
 import { Countdown } from '@/components/common/Countdown';
 import { Button } from '@/components/primitives/Button';
 import { TextField, SelectField } from '@/components/common/Field';
+import { Turnstile } from '@/components/common/Turnstile';
+import { apiFetch } from '@/lib/api';
 import { cn } from '@/lib/cn';
 import './webinar-page.css';
 
@@ -23,13 +25,44 @@ const KIND_LABEL: Record<string, string> = {
 
 export default function WebinarPage() {
   const w = FEATURED_WEBINAR;
+  const [name, setName] = useState('');
+  const [email, setEmail] = useState('');
+  const [whatsapp, setWhatsapp] = useState('');
+  const [region, setRegion] = useState('');
+  const [persona, setPersona] = useState('');
+  const [turnstileToken, setTurnstileToken] = useState('');
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState<string>();
   const [done, setDone] = useState(false);
   useScrollReveal();
 
-  function onSubmit(e: FormEvent) {
+  async function onSubmit(e: FormEvent) {
     e.preventDefault();
-    setDone(true);
+    setError(undefined);
+    setSubmitting(true);
+    try {
+      await apiFetch('/webinar-registrations', {
+        method: 'POST',
+        body: JSON.stringify({
+          webinarSlug: w.slug,
+          name,
+          email,
+          whatsapp: whatsapp || undefined,
+          region,
+          persona,
+          turnstileToken,
+        }),
+      });
+      setDone(true);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Could not register you. Please try again.');
+    } finally {
+      setSubmitting(false);
+    }
   }
+
+  const canSubmit =
+    name.trim().length > 0 && email.trim().length > 0 && region.length > 0 && persona.length > 0 && turnstileToken.length > 0;
 
   return (
     <Layout>
@@ -159,9 +192,35 @@ export default function WebinarPage() {
               </div>
             ) : (
               <form className="webinar-page__form" onSubmit={onSubmit}>
-                <TextField label="Full name" name="name" required autoComplete="name" />
-                <TextField label="Email address" name="email" type="email" required autoComplete="email" />
-                <TextField label="WhatsApp number" name="whatsapp" hint="Optional, for the joining link" />
+                {error ? (
+                  <p className="auth__alert" role="alert">
+                    {error}
+                  </p>
+                ) : null}
+                <TextField
+                  label="Full name"
+                  name="name"
+                  required
+                  autoComplete="name"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                />
+                <TextField
+                  label="Email address"
+                  name="email"
+                  type="email"
+                  required
+                  autoComplete="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                />
+                <TextField
+                  label="WhatsApp number"
+                  name="whatsapp"
+                  hint="Optional, for the joining link"
+                  value={whatsapp}
+                  onChange={(e) => setWhatsapp(e.target.value)}
+                />
                 <SelectField
                   label="Where are you joining from?"
                   name="region"
@@ -175,6 +234,8 @@ export default function WebinarPage() {
                     { value: 'other', label: 'Elsewhere' },
                   ]}
                   required
+                  value={region}
+                  onChange={(e) => setRegion(e.target.value)}
                 />
                 <SelectField
                   label="What describes you best?"
@@ -188,8 +249,11 @@ export default function WebinarPage() {
                     { value: 'partner', label: 'Organisation or partner' },
                   ]}
                   required
+                  value={persona}
+                  onChange={(e) => setPersona(e.target.value)}
                 />
-                <Button as="button" type="submit" size="lg" fullWidth arrow>
+                <Turnstile onVerify={setTurnstileToken} />
+                <Button as="button" type="submit" size="lg" fullWidth arrow loading={submitting} disabled={!canSubmit}>
                   Reserve my seat
                 </Button>
               </form>

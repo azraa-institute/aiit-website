@@ -10,6 +10,7 @@ import { AuthModule } from './modules/auth/auth.module';
 import { CoursesModule } from './modules/courses/courses.module';
 import { EnrollmentsModule } from './modules/enrollments/enrollments.module';
 import { AssignmentsModule } from './modules/assignments/assignments.module';
+import { CertificatesModule } from './modules/certificates/certificates.module';
 
 @Module({
   imports: [
@@ -34,6 +35,7 @@ import { AssignmentsModule } from './modules/assignments/assignments.module';
     CoursesModule,
     EnrollmentsModule,
     AssignmentsModule,
+    CertificatesModule,
   ],
   providers: [{ provide: APP_GUARD, useClass: ThrottlerGuard }],
 })

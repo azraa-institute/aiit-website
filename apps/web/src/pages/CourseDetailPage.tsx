@@ -1,7 +1,11 @@
-import { useParams, Link, Navigate } from 'react-router-dom';
+import { useState } from 'react';
+import { useParams, useNavigate, Link, Navigate } from 'react-router-dom';
+import type { Course } from '@/data/types';
 import { Layout } from '@/components/layout/Layout';
 import { Seo, organizationLd } from '@/lib/Seo';
 import { useScrollReveal } from '@/lib/useScrollReveal';
+import { useAuth } from '@/lib/AuthContext';
+import { apiFetch, ApiError } from '@/lib/api';
 import { useCourseDetail, useCourseList } from './CoursesPage.data';
 import { getDomain } from '@/data/technologies';
 import { getInstructor } from '@/data/instructors';
@@ -144,9 +148,7 @@ export default function CourseDetailPage() {
                   {course.pricing === 'subscription' && (
                     <p className="course-detail__note">Included with AIIT membership.</p>
                   )}
-                  <Button as="link" to="/register" fullWidth size="lg" arrow>
-                    {comingSoon ? 'Join the waitlist' : 'Enroll now'}
-                  </Button>
+                  <EnrollAction course={course} comingSoon={comingSoon} />
                   <Button as="link" to="/webinar" variant="secondary" fullWidth>
                     Ask about this course
                   </Button>
@@ -245,5 +247,79 @@ export default function CourseDetailPage() {
         </section>
       </article>
     </Layout>
+  );
+}
+
+/**
+ * Free courses enroll for real (POST /courses/:slug/enroll) and land the
+ * learner in the portal; paid/subscription courses have no checkout yet, so
+ * the CTA stays informational rather than pretending payment works. While
+ * auth status is still resolving (`useAuth()`'s initial `getSession()` call
+ * hasn't returned), the button stays disabled instead of guessing --
+ * showing the signed-out link during that window is what previously sent
+ * already-signed-in learners to /register.
+ */
+function EnrollAction({ course, comingSoon }: { course: Course; comingSoon: boolean }) {
+  const { status } = useAuth();
+  const navigate = useNavigate();
+  const [enrolling, setEnrolling] = useState(false);
+  const [error, setError] = useState<string>();
+
+  if (status === 'loading') {
+    return (
+      <Button as="button" type="button" fullWidth size="lg" disabled>
+        {comingSoon ? 'Join the waitlist' : 'Enroll now'}
+      </Button>
+    );
+  }
+
+  if (status === 'anonymous') {
+    return (
+      <Button as="link" to="/register" fullWidth size="lg" arrow>
+        {comingSoon ? 'Join the waitlist' : 'Enroll now'}
+      </Button>
+    );
+  }
+
+  if (course.pricing !== 'free') {
+    return (
+      <>
+        <Button as="button" type="button" fullWidth size="lg" disabled>
+          {comingSoon ? 'Join the waitlist' : 'Enroll now'}
+        </Button>
+        <p className="course-detail__note">
+          Online payment isn&apos;t available yet for this course -- use &quot;Ask about this course&quot; below.
+        </p>
+      </>
+    );
+  }
+
+  async function handleEnroll() {
+    setError(undefined);
+    setEnrolling(true);
+    try {
+      await apiFetch(`/courses/${encodeURIComponent(course.slug)}/enroll`, { method: 'POST' });
+      navigate('/portal/courses');
+    } catch (err) {
+      if (err instanceof ApiError && err.status === 409) {
+        navigate('/portal/courses');
+        return;
+      }
+      setError(err instanceof Error ? err.message : 'Could not enroll you in this course.');
+      setEnrolling(false);
+    }
+  }
+
+  return (
+    <>
+      {error ? (
+        <p className="auth__alert" role="alert">
+          {error}
+        </p>
+      ) : null}
+      <Button as="button" type="button" fullWidth size="lg" arrow loading={enrolling} onClick={handleEnroll}>
+        Enroll now
+      </Button>
+    </>
   );
 }

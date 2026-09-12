@@ -119,6 +119,7 @@ sites.
 | `/instructors` · `/why-join` · `/aiit-blueprint` · `/affiliate` | Editorial pages |
 | `/shop` · `/shop/:slug` | Merchandise catalogue · product detail |
 | `/contact` | Contact form |
+| `/newsletter/confirm` · `/newsletter/unsubscribe` | Newsletter double opt-in confirm · unsubscribe (landed on from an email link) |
 | `/login` · `/register` · `/forgot-password` | Auth |
 | `/portal` · `/portal/*` | Learner portal — dashboard, courses, certificates, assignments, resources, webinars, profile, notifications, settings |
 | `/privacy-policy` · `/terms` | Legal |
@@ -160,12 +161,15 @@ scaffold. Live modules:
 - **File storage** — avatar upload/remove and assignment file attachments via
   Supabase Storage (`avatars` public bucket, `submissions` private bucket),
   RLS-scoped to each user's own `{userId}/` path prefix.
+- **Public forms** — contact, newsletter (double opt-in + unsubscribe),
+  webinar registration, and affiliate application all store real data and
+  send real email (Resend) once `TURNSTILE_SECRET_KEY`/`RESEND_API_KEY` are
+  set. Cloudflare Turnstile gates all four; `TurnstileService` fails closed
+  (refuses the request) rather than silently accepting unprotected
+  submissions if the secret key isn't configured.
 
 **Not yet wired to the backend:**
 
-- The **contact, newsletter, and webinar-registration forms** still validate
-  and show a success state locally but don't submit anywhere
-  (`ContactPage.tsx`, `NewsletterForm.tsx`, `WebinarPage.tsx`).
 - **Apple sign-in** is not built — it needs a paid Apple Developer Program
   membership ($99/yr) and a separate setup (Services ID, private key, JWT
   client secret) that hasn't started; the button was removed rather than left

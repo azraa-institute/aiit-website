@@ -3,9 +3,12 @@ import ReactDOM from 'react-dom/client';
 import { BrowserRouter } from 'react-router-dom';
 import { HelmetProvider } from 'react-helmet-async';
 import { App } from './App';
+import { initSentry } from './lib/sentry';
 import './styles/global.css';
 import './components/primitives/primitives.css';
 import './components/primitives/button.css';
+
+initSentry();
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>

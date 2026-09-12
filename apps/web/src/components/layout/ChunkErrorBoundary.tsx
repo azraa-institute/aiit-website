@@ -1,6 +1,7 @@
 import { Component } from 'react';
 import type { ReactNode } from 'react';
 import { Logo } from './Logo';
+import { captureException } from '@/lib/sentry';
 import './chunk-error-boundary.css';
 
 interface Props {
@@ -46,10 +47,15 @@ export class ChunkErrorBoundary extends Component<Props, State> {
   }
 
   componentDidCatch(error: unknown) {
-    if (isChunkLoadError(error) && !sessionStorage.getItem(RELOAD_FLAG)) {
-      sessionStorage.setItem(RELOAD_FLAG, '1');
-      window.location.reload();
+    if (isChunkLoadError(error)) {
+      if (!sessionStorage.getItem(RELOAD_FLAG)) {
+        sessionStorage.setItem(RELOAD_FLAG, '1');
+        window.location.reload();
+      }
+      return;
     }
+    // A genuine bug, not the expected stale-deploy case -- worth knowing about.
+    captureException(error);
   }
 
   render() {

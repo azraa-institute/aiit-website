@@ -1,6 +1,7 @@
 import { defineConfig } from 'vite';
 import type { Plugin } from 'vite';
 import react from '@vitejs/plugin-react';
+import { sentryVitePlugin } from '@sentry/vite-plugin';
 import { fileURLToPath, URL } from 'node:url';
 import fs from 'node:fs';
 import path from 'node:path';
@@ -103,9 +104,24 @@ function aiitBlog(): Plugin {
   };
 }
 
+// Uploads production source maps to Sentry for readable stack traces, then
+// deletes the map files so they aren't publicly served alongside the built
+// JS. Only runs when SENTRY_AUTH_TOKEN is set (a build-time secret, not
+// VITE_-prefixed -- it must never reach the client bundle) -- absent, this
+// resolves to no plugin at all, so a build with no Sentry config configured
+// yet still works exactly as before.
+const sentryPlugin = process.env.SENTRY_AUTH_TOKEN
+  ? sentryVitePlugin({
+      org: process.env.SENTRY_ORG,
+      project: process.env.SENTRY_PROJECT ?? 'aiit-web',
+      authToken: process.env.SENTRY_AUTH_TOKEN,
+      sourcemaps: { filesToDeleteAfterUpload: ['dist/**/*.map'] },
+    })
+  : null;
+
 // https://vite.dev/config/
 export default defineConfig({
-  plugins: [react(), aiitBlog()],
+  plugins: [react(), aiitBlog(), sentryPlugin],
   resolve: {
     alias: {
       '@': fileURLToPath(new URL('./src', import.meta.url)),
@@ -114,6 +130,9 @@ export default defineConfig({
   build: {
     target: 'es2020',
     cssCodeSplit: true,
+    // Only needed for Sentry to resolve real stack traces -- the plugin
+    // above deletes the .map files post-upload, so this doesn't ship them.
+    sourcemap: Boolean(process.env.SENTRY_AUTH_TOKEN),
     rollupOptions: {
       output: {
         manualChunks: {

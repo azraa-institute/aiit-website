@@ -169,6 +169,7 @@ model Course {
   publishedAt      DateTime?             @map("published_at") @db.Timestamptz(6)
   modules          CourseModule[]
   enrollments      Enrollment[]
+  assignments      Assignment[]
   createdAt        DateTime              @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt        DateTime              @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
   deletedAt        DateTime?             @map("deleted_at") @db.Timestamptz(6)
@@ -205,6 +206,46 @@ model Enrollment {
 
   @@unique([userId, courseId])
   @@map("enrollments")
+  @@schema("public")
+}
+
+// ---- Learner portal: assignments ----
+// Submission status (upcoming/overdue/submitted/graded) is deliberately NOT
+// a stored column -- it's derived from submittedAt/gradedAt/dueAt in
+// AssignmentsService each time it's read, so it can never drift out of sync
+// with the timestamps that actually define it.
+
+model Assignment {
+  id          String                 @id @default(uuid()) @db.Uuid
+  courseId    String                 @map("course_id") @db.Uuid
+  course      Course                 @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  title       String
+  description String
+  dueAt       DateTime?              @map("due_at") @db.Timestamptz(6)
+  submissions AssignmentSubmission[]
+  createdAt   DateTime               @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt   DateTime               @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  @@map("assignments")
+  @@schema("public")
+}
+
+model AssignmentSubmission {
+  id           String     @id @default(uuid()) @db.Uuid
+  assignmentId String     @map("assignment_id") @db.Uuid
+  assignment   Assignment @relation(fields: [assignmentId], references: [id], onDelete: Cascade)
+  userId       String     @map("user_id") @db.Uuid
+  fileKey      String?    @map("file_key") // Supabase Storage object key, not a URL -- same convention as Profile.avatarKey
+  note         String?
+  submittedAt  DateTime?  @map("submitted_at") @db.Timestamptz(6)
+  grade        String?
+  feedback     String?
+  gradedAt     DateTime?  @map("graded_at") @db.Timestamptz(6)
+  createdAt    DateTime   @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt    DateTime   @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  @@unique([assignmentId, userId])
+  @@map("assignment_submissions")
   @@schema("public")
 }
 

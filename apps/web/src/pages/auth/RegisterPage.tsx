@@ -6,7 +6,7 @@ import { Button } from '@/components/primitives/Button';
 import { TextField, PasswordField } from '@/components/common/Field';
 import { PasswordStrengthMeter } from '@/components/common/PasswordStrengthMeter';
 import { supabase } from '@/lib/supabaseClient';
-import { AuthLayout, GoogleAuthButton, AppleAuthButton } from './AuthLayout';
+import { AuthLayout, GoogleAuthButton } from './AuthLayout';
 
 const EMAIL_RE = /.+@.+\..+/;
 const MIN_PASSWORD_LENGTH = 8;
@@ -92,7 +92,7 @@ export default function RegisterPage() {
     setSent(true);
   }
 
-  async function onOAuthSignIn(provider: 'google' | 'apple') {
+  async function onOAuthSignIn(provider: 'google') {
     if (!supabase) {
       setError('Sign-up is not configured yet.');
       return;
@@ -114,7 +114,6 @@ export default function RegisterPage() {
           sent ? undefined : (
             <>
               <GoogleAuthButton onClick={() => onOAuthSignIn('google')} />
-              <AppleAuthButton onClick={() => onOAuthSignIn('apple')} />
             </>
           )
         }

@@ -78,12 +78,6 @@ const GoogleMark = () => (
   </svg>
 );
 
-const AppleMark = () => (
-  <svg width="17" height="19" viewBox="0 0 15 17" aria-hidden="true" fill="currentColor">
-    <path d="M12.42 8.98c-.02-2.4 1.96-3.56 2.05-3.61-1.12-1.64-2.86-1.86-3.48-1.88-1.48-.15-2.89.87-3.64.87-.75 0-1.91-.85-3.14-.83-1.62.03-3.11.94-3.94 2.38-1.68 2.92-.43 7.24 1.2 9.61.8 1.16 1.75 2.46 3 2.42 1.2-.05 1.66-.78 3.11-.78 1.45 0 1.86.78 3.13.75 1.29-.02 2.11-1.18 2.9-2.35.91-1.34 1.29-2.65 1.31-2.72-.03-.01-2.5-.96-2.53-3.83zM10.02 2.4c.66-.8.9-1.92.79-3.03-.96.04-2.12.64-2.8 1.44-.61.7-1.15 1.85-1.01 2.94 1.07.08 2.16-.55 2.82-1.35z" />
-  </svg>
-);
-
 /**
  * Icon-only, so the accessible name lives entirely in aria-label; `title`
  * adds a native tooltip on hover for sighted mouse users.
@@ -93,7 +87,7 @@ function ProviderButton({
   onClick,
   label,
 }: {
-  provider: 'google' | 'apple';
+  provider: 'google';
   onClick?: () => void;
   label: string;
 }) {
@@ -105,26 +99,15 @@ function ProviderButton({
       aria-label={label}
       title={label}
     >
-      {provider === 'google' ? <GoogleMark /> : <AppleMark />}
+      <GoogleMark />
     </button>
   );
 }
 
 /**
  * Rendered by LoginPage/RegisterPage via AuthLayout's `social` slot, wired
- * to supabase.auth.signInWithOAuth({ provider: 'google' }). Errors gracefully
- * until the Google Cloud / Supabase provider config is in place.
+ * to supabase.auth.signInWithOAuth({ provider: 'google' }).
  */
 export function GoogleAuthButton({ onClick }: { onClick?: () => void }) {
   return <ProviderButton provider="google" onClick={onClick} label="Continue with Google" />;
-}
-
-/**
- * Wired to supabase.auth.signInWithOAuth({ provider: 'apple' }) -- a real
- * call, not a stub. It errors gracefully (same as Google) until Apple Sign
- * In is actually configured as a provider in Supabase/Apple Developer,
- * which hasn't happened yet.
- */
-export function AppleAuthButton({ onClick }: { onClick?: () => void }) {
-  return <ProviderButton provider="apple" onClick={onClick} label="Continue with Apple" />;
 }

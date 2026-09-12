@@ -5,7 +5,7 @@ import { Seo } from '@/lib/Seo';
 import { Button } from '@/components/primitives/Button';
 import { TextField, PasswordField } from '@/components/common/Field';
 import { supabase } from '@/lib/supabaseClient';
-import { AuthLayout, GoogleAuthButton, AppleAuthButton } from './AuthLayout';
+import { AuthLayout, GoogleAuthButton } from './AuthLayout';
 
 interface LocationState {
   from?: { pathname: string };
@@ -83,7 +83,7 @@ export default function LoginPage() {
     navigate(state?.from?.pathname ?? '/portal', { replace: true });
   }
 
-  async function onOAuthSignIn(provider: 'google' | 'apple') {
+  async function onOAuthSignIn(provider: 'google') {
     if (!supabase) {
       setError('Sign-in is not configured yet.');
       return;
@@ -111,7 +111,6 @@ export default function LoginPage() {
           magicLinkSent ? undefined : (
             <>
               <GoogleAuthButton onClick={() => onOAuthSignIn('google')} />
-              <AppleAuthButton onClick={() => onOAuthSignIn('apple')} />
             </>
           )
         }

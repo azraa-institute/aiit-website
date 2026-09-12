@@ -145,10 +145,10 @@
   line-height: 1.55;
 }
 
-/* ---- Social sign-in (Google + Apple) ----
+/* ---- Social sign-in (Google) ----
    Icon-only and compact on purpose: the "Or continue with" divider already
-   says what these are, so a full-width labelled button per provider is
-   redundant weight the form doesn't need. */
+   says what this is, so a full-width labelled button is redundant weight
+   the form doesn't need. */
 .auth__social {
   margin-top: var(--space-6);
   display: flex;
@@ -170,9 +170,6 @@
     background var(--dur-fast) var(--ease-out),
     box-shadow var(--dur-fast) var(--ease-out),
     transform var(--dur-fast) var(--ease-out);
-}
-.auth__provider--apple {
-  color: var(--ink);
 }
 .auth__provider:hover {
   border-color: var(--fg-muted);

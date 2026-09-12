@@ -10,6 +10,7 @@ import { AuthLayout, GoogleAuthButton, AppleAuthButton } from './AuthLayout';
 
 const EMAIL_RE = /.+@.+\..+/;
 const MIN_PASSWORD_LENGTH = 8;
+const ALREADY_REGISTERED_MESSAGE = 'An account with this email already exists. Please sign in instead.';
 
 interface TouchedState {
   firstName?: boolean;
@@ -58,7 +59,7 @@ export default function RegisterPage() {
 
     setError(undefined);
     setSubmitting(true);
-    const { error: signUpError } = await supabase.auth.signUp({
+    const { data, error: signUpError } = await supabase.auth.signUp({
       email,
       password,
       options: {
@@ -69,9 +70,25 @@ export default function RegisterPage() {
     setSubmitting(false);
 
     if (signUpError) {
-      setError(signUpError.message);
+      setError(
+        signUpError.message.toLowerCase().includes('already registered')
+          ? ALREADY_REGISTERED_MESSAGE
+          : signUpError.message,
+      );
       return;
     }
+
+    // Supabase's anti-enumeration design: signUp() for an email that already
+    // has a confirmed account returns a fake/obfuscated user rather than an
+    // error, so it can't be told apart from a real signup by response shape
+    // alone -- except its identities array is always empty, unlike a
+    // genuinely new signup's. (The other documented mode returns an explicit
+    // "already registered" error instead, handled above.)
+    if (data.user && data.user.identities && data.user.identities.length === 0) {
+      setError(ALREADY_REGISTERED_MESSAGE);
+      return;
+    }
+
     setSent(true);
   }
 

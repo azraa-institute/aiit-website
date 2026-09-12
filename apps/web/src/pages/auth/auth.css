@@ -316,6 +316,14 @@
   color: var(--fg-soft);
   line-height: 1.6;
 }
+.auth__done a {
+  color: var(--brass-deep);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.auth__done a:hover {
+  color: var(--ink);
+}
 
 /* ============================================================
    TABLET & MOBILE — the photo becomes a banner, the card lifts

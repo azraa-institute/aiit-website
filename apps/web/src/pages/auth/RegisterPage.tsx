@@ -109,7 +109,10 @@ export default function RegisterPage() {
       >
         {sent ? (
           <p className="auth__done">
-            Check your inbox to confirm your email address, then sign in to get started.
+            Check your inbox for a confirmation link to activate your new account. Already have an
+            AIIT account with this email? No new email is sent in that case -- try{' '}
+            <Link to="/login">signing in</Link> instead, or{' '}
+            <Link to="/forgot-password">reset your password</Link> if you've forgotten it.
           </p>
         ) : (
           <form className="auth__form" onSubmit={onSubmit} noValidate>

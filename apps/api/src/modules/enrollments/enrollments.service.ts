@@ -2,6 +2,7 @@ import { ConflictException, ForbiddenException, Injectable, NotFoundException } 
 import type { Prisma } from '@prisma/client';
 import type { Enrollment } from '@aiit/shared';
 import { PrismaService } from '../../common/prisma/prisma.service';
+import { NotificationsService } from '../notifications/notifications.service';
 import { mapDomain, mapLevel } from '../courses/catalogue.mappers';
 
 const ENROLLMENT_SELECT = {
@@ -26,7 +27,10 @@ type EnrollmentRow = Prisma.EnrollmentGetPayload<{ select: typeof ENROLLMENT_SEL
 
 @Injectable()
 export class EnrollmentsService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly notifications: NotificationsService,
+  ) {}
 
   async listForUser(userId: string): Promise<Enrollment[]> {
     const rows = await this.prisma.enrollment.findMany({
@@ -67,6 +71,14 @@ export class EnrollmentsService {
           data: { userId, courseId: course.id },
           select: ENROLLMENT_SELECT,
         });
+
+    await this.notifications.create(
+      userId,
+      'course',
+      `You're enrolled in ${row.course.title}`,
+      undefined,
+      `/courses/${row.course.slug}`,
+    );
 
     return toEnrollment(row);
   }

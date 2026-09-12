@@ -3,6 +3,7 @@ import type { Prisma } from '@prisma/client';
 import type { Assignment, AssignmentStatus } from '@aiit/shared';
 import { PrismaService } from '../../common/prisma/prisma.service';
 import { EnrollmentsService } from '../enrollments/enrollments.service';
+import { NotificationsService } from '../notifications/notifications.service';
 import { mapDomain, mapLevel } from '../courses/catalogue.mappers';
 import type { SubmitAssignmentDto } from './dto/submit-assignment.dto';
 import type { GradeSubmissionDto } from './dto/grade-submission.dto';
@@ -42,6 +43,7 @@ export class AssignmentsService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly enrollments: EnrollmentsService,
+    private readonly notifications: NotificationsService,
   ) {}
 
   async listForUser(userId: string): Promise<Assignment[]> {
@@ -98,8 +100,23 @@ export class AssignmentsService {
     const submission = await this.prisma.assignmentSubmission.update({
       where: { id: submissionId },
       data: { grade: dto.grade, feedback: dto.feedback, gradedAt: new Date() },
-      select: { grade: true, feedback: true, gradedAt: true },
+      select: {
+        userId: true,
+        grade: true,
+        feedback: true,
+        gradedAt: true,
+        assignment: { select: { title: true } },
+      },
     });
+
+    await this.notifications.create(
+      submission.userId,
+      'assignment',
+      `Your assignment was graded: ${submission.assignment.title}`,
+      dto.feedback ? `Grade: ${dto.grade} -- ${dto.feedback}` : `Grade: ${dto.grade}`,
+      '/portal/assignments',
+    );
+
     return {
       grade: submission.grade!,
       feedback: submission.feedback,

@@ -4,6 +4,7 @@ import type { Prisma } from '@prisma/client';
 import type { Certificate } from '@aiit/shared';
 import { PrismaService } from '../../common/prisma/prisma.service';
 import { EnrollmentsService } from '../enrollments/enrollments.service';
+import { NotificationsService } from '../notifications/notifications.service';
 import { mapDomain, mapLevel } from '../courses/catalogue.mappers';
 
 const CERTIFICATE_SELECT = {
@@ -22,6 +23,7 @@ export class CertificatesService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly enrollments: EnrollmentsService,
+    private readonly notifications: NotificationsService,
   ) {}
 
   async listForUser(userId: string): Promise<Certificate[]> {
@@ -52,6 +54,14 @@ export class CertificatesService {
     });
 
     await this.enrollments.markCompleted(targetUserId, course.id);
+
+    await this.notifications.create(
+      targetUserId,
+      'certificate',
+      `Certificate earned: ${row.course.title}`,
+      undefined,
+      '/portal/certificates',
+    );
 
     return toCertificate(row);
   }

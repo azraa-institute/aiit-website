@@ -11,6 +11,7 @@ import { CoursesModule } from './modules/courses/courses.module';
 import { EnrollmentsModule } from './modules/enrollments/enrollments.module';
 import { AssignmentsModule } from './modules/assignments/assignments.module';
 import { CertificatesModule } from './modules/certificates/certificates.module';
+import { NotificationsModule } from './modules/notifications/notifications.module';
 
 @Module({
   imports: [
@@ -36,6 +37,7 @@ import { CertificatesModule } from './modules/certificates/certificates.module';
     EnrollmentsModule,
     AssignmentsModule,
     CertificatesModule,
+    NotificationsModule,
   ],
   providers: [{ provide: APP_GUARD, useClass: ThrottlerGuard }],
 })

@@ -2,6 +2,7 @@ import { ConflictException, NotFoundException } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
 import { PrismaService } from '../../common/prisma/prisma.service';
 import { EnrollmentsService } from '../enrollments/enrollments.service';
+import { NotificationsService } from '../notifications/notifications.service';
 import { CertificatesService } from './certificates.service';
 
 const CERTIFICATE_ROW = {
@@ -26,6 +27,7 @@ describe('CertificatesService', () => {
     certificate: { findMany: jest.Mock; findUnique: jest.Mock; create: jest.Mock };
   };
   let enrollments: { markCompleted: jest.Mock };
+  let notifications: { create: jest.Mock };
 
   beforeEach(async () => {
     prisma = {
@@ -33,12 +35,14 @@ describe('CertificatesService', () => {
       certificate: { findMany: jest.fn(), findUnique: jest.fn(), create: jest.fn() },
     };
     enrollments = { markCompleted: jest.fn() };
+    notifications = { create: jest.fn() };
 
     const moduleRef = await Test.createTestingModule({
       providers: [
         CertificatesService,
         { provide: PrismaService, useValue: prisma },
         { provide: EnrollmentsService, useValue: enrollments },
+        { provide: NotificationsService, useValue: notifications },
       ],
     }).compile();
 
@@ -95,6 +99,13 @@ describe('CertificatesService', () => {
         }),
       );
       expect(enrollments.markCompleted).toHaveBeenCalledWith('user-1', 'crs-1');
+      expect(notifications.create).toHaveBeenCalledWith(
+        'user-1',
+        'certificate',
+        'Certificate earned: Digital & Tech Literacy (Absolute Beginner)',
+        undefined,
+        '/portal/certificates',
+      );
       expect(result.credentialId).toBe('AIIT-AB12CD34');
     });
   });

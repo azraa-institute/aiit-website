@@ -17,3 +17,4 @@ export * from './catalogue';
 export * from './enrollment';
 export * from './assignment';
 export * from './certificate';
+export * from './notification';

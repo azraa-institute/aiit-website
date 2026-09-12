@@ -269,6 +269,38 @@ model Certificate {
   @@schema("public")
 }
 
+// ---- Learner portal: notifications ----
+// No self-insert RLS policy, deliberately -- a notification only ever comes
+// from NotificationsService.create(), called by the API's other services
+// (enrollment, grading, certificate issuance) via the service-role
+// connection. A client has no legitimate reason to write one directly.
+// href is a plain string, not a FK -- it's a frontend route, e.g.
+// "/portal/certificates", not a reference to another table's row.
+
+enum NotificationKind {
+  course
+  certificate
+  assignment
+  webinar
+  system
+
+  @@schema("public")
+}
+
+model Notification {
+  id        String           @id @default(uuid()) @db.Uuid
+  userId    String           @map("user_id") @db.Uuid
+  kind      NotificationKind
+  title     String
+  body      String?
+  href      String?
+  read      Boolean          @default(false)
+  createdAt DateTime         @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  @@map("notifications")
+  @@schema("public")
+}
+
 // Named CourseModule, not Module -- every NestJS file in this codebase
 // imports Module from @nestjs/common; a same-named Prisma model is a
 // constant footgun even though technically resolvable via aliasing.

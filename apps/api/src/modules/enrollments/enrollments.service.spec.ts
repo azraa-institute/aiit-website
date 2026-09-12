@@ -1,6 +1,7 @@
 import { ConflictException, ForbiddenException, NotFoundException } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
 import { PrismaService } from '../../common/prisma/prisma.service';
+import { NotificationsService } from '../notifications/notifications.service';
 import { EnrollmentsService } from './enrollments.service';
 
 const DOMAIN = {
@@ -37,6 +38,7 @@ describe('EnrollmentsService', () => {
     course: { findFirst: jest.Mock };
     enrollment: { findMany: jest.Mock; findUnique: jest.Mock; create: jest.Mock; update: jest.Mock; updateMany: jest.Mock };
   };
+  let notifications: { create: jest.Mock };
 
   beforeEach(async () => {
     prisma = {
@@ -49,9 +51,14 @@ describe('EnrollmentsService', () => {
         updateMany: jest.fn(),
       },
     };
+    notifications = { create: jest.fn() };
 
     const moduleRef = await Test.createTestingModule({
-      providers: [EnrollmentsService, { provide: PrismaService, useValue: prisma }],
+      providers: [
+        EnrollmentsService,
+        { provide: PrismaService, useValue: prisma },
+        { provide: NotificationsService, useValue: notifications },
+      ],
     }).compile();
 
     service = moduleRef.get(EnrollmentsService);
@@ -117,6 +124,13 @@ describe('EnrollmentsService', () => {
         expect.objectContaining({ data: { userId: 'user-1', courseId: 'crs-1' } }),
       );
       expect(result.id).toBe('enr-1');
+      expect(notifications.create).toHaveBeenCalledWith(
+        'user-1',
+        'course',
+        "You're enrolled in Digital & Tech Literacy (Absolute Beginner)",
+        undefined,
+        '/courses/digital-and-tech-literacy-absolute-beginner',
+      );
     });
 
     it('throws ConflictException when already actively enrolled', async () => {

@@ -2,6 +2,7 @@ import { ForbiddenException, NotFoundException } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
 import { PrismaService } from '../../common/prisma/prisma.service';
 import { EnrollmentsService } from '../enrollments/enrollments.service';
+import { NotificationsService } from '../notifications/notifications.service';
 import { AssignmentsService } from './assignments.service';
 
 const COURSE = {
@@ -34,6 +35,7 @@ describe('AssignmentsService', () => {
     assignmentSubmission: { upsert: jest.Mock; update: jest.Mock };
   };
   let enrollments: { isEnrolled: jest.Mock };
+  let notifications: { create: jest.Mock };
 
   beforeEach(async () => {
     prisma = {
@@ -42,12 +44,14 @@ describe('AssignmentsService', () => {
       assignmentSubmission: { upsert: jest.fn(), update: jest.fn() },
     };
     enrollments = { isEnrolled: jest.fn() };
+    notifications = { create: jest.fn() };
 
     const moduleRef = await Test.createTestingModule({
       providers: [
         AssignmentsService,
         { provide: PrismaService, useValue: prisma },
         { provide: EnrollmentsService, useValue: enrollments },
+        { provide: NotificationsService, useValue: notifications },
       ],
     }).compile();
 
@@ -151,11 +155,13 @@ describe('AssignmentsService', () => {
   });
 
   describe('grade', () => {
-    it('sets grade/feedback/gradedAt', async () => {
+    it('sets grade/feedback/gradedAt and notifies the submission owner', async () => {
       prisma.assignmentSubmission.update.mockResolvedValueOnce({
+        userId: 'user-1',
         grade: 'B+',
         feedback: 'Good, but check part 2.',
         gradedAt: new Date('2026-09-13T00:00:00.000Z'),
+        assignment: { title: 'Set up your first cloud account' },
       });
 
       const result = await service.grade('sub-1', { grade: 'B+', feedback: 'Good, but check part 2.' });
@@ -165,6 +171,13 @@ describe('AssignmentsService', () => {
         feedback: 'Good, but check part 2.',
         gradedAt: '2026-09-13T00:00:00.000Z',
       });
+      expect(notifications.create).toHaveBeenCalledWith(
+        'user-1',
+        'assignment',
+        'Your assignment was graded: Set up your first cloud account',
+        'Grade: B+ -- Good, but check part 2.',
+        '/portal/assignments',
+      );
     });
   });
 });

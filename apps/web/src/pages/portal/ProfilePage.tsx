@@ -16,9 +16,10 @@ const AVATARS_BUCKET = 'avatars';
 export default function ProfilePage() {
   const { session } = useAuth();
   const state = useLearner();
-  useScrollReveal([state.status]);
 
   const [initialized, setInitialized] = useState(false);
+  useScrollReveal([state.status, initialized]);
+
   const [name, setName] = useState('');
   const [headline, setHeadline] = useState('');
   const [saving, setSaving] = useState(false);

@@ -2,9 +2,9 @@
 
 # AIIT — Azraa Institute of Information Technology
 
-The web front-end for **AIIT**, an international online technology institute —
+**AIIT**, an international online technology institute —
 [aiit.network](https://aiit.network) reimagined as a calm, editorial,
-future-tech learning platform.
+future-tech learning platform, with a real learner portal behind it.
 
 ![React](https://img.shields.io/badge/React-18-61DAFB?style=flat-square&logo=react&logoColor=white)
 ![TypeScript](https://img.shields.io/badge/TypeScript-5.6-3178C6?style=flat-square&logo=typescript&logoColor=white)
@@ -30,7 +30,9 @@ redesign.
 | Styling | Hand-built design system on CSS custom properties; no UI framework |
 | Motion | CSS + `IntersectionObserver`, `prefers-reduced-motion` respected throughout |
 | Content | Markdown blog + typed seed data; no CMS |
-| Hosting | Vercel (static SPA) |
+| Auth | Supabase Auth (email/password, magic link, TOTP 2FA); JWT verified against Supabase's JWKS |
+| Backend | NestJS + Prisma + Postgres (Supabase), real business endpoints (see Backend below) |
+| Hosting | Vercel (frontend, static SPA) + Render (API) |
 
 ## Quick start
 
@@ -46,8 +48,8 @@ npm run typecheck  # tsc, no emit
 Requires **Node 20+**.
 
 This is an npm-workspaces monorepo: `apps/web` is the frontend above, `apps/api`
-is the NestJS backend (Phase 0 foundations — a scaffold with a health check, not
-yet wired to real business logic), `packages/shared` holds types shared by both.
+is the NestJS backend (real auth, catalogue, learner-portal endpoints — see
+Backend below), `packages/shared` holds types shared by both.
 `npm install`/`npm run dev`/`build`/`lint`/`typecheck` at the repo root operate
 across the whole workspace; `npm run dev:api` starts the API alone.
 
@@ -56,7 +58,7 @@ across the whole workspace; `npm run dev:api` starts the API alone.
 ```
 azraa-aiit/
 ├── apps/web/        the frontend above (moved from the former repo-root src/)
-├── apps/api/        the NestJS API — see apps/api/README or the backend plan
+├── apps/api/        the NestJS API — see Backend below
 ├── packages/shared/ TypeScript types imported by both apps
 ├── docs/            planning documents (local-only, gitignored)
 └── scripts/         repo-level tooling (e.g. docs:pdf)
@@ -81,7 +83,7 @@ src/
 │   └── home/           homepage section components
 ├── pages/           one component per route
 │   ├── auth/           login, register, forgot-password
-│   └── portal/         learner portal shell
+│   └── portal/         learner portal — dashboard, courses, assignments, certificates, profile, settings
 └── styles/          tokens.css (design system), reset, global rules
 ```
 
@@ -123,22 +125,53 @@ sites.
 
 ## Deployment
 
-`vercel.json` configures SPA rewrites and asset caching. Any static host works —
-serve `dist/` with a catch-all rewrite to `/index.html`.
+**Frontend** (`apps/web`) — Vercel, auto-deploys `main` and every PR branch as a
+preview. `vercel.json` configures SPA rewrites and asset caching. Any static
+host works — serve `dist/` with a catch-all rewrite to `/index.html`. Vite
+bakes `VITE_*` env vars in at **build time** — changing one in Vercel does
+nothing until the next deploy.
 
-## Backend status
+**API** (`apps/api`) — Render, one production service. `.github/workflows/deploy.yml`
+runs on every push to `main`: applies pending Prisma migrations against the
+real database, then triggers a Render deploy via its deploy hook (Render only
+tracks `main` — there is no preview environment for the API, so a PR branch's
+Vercel preview still talks to the same production API). `CORS_ORIGINS` on
+Render auto-allows any Vercel preview URL under this project via a pattern
+match in `main.ts`, in addition to the two production domains listed there
+explicitly.
 
-The front-end is complete. The backend (`apps/api`) has its Phase 0 foundations —
-a health check, CI/CD, and migration tooling — but no real business endpoints
-yet. As a result:
+## Backend
 
-- **Forms** (contact, newsletter, webinar, auth) validate and show success
-  states but do not submit anywhere.
-- **Authentication** is a client-only placeholder; the Google sign-in button is
-  intentionally hidden until an OAuth provider is wired up.
-- **The learner portal** renders fully designed *empty states* from an empty
-  record (`src/pages/portal/learnerData.ts`) — it never displays fabricated
-  progress, grades or certificates.
+`apps/api` is a real NestJS + Prisma + Postgres (Supabase) backend, not a
+scaffold. Live modules:
+
+- **Auth** — Supabase Auth (email/password, magic link, TOTP 2FA). API routes
+  verify the caller's JWT against Supabase's JWKS endpoint (`JwtGuard`), then
+  look up the app-level role from `profiles` — never trusts the JWT's own role
+  claim.
+- **Catalogue** — course/domain/category data, location-based currency pricing.
+- **Learner portal** — `Enrollment`, `Assignment` + `AssignmentSubmission`,
+  `Certificate`, `Notification`. Self-enrollment is open for free courses only
+  (no payment integration exists); grading and certificate issuance are real
+  `@Roles('admin')`-gated endpoints with no admin UI yet — callable directly
+  (curl/Postman) until one is built.
+- **Profile** — `GET/PATCH /me`, `PATCH /me/preferences`, `DELETE /me` (soft
+  deletion request).
+
+**Not yet wired to the backend:**
+
+- The **contact, newsletter, and webinar-registration forms** still validate
+  and show a success state locally but don't submit anywhere
+  (`ContactPage.tsx`, `NewsletterForm.tsx`, `WebinarPage.tsx`).
+- **Google/Apple sign-in** buttons call real Supabase OAuth methods but show a
+  graceful "not configured" error — the providers aren't set up in the
+  Supabase/Google Cloud dashboards yet.
+- **Avatar upload and assignment file attachments** need two Supabase Storage
+  buckets (`avatars`, `submissions`) that haven't been created yet; everything
+  else in the portal works without them.
+- **Payments** — no payment system exists in this codebase. Paid/subscription
+  courses show as informational-only on the course page; there is no
+  Payment Methods section anywhere in the portal.
 
 ---
 

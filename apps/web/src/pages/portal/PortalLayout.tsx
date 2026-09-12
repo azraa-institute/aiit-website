@@ -6,6 +6,8 @@ import { useAuth } from '@/lib/AuthContext';
 import { useLockBodyScroll } from '@/lib/useLockBodyScroll';
 import { Logo } from '@/components/layout/Logo';
 import { Toast } from '@/components/common/Toast';
+import { Avatar } from '@/components/common/Avatar';
+import { publicFileUrl } from '@/lib/storage';
 import { useLearner, greetingName } from './learnerData';
 import { PortalAtmosphere } from './PortalAtmosphere';
 import { PortalLoader } from './PortalLoader';
@@ -87,6 +89,7 @@ export default function PortalLayout() {
   const learner = learnerState.learner;
   const unread = learner?.notifications.filter((n) => !n.read).length ?? 0;
   const firstName = learner ? greetingName(learner) : null;
+  const avatarUrl = publicFileUrl('avatars', learner?.profile.avatarKey);
   const current = NAV.find((n) => (n.end ? location.pathname === n.to : location.pathname.startsWith(n.to)));
   const sectionLabel = current?.label ?? 'Portal';
 
@@ -217,9 +220,7 @@ export default function PortalLayout() {
               </svg>
             </NavLink>
             <Link to="/portal/profile" className="portal-topbar__id">
-              <span className="portal-topbar__id-mark" aria-hidden="true">
-                {firstName ? firstName[0].toUpperCase() : 'A'}
-              </span>
+              <Avatar name={learner?.profile.name} photoUrl={avatarUrl} size="sm" className="portal-topbar__id-mark" />
               <span className="portal-topbar__id-name">{firstName ?? 'Your profile'}</span>
             </Link>
           </div>

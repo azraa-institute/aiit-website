@@ -23,7 +23,23 @@ async function bootstrap() {
     .split(',')
     .map((o) => o.trim())
     .filter(Boolean);
-  app.enableCors({ origin: corsOrigins.length > 0 ? corsOrigins : false, credentials: true });
+  // Vercel preview deployments (e.g. PR branches) get a URL under this
+  // project's own team every time, so they're allowed automatically instead
+  // of needing a manual CORS_ORIGINS edit for every PR.
+  const vercelPreviewPattern = /^https:\/\/aiit-[a-z0-9-]+-azraa-institute-of-information-technology\.vercel\.app$/;
+  app.enableCors({
+    origin:
+      corsOrigins.length === 0
+        ? false
+        : (origin, callback) => {
+            if (!origin || corsOrigins.includes(origin) || vercelPreviewPattern.test(origin)) {
+              callback(null, true);
+            } else {
+              callback(new Error('Not allowed by CORS'));
+            }
+          },
+    credentials: true,
+  });
 
   app.useGlobalPipes(
     new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true, transform: true }),

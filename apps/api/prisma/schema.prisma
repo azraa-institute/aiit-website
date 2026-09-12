@@ -168,11 +168,136 @@ model Course {
   status           CourseLifecycleStatus @default(draft)
   publishedAt      DateTime?             @map("published_at") @db.Timestamptz(6)
   modules          CourseModule[]
+  enrollments      Enrollment[]
+  assignments      Assignment[]
+  certificates     Certificate[]
   createdAt        DateTime              @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt        DateTime              @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
   deletedAt        DateTime?             @map("deleted_at") @db.Timestamptz(6)
 
   @@map("courses")
+  @@schema("public")
+}
+
+// ---- Learner portal: enrollment ----
+// enrolledCount on Course above is the static marketing figure imported from
+// the old site's copy -- deliberately NOT derived from this table, which
+// starts at zero real signups. This is the real, per-learner signal used for
+// "am I enrolled" / My Courses / assignment eligibility, not the public
+// course-listing count.
+
+enum EnrollmentStatus {
+  active
+  completed
+  cancelled
+
+  @@schema("public")
+}
+
+model Enrollment {
+  id          String           @id @default(uuid()) @db.Uuid
+  userId      String           @map("user_id") @db.Uuid // references auth.users.id, not a Prisma relation -- see Profile
+  courseId    String           @map("course_id") @db.Uuid
+  course      Course           @relation(fields: [courseId], references: [id])
+  status      EnrollmentStatus @default(active)
+  enrolledAt  DateTime         @default(now()) @map("enrolled_at") @db.Timestamptz(6)
+  completedAt DateTime?        @map("completed_at") @db.Timestamptz(6)
+  createdAt   DateTime         @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt   DateTime         @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  @@unique([userId, courseId])
+  @@map("enrollments")
+  @@schema("public")
+}
+
+// ---- Learner portal: assignments ----
+// Submission status (upcoming/overdue/submitted/graded) is deliberately NOT
+// a stored column -- it's derived from submittedAt/gradedAt/dueAt in
+// AssignmentsService each time it's read, so it can never drift out of sync
+// with the timestamps that actually define it.
+
+model Assignment {
+  id          String                 @id @default(uuid()) @db.Uuid
+  courseId    String                 @map("course_id") @db.Uuid
+  course      Course                 @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  title       String
+  description String
+  dueAt       DateTime?              @map("due_at") @db.Timestamptz(6)
+  submissions AssignmentSubmission[]
+  createdAt   DateTime               @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt   DateTime               @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  @@map("assignments")
+  @@schema("public")
+}
+
+model AssignmentSubmission {
+  id           String     @id @default(uuid()) @db.Uuid
+  assignmentId String     @map("assignment_id") @db.Uuid
+  assignment   Assignment @relation(fields: [assignmentId], references: [id], onDelete: Cascade)
+  userId       String     @map("user_id") @db.Uuid
+  fileKey      String?    @map("file_key") // Supabase Storage object key, not a URL -- same convention as Profile.avatarKey
+  note         String?
+  submittedAt  DateTime?  @map("submitted_at") @db.Timestamptz(6)
+  grade        String?
+  feedback     String?
+  gradedAt     DateTime?  @map("graded_at") @db.Timestamptz(6)
+  createdAt    DateTime   @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt    DateTime   @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  @@unique([assignmentId, userId])
+  @@map("assignment_submissions")
+  @@schema("public")
+}
+
+// ---- Learner portal: certificates ----
+// Issued only via @Roles('admin') (CertificatesService.issue), which also
+// marks the learner's Enrollment completed in the same call -- there is no
+// automatic "100% of lessons done" trigger, since course curricula are
+// currently empty. No admin UI yet; a real, correctly-gated API call.
+
+model Certificate {
+  id           String   @id @default(uuid()) @db.Uuid
+  userId       String   @map("user_id") @db.Uuid
+  courseId     String   @map("course_id") @db.Uuid
+  course       Course   @relation(fields: [courseId], references: [id])
+  credentialId String   @unique @map("credential_id")
+  issuedAt     DateTime @default(now()) @map("issued_at") @db.Timestamptz(6)
+
+  @@unique([userId, courseId])
+  @@map("certificates")
+  @@schema("public")
+}
+
+// ---- Learner portal: notifications ----
+// No self-insert RLS policy, deliberately -- a notification only ever comes
+// from NotificationsService.create(), called by the API's other services
+// (enrollment, grading, certificate issuance) via the service-role
+// connection. A client has no legitimate reason to write one directly.
+// href is a plain string, not a FK -- it's a frontend route, e.g.
+// "/portal/certificates", not a reference to another table's row.
+
+enum NotificationKind {
+  course
+  certificate
+  assignment
+  webinar
+  system
+
+  @@schema("public")
+}
+
+model Notification {
+  id        String           @id @default(uuid()) @db.Uuid
+  userId    String           @map("user_id") @db.Uuid
+  kind      NotificationKind
+  title     String
+  body      String?
+  href      String?
+  read      Boolean          @default(false)
+  createdAt DateTime         @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  @@map("notifications")
   @@schema("public")
 }
 

@@ -8,6 +8,10 @@ import { PrismaModule } from './common/prisma/prisma.module';
 import { HealthModule } from './modules/health/health.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { CoursesModule } from './modules/courses/courses.module';
+import { EnrollmentsModule } from './modules/enrollments/enrollments.module';
+import { AssignmentsModule } from './modules/assignments/assignments.module';
+import { CertificatesModule } from './modules/certificates/certificates.module';
+import { NotificationsModule } from './modules/notifications/notifications.module';
 
 @Module({
   imports: [
@@ -30,6 +34,10 @@ import { CoursesModule } from './modules/courses/courses.module';
     HealthModule,
     AuthModule,
     CoursesModule,
+    EnrollmentsModule,
+    AssignmentsModule,
+    CertificatesModule,
+    NotificationsModule,
   ],
   providers: [{ provide: APP_GUARD, useClass: ThrottlerGuard }],
 })

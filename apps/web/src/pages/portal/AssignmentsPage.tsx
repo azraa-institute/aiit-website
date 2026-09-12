@@ -1,16 +1,11 @@
+import type { Assignment } from '@aiit/shared';
 import { useScrollReveal } from '@/lib/useScrollReveal';
-import { formatDate } from '@/lib/format';
-import { useLearner, courseById } from './learnerData';
+import { useLearner } from './learnerData';
 import { PortalEmpty } from './PortalEmpty';
 import { PortalLoader } from './PortalLoader';
+import { AssignmentRow } from './AssignmentRow';
 
-const STATUS_LABEL = {
-  pending: 'To do',
-  submitted: 'Submitted',
-  graded: 'Graded',
-} as const;
-
-const ORDER = { pending: 0, submitted: 1, graded: 2 } as const;
+const ORDER: Record<Assignment['status'], number> = { overdue: 0, upcoming: 1, submitted: 2, graded: 3 };
 
 export default function AssignmentsPage() {
   const state = useLearner();
@@ -39,25 +34,9 @@ export default function AssignmentsPage() {
         />
       ) : (
         <ul className="tasklist" role="list">
-          {assignments.map((a) => {
-            const course = courseById(a.courseId);
-            return (
-              <li key={a.id} className="task" data-status={a.status} data-reveal>
-                <div className="task__main">
-                  <p className="task__status">{STATUS_LABEL[a.status]}</p>
-                  <h2 className="task__title">{a.title}</h2>
-                  {course ? <p className="task__course">{course.title}</p> : null}
-                </div>
-                <p className="task__meta">
-                  {a.status === 'graded' && a.grade
-                    ? `Grade: ${a.grade}`
-                    : a.dueAt
-                      ? `Due ${formatDate(a.dueAt)}`
-                      : ''}
-                </p>
-              </li>
-            );
-          })}
+          {assignments.map((a) => (
+            <AssignmentRow key={a.id} assignment={a} onSubmitted={state.refetch} />
+          ))}
         </ul>
       )}
     </div>

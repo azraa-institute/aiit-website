@@ -2,6 +2,7 @@ import { PrismaClient } from '@prisma/client';
 import { DOMAINS } from './seed-data/domains';
 import { CATEGORIES } from './seed-data/categories';
 import { COURSES, type CourseSeed } from './seed-data/courses';
+import { ASSIGNMENTS } from './seed-data/assignments';
 
 const prisma = new PrismaClient();
 
@@ -41,7 +42,38 @@ async function main(): Promise<void> {
     });
   }
 
-  console.log(`Seeded ${DOMAINS.length} domains, ${CATEGORIES.length} categories, ${COURSES.length} courses.`);
+  for (const assignment of ASSIGNMENTS) {
+    const course = await prisma.course.findUnique({
+      where: { slug: assignment.courseSlug },
+      select: { id: true },
+    });
+    if (!course) {
+      throw new Error(
+        `Seed error: unknown course slug "${assignment.courseSlug}" for assignment "${assignment.title}".`,
+      );
+    }
+
+    const dueAt = assignment.dueInDays !== null ? new Date(Date.now() + assignment.dueInDays * 86_400_000) : null;
+    const data = {
+      courseId: course.id,
+      title: assignment.title,
+      description: assignment.description,
+      dueAt,
+    };
+
+    const existing = await prisma.assignment.findFirst({
+      where: { courseId: course.id, title: assignment.title },
+    });
+    if (existing) {
+      await prisma.assignment.update({ where: { id: existing.id }, data });
+    } else {
+      await prisma.assignment.create({ data });
+    }
+  }
+
+  console.log(
+    `Seeded ${DOMAINS.length} domains, ${CATEGORIES.length} categories, ${COURSES.length} courses, ${ASSIGNMENTS.length} assignments.`,
+  );
 }
 
 function toCourseData(course: CourseSeed, categoryId: string, domainId: string | null) {

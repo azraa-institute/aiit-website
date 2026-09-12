@@ -2,6 +2,7 @@ import { lazy, Suspense, useEffect } from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { ScrollToTop } from '@/components/layout/ScrollToTop';
 import { RouteFallback } from '@/components/layout/RouteFallback';
+import { ChunkErrorBoundary, CHUNK_RELOAD_FLAG } from '@/components/layout/ChunkErrorBoundary';
 import { AuthProvider } from '@/lib/AuthContext';
 import { RequireAuth } from '@/components/auth/RequireAuth';
 
@@ -13,6 +14,11 @@ import { RequireAuth } from '@/components/auth/RequireAuth';
  */
 function SplashGate() {
   useEffect(() => {
+    // This route rendered successfully -- a later chunk-load error deserves
+    // its own fresh auto-reload attempt, not to be blocked by one from
+    // earlier in the session.
+    sessionStorage.removeItem(CHUNK_RELOAD_FLAG);
+
     const el = document.getElementById('splash');
     if (!el) return;
     let done = false;
@@ -72,60 +78,62 @@ export function App() {
   return (
     <AuthProvider>
       <ScrollToTop />
-      <Suspense fallback={<RouteFallback />}>
-        <SplashGate />
-        <Routes>
-          <Route path="/" element={<HomePage />} />
-          <Route path="/about" element={<AboutPage />} />
-          <Route path="/courses" element={<CoursesPage />} />
-          <Route path="/courses/:slug" element={<CourseDetailPage />} />
-          <Route path="/resources" element={<ResourcesPage />} />
-          <Route path="/resources/:slug" element={<ResourceDetailPage />} />
-          <Route path="/webinar" element={<WebinarPage />} />
-          <Route path="/faqs" element={<FaqsPage />} />
-          <Route path="/contact" element={<ContactPage />} />
-          <Route path="/shop" element={<ShopPage />} />
-          {/* Legacy slug — the product's slug was corrected. */}
-          <Route
-            path="/shop/laptop-stand-p43fallen-key"
-            element={<Navigate to="/shop/laptop-stand-p43f-allen-key" replace />}
-          />
-          <Route path="/shop/:slug" element={<ProductDetailPage />} />
-          <Route path="/instructors" element={<InstructorsPage />} />
-          <Route path="/why-join" element={<WhyJoinPage />} />
-          <Route path="/aiit-blueprint" element={<BlueprintPage />} />
-          <Route path="/affiliate" element={<AffiliatePage />} />
-          <Route path="/login" element={<LoginPage />} />
-          <Route path="/register" element={<RegisterPage />} />
-          <Route path="/forgot-password" element={<ForgotPasswordPage />} />
-          <Route path="/auth/callback" element={<AuthCallbackPage />} />
-          <Route path="/reset-password" element={<ResetPasswordPage />} />
+      <ChunkErrorBoundary>
+        <Suspense fallback={<RouteFallback />}>
+          <SplashGate />
+          <Routes>
+            <Route path="/" element={<HomePage />} />
+            <Route path="/about" element={<AboutPage />} />
+            <Route path="/courses" element={<CoursesPage />} />
+            <Route path="/courses/:slug" element={<CourseDetailPage />} />
+            <Route path="/resources" element={<ResourcesPage />} />
+            <Route path="/resources/:slug" element={<ResourceDetailPage />} />
+            <Route path="/webinar" element={<WebinarPage />} />
+            <Route path="/faqs" element={<FaqsPage />} />
+            <Route path="/contact" element={<ContactPage />} />
+            <Route path="/shop" element={<ShopPage />} />
+            {/* Legacy slug — the product's slug was corrected. */}
+            <Route
+              path="/shop/laptop-stand-p43fallen-key"
+              element={<Navigate to="/shop/laptop-stand-p43f-allen-key" replace />}
+            />
+            <Route path="/shop/:slug" element={<ProductDetailPage />} />
+            <Route path="/instructors" element={<InstructorsPage />} />
+            <Route path="/why-join" element={<WhyJoinPage />} />
+            <Route path="/aiit-blueprint" element={<BlueprintPage />} />
+            <Route path="/affiliate" element={<AffiliatePage />} />
+            <Route path="/login" element={<LoginPage />} />
+            <Route path="/register" element={<RegisterPage />} />
+            <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+            <Route path="/auth/callback" element={<AuthCallbackPage />} />
+            <Route path="/reset-password" element={<ResetPasswordPage />} />
 
-          <Route
-            path="/portal"
-            element={
-              <RequireAuth>
-                <PortalLayout />
-              </RequireAuth>
-            }
-          >
-            <Route index element={<DashboardPage />} />
-            <Route path="courses" element={<MyCoursesPage />} />
-            <Route path="certificates" element={<CertificatesPage />} />
-            <Route path="assignments" element={<AssignmentsPage />} />
-            <Route path="resources" element={<PortalResourcesPage />} />
-            <Route path="webinars" element={<WebinarsPage />} />
-            <Route path="profile" element={<ProfilePage />} />
-            <Route path="notifications" element={<NotificationsPage />} />
-            <Route path="settings" element={<SettingsPage />} />
-          </Route>
+            <Route
+              path="/portal"
+              element={
+                <RequireAuth>
+                  <PortalLayout />
+                </RequireAuth>
+              }
+            >
+              <Route index element={<DashboardPage />} />
+              <Route path="courses" element={<MyCoursesPage />} />
+              <Route path="certificates" element={<CertificatesPage />} />
+              <Route path="assignments" element={<AssignmentsPage />} />
+              <Route path="resources" element={<PortalResourcesPage />} />
+              <Route path="webinars" element={<WebinarsPage />} />
+              <Route path="profile" element={<ProfilePage />} />
+              <Route path="notifications" element={<NotificationsPage />} />
+              <Route path="settings" element={<SettingsPage />} />
+            </Route>
 
-          <Route path="/privacy-policy" element={<LegalPage kind="privacy" />} />
-          <Route path="/terms" element={<LegalPage kind="terms" />} />
+            <Route path="/privacy-policy" element={<LegalPage kind="privacy" />} />
+            <Route path="/terms" element={<LegalPage kind="terms" />} />
 
-          <Route path="*" element={<NotFoundPage />} />
-        </Routes>
-      </Suspense>
+            <Route path="*" element={<NotFoundPage />} />
+          </Routes>
+        </Suspense>
+      </ChunkErrorBoundary>
     </AuthProvider>
   );
 }

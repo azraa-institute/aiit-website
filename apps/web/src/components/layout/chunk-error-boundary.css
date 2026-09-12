@@ -1,0 +1,48 @@
+/* Manual recovery state -- shown only when an automatic reload wouldn't be
+   safe to assume will fix it (see ChunkErrorBoundary.tsx). */
+.chunk-error {
+  min-height: 60vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-3);
+  padding: var(--space-6);
+  text-align: center;
+}
+
+.chunk-error .aiit-logo {
+  height: 34px;
+  margin-bottom: var(--space-2);
+}
+
+.chunk-error__title {
+  font-family: var(--font-display);
+  font-size: var(--fs-heading);
+  color: var(--ink);
+}
+
+.chunk-error__body {
+  max-width: 32rem;
+  color: var(--ink-muted);
+}
+
+.chunk-error__button {
+  margin-top: var(--space-3);
+  padding: 0.75rem 1.75rem;
+  border: 1px solid var(--ink);
+  border-radius: var(--radius-sm);
+  background: var(--ink);
+  color: var(--ivory);
+  font-family: var(--font-ui);
+  font-size: var(--fs-sm);
+  font-weight: 700;
+  cursor: pointer;
+  transition:
+    background var(--dur-fast) var(--ease-out),
+    color var(--dur-fast) var(--ease-out);
+}
+.chunk-error__button:hover {
+  background: transparent;
+  color: var(--ink);
+}

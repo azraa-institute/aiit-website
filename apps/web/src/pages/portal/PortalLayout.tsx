@@ -5,6 +5,7 @@ import { cn } from '@/lib/cn';
 import { useAuth } from '@/lib/AuthContext';
 import { useLockBodyScroll } from '@/lib/useLockBodyScroll';
 import { Logo } from '@/components/layout/Logo';
+import { Toast } from '@/components/common/Toast';
 import { useLearner, greetingName } from './learnerData';
 import { PortalAtmosphere } from './PortalAtmosphere';
 import { PortalLoader } from './PortalLoader';
@@ -49,9 +50,24 @@ export default function PortalLayout() {
   const { signOut } = useAuth();
   const learnerState = useLearner();
   const [menuOpen, setMenuOpen] = useState(false);
+  const [showWelcome, setShowWelcome] = useState(false);
   const menuCloseRef = useRef<HTMLButtonElement>(null);
+  const checkedWelcome = useRef(false);
 
   useLockBodyScroll(menuOpen);
+
+  // One-shot: AuthCallbackPage marks a fresh confirmation/OAuth sign-in via
+  // navigation state. Re-navigating to strip it (rather than just reading
+  // it) stops a hard refresh on this same history entry from re-showing it,
+  // since React Router's state is backed by the real history.state.
+  useEffect(() => {
+    if (checkedWelcome.current) return;
+    checkedWelcome.current = true;
+    if ((location.state as { justConfirmed?: boolean } | null)?.justConfirmed) {
+      setShowWelcome(true);
+      navigate(location.pathname, { replace: true, state: null });
+    }
+  }, [location, navigate]);
 
   useEffect(() => {
     setMenuOpen(false);
@@ -86,6 +102,13 @@ export default function PortalLayout() {
       <a className="portal__skip skip-link" href="#portal-main">
         Skip to content
       </a>
+
+      {showWelcome && (
+        <Toast
+          message={firstName ? `Welcome, ${firstName} — you're all set.` : "Welcome — you're all set."}
+          onDismiss={() => setShowWelcome(false)}
+        />
+      )}
 
       {/* Navigation rail — the same markup is the desktop rail and the
           mobile slide-out panel; CSS switches presentation. */}

@@ -15,6 +15,8 @@ interface BaseProps {
   /** Show a trailing arrow that animates on hover. */
   arrow?: boolean;
   fullWidth?: boolean;
+  /** Shows a spinner and implies disabled -- for an in-flight async action (e.g. form submit). */
+  loading?: boolean;
 }
 
 type ButtonAsButton = BaseProps &
@@ -26,13 +28,21 @@ type ButtonAsRoute = BaseProps &
 
 type ButtonProps = ButtonAsButton | ButtonAsLink | ButtonAsRoute;
 
-function classes(variant: Variant, size: Size, arrow?: boolean, fullWidth?: boolean, extra?: string) {
+function classes(
+  variant: Variant,
+  size: Size,
+  arrow?: boolean,
+  fullWidth?: boolean,
+  loading?: boolean,
+  extra?: string,
+) {
   return cn(
     'btn',
     `btn--${variant}`,
     `btn--${size}`,
     arrow && 'btn--arrow',
     fullWidth && 'btn--block',
+    loading && 'btn--loading',
     extra,
   );
 }
@@ -43,13 +53,16 @@ const Arrow = () => (
   </svg>
 );
 
+const Spinner = () => <span className="btn__spinner" aria-hidden="true" />;
+
 export const Button = forwardRef<HTMLButtonElement | HTMLAnchorElement, ButtonProps>(
-  ({ variant = 'primary', size = 'md', children, className, arrow, fullWidth, ...rest }, ref) => {
-    const cls = classes(variant, size, arrow, fullWidth, className);
+  ({ variant = 'primary', size = 'md', children, className, arrow, fullWidth, loading, ...rest }, ref) => {
+    const cls = classes(variant, size, arrow, fullWidth, loading, className);
     const content = (
       <>
+        {loading && <Spinner />}
         <span className="btn__label">{children}</span>
-        {arrow && <Arrow />}
+        {arrow && !loading && <Arrow />}
       </>
     );
 
@@ -69,9 +82,15 @@ export const Button = forwardRef<HTMLButtonElement | HTMLAnchorElement, ButtonPr
         </a>
       );
     }
-    const { as: _as, ...buttonRest } = rest as ButtonAsButton;
+    const { as: _as, disabled, ...buttonRest } = rest as ButtonAsButton;
     return (
-      <button className={cls} ref={ref as React.Ref<HTMLButtonElement>} {...buttonRest}>
+      <button
+        className={cls}
+        disabled={disabled || loading}
+        aria-busy={loading || undefined}
+        ref={ref as React.Ref<HTMLButtonElement>}
+        {...buttonRest}
+      >
         {content}
       </button>
     );

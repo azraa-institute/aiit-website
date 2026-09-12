@@ -40,6 +40,21 @@
   box-shadow: 0 0 0 3px rgba(154, 123, 79, 0.16);
 }
 
+/* Chrome/Edge tint autofilled fields yellow/blue by default -- override so
+   they read as the same clean surface as every other field. */
+.field__control:-webkit-autofill,
+.field__control:-webkit-autofill:hover,
+.field__control:-webkit-autofill:focus {
+  -webkit-text-fill-color: var(--fg);
+  -webkit-box-shadow: 0 0 0 1000px var(--surface) inset;
+  transition: background-color 9999s ease-in-out 0s;
+}
+.on-ink .field__control:-webkit-autofill,
+.on-ink .field__control:-webkit-autofill:hover,
+.on-ink .field__control:-webkit-autofill:focus {
+  -webkit-box-shadow: 0 0 0 1000px rgba(244, 239, 231, 0.06) inset;
+}
+
 .field__control--area {
   resize: vertical;
   min-height: 110px;
@@ -67,6 +82,13 @@
 }
 .field__password .field__control {
   padding-right: 3rem;
+}
+/* Edge injects its own show/hide eye icon into password inputs, which
+   stacks visually with our custom .field__reveal button -- suppress it so
+   only one toggle shows. Chrome/Firefox have no equivalent to suppress. */
+.field__password .field__control::-ms-reveal,
+.field__password .field__control::-ms-clear {
+  display: none;
 }
 .field__reveal {
   position: absolute;

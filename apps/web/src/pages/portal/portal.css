@@ -1072,16 +1072,34 @@
    ============================================================ */
 
 .cpath {
-  display: grid;
-  gap: var(--space-3);
+  display: flex;
+  gap: var(--space-5);
   padding: var(--space-5);
   border: 1px solid var(--line);
   border-radius: var(--radius-sm);
   background: rgba(255, 255, 255, 0.5);
-  transition: border-color var(--dur-fast) var(--ease-out);
+  box-shadow: var(--shadow-soft);
+  transition:
+    border-color var(--dur-fast) var(--ease-out),
+    box-shadow var(--dur-fast) var(--ease-out);
 }
 .cpath:hover {
   border-color: var(--line-strong);
+  box-shadow: var(--shadow-lift);
+}
+.cpath__plate {
+  flex: 0 0 auto;
+  display: block;
+  width: 88px;
+  cursor: pointer;
+}
+.cpath__body {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: var(--space-4);
 }
 .cpath__eyebrow {
   font-size: 0.6875rem;
@@ -1110,74 +1128,19 @@
 .cpath__point span {
   color: var(--ink-soft);
 }
-.cpath__meter {
-  display: flex;
-  align-items: center;
-  gap: var(--space-3);
-}
-.cpath__meter-track {
-  position: relative;
-  flex: 1;
-  height: 2px;
-  background: var(--line);
-  overflow: hidden;
-}
-.cpath__meter-fill {
-  position: absolute;
-  inset: 0 auto 0 0;
-  width: var(--v, 0%);
-  background: var(--brass);
-}
-.cpath__meter-value {
-  font-size: var(--fs-xs);
-  font-variant-numeric: tabular-nums;
-  color: var(--ink-faint);
-}
-.cpath__stages {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--space-3) var(--space-4);
-}
-.cpath__stage {
-  display: flex;
-  align-items: center;
-  gap: 0.4rem;
-  font-size: var(--fs-xs);
-  color: var(--ink-faint);
-}
-.cpath__stage-mark {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  border: 1px solid var(--line-strong);
-}
-.cpath__stage[data-state='done'] .cpath__stage-mark {
-  background: var(--ink);
-  border-color: var(--ink);
-}
-.cpath__stage[data-state='done'] .cpath__stage-label {
-  color: var(--ink-muted);
-}
-.cpath__stage[data-state='active'] .cpath__stage-mark {
-  background: var(--brass);
-  border-color: var(--brass);
-}
-.cpath__stage[data-state='active'] .cpath__stage-label {
-  color: var(--brass-deep);
-}
 .cpath__action {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
   gap: var(--space-3);
-  margin-top: 0.2rem;
 }
-.cpath__action-context {
-  font-size: var(--fs-xs);
-  color: var(--ink-faint);
+@media (max-width: 560px) {
+  .cpath {
+    gap: var(--space-4);
+  }
+  .cpath__plate {
+    width: 64px;
+  }
 }
 
 /* ============================================================

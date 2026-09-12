@@ -64,20 +64,24 @@
   --accent-fg: #ffffff;
 
   /* ---- Type weight ----
-     Georgia ships only Regular (400) and Bold (700). The hierarchy is carried
-     by size, leading and spacing — NOT by a wall of bold. Regular Georgia is
-     already sturdy and confident; 700 is reserved for genuine emphasis and for
-     small uppercase functional labels that need presence at their size. */
+     Georgia (display) ships only Regular (400) and Bold (700) — its
+     hierarchy is carried by size, leading and spacing, not a wall of bold.
+     Inter (UI) has a full weight range but uses the same two-step scale for
+     consistency with the display type; reach for a heavier Inter weight
+     directly (500/600) only where a component genuinely needs a third step. */
   --fw-body: 400;
   --fw-medium: 400; /* headings / titles — Georgia regular reads as editorial display */
   --fw-strong: 700;
   --fw-display: 400;
 
   /* ---- Typography ----
-     One typeface across the whole site: Georgia, the site's signature serif.
-     Native system font — no web-font request. */
+     Georgia, the site's signature serif, stays for display type (headings,
+     the editorial voice). Body copy, buttons, nav, forms and every other UI
+     surface use Inter instead — a cleaner, more legible sans at small sizes
+     than Georgia, while headings keep the site's editorial identity. */
   --font-display: Georgia, 'Times New Roman', 'Times', serif;
-  --font-ui: Georgia, 'Times New Roman', 'Times', serif;
+  --font-ui:
+    'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif;
   /* One deliberate accent typeface — Cormorant Garamond italic, the family
      the display scale below was originally tuned against. Used in exactly
      one place (the homepage "learner's journey" section) as a sophisticated

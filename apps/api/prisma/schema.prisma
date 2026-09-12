@@ -168,11 +168,43 @@ model Course {
   status           CourseLifecycleStatus @default(draft)
   publishedAt      DateTime?             @map("published_at") @db.Timestamptz(6)
   modules          CourseModule[]
+  enrollments      Enrollment[]
   createdAt        DateTime              @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt        DateTime              @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
   deletedAt        DateTime?             @map("deleted_at") @db.Timestamptz(6)
 
   @@map("courses")
+  @@schema("public")
+}
+
+// ---- Learner portal: enrollment ----
+// enrolledCount on Course above is the static marketing figure imported from
+// the old site's copy -- deliberately NOT derived from this table, which
+// starts at zero real signups. This is the real, per-learner signal used for
+// "am I enrolled" / My Courses / assignment eligibility, not the public
+// course-listing count.
+
+enum EnrollmentStatus {
+  active
+  completed
+  cancelled
+
+  @@schema("public")
+}
+
+model Enrollment {
+  id          String           @id @default(uuid()) @db.Uuid
+  userId      String           @map("user_id") @db.Uuid // references auth.users.id, not a Prisma relation -- see Profile
+  courseId    String           @map("course_id") @db.Uuid
+  course      Course           @relation(fields: [courseId], references: [id])
+  status      EnrollmentStatus @default(active)
+  enrolledAt  DateTime         @default(now()) @map("enrolled_at") @db.Timestamptz(6)
+  completedAt DateTime?        @map("completed_at") @db.Timestamptz(6)
+  createdAt   DateTime         @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt   DateTime         @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  @@unique([userId, courseId])
+  @@map("enrollments")
   @@schema("public")
 }
 

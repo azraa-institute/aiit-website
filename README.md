@@ -167,6 +167,12 @@ scaffold. Live modules:
   set. Cloudflare Turnstile gates all four; `TurnstileService` fails closed
   (refuses the request) rather than silently accepting unprotected
   submissions if the secret key isn't configured.
+- **Error monitoring** — Sentry on both apps (`SENTRY_DSN` on the API,
+  `VITE_SENTRY_DSN` on the frontend — the latter is statically eliminated
+  from the built bundle entirely when unset, so there's no cost until it's
+  configured). The frontend also uploads production source maps via
+  `@sentry/vite-plugin` when `SENTRY_AUTH_TOKEN` is set, then deletes them
+  locally so they're never served alongside the built JS.
 
 **Not yet wired to the backend:**
 

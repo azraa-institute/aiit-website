@@ -12,8 +12,8 @@ export default function MyCoursesPage() {
   if (state.status === 'error') return null;
 
   const { enrolled } = state.learner;
-  const active = enrolled.filter((e) => e.progress < 100);
-  const completed = enrolled.filter((e) => e.progress >= 100);
+  const active = enrolled.filter((e) => e.status === 'active');
+  const completed = enrolled.filter((e) => e.status === 'completed');
 
   return (
     <div className="portal-page">
@@ -28,7 +28,7 @@ export default function MyCoursesPage() {
       {enrolled.length === 0 ? (
         <PortalEmpty
           title="No courses yet"
-          body="Once you enrol in an AIIT programme it appears here as a journey — your progress, your current lesson and what to do next."
+          body="Once you enrol in an AIIT programme it appears here — your status and the way back into the course."
           action={{ label: 'Browse courses', to: '/courses' }}
         />
       ) : (
@@ -38,7 +38,7 @@ export default function MyCoursesPage() {
               <p className="portal-eyebrow">In progress</p>
               <div className="dash__paths">
                 {active.map((e) => (
-                  <CoursePathRow key={e.courseId} enrolled={e} />
+                  <CoursePathRow key={e.id} enrolled={e} />
                 ))}
               </div>
             </section>
@@ -49,7 +49,7 @@ export default function MyCoursesPage() {
               <p className="portal-eyebrow">Completed</p>
               <div className="dash__paths">
                 {completed.map((e) => (
-                  <CoursePathRow key={e.courseId} enrolled={e} />
+                  <CoursePathRow key={e.id} enrolled={e} />
                 ))}
               </div>
             </section>

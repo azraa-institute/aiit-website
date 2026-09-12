@@ -1,8 +1,7 @@
 import { Link } from 'react-router-dom';
 import { useScrollReveal } from '@/lib/useScrollReveal';
 import { formatDate } from '@/lib/format';
-import { Button } from '@/components/primitives/Button';
-import { useLearner, courseById } from './learnerData';
+import { useLearner } from './learnerData';
 import { PortalEmpty } from './PortalEmpty';
 import { PortalLoader } from './PortalLoader';
 
@@ -40,41 +39,30 @@ export default function CertificatesPage() {
         />
       ) : (
         <ul className="certs" role="list">
-          {certificates.map((c, i) => {
-            const course = courseById(c.courseId);
-            if (!course) return null;
-            return (
-              <li
-                key={c.credentialId}
-                className="cert"
-                data-reveal
-                style={{ '--reveal-delay': `${i * 90}ms` } as React.CSSProperties}
-              >
-                <div className="cert__seal" aria-hidden="true">
-                  <span className="cert__seal-ring" />
-                  <span className="cert__seal-mark">AIIT</span>
-                </div>
-                <div className="cert__body">
-                  <p className="cert__eyebrow">Certified</p>
-                  <h2 className="cert__course">
-                    <Link to={`/courses/${course.slug}`}>{course.title}</Link>
-                  </h2>
-                  <p className="cert__meta">
-                    Issued {formatDate(c.issued)}
-                    <span aria-hidden="true"> · </span>
-                    <span className="cert__id">ID {c.credentialId}</span>
-                  </p>
-                </div>
-                {c.url ? (
-                  <div className="cert__action">
-                    <Button as="a" href={c.url} target="_blank" rel="noopener" variant="secondary" size="sm">
-                      View certificate
-                    </Button>
-                  </div>
-                ) : null}
-              </li>
-            );
-          })}
+          {certificates.map((c, i) => (
+            <li
+              key={c.id}
+              className="cert"
+              data-reveal
+              style={{ '--reveal-delay': `${i * 90}ms` } as React.CSSProperties}
+            >
+              <div className="cert__seal" aria-hidden="true">
+                <span className="cert__seal-ring" />
+                <span className="cert__seal-mark">AIIT</span>
+              </div>
+              <div className="cert__body">
+                <p className="cert__eyebrow">Certified</p>
+                <h2 className="cert__course">
+                  <Link to={`/courses/${c.course.slug}`}>{c.course.title}</Link>
+                </h2>
+                <p className="cert__meta">
+                  Issued {formatDate(c.issuedAt)}
+                  <span aria-hidden="true"> · </span>
+                  <span className="cert__id">ID {c.credentialId}</span>
+                </p>
+              </div>
+            </li>
+          ))}
         </ul>
       )}
     </div>

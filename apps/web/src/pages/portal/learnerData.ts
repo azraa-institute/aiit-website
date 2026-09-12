@@ -1,59 +1,29 @@
 import { useEffect, useState } from 'react';
-import { COURSES } from '@/data/courses';
-import type { Course } from '@/data/types';
+import type { Assignment, Certificate, Enrollment, Me, Notification } from '@aiit/shared';
+import { apiFetch } from '@/lib/api';
 
 /**
- * Learner portal data layer — the single place to connect the backend.
+ * Learner portal data layer. Fetches the real backend (Phase 1's auth
+ * endpoints + the Phase 2 enrollment/assignment/certificate/notification
+ * modules) in parallel and assembles one LearnerRecord, so every page keeps
+ * branching on the same loading/ready/error shape it always has.
  *
- * The real learner record lives behind login on the AIIT backend, which is
- * not part of this frontend. Everything here is intentionally empty: the
- * portal renders a complete, designed experience from an empty record and
- * grows richer as real data arrives, never fabricating progress, grades,
- * certificates or activity.
+ * `email` deliberately isn't part of LearnerProfile -- the API's Profile
+ * model doesn't store it (Supabase's auth.users owns that); anywhere email
+ * needs to be shown, read it from useAuth()'s session instead.
  *
- * To connect it: have `loadLearner()` fetch the account and map the response
- * onto `LearnerRecord`. The `useLearner` hook already models the
- * loading / ready / error states.
+ * Webinar registrations have no real backend yet (out of scope this phase)
+ * -- always empty, same honest "nothing to show" behaviour as before, not a
+ * stub pretending to be real.
  */
 
-export type JourneyPhase = 'learn' | 'practice' | 'certify' | 'progress' | 'globalize';
-
-/** One stage inside a single course's path. Only render stages the
- *  course's real curriculum data supports. */
-export interface CourseStage {
-  label: string;
-  /** 'done' | 'active' | 'upcoming' — derived from real lesson state. */
-  state: 'done' | 'active' | 'upcoming';
-}
-
-export interface NextAction {
-  /** Verb-led, e.g. "Resume lesson", "View assignment", "View certificate". */
-  label: string;
-  href: string;
-  /** Short context line, e.g. the lesson or assignment title. */
-  context?: string;
-}
-
-export interface EnrolledCourse {
-  courseId: string;
-  /** 0–100, from the backend. */
-  progress: number;
-  /** Human label for where the learner is, e.g. the current lesson. */
-  currentPoint?: string;
-  enrolledAt?: string;
-  completedAt?: string;
-  /** Real curriculum milestones, if the backend exposes them. */
-  stages?: CourseStage[];
-  nextAction?: NextAction;
-}
-
-export interface EarnedCertificate {
-  courseId: string;
-  /** ISO date the credential was issued. */
-  issued: string;
-  credentialId: string;
-  /** Verify / view URL, if the backend issues one. */
-  url?: string;
+export interface LearnerProfile {
+  name: string | null;
+  headline: string | null;
+  country: string | null;
+  avatarKey: string | null;
+  preferences: Record<string, unknown>;
+  joinedAt: string;
 }
 
 export interface WebinarRegistration {
@@ -64,70 +34,58 @@ export interface WebinarRegistration {
   joinUrl?: string;
 }
 
-export interface AssignmentRecord {
-  id: string;
-  courseId: string;
-  title: string;
-  status: 'pending' | 'submitted' | 'graded';
-  dueAt?: string;
-  grade?: string;
-  href?: string;
-}
-
-export type NotificationKind = 'course' | 'certificate' | 'assignment' | 'webinar' | 'system';
-
-export interface PortalNotification {
-  id: string;
-  kind: NotificationKind;
-  title: string;
-  body?: string;
-  at: string;
-  read: boolean;
-  href?: string;
-}
-
-export interface LearnerProfile {
-  /** First name or full name if the backend provides it; never invented. */
-  name?: string;
-  email?: string;
-  headline?: string;
-  location?: string;
-  joinedAt?: string;
+export interface NextAction {
+  label: string;
+  href: string;
+  context?: string;
 }
 
 export interface LearnerRecord {
   profile: LearnerProfile;
-  enrolled: EnrolledCourse[];
-  certificates: EarnedCertificate[];
+  enrolled: Enrollment[];
+  certificates: Certificate[];
+  assignments: Assignment[];
+  notifications: Notification[];
   webinars: WebinarRegistration[];
-  assignments: AssignmentRecord[];
-  notifications: PortalNotification[];
 }
 
-export const EMPTY_LEARNER: LearnerRecord = {
-  profile: {},
-  enrolled: [],
-  certificates: [],
-  webinars: [],
-  assignments: [],
-  notifications: [],
-};
-
 async function fetchLearner(): Promise<LearnerRecord> {
-  // return mapResponse(await fetch('/api/me').then((r) => r.json()));
-  return EMPTY_LEARNER;
+  const [me, enrolled, assignments, certificates, notifications] = await Promise.all([
+    apiFetch<Me>('/auth/me'),
+    apiFetch<Enrollment[]>('/me/enrollments'),
+    apiFetch<Assignment[]>('/me/assignments'),
+    apiFetch<Certificate[]>('/me/certificates'),
+    apiFetch<Notification[]>('/me/notifications'),
+  ]);
+
+  return {
+    profile: {
+      name: me.name,
+      headline: me.headline,
+      country: me.country,
+      avatarKey: me.avatarKey,
+      preferences: me.preferences,
+      joinedAt: me.createdAt,
+    },
+    enrolled,
+    assignments,
+    certificates,
+    notifications,
+    webinars: [],
+  };
 }
 
 let inFlight: Promise<LearnerRecord> | null = null;
 
-/**
- * Fetch the learner record — replace `fetchLearner` with the real backend
- * call. Memoised for the session so every `useLearner()` caller shares one
- * request.
- */
+/** Memoised for the session so every useLearner() caller shares one request. */
 export function loadLearner(): Promise<LearnerRecord> {
   if (!inFlight) inFlight = fetchLearner();
   return inFlight;
+}
+
+/** Call after any action that changes the learner record server-side (enroll, submit, mark-read, profile edit) so the next mount/refetch picks up the change. */
+export function invalidateLearner(): void {
+  inFlight = null;
 }
 
 export type LearnerState =
@@ -139,16 +97,22 @@ export type LearnerState =
  * Portal-wide learner state. Components branch on `status` to show the
  * loading, error or ready experience; `ready` still covers a completely
  * empty account, which is a designed state, not a failure.
+ *
+ * `refetch()` invalidates the shared cache and reloads -- call it after an
+ * action that changes the record server-side (submitting an assignment,
+ * marking a notification read). It only affects the calling component's own
+ * hook instance; other already-mounted useLearner() callers (e.g. the
+ * topbar's unread badge) pick up the change on their own next mount, not
+ * instantly -- there's no cross-component cache broadcast, matching this
+ * codebase's plain useState/useEffect convention (no React Query/SWR).
  */
-export function useLearner(): LearnerState {
-  const [state, setState] = useState<LearnerState>(
-    // The scaffold resolves synchronously, so start ready and avoid a
-    // loading flash. A real fetch should start in { status: 'loading' }.
-    { status: 'ready', learner: EMPTY_LEARNER, error: null },
-  );
+export function useLearner(): LearnerState & { refetch: () => void } {
+  const [reloadToken, setReloadToken] = useState(0);
+  const [state, setState] = useState<LearnerState>({ status: 'loading', learner: null, error: null });
 
   useEffect(() => {
     let alive = true;
+    if (reloadToken > 0) setState({ status: 'loading', learner: null, error: null });
     loadLearner()
       .then((learner) => {
         if (alive) setState({ status: 'ready', learner, error: null });
@@ -164,19 +128,20 @@ export function useLearner(): LearnerState {
     return () => {
       alive = false;
     };
-  }, []);
+  }, [reloadToken]);
 
-  return state;
+  function refetch() {
+    invalidateLearner();
+    setReloadToken((t) => t + 1);
+  }
+
+  return { ...state, refetch };
 }
 
 /* ---- Derived helpers (pure, data-driven) ---- */
 
-export function courseById(id: string): Course | undefined {
-  return COURSES.find((c) => c.id === id);
-}
-
 export interface JourneyPhaseState {
-  phase: JourneyPhase;
+  phase: 'learn' | 'practice' | 'certify' | 'progress' | 'globalize';
   label: string;
   /** 'complete' | 'active' | 'dormant' — never invented, always derived. */
   state: 'complete' | 'active' | 'dormant';
@@ -184,7 +149,7 @@ export interface JourneyPhaseState {
   detail?: string;
 }
 
-const PHASE_LABEL: Record<JourneyPhase, string> = {
+const PHASE_LABEL: Record<JourneyPhaseState['phase'], string> = {
   learn: 'Learn',
   practice: 'Practice',
   certify: 'Certify',
@@ -193,20 +158,19 @@ const PHASE_LABEL: Record<JourneyPhase, string> = {
 };
 
 /**
- * Maps the real learner record onto AIIT's five-phase journey.
- * An empty record yields five dormant phases — a calm starting line,
- * not a failure state.
+ * Maps the real learner record onto AIIT's five-phase journey. There's no
+ * lesson-level progress signal yet (course curricula are empty), so this
+ * works off enrollment/certificate status rather than a percentage --
+ * "practice" is a simplified stand-in for "meaningfully underway", not the
+ * finer-grained signal a real lesson-completion percentage would give.
  */
 export function journeyPhases(learner: LearnerRecord): JourneyPhaseState[] {
-  const active = learner.enrolled.filter((e) => e.progress < 100);
-  const completed = learner.enrolled.filter((e) => e.progress >= 100);
+  const active = learner.enrolled.filter((e) => e.status === 'active');
+  const completed = learner.enrolled.filter((e) => e.status === 'completed');
   const hasCerts = learner.certificates.length > 0;
-  const anyPractice = learner.enrolled.some(
-    (e) => e.progress >= 40 && e.progress < 100,
-  );
 
   const phase = (
-    p: JourneyPhase,
+    p: JourneyPhaseState['phase'],
     state: JourneyPhaseState['state'],
     detail?: string,
   ): JourneyPhaseState => ({ phase: p, label: PHASE_LABEL[p], state, detail });
@@ -217,10 +181,7 @@ export function journeyPhases(learner: LearnerRecord): JourneyPhaseState[] {
       active.length > 0 ? 'active' : learner.enrolled.length > 0 ? 'complete' : 'dormant',
       active.length > 0 ? countLabel(active.length, 'course') + ' in progress' : undefined,
     ),
-    phase(
-      'practice',
-      anyPractice ? 'active' : completed.length > 0 ? 'complete' : 'dormant',
-    ),
+    phase('practice', active.length > 0 ? 'active' : completed.length > 0 ? 'complete' : 'dormant'),
     phase(
       'certify',
       hasCerts && active.length === 0 && learner.enrolled.length > 0
@@ -241,38 +202,28 @@ function countLabel(n: number, noun: string): string {
 
 /** The single most important thing for the learner to do next, or null. */
 export function primaryNextAction(learner: LearnerRecord): NextAction | null {
-  const active = learner.enrolled
-    .filter((e) => e.progress < 100)
-    .sort((a, b) => b.progress - a.progress);
-  if (active[0]?.nextAction) return active[0].nextAction;
-
-  const pendingAssignment = learner.assignments.find((a) => a.status === 'pending');
-  if (pendingAssignment) {
+  const urgentAssignment = learner.assignments.find((a) => a.status === 'overdue' || a.status === 'upcoming');
+  if (urgentAssignment) {
     return {
-      label: 'View assignment',
-      href: pendingAssignment.href ?? '/portal/assignments',
-      context: pendingAssignment.title,
+      label: urgentAssignment.status === 'overdue' ? 'Submit overdue assignment' : 'View assignment',
+      href: '/portal/assignments',
+      context: urgentAssignment.title,
     };
   }
 
-  if (active[0]) {
-    const course = courseById(active[0].courseId);
+  const activeEnrollment = learner.enrolled.find((e) => e.status === 'active');
+  if (activeEnrollment) {
     return {
       label: 'Continue course',
-      href: course ? `/courses/${course.slug}` : '/portal/courses',
-      context: course?.title,
+      href: `/courses/${activeEnrollment.course.slug}`,
+      context: activeEnrollment.course.title,
     };
   }
   return null;
 }
 
 export function isEmptyLearner(learner: LearnerRecord): boolean {
-  return (
-    learner.enrolled.length === 0 &&
-    learner.certificates.length === 0 &&
-    learner.webinars.length === 0 &&
-    learner.assignments.length === 0
-  );
+  return learner.enrolled.length === 0 && learner.certificates.length === 0 && learner.assignments.length === 0;
 }
 
 export function greetingName(learner: LearnerRecord): string | null {

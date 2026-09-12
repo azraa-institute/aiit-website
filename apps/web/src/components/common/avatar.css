@@ -1,0 +1,36 @@
+.avatar {
+  display: inline-grid;
+  place-items: center;
+  flex-shrink: 0;
+  border-radius: 50%;
+  object-fit: cover;
+  overflow: hidden;
+}
+
+.avatar--mark {
+  background: var(--ink);
+  color: var(--ivory);
+  font-family: var(--font-display);
+  letter-spacing: 0.02em;
+  font-weight: 500;
+}
+.on-ink .avatar--mark {
+  background: var(--ivory);
+  color: var(--ink);
+}
+
+.avatar--sm {
+  width: 28px;
+  height: 28px;
+  font-size: 0.75rem;
+}
+.avatar--md {
+  width: 44px;
+  height: 44px;
+  font-size: 1rem;
+}
+.avatar--lg {
+  width: 88px;
+  height: 88px;
+  font-size: 1.75rem;
+}

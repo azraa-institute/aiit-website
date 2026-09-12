@@ -30,9 +30,7 @@ export default function DashboardPage() {
   const firstName = greetingName(learner);
   const empty = isEmptyLearner(learner);
   const phases = journeyPhases(learner);
-  const active = learner.enrolled
-    .filter((e) => e.progress < 100)
-    .sort((a, b) => b.progress - a.progress);
+  const active = learner.enrolled.filter((e) => e.status === 'active');
   const nextAction = primaryNextAction(learner);
 
   return (
@@ -125,7 +123,7 @@ export default function DashboardPage() {
             {active.length > 0 ? (
               <div className="dash__paths">
                 {active.map((e) => (
-                  <CoursePathRow key={e.courseId} enrolled={e} />
+                  <CoursePathRow key={e.id} enrolled={e} />
                 ))}
               </div>
             ) : (

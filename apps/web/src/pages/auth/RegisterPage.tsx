@@ -4,6 +4,7 @@ import { Link } from 'react-router-dom';
 import { Seo } from '@/lib/Seo';
 import { Button } from '@/components/primitives/Button';
 import { TextField, PasswordField } from '@/components/common/Field';
+import { PasswordStrengthMeter } from '@/components/common/PasswordStrengthMeter';
 import { supabase } from '@/lib/supabaseClient';
 import { AuthLayout, GoogleAuthButton, AppleAuthButton } from './AuthLayout';
 
@@ -171,6 +172,7 @@ export default function RegisterPage() {
               hint={`At least ${MIN_PASSWORD_LENGTH} characters`}
               error={passwordError}
             />
+            <PasswordStrengthMeter password={password} />
             <label className="auth__check">
               <input
                 type="checkbox"

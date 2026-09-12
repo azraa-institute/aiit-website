@@ -90,7 +90,7 @@
   border-right: 1px solid var(--line-invert);
 }
 .blueprint-stats__value {
-  font-family: 'Inter', var(--font-ui);
+  font-family: var(--font-ui);
   font-weight: 700;
   font-size: clamp(2.2rem, 1.6rem + 3vw, 3.4rem);
   line-height: 1;
@@ -162,7 +162,7 @@ p.blueprint-stats__label {
   r: 6;
 }
 .blueprint-pathway__node text {
-  font-family: 'Inter', var(--font-ui);
+  font-family: var(--font-ui);
   font-size: 12px;
   font-weight: 500;
   letter-spacing: 0.01em;
@@ -194,7 +194,7 @@ p.blueprint-stats__label {
   fill: var(--red-tint);
 }
 .blueprint-pathway__dest text {
-  font-family: 'Inter', var(--font-ui);
+  font-family: var(--font-ui);
   font-size: 9px;
   font-weight: 700;
   letter-spacing: 0.04em;
@@ -512,7 +512,7 @@ p.blueprint-stats__label {
   background: linear-gradient(160deg, var(--ivory), var(--surface));
 }
 .blueprint-fanout__origin {
-  font-family: 'Inter', var(--font-ui);
+  font-family: var(--font-ui);
   font-weight: 700;
   font-size: var(--fs-sm);
   letter-spacing: 0.1em;

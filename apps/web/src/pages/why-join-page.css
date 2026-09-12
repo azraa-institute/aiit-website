@@ -131,7 +131,7 @@
 }
 .wj-hero__discipline-index {
   flex-shrink: 0;
-  font-family: 'Inter', var(--font-ui);
+  font-family: var(--font-ui);
   font-size: 0.75rem;
   font-weight: 600;
   font-variant-numeric: tabular-nums;
@@ -258,7 +258,7 @@
 .wj-reasons__index {
   grid-row: 1 / 3;
   padding-top: 0.15em;
-  font-family: 'Inter', var(--font-ui);
+  font-family: var(--font-ui);
   font-size: var(--fs-heading);
   font-weight: 700;
   font-variant-numeric: tabular-nums;

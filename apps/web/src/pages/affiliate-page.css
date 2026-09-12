@@ -32,7 +32,7 @@
 .calculator__scale,
 .process__index,
 .process__body {
-  font-family: 'Inter', var(--font-ui);
+  font-family: var(--font-ui);
 }
 
 /* ============================================================
@@ -143,7 +143,7 @@
   stroke-width: 1.4;
 }
 .affiliate-network__center text {
-  font-family: 'Inter', var(--font-ui);
+  font-family: var(--font-ui);
   font-size: 15px;
   font-weight: 700;
   letter-spacing: 0.04em;
@@ -183,7 +183,7 @@
   }
 }
 .affiliate-network__node text {
-  font-family: 'Inter', var(--font-ui);
+  font-family: var(--font-ui);
   font-size: 11px;
   font-weight: 600;
   letter-spacing: 0.12em;

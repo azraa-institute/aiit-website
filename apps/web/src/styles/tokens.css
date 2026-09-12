@@ -77,11 +77,14 @@
   /* ---- Typography ----
      Georgia, the site's signature serif, stays for display type (headings,
      the editorial voice). Body copy, buttons, nav, forms and every other UI
-     surface use Inter instead — a cleaner, more legible sans at small sizes
-     than Georgia, while headings keep the site's editorial identity. */
+     surface use Google Sans instead — a cleaner, more legible sans at small
+     sizes than Georgia, while headings keep the site's editorial identity.
+     Free/OFL-licensed geometric sans from Google Fonts, in the same visual
+     family as Grok's Universal Sans (a commercial PangramPangram typeface
+     with no free source). */
   --font-display: Georgia, 'Times New Roman', 'Times', serif;
   --font-ui:
-    'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif;
+    'Google Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif;
   /* One deliberate accent typeface — Cormorant Garamond italic, the family
      the display scale below was originally tuned against. Used in exactly
      one place (the homepage "learner's journey" section) as a sophisticated

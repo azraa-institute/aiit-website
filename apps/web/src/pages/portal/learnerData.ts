@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import type { Assignment, Certificate, Enrollment, Me, Notification } from '@aiit/shared';
 import { apiFetch } from '@/lib/api';
+import { supabase } from '@/lib/supabaseClient';
 
 /**
  * Learner portal data layer. Fetches the real backend (Phase 1's auth
@@ -101,6 +102,30 @@ const listeners = new Set<() => void>();
 export function invalidateLearner(): void {
   inFlight = null;
   listeners.forEach((notify) => notify());
+}
+
+/**
+ * `inFlight` above is a module-level cache -- it survives for the whole
+ * browser tab's lifetime, not just one signed-in session. Without this,
+ * user A signing out and user B signing in afterwards (same tab, no hard
+ * reload) would still see `loadLearner()` return A's already-cached
+ * record: RequireAuth remounting PortalLayout doesn't help, since a fresh
+ * useLearner() instance still just asks this same module-level cache,
+ * which has no idea the signed-in user changed underneath it. Runs once
+ * at module load (this file is only ever imported once, like `inFlight`
+ * itself) and invalidates whenever the session's user id actually
+ * changes -- not on every auth event, since a token refresh for the same
+ * user fires one too and shouldn't force a needless refetch.
+ */
+if (supabase) {
+  let lastUserId: string | null | undefined; // undefined = baseline not yet recorded
+  supabase.auth.onAuthStateChange((_event, session) => {
+    const userId = session?.user.id ?? null;
+    if (lastUserId !== undefined && userId !== lastUserId) {
+      invalidateLearner();
+    }
+    lastUserId = userId;
+  });
 }
 
 export type LearnerState =

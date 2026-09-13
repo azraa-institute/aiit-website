@@ -57,8 +57,9 @@ export class ProfileService {
       subject: 'Welcome to AIIT',
       html: brandedEmailHtml({
         heading: 'Welcome to AIIT',
-        intro:
-          "Your account is ready. Head to your learner portal to explore courses, track assignments, and pick up where you left off.",
+        // This only ever sends on a real first-ever signup, so "pick up
+        // where you left off" never applies -- there's nothing to resume yet.
+        intro: 'Your account is ready. Head to your learner portal to explore courses and start learning.',
         ctaLabel: 'Go to your portal',
         ctaUrl: portalUrl,
         footerNote: "You're receiving this because you created an account on aiit.network.",
@@ -93,6 +94,30 @@ export class ProfileService {
     await this.prisma.profile.update({
       where: { id: userId },
       data: { status: 'pending_deletion', deletionRequestedAt: new Date() },
+    });
+  }
+
+  /**
+   * Called by the frontend right after a password change succeeds --
+   * ResetPasswordPage (via a recovery-link session) and SettingsPage (a
+   * logged-in user changing it directly) both call supabase.auth.updateUser
+   * client-side with no backend involvement, so there's no natural
+   * server-side hook for "a password just changed"; this is the deliberate
+   * substitute. Best-effort like the welcome email: EmailService no-ops
+   * with a logged warning if it fails, never throws.
+   */
+  async notifyPasswordChanged(email: string | undefined): Promise<void> {
+    if (!email) return;
+    await this.email.send({
+      to: email,
+      subject: 'Your AIIT password was changed',
+      html: brandedEmailHtml({
+        heading: 'Password changed',
+        intro: 'The password on your AIIT account was just changed. If this was you, no action is needed.',
+        ctaLabel: 'Review your account',
+        ctaUrl: `${process.env.APP_URL ?? 'https://aiit.network'}/portal/settings`,
+        footerNote: "If you didn't make this change, reset your password immediately and contact us at info@aiit.network.",
+      }),
     });
   }
 

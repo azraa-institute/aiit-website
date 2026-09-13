@@ -1766,10 +1766,18 @@
 .profile-details__readonly {
   display: flex;
   align-items: center;
-  gap: var(--space-3);
+  flex-wrap: wrap;
+  gap: var(--space-1) var(--space-3);
   padding: var(--space-3) var(--space-4);
   background: var(--ivory);
   border-radius: var(--radius-sm);
+}
+.profile-details__readonly > div {
+  min-width: 0;
+  flex: 1 1 auto;
+}
+.profile-details__readonly-value {
+  overflow-wrap: anywhere;
 }
 .profile-details__readonly-icon {
   flex: 0 0 auto;

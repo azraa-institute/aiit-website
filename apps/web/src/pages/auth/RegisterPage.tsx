@@ -5,11 +5,11 @@ import { Seo } from '@/lib/Seo';
 import { Button } from '@/components/primitives/Button';
 import { TextField, PasswordField } from '@/components/common/Field';
 import { PasswordStrengthMeter } from '@/components/common/PasswordStrengthMeter';
+import { MIN_PASSWORD_LENGTH, passwordMeetsRequirements, PasswordRequirementsList } from '@/components/common/PasswordRequirements';
 import { supabase } from '@/lib/supabaseClient';
 import { AuthLayout, GoogleAuthButton } from './AuthLayout';
 
 const EMAIL_RE = /.+@.+\..+/;
-const MIN_PASSWORD_LENGTH = 8;
 const ALREADY_REGISTERED_MESSAGE = 'An account with this email already exists. Please sign in instead.';
 
 interface TouchedState {
@@ -31,7 +31,7 @@ export default function RegisterPage() {
   const [sent, setSent] = useState(false);
 
   const emailValid = EMAIL_RE.test(email.trim());
-  const passwordValid = password.length >= MIN_PASSWORD_LENGTH;
+  const passwordValid = passwordMeetsRequirements(password);
   const canSubmit =
     firstName.trim().length > 0 && lastName.trim().length > 0 && emailValid && passwordValid && agreed;
 
@@ -40,7 +40,7 @@ export default function RegisterPage() {
   const emailError = touched.email && email.length > 0 && !emailValid ? 'Enter a valid email address.' : undefined;
   const passwordError =
     touched.password && password.length > 0 && !passwordValid
-      ? `Use at least ${MIN_PASSWORD_LENGTH} characters.`
+      ? `Use at least ${MIN_PASSWORD_LENGTH} characters, with a letter and a number.`
       : undefined;
 
   function markTouched(field: keyof TouchedState) {
@@ -185,10 +185,11 @@ export default function RegisterPage() {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               onBlur={() => markTouched('password')}
-              hint={`At least ${MIN_PASSWORD_LENGTH} characters`}
+              hint={`At least ${MIN_PASSWORD_LENGTH} characters, with a letter and a number`}
               error={passwordError}
             />
             <PasswordStrengthMeter password={password} />
+            <PasswordRequirementsList password={password} />
             <label className="auth__check">
               <input
                 type="checkbox"

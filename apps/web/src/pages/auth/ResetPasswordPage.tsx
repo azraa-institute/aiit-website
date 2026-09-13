@@ -4,10 +4,12 @@ import { Link } from 'react-router-dom';
 import { Seo } from '@/lib/Seo';
 import { Button } from '@/components/primitives/Button';
 import { PasswordField } from '@/components/common/Field';
+import { MIN_PASSWORD_LENGTH, passwordMeetsRequirements, PasswordRequirementsList } from '@/components/common/PasswordRequirements';
 import { supabase } from '@/lib/supabaseClient';
 import { AuthLayout } from './AuthLayout';
 
 export default function ResetPasswordPage() {
+  const [password, setPassword] = useState('');
   const [error, setError] = useState<string>();
   const [submitting, setSubmitting] = useState(false);
   const [done, setDone] = useState(false);
@@ -15,11 +17,10 @@ export default function ResetPasswordPage() {
   async function onSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
     const data = new FormData(e.currentTarget);
-    const password = String(data.get('password') ?? '');
     const confirmPassword = String(data.get('confirmPassword') ?? '');
 
-    if (password.length < 8) {
-      setError('Use a password of at least 8 characters.');
+    if (!passwordMeetsRequirements(password)) {
+      setError(`Use at least ${MIN_PASSWORD_LENGTH} characters, with a letter and a number.`);
       return;
     }
     if (password !== confirmPassword) {
@@ -73,9 +74,12 @@ export default function ResetPasswordPage() {
               label="New password"
               name="password"
               autoComplete="new-password"
-              hint="At least 8 characters"
+              hint={`At least ${MIN_PASSWORD_LENGTH} characters, with a letter and a number`}
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
               required
             />
+            <PasswordRequirementsList password={password} />
             <PasswordField
               label="Confirm password"
               name="confirmPassword"

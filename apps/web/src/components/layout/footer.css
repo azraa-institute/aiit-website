@@ -186,6 +186,7 @@
    ============================================================ */
 .site-footer__highlights {
   position: relative;
+  isolation: isolate;
   display: flex;
   flex-wrap: wrap;
   align-items: center;
@@ -193,6 +194,14 @@
   gap: var(--space-6);
   padding-block: clamp(2rem, 1.5rem + 2vw, 3rem);
   border-bottom: 1px solid var(--line-invert);
+}
+@media (min-width: 860px) {
+  .site-footer__highlights {
+    min-height: clamp(200px, 20vw, 280px);
+    /* keep the flowing highlight list clear of the absolutely-positioned
+       label stack pinned to the right edge */
+    padding-right: 150px;
+  }
 }
 
 .site-footer__highlight-list {
@@ -228,33 +237,52 @@
   color: var(--fg-muted);
 }
 
-/* ---- Decorative network graphic ---- */
+/* ---- Decorative globe: a large wireframe sphere bleeding off the right
+   edge, with the label stack layered on top of it -- not a small icon
+   sitting beside the text. Purely decorative, hidden below the width it
+   can no longer sit comfortably behind the labels without crowding them. */
 .site-footer__network {
-  position: relative;
   display: none;
-  align-items: center;
-  gap: var(--space-5);
-  flex: 0 0 auto;
+  position: absolute;
+  top: 50%;
+  right: -6%;
+  transform: translateY(-50%);
+  width: clamp(320px, 34vw, 560px);
+  aspect-ratio: 1;
+  z-index: 0;
+  pointer-events: none;
 }
-@media (min-width: 1000px) {
+@media (min-width: 860px) {
   .site-footer__network {
-    display: flex;
+    display: block;
   }
 }
 .site-footer__network-art {
-  width: clamp(160px, 14vw, 220px);
-  height: auto;
-  opacity: 0.9;
+  width: 100%;
+  height: 100%;
+  mask-image: radial-gradient(circle at 60% 50%, #000 55%, transparent 78%);
+  -webkit-mask-image: radial-gradient(circle at 60% 50%, #000 55%, transparent 78%);
 }
 .site-footer__network-labels {
-  display: grid;
+  display: none;
+  position: absolute;
+  top: 50%;
+  right: 0;
+  transform: translateY(-50%);
+  z-index: 1;
   gap: 0.3rem;
   font-size: var(--fs-eyebrow);
   font-weight: 700;
   letter-spacing: var(--tracking-wide);
   text-transform: uppercase;
   color: var(--fg-muted);
+  text-align: right;
   white-space: nowrap;
+}
+@media (min-width: 860px) {
+  .site-footer__network-labels {
+    display: grid;
+  }
 }
 
 /* ============================================================

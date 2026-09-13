@@ -138,12 +138,12 @@ export function Footer() {
 
           <div className="site-footer__network" aria-hidden="true">
             <FooterNetworkGraphic className="site-footer__network-art" />
-            <ul className="site-footer__network-labels" role="list">
-              {NETWORK_LABELS.map((l) => (
-                <li key={l}>{l}</li>
-              ))}
-            </ul>
           </div>
+          <ul className="site-footer__network-labels" role="list" aria-hidden="true">
+            {NETWORK_LABELS.map((l) => (
+              <li key={l}>{l}</li>
+            ))}
+          </ul>
         </div>
 
         <div className="site-footer__bottom">

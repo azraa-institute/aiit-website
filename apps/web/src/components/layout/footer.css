@@ -198,20 +198,23 @@
 .site-footer__highlights {
   position: relative;
   isolation: isolate;
+  overflow: hidden;
   display: flex;
   flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
   gap: var(--space-6);
   padding-block: clamp(2rem, 1.5rem + 2vw, 3rem);
+  border-top: 1px solid var(--line-invert);
   border-bottom: 1px solid var(--line-invert);
+  background: linear-gradient(105deg, #0d0c0b 0%, #11100e 55%, #0c0b0a 100%);
 }
 @media (min-width: 860px) {
   .site-footer__highlights {
     min-height: clamp(200px, 20vw, 280px);
-    /* keep the flowing highlight list clear of the absolutely-positioned
-       label stack pinned to the right edge */
-    padding-right: 150px;
+    /* keep the flowing highlight list clear of the label stack pinned to
+       the right edge */
+    padding-right: 140px;
   }
 }
 
@@ -248,31 +251,41 @@
   color: var(--fg-muted);
 }
 
-/* ---- Decorative globe: a large wireframe sphere bleeding off the right
-   edge, with the label stack layered on top of it -- not a small icon
-   sitting beside the text. Purely decorative, hidden below the width it
-   can no longer sit comfortably behind the labels without crowding them. */
+/* ---- Decorative digital-earth field: a large, fine dot/contour sphere
+   anchored bottom-right and mostly cropped by the strip's own
+   overflow:hidden -- an intentionally oversized, very subtle background
+   texture, not a focal graphic. Stays visible (scaled + faded down) at
+   every width rather than hard-hiding, per the "never disappear entirely,
+   just recede" brief. */
 .site-footer__network {
-  display: none;
   position: absolute;
-  top: 50%;
-  right: -6%;
-  transform: translateY(-50%);
-  width: clamp(320px, 34vw, 560px);
+  right: -16%;
+  bottom: -68%;
+  width: clamp(220px, 55vw, 320px);
   aspect-ratio: 1;
   z-index: 0;
+  opacity: 0.14;
   pointer-events: none;
 }
-@media (min-width: 860px) {
+@media (min-width: 640px) {
   .site-footer__network {
-    display: block;
+    right: -12%;
+    bottom: -62%;
+    width: clamp(360px, 40vw, 480px);
+    opacity: 0.22;
+  }
+}
+@media (min-width: 1200px) {
+  .site-footer__network {
+    right: -10%;
+    bottom: -60%;
+    width: clamp(500px, 34vw, 640px);
+    opacity: 0.28;
   }
 }
 .site-footer__network-art {
   width: 100%;
   height: 100%;
-  mask-image: radial-gradient(circle at 60% 50%, #000 55%, transparent 78%);
-  -webkit-mask-image: radial-gradient(circle at 60% 50%, #000 55%, transparent 78%);
 }
 .site-footer__network-labels {
   display: none;
@@ -281,12 +294,13 @@
   right: 0;
   transform: translateY(-50%);
   z-index: 1;
-  gap: 0.3rem;
-  font-size: var(--fs-eyebrow);
-  font-weight: 700;
-  letter-spacing: var(--tracking-wide);
+  gap: 0.4rem;
+  font-family: var(--font-ui);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.14em;
   text-transform: uppercase;
-  color: var(--fg-muted);
+  color: rgba(239, 229, 211, 0.78);
   text-align: right;
   white-space: nowrap;
 }

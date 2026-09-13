@@ -8,8 +8,10 @@ const DELAY_MS = 2600;
 /** Routes where an enrolment promo would be redundant or intrusive.
  *  `/resources` is excluded so the promo never interrupts an article the
  *  reader has just started — the newsletter band at the end of each piece
- *  is the non-intrusive path there. */
-const SKIP_PREFIXES = ['/login', '/register', '/forgot-password', '/portal', '/resources'];
+ *  is the non-intrusive path there. `/verify` is excluded because its
+ *  visitor is typically a third party (an employer or admissions office
+ *  checking a credential), not a prospective student. */
+const SKIP_PREFIXES = ['/login', '/register', '/forgot-password', '/portal', '/resources', '/verify'];
 /** Enrolment currently routes to the register page (no checkout yet). */
 const ENROLL_ROUTE = '/register';
 

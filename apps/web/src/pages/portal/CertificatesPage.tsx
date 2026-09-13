@@ -1,6 +1,9 @@
+import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useScrollReveal } from '@/lib/useScrollReveal';
 import { formatDate } from '@/lib/format';
+import { apiFetchBlob, downloadBlob, ApiError } from '@/lib/api';
+import { Button } from '@/components/primitives/Button';
 import { useLearner } from './learnerData';
 import { PortalEmpty } from './PortalEmpty';
 import { PortalLoader } from './PortalLoader';
@@ -8,11 +11,38 @@ import { PortalLoader } from './PortalLoader';
 export default function CertificatesPage() {
   const state = useLearner();
   useScrollReveal([state.status]);
+  const [downloadingId, setDownloadingId] = useState<string>();
+  const [copiedId, setCopiedId] = useState<string>();
+  const [error, setError] = useState<string>();
 
   if (state.status === 'loading') return <PortalLoader label="Loading your certificates" />;
   if (state.status === 'error') return null;
 
   const { certificates } = state.learner;
+
+  async function handleDownload(id: string, credentialId: string) {
+    setError(undefined);
+    setDownloadingId(id);
+    try {
+      const blob = await apiFetchBlob(`/me/certificates/${id}/pdf`);
+      downloadBlob(blob, `AIIT-Certificate-${credentialId}.pdf`);
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : 'Could not download this certificate.');
+    } finally {
+      setDownloadingId(undefined);
+    }
+  }
+
+  async function handleCopyLink(id: string, credentialId: string) {
+    const url = `${window.location.origin}/verify/${credentialId}`;
+    try {
+      await navigator.clipboard.writeText(url);
+      setCopiedId(id);
+      window.setTimeout(() => setCopiedId((current) => (current === id ? undefined : current)), 2000);
+    } catch {
+      setError('Could not copy the link -- copy it from the address bar after opening it instead.');
+    }
+  }
 
   return (
     <div className="portal-page">
@@ -24,6 +54,12 @@ export default function CertificatesPage() {
           verifiable, and yours to share.
         </p>
       </header>
+
+      {error ? (
+        <p className="auth__alert" role="alert">
+          {error}
+        </p>
+      ) : null}
 
       {certificates.length === 0 ? (
         <PortalEmpty
@@ -60,6 +96,20 @@ export default function CertificatesPage() {
                   <span aria-hidden="true"> · </span>
                   <span className="cert__id">ID {c.credentialId}</span>
                 </p>
+                <div className="cert__action">
+                  <Button
+                    as="button"
+                    variant="secondary"
+                    size="sm"
+                    loading={downloadingId === c.id}
+                    onClick={() => handleDownload(c.id, c.credentialId)}
+                  >
+                    Download PDF
+                  </Button>
+                  <Button as="button" variant="ghost" size="sm" onClick={() => handleCopyLink(c.id, c.credentialId)}>
+                    {copiedId === c.id ? 'Link copied' : 'Copy verification link'}
+                  </Button>
+                </div>
               </div>
             </li>
           ))}

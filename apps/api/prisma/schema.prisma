@@ -263,6 +263,10 @@ model Certificate {
   courseId     String   @map("course_id") @db.Uuid
   course       Course   @relation(fields: [courseId], references: [id])
   credentialId String   @unique @map("credential_id")
+  // Snapshotted from Profile.name at issuance -- a certificate is a fixed
+  // historical record, so it must keep showing the name as it was on the
+  // day it was earned even if the learner renames themselves afterwards.
+  holderName   String   @map("holder_name")
   issuedAt     DateTime @default(now()) @map("issued_at") @db.Timestamptz(6)
 
   @@unique([userId, courseId])

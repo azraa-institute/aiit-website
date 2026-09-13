@@ -120,6 +120,7 @@ sites.
 | `/shop` · `/shop/:slug` | Merchandise catalogue · product detail |
 | `/contact` | Contact form |
 | `/newsletter/confirm` · `/newsletter/unsubscribe` | Newsletter double opt-in confirm · unsubscribe (landed on from an email link) |
+| `/verify/:credentialId` | Public certificate verification — no login required |
 | `/login` · `/register` · `/forgot-password` | Auth |
 | `/portal` · `/portal/*` | Learner portal — dashboard, courses, certificates, assignments, resources, webinars, profile, notifications, settings |
 | `/privacy-policy` · `/terms` | Legal |
@@ -155,7 +156,14 @@ scaffold. Live modules:
   `Certificate`, `Notification`. Self-enrollment is open for free courses only
   (no payment integration exists); grading and certificate issuance are real
   `@Roles('admin')`-gated endpoints with no admin UI yet — callable directly
-  (curl/Postman) until one is built.
+  (curl/Postman) until one is built. Every certificate has a real,
+  server-rendered PDF (`GET /me/certificates/:id/pdf`, `pdf-lib` — no
+  headless browser) and a public, unauthenticated verification endpoint/page
+  (`GET /certificates/verify/:credentialId`, `aiit.network/verify/:credentialId`)
+  so anyone holding a credential ID can confirm it's real. The holder's name
+  is snapshotted onto the certificate at issuance, not joined live from
+  `Profile.name`, so a certificate keeps showing the name as it was on the
+  day it was earned even if the learner renames themselves afterwards.
 - **Profile** — `GET/PATCH /me`, `PATCH /me/preferences`, `DELETE /me` (soft
   deletion request).
 - **File storage** — avatar upload/remove and assignment file attachments via

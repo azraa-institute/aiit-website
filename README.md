@@ -26,7 +26,7 @@ redesign.
 | --- | --- |
 | Framework | React 18 + TypeScript, bundled with Vite 5 |
 | Routing | React Router 6 — lazy-loaded route chunks |
-| SEO | `react-helmet-async` — per-page metadata + JSON-LD |
+| SEO | `react-helmet-async` — per-page metadata + JSON-LD; `sitemap.xml` generated at build time from real course/product/article data (see vite.config.ts) |
 | Styling | Hand-built design system on CSS custom properties; no UI framework |
 | Motion | CSS + `IntersectionObserver`, `prefers-reduced-motion` respected throughout |
 | Content | Markdown blog + typed seed data; no CMS |

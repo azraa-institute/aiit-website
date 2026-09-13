@@ -71,6 +71,39 @@
   color: var(--ink);
 }
 
+.newsletter-form--compact {
+  max-width: none;
+}
+.newsletter-form--compact .newsletter-form__field {
+  border: 1px solid var(--line-invert);
+  border-radius: var(--radius-sm);
+  padding: 0;
+  overflow: hidden;
+  gap: 0;
+}
+.newsletter-form--compact .newsletter-form__field input {
+  padding: 0.7rem 0.9rem;
+  font-family: var(--font-ui);
+  font-size: var(--fs-sm);
+}
+.newsletter-form--compact .newsletter-form__field button {
+  display: grid;
+  place-items: center;
+  align-self: stretch;
+  width: 44px;
+  padding: 0;
+  border-bottom: 0;
+  background: var(--brass);
+  color: var(--ink);
+  transition: background var(--dur-fast) var(--ease-out);
+}
+.newsletter-form--compact .newsletter-form__field button:hover {
+  background: var(--brass-tint);
+}
+.newsletter-form--compact .newsletter-form__field button:disabled {
+  opacity: 0.6;
+}
+
 .newsletter-form__turnstile {
   margin-top: var(--space-3);
 }

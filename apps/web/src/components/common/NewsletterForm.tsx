@@ -3,10 +3,12 @@ import type { FormEvent } from 'react';
 import { cn } from '@/lib/cn';
 import { apiFetch, ApiError } from '@/lib/api';
 import { Turnstile } from './Turnstile';
+import { ArrowRightIcon } from '@/components/layout/footer-icons';
 import './newsletter-form.css';
 
 interface NewsletterFormProps {
-  variant?: 'inline' | 'stacked';
+  /** 'compact' -- icon-only submit button, for tight spaces like the footer. */
+  variant?: 'inline' | 'stacked' | 'compact';
   className?: string;
 }
 
@@ -70,12 +72,22 @@ export function NewsletterForm({ variant = 'inline', className }: NewsletterForm
           }}
           aria-invalid={state === 'error'}
         />
-        <button type="submit" disabled={state === 'submitting' || !turnstileToken}>
-          {state === 'submitting' ? 'Subscribing…' : 'Subscribe'}
+        <button
+          type="submit"
+          disabled={state === 'submitting' || !turnstileToken}
+          aria-label={state === 'submitting' ? 'Subscribing…' : 'Subscribe'}
+        >
+          {variant === 'compact' ? (
+            <ArrowRightIcon />
+          ) : state === 'submitting' ? (
+            'Subscribing…'
+          ) : (
+            'Subscribe'
+          )}
         </button>
       </div>
       <div className="newsletter-form__turnstile">
-        <Turnstile onVerify={setTurnstileToken} />
+        <Turnstile onVerify={setTurnstileToken} theme={variant === 'compact' ? 'dark' : 'auto'} />
       </div>
       {state === 'error' && (
         <p className="newsletter-form__error" role="alert">

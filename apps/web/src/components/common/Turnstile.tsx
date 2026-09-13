@@ -48,7 +48,13 @@ function loadTurnstileScript(): Promise<void> {
  * closed), this just explains why up front rather than showing a silently
  * broken widget.
  */
-export function Turnstile({ onVerify }: { onVerify: (token: string) => void }) {
+export function Turnstile({
+  onVerify,
+  theme = 'auto',
+}: {
+  onVerify: (token: string) => void;
+  theme?: 'light' | 'dark' | 'auto';
+}) {
   const containerRef = useRef<HTMLDivElement>(null);
   const widgetId = useRef<string | null>(null);
   const [error, setError] = useState(false);
@@ -66,6 +72,7 @@ export function Turnstile({ onVerify }: { onVerify: (token: string) => void }) {
           callback: onVerify,
           'expired-callback': () => onVerify(''),
           'error-callback': () => setError(true),
+          theme,
         });
       })
       .catch(() => setError(true));
@@ -77,7 +84,7 @@ export function Turnstile({ onVerify }: { onVerify: (token: string) => void }) {
       }
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [siteKey]);
+  }, [siteKey, theme]);
 
   if (!siteKey) {
     return <p className="field__hint">Bot verification is not configured yet.</p>;

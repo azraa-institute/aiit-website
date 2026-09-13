@@ -5,6 +5,7 @@ import { Seo } from '@/lib/Seo';
 import { Button } from '@/components/primitives/Button';
 import { TextField } from '@/components/common/Field';
 import { supabase } from '@/lib/supabaseClient';
+import { apiFetch, ApiError } from '@/lib/api';
 import { AuthLayout } from './AuthLayout';
 
 export default function ForgotPasswordPage() {
@@ -28,13 +29,34 @@ export default function ForgotPasswordPage() {
 
     setError(undefined);
     setSubmitting(true);
+
+    // Checked explicitly (not the enumeration-safe "if an account exists"
+    // wording most reset flows use) -- a deliberate product choice made
+    // knowing it lets someone confirm whether a given email has an AIIT
+    // account. Accepted because RegisterPage already reveals the same
+    // thing on a duplicate signup attempt, so this isn't new exposure, and
+    // a real user who mistyped their email gets a clear answer instead of
+    // a permanently unexplained "nothing arrived".
+    try {
+      const { exists } = await apiFetch<{ exists: boolean }>(
+        `/auth/email-exists?email=${encodeURIComponent(email)}`,
+      );
+      if (!exists) {
+        setError("We couldn't find an AIIT account for that email.");
+        setSubmitting(false);
+        return;
+      }
+    } catch (err) {
+      setSubmitting(false);
+      setError(err instanceof ApiError ? err.message : 'Could not check that email right now.');
+      return;
+    }
+
     const { error: resetError } = await supabase.auth.resetPasswordForEmail(email, {
       redirectTo: `${window.location.origin}/reset-password`,
     });
     setSubmitting(false);
 
-    // Don't reveal whether the email exists -- the UI's copy already says
-    // "if an account exists", so surface transport/config errors only.
     if (resetError) {
       setError(resetError.message);
       return;
@@ -56,8 +78,8 @@ export default function ForgotPasswordPage() {
       >
         {sent ? (
           <p className="auth__done">
-            If an account exists for that email, a reset link is on its way. The link expires in 60
-            minutes. Check your spam folder if it does not arrive.
+            A reset link is on its way. It expires in 60 minutes. Check your spam folder if it does
+            not arrive.
           </p>
         ) : (
           <form className="auth__form" onSubmit={onSubmit} noValidate>

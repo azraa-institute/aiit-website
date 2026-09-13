@@ -54,12 +54,20 @@ export default function LoginPage() {
       setSubmitting(true);
       const { error: otpError } = await supabase.auth.signInWithOtp({
         email,
-        options: { emailRedirectTo: `${window.location.origin}/auth/callback` },
+        // shouldCreateUser: false -- this is a SIGN-IN form. Without it,
+        // Supabase's default magic-link behaviour silently creates a brand
+        // new account for any email typed here, bypassing Register's name
+        // collection and terms acceptance entirely.
+        options: { emailRedirectTo: `${window.location.origin}/auth/callback`, shouldCreateUser: false },
       });
       setSubmitting(false);
 
       if (otpError) {
-        setError(otpError.message);
+        setError(
+          otpError.message.toLowerCase().includes('signups not allowed')
+            ? "We couldn't find an AIIT account for that email. Check the address, or create an account instead."
+            : otpError.message,
+        );
         return;
       }
       setMagicLinkSent(true);

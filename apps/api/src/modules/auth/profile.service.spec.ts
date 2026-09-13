@@ -23,12 +23,14 @@ describe('ProfileService', () => {
   let service: ProfileService;
   let prisma: {
     profile: { findUnique: jest.Mock; update: jest.Mock; updateMany: jest.Mock };
+    $queryRaw: jest.Mock;
   };
   let email: { send: jest.Mock };
 
   beforeEach(async () => {
     prisma = {
       profile: { findUnique: jest.fn(), update: jest.fn(), updateMany: jest.fn() },
+      $queryRaw: jest.fn(),
     };
     email = { send: jest.fn() };
 
@@ -127,6 +129,18 @@ describe('ProfileService', () => {
     expect(prisma.profile.update).toHaveBeenCalledWith({
       where: { id: 'user-1' },
       data: { status: 'pending_deletion', deletionRequestedAt: expect.any(Date) },
+    });
+  });
+
+  describe('emailExists', () => {
+    it('returns true when the raw query finds a matching auth.users row', async () => {
+      prisma.$queryRaw.mockResolvedValueOnce([{ exists: true }]);
+      await expect(service.emailExists('ada@example.com')).resolves.toBe(true);
+    });
+
+    it('returns false when no row matches', async () => {
+      prisma.$queryRaw.mockResolvedValueOnce([{ exists: false }]);
+      await expect(service.emailExists('nobody@example.com')).resolves.toBe(false);
     });
   });
 });

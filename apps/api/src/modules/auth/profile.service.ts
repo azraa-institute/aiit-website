@@ -95,6 +95,27 @@ export class ProfileService {
       data: { status: 'pending_deletion', deletionRequestedAt: new Date() },
     });
   }
+
+  /**
+   * Backs ForgotPasswordPage's "no account found" message. auth.users isn't
+   * a Prisma model (Supabase-managed, see schema.prisma), hence the raw
+   * query -- Prisma parameterizes the interpolated value in a tagged
+   * template, so this isn't string-built SQL. Deliberately case-insensitive
+   * since Supabase itself treats email as case-insensitive for sign-in.
+   *
+   * This is a real, if narrow, email-enumeration surface -- tightly
+   * throttled at the controller for that reason. Accepted for this app:
+   * RegisterPage already reveals "already registered" on a duplicate
+   * signup attempt, so withholding the same signal here wouldn't actually
+   * stop anyone determined to check, just make the honest, no-account
+   * case more confusing for real users who mistype their email.
+   */
+  async emailExists(email: string): Promise<boolean> {
+    const rows = await this.prisma.$queryRaw<{ exists: boolean }[]>`
+      SELECT EXISTS(SELECT 1 FROM auth.users WHERE lower(email) = lower(${email})) AS exists
+    `;
+    return rows[0]?.exists ?? false;
+  }
 }
 
 function toMe(profile: Profile, isNewSignup: boolean): Me {

@@ -20,10 +20,10 @@ const ME: Me = {
 
 describe('AuthController', () => {
   let controller: AuthController;
-  let profiles: { getMe: jest.Mock };
+  let profiles: { getMe: jest.Mock; emailExists: jest.Mock };
 
   beforeEach(async () => {
-    profiles = { getMe: jest.fn() };
+    profiles = { getMe: jest.fn(), emailExists: jest.fn() };
 
     const moduleRef = await Test.createTestingModule({
       controllers: [AuthController],
@@ -42,5 +42,18 @@ describe('AuthController', () => {
       controller.getMe({ userId: 'user-1', role: 'learner', email: 'ada@example.com' }),
     ).resolves.toEqual(ME);
     expect(profiles.getMe).toHaveBeenCalledWith('user-1', 'ada@example.com');
+  });
+
+  describe('emailExists', () => {
+    it('reports true for a registered email', async () => {
+      profiles.emailExists.mockResolvedValueOnce(true);
+      await expect(controller.emailExists({ email: 'ada@example.com' })).resolves.toEqual({ exists: true });
+      expect(profiles.emailExists).toHaveBeenCalledWith('ada@example.com');
+    });
+
+    it('reports false for an unregistered email', async () => {
+      profiles.emailExists.mockResolvedValueOnce(false);
+      await expect(controller.emailExists({ email: 'nobody@example.com' })).resolves.toEqual({ exists: false });
+    });
   });
 });

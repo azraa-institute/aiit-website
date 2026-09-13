@@ -45,6 +45,18 @@ export function SecurityFactorsSection() {
     if (!supabase) return;
     setActionError(undefined);
     setEnrolling(true);
+
+    // An enrollment abandoned without clicking "Cancel" (tab closed, browser
+    // crash, navigated away mid-QR-scan) leaves an unverified factor behind
+    // server-side, with no record of it left client-side to clean up later.
+    // Supabase then refuses a new enroll() under the same friendly name with
+    // a confusing "already exists" error -- clear any of those out first so
+    // re-enrolling always works.
+    const stale = factors?.filter((f) => f.status === 'unverified') ?? [];
+    for (const f of stale) {
+      await supabase.auth.mfa.unenroll({ factorId: f.id });
+    }
+
     // issuer defaults to the Supabase project's own domain when omitted --
     // that's what was actually showing up in authenticator apps as the
     // entry name (alongside the account email, which TOTP's otpauth
@@ -98,7 +110,11 @@ export function SecurityFactorsSection() {
 
   async function handleCancelPending() {
     if (!supabase || !pending) return;
-    await supabase.auth.mfa.unenroll({ factorId: pending.factorId });
+    const { error } = await supabase.auth.mfa.unenroll({ factorId: pending.factorId });
+    if (error) {
+      setActionError(error.message);
+      return;
+    }
     setPending(null);
     setCode('');
     setActionError(undefined);

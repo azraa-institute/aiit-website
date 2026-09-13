@@ -4,7 +4,7 @@ import { Link } from 'react-router-dom';
 import { cn } from '@/lib/cn';
 import './button.css';
 
-type Variant = 'primary' | 'secondary' | 'ghost' | 'link';
+type Variant = 'primary' | 'secondary' | 'ghost' | 'link' | 'destructive';
 type Size = 'sm' | 'md' | 'lg';
 
 interface BaseProps {

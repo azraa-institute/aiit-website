@@ -5,10 +5,12 @@ import { useScrollReveal } from '@/lib/useScrollReveal';
 import { useAuth } from '@/lib/AuthContext';
 import { supabase } from '@/lib/supabaseClient';
 import { apiFetch } from '@/lib/api';
+import { cn } from '@/lib/cn';
 import { TextField, PasswordField, SelectField } from '@/components/common/Field';
 import { Button } from '@/components/primitives/Button';
 import { COUNTRIES } from '@/data/countries';
 import { LANGUAGES } from '@/data/languages';
+import { MailIcon, LockIcon, MonitorIcon, GlobeIcon, TrashIcon } from './settings-icons';
 import { useLearner } from './learnerData';
 import { PortalLoader } from './PortalLoader';
 import { SecurityFactorsSection } from './SecurityFactorsSection';
@@ -16,6 +18,14 @@ import { LinkedAccountsSection } from './LinkedAccountsSection';
 
 const COUNTRY_OPTIONS = [{ value: '', label: 'Not set' }, ...COUNTRIES.map((c) => ({ value: c.code, label: c.name }))];
 const LANGUAGE_OPTIONS = LANGUAGES.map((l) => ({ value: l.code, label: l.name }));
+
+const SETTINGS_NAV_ITEMS = [
+  { id: 'sign-in-security', label: 'Sign-in & security' },
+  { id: 'linked-accounts', label: 'Linked accounts' },
+  { id: 'preferences', label: 'Preferences' },
+  { id: 'two-factor', label: 'Two-factor authentication' },
+  { id: 'danger-zone', label: 'Danger zone', danger: true },
+] as const;
 
 export default function SettingsPage() {
   const state = useLearner();
@@ -28,15 +38,20 @@ export default function SettingsPage() {
     <div className="portal-page">
       <header className="portal-page__head" data-reveal>
         <p className="portal-eyebrow">Account settings</p>
-        <h1 className="portal-page__title">Your account</h1>
-        <p className="portal-page__intro">Sign-in, security, region and language, all connected to your account.</p>
+        <h1 className="portal-page__title">Account settings</h1>
+        <p className="portal-page__intro">Manage your account, security and preferences.</p>
       </header>
 
-      <SignInSecuritySection />
-      <LinkedAccountsSection />
-      <RegionLanguageSection />
-      <SecurityFactorsSection />
-      <DangerZoneSection />
+      <div className="settings-shell" data-reveal>
+        <SettingsNav />
+        <div className="settings-panels">
+          <SignInSecuritySection />
+          <LinkedAccountsSection />
+          <RegionLanguageSection />
+          <SecurityFactorsSection />
+          <DangerZoneSection />
+        </div>
+      </div>
 
       <p className="settings__foot" data-reveal>
         Need help with your account? <Link to="/contact">Contact the AIIT team</Link>.
@@ -45,7 +60,53 @@ export default function SettingsPage() {
   );
 }
 
+/** Anchor nav for the settings sections below -- every section stays mounted
+ * and visible (not a hide/show tab), so a save confirmation or error a
+ * section is showing never gets hidden by switching tabs. IntersectionObserver
+ * only drives which link is highlighted as "active" while scrolling. */
+function SettingsNav() {
+  const [activeId, setActiveId] = useState<string>(SETTINGS_NAV_ITEMS[0].id);
+
+  useEffect(() => {
+    const elements = SETTINGS_NAV_ITEMS.map((item) => document.getElementById(item.id)).filter(
+      (el): el is HTMLElement => el !== null,
+    );
+    if (elements.length === 0) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        const visible = entries
+          .filter((entry) => entry.isIntersecting)
+          .sort((a, b) => a.boundingClientRect.top - b.boundingClientRect.top);
+        if (visible[0]) setActiveId(visible[0].target.id);
+      },
+      { rootMargin: '-15% 0px -70% 0px', threshold: [0, 1] },
+    );
+    elements.forEach((el) => observer.observe(el));
+    return () => observer.disconnect();
+  }, []);
+
+  return (
+    <nav className="settings-nav" aria-label="Settings sections">
+      {SETTINGS_NAV_ITEMS.map((item) => (
+        <a
+          key={item.id}
+          href={`#${item.id}`}
+          className={cn(
+            'settings-nav__link',
+            'danger' in item && item.danger && 'settings-nav__link--danger',
+            activeId === item.id && 'is-active',
+          )}
+        >
+          {item.label}
+        </a>
+      ))}
+    </nav>
+  );
+}
+
 function SignInSecuritySection() {
+  const { session } = useAuth();
   const [newEmail, setNewEmail] = useState('');
   const [emailSaving, setEmailSaving] = useState(false);
   const [emailMessage, setEmailMessage] = useState<string>();
@@ -119,72 +180,96 @@ function SignInSecuritySection() {
   }
 
   return (
-    <section className="settings-section" data-reveal>
-      <h2 className="settings-section__title">Sign-in &amp; security</h2>
+    <section id="sign-in-security" className="settings-section" data-reveal>
+      <div className="settings-section__head">
+        <span className="settings-section__icon">
+          <LockIcon />
+        </span>
+        <h2 className="settings-section__title">Sign-in &amp; security</h2>
+      </div>
 
-      <form className="settings-section__form" onSubmit={handleEmailChange}>
-        <h3 className="settings-section__subtitle">Change email</h3>
-        {emailError ? (
-          <p className="auth__alert" role="alert">
-            {emailError}
+      <div className="settings-section__subcard">
+        <form onSubmit={handleEmailChange}>
+          <h3 className="settings-section__subtitle">
+            <MailIcon /> Email address
+          </h3>
+          <p className="settings__body">
+            Current email <strong>{session?.user.email ?? '—'}</strong>
           </p>
-        ) : null}
-        {emailMessage ? <p className="profile-edit__saved">{emailMessage}</p> : null}
-        <TextField
-          label="New email address"
-          type="email"
-          value={newEmail}
-          onChange={(e) => setNewEmail(e.target.value)}
-          required
-        />
-        <Button as="button" type="submit" variant="secondary" size="sm" loading={emailSaving}>
-          Update email
-        </Button>
-      </form>
+          <div className="settings-section__form">
+            {emailError ? (
+              <p className="auth__alert" role="alert">
+                {emailError}
+              </p>
+            ) : null}
+            {emailMessage ? <p className="profile-edit__saved">{emailMessage}</p> : null}
+            <TextField
+              label="New email address"
+              type="email"
+              value={newEmail}
+              onChange={(e) => setNewEmail(e.target.value)}
+              required
+            />
+            <Button as="button" type="submit" variant="secondary" size="sm" loading={emailSaving}>
+              Update email
+            </Button>
+          </div>
+        </form>
+      </div>
 
-      <form className="settings-section__form" onSubmit={handlePasswordChange}>
-        <h3 className="settings-section__subtitle">Change password</h3>
-        {passwordError ? (
-          <p className="auth__alert" role="alert">
-            {passwordError}
-          </p>
-        ) : null}
-        {passwordMessage ? <p className="profile-edit__saved">{passwordMessage}</p> : null}
-        <PasswordField
-          label="New password"
-          value={newPassword}
-          onChange={(e) => setNewPassword(e.target.value)}
-          hint="At least 8 characters"
-          required
-        />
-        <PasswordField
-          label="Confirm new password"
-          value={confirmPassword}
-          onChange={(e) => setConfirmPassword(e.target.value)}
-          required
-        />
-        <Button as="button" type="submit" variant="secondary" size="sm" loading={passwordSaving}>
-          Update password
-        </Button>
-      </form>
+      <div className="settings-section__subcard">
+        <form onSubmit={handlePasswordChange}>
+          <h3 className="settings-section__subtitle">
+            <LockIcon /> Password
+          </h3>
+          <div className="settings-section__form">
+            {passwordError ? (
+              <p className="auth__alert" role="alert">
+                {passwordError}
+              </p>
+            ) : null}
+            {passwordMessage ? <p className="profile-edit__saved">{passwordMessage}</p> : null}
+            <PasswordField
+              label="New password"
+              value={newPassword}
+              onChange={(e) => setNewPassword(e.target.value)}
+              hint="At least 8 characters"
+              required
+            />
+            <PasswordField
+              label="Confirm new password"
+              value={confirmPassword}
+              onChange={(e) => setConfirmPassword(e.target.value)}
+              required
+            />
+            <Button as="button" type="submit" variant="secondary" size="sm" loading={passwordSaving}>
+              Update password
+            </Button>
+          </div>
+        </form>
+      </div>
 
-      <div className="settings-section__form">
-        <h3 className="settings-section__subtitle">Sessions</h3>
+      <div className="settings-section__subcard">
+        <h3 className="settings-section__subtitle">
+          <MonitorIcon /> Sessions
+        </h3>
         <p className="settings__body">
           If you think your account may be signed in somewhere you don&apos;t recognise, sign out of every
           device at once.
         </p>
         {signOutMessage ? <p className="profile-edit__saved">{signOutMessage}</p> : null}
-        <Button
-          as="button"
-          type="button"
-          variant="secondary"
-          size="sm"
-          loading={signingOutEverywhere}
-          onClick={handleSignOutEverywhere}
-        >
-          Sign out everywhere
-        </Button>
+        <div className="settings-section__form">
+          <Button
+            as="button"
+            type="button"
+            variant="secondary"
+            size="sm"
+            loading={signingOutEverywhere}
+            onClick={handleSignOutEverywhere}
+          >
+            Sign out everywhere
+          </Button>
+        </div>
       </div>
     </section>
   );
@@ -235,8 +320,13 @@ function RegionLanguageSection() {
   }
 
   return (
-    <section className="settings-section" data-reveal>
-      <h2 className="settings-section__title">Region &amp; language</h2>
+    <section id="preferences" className="settings-section" data-reveal>
+      <div className="settings-section__head">
+        <span className="settings-section__icon">
+          <GlobeIcon />
+        </span>
+        <h2 className="settings-section__title">Preferences</h2>
+      </div>
       <form className="settings-section__form" onSubmit={handleSave}>
         {error ? (
           <p className="auth__alert" role="alert">
@@ -282,8 +372,13 @@ function DangerZoneSection() {
   }
 
   return (
-    <section className="settings-section settings-section--danger" data-reveal>
-      <h2 className="settings-section__title">Delete account</h2>
+    <section id="danger-zone" className="settings-section settings-section--danger" data-reveal>
+      <div className="settings-section__head">
+        <span className="settings-section__icon">
+          <TrashIcon />
+        </span>
+        <h2 className="settings-section__title">Danger zone</h2>
+      </div>
       <p className="settings__body">
         This marks your account for deletion. It does not immediately erase your data.
       </p>
@@ -293,9 +388,11 @@ function DangerZoneSection() {
         </p>
       ) : null}
       {!confirming ? (
-        <Button as="button" type="button" variant="secondary" size="sm" onClick={() => setConfirming(true)}>
-          Delete my account
-        </Button>
+        <div className="settings-section__form">
+          <Button as="button" type="button" variant="destructive" size="sm" onClick={() => setConfirming(true)}>
+            Delete my account
+          </Button>
+        </div>
       ) : (
         <div className="settings-section__confirm">
           <p className="settings__body">
@@ -310,7 +407,7 @@ function DangerZoneSection() {
             <Button
               as="button"
               type="button"
-              variant="secondary"
+              variant="destructive"
               size="sm"
               disabled={confirmText !== 'DELETE'}
               loading={deleting}
@@ -327,3 +424,4 @@ function DangerZoneSection() {
     </section>
   );
 }
+

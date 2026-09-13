@@ -102,6 +102,17 @@
   --btn-bg: var(--accent-wash);
 }
 
+.btn--destructive {
+  --btn-bg: transparent;
+  --btn-fg: var(--red-deep);
+  --btn-border: var(--red-tint);
+}
+.btn--destructive:hover {
+  --btn-bg: var(--red);
+  --btn-border: var(--red);
+  --btn-fg: #fff;
+}
+
 .btn--ghost {
   --btn-fg: var(--fg);
   padding-inline: var(--space-2);

@@ -3,6 +3,8 @@ import type { Factor } from '@supabase/supabase-js';
 import { supabase } from '@/lib/supabaseClient';
 import { TextField } from '@/components/common/Field';
 import { Button } from '@/components/primitives/Button';
+import { cn } from '@/lib/cn';
+import { ShieldIcon } from './settings-icons';
 
 /**
  * Two-factor authentication (TOTP) via Supabase Auth's MFA API -- a core
@@ -101,10 +103,21 @@ export function SecurityFactorsSection() {
   }
 
   const verifiedFactors = factors?.filter((f) => f.status === 'verified') ?? [];
+  const enabled = verifiedFactors.length > 0;
 
   return (
-    <section className="settings-section" data-reveal>
-      <h2 className="settings-section__title">Two-factor authentication</h2>
+    <section id="two-factor" className="settings-section" data-reveal>
+      <div className="settings-section__head">
+        <span className="settings-section__icon">
+          <ShieldIcon />
+        </span>
+        <h2 className="settings-section__title">Two-factor authentication</h2>
+        {factors !== null ? (
+          <span className={cn('settings-section__pill', enabled && 'settings-section__pill--on')}>
+            {enabled ? 'Enabled' : 'Not enabled'}
+          </span>
+        ) : null}
+      </div>
       <p className="settings__body">
         Add an authenticator app (Google Authenticator, 1Password, Authy) as a second sign-in step.
       </p>

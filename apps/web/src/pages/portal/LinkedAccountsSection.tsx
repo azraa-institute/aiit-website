@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import type { UserIdentity } from '@supabase/supabase-js';
 import { supabase } from '@/lib/supabaseClient';
 import { Button } from '@/components/primitives/Button';
+import { LinkIcon } from './settings-icons';
 
 const PROVIDER_LABELS: Record<string, string> = {
   email: 'Email & password',
@@ -63,8 +64,13 @@ export function LinkedAccountsSection() {
 
   if (loadError) {
     return (
-      <section className="settings-section" data-reveal>
-        <h2 className="settings-section__title">Linked sign-in methods</h2>
+      <section id="linked-accounts" className="settings-section" data-reveal>
+        <div className="settings-section__head">
+          <span className="settings-section__icon">
+            <LinkIcon />
+          </span>
+          <h2 className="settings-section__title">Linked sign-in methods</h2>
+        </div>
         <p className="auth__alert" role="alert">
           {loadError}
         </p>
@@ -80,8 +86,13 @@ export function LinkedAccountsSection() {
   const canUnlink = identities.length > 1;
 
   return (
-    <section className="settings-section" data-reveal>
-      <h2 className="settings-section__title">Linked sign-in methods</h2>
+    <section id="linked-accounts" className="settings-section" data-reveal>
+      <div className="settings-section__head">
+        <span className="settings-section__icon">
+          <LinkIcon />
+        </span>
+        <h2 className="settings-section__title">Linked sign-in methods</h2>
+      </div>
       <p className="settings__body">These are the ways you can currently sign in to your AIIT account.</p>
 
       {actionError ? (
@@ -99,7 +110,7 @@ export function LinkedAccountsSection() {
               <Button
                 as="button"
                 type="button"
-                variant="ghost"
+                variant="destructive"
                 size="sm"
                 disabled={!canUnlink}
                 loading={unlinkingId === identity.identity_id}

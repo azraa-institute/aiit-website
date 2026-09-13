@@ -8,6 +8,7 @@ import { uploadFile, publicFileUrl, removeFile } from '@/lib/storage';
 import { Avatar } from '@/components/common/Avatar';
 import { TextField } from '@/components/common/Field';
 import { Button } from '@/components/primitives/Button';
+import { CameraIcon, LockIcon } from './settings-icons';
 import { useLearner } from './learnerData';
 import { PortalLoader } from './PortalLoader';
 
@@ -104,17 +105,24 @@ export default function ProfilePage() {
     <div className="portal-page">
       <header className="portal-page__head" data-reveal>
         <p className="portal-eyebrow">Profile</p>
-        <h1 className="portal-page__title">{profile.name ?? 'Your profile'}</h1>
-        <p className="portal-page__intro">
-          How you appear across AIIT — your learning identity, kept in one place.
-        </p>
+        <h1 className="portal-page__title">Profile</h1>
+        <p className="portal-page__intro">Manage how your identity appears across AIIT.</p>
       </header>
 
-      <div className="profile-edit" data-reveal>
-        <div className="profile-edit__photo">
+      <div className="profile-identity" data-reveal>
+        <div className="profile-identity__photo">
           <Avatar name={profile.name} photoUrl={photoUrl} size="lg" />
-          <div className="profile-edit__photo-actions">
-            <label className="btn btn--secondary btn--sm profile-edit__upload">
+          <label className="profile-identity__camera" aria-label={photoUrl ? 'Change photo' : 'Upload photo'}>
+            <CameraIcon />
+            <input type="file" accept="image/*" onChange={handlePhotoChange} disabled={uploadingPhoto} />
+          </label>
+        </div>
+
+        <div className="profile-identity__info">
+          <p className="profile-identity__name">{profile.name || 'Your profile'}</p>
+          <p className="profile-identity__role">Learner</p>
+          <div className="profile-identity__actions">
+            <label className="btn btn--secondary btn--sm profile-identity__upload">
               {uploadingPhoto ? 'Uploading…' : photoUrl ? 'Change photo' : 'Upload photo'}
               <input type="file" accept="image/*" onChange={handlePhotoChange} disabled={uploadingPhoto} />
             </label>
@@ -124,9 +132,14 @@ export default function ProfilePage() {
               </Button>
             ) : null}
           </div>
+          <p className="profile-identity__hint">JPG or PNG, up to a few MB.</p>
         </div>
+      </div>
 
-        <form className="profile-edit__form" onSubmit={handleSave}>
+      <div className="profile-details" data-reveal>
+        <h2 className="profile-details__title">Personal information</h2>
+
+        <form className="profile-details__form" onSubmit={handleSave}>
           {error ? (
             <p className="auth__alert" role="alert">
               {error}
@@ -134,7 +147,17 @@ export default function ProfilePage() {
           ) : null}
           {saved ? <p className="profile-edit__saved">Saved.</p> : null}
 
-          <TextField label="Name" value={name} onChange={(e) => setName(e.target.value)} maxLength={200} />
+          <div className="profile-details__grid">
+            <TextField label="Name" value={name} onChange={(e) => setName(e.target.value)} maxLength={200} />
+            <TextField
+              label="Phone"
+              type="tel"
+              value={phone}
+              onChange={(e) => setPhone(e.target.value)}
+              maxLength={30}
+              hint="Optional -- not used for sign-in or verification."
+            />
+          </div>
           <TextField
             label="Headline"
             value={headline}
@@ -142,26 +165,22 @@ export default function ProfilePage() {
             maxLength={200}
             hint="A short line about you, shown alongside your name."
           />
-          <TextField
-            label="Phone"
-            type="tel"
-            value={phone}
-            onChange={(e) => setPhone(e.target.value)}
-            maxLength={30}
-            hint="Optional -- not used for sign-in or verification, just contact info."
-          />
-          <TextField
-            label="Email"
-            value={session?.user.email ?? ''}
-            disabled
-            readOnly
-            hint="Managed in Account Settings."
-          />
-          <p className="profile-edit__meta">Member since {formatDate(profile.joinedAt)}</p>
 
-          <Button as="button" type="submit" loading={saving}>
-            Save changes
-          </Button>
+          <div className="profile-details__readonly">
+            <LockIcon className="profile-details__readonly-icon" />
+            <div>
+              <p className="profile-details__readonly-label">Email</p>
+              <p className="profile-details__readonly-value">{session?.user.email ?? ''}</p>
+            </div>
+            <p className="profile-details__readonly-note">Managed in Account Settings</p>
+          </div>
+
+          <div className="profile-details__foot">
+            <p className="profile-edit__meta">Member since {formatDate(profile.joinedAt)}</p>
+            <Button as="button" type="submit" loading={saving}>
+              Save changes
+            </Button>
+          </div>
         </form>
       </div>
     </div>

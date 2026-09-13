@@ -54,22 +54,24 @@ export default function PortalLayout() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [showWelcome, setShowWelcome] = useState(false);
   const menuCloseRef = useRef<HTMLButtonElement>(null);
-  const checkedWelcome = useRef(false);
+  const shownWelcome = useRef(false);
 
   useLockBodyScroll(menuOpen);
 
-  // One-shot: AuthCallbackPage marks a fresh confirmation/OAuth sign-in via
-  // navigation state. Re-navigating to strip it (rather than just reading
-  // it) stops a hard refresh on this same history entry from re-showing it,
-  // since React Router's state is backed by the real history.state.
+  // Real signal, not a heuristic: `isNewSignup` only comes back true on the
+  // exact GET /auth/me call that just fired the API's one-time welcome
+  // email, i.e. an actual first-ever signup -- true alike for Google and
+  // email/password. Guarded by a ref (not just the flag itself) so a later
+  // refetch() during this same mount -- which will see isNewSignup: false,
+  // since the API already claimed it -- can't accidentally hide a toast
+  // that's already showing.
   useEffect(() => {
-    if (checkedWelcome.current) return;
-    checkedWelcome.current = true;
-    if ((location.state as { justConfirmed?: boolean } | null)?.justConfirmed) {
+    if (shownWelcome.current) return;
+    if (learnerState.status === 'ready' && learnerState.learner.isNewSignup) {
+      shownWelcome.current = true;
       setShowWelcome(true);
-      navigate(location.pathname, { replace: true, state: null });
     }
-  }, [location, navigate]);
+  }, [learnerState]);
 
   useEffect(() => {
     setMenuOpen(false);

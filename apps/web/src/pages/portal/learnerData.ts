@@ -47,6 +47,8 @@ export interface LearnerRecord {
   assignments: Assignment[];
   notifications: Notification[];
   webinars: WebinarRegistration[];
+  /** True only right after a genuine first-ever signup (Google or email/password) -- the API's real signal for the portal's one-time welcome toast. */
+  isNewSignup: boolean;
 }
 
 async function fetchLearner(): Promise<LearnerRecord> {
@@ -72,6 +74,7 @@ async function fetchLearner(): Promise<LearnerRecord> {
     certificates,
     notifications,
     webinars: [],
+    isNewSignup: me.isNewSignup,
   };
 }
 

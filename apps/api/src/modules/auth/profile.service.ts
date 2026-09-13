@@ -20,11 +20,9 @@ export class ProfileService {
     const profile = await this.prisma.profile.findUnique({ where: { id: userId } });
     if (!profile) throw new NotFoundException('Profile not found.');
 
-    if (!profile.welcomedAt) {
-      await this.sendWelcomeEmailOnce(userId, email);
-    }
+    const isNewSignup = profile.welcomedAt === null && (await this.sendWelcomeEmailOnce(userId, email));
 
-    return toMe(profile);
+    return toMe(profile, isNewSignup);
   }
 
   /**
@@ -36,17 +34,21 @@ export class ProfileService {
    * with `welcomedAt: null` in its own `where` is the guard against a race
    * (e.g. two near-simultaneous GET /auth/me calls) sending the email
    * twice: only the call that actually flips the row from null gets count 1.
+   * Returns whether *this* call was the one that won the claim -- the
+   * frontend's real "just signed up" signal (replacing a former heuristic
+   * based on the OAuth callback URL shape, which fired on every Google
+   * login, not just the first).
    */
-  private async sendWelcomeEmailOnce(userId: string, email: string | undefined): Promise<void> {
+  private async sendWelcomeEmailOnce(userId: string, email: string | undefined): Promise<boolean> {
     const claimed = await this.prisma.profile.updateMany({
       where: { id: userId, welcomedAt: null },
       data: { welcomedAt: new Date() },
     });
-    if (claimed.count === 0) return;
+    if (claimed.count === 0) return false;
 
     if (!email) {
       this.logger.warn(`No email claim on JWT for user ${userId} -- skipped welcome email.`);
-      return;
+      return true;
     }
 
     const portalUrl = `${process.env.APP_URL ?? 'https://aiit.network'}/portal`;
@@ -62,6 +64,7 @@ export class ProfileService {
         footerNote: "You're receiving this because you created an account on aiit.network.",
       }),
     });
+    return true;
   }
 
   async updateProfile(userId: string, dto: UpdateProfileDto): Promise<Me> {
@@ -74,7 +77,7 @@ export class ProfileService {
         ...(dto.avatarKey !== undefined && { avatarKey: dto.avatarKey }),
       },
     });
-    return toMe(profile);
+    return toMe(profile, false);
   }
 
   async updatePreferences(userId: string, dto: UpdatePreferencesDto): Promise<Me> {
@@ -82,7 +85,7 @@ export class ProfileService {
       where: { id: userId },
       data: { preferences: dto.preferences as Prisma.InputJsonValue },
     });
-    return toMe(profile);
+    return toMe(profile, false);
   }
 
   /** Soft: marks the account for deletion. A purge job is future work. */
@@ -94,7 +97,7 @@ export class ProfileService {
   }
 }
 
-function toMe(profile: Profile): Me {
+function toMe(profile: Profile, isNewSignup: boolean): Me {
   return {
     id: profile.id,
     role: profile.role,
@@ -106,5 +109,6 @@ function toMe(profile: Profile): Me {
     preferences: profile.preferences as Record<string, unknown>,
     createdAt: profile.createdAt.toISOString(),
     updatedAt: profile.updatedAt.toISOString(),
+    isNewSignup,
   };
 }

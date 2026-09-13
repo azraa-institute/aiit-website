@@ -13,4 +13,6 @@ export interface Me {
   preferences: Record<string, unknown>;
   createdAt: string;
   updatedAt: string;
+  /** True only on the exact GET /auth/me call that just fired the one-time welcome email -- i.e. a real first-ever signup, for either Google or email/password. False on every later call. */
+  isNewSignup: boolean;
 }

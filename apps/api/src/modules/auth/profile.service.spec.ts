@@ -56,6 +56,7 @@ describe('ProfileService', () => {
       preferences: {},
       createdAt: '2026-01-01T00:00:00.000Z',
       updatedAt: '2026-01-02T00:00:00.000Z',
+      isNewSignup: false,
     });
     expect(prisma.profile.findUnique).toHaveBeenCalledWith({ where: { id: 'user-1' } });
     expect(prisma.profile.updateMany).not.toHaveBeenCalled();
@@ -67,11 +68,11 @@ describe('ProfileService', () => {
     await expect(service.getMe('missing', 'ada@example.com')).rejects.toBeInstanceOf(NotFoundException);
   });
 
-  it('sends a welcome email exactly once, the first time getMe sees an unwelcomed profile', async () => {
+  it('sends a welcome email exactly once, the first time getMe sees an unwelcomed profile, and reports isNewSignup', async () => {
     prisma.profile.findUnique.mockResolvedValueOnce({ ...PROFILE, welcomedAt: null });
     prisma.profile.updateMany.mockResolvedValueOnce({ count: 1 });
 
-    await service.getMe('user-1', 'ada@example.com');
+    const me = await service.getMe('user-1', 'ada@example.com');
 
     expect(prisma.profile.updateMany).toHaveBeenCalledWith({
       where: { id: 'user-1', welcomedAt: null },
@@ -80,23 +81,26 @@ describe('ProfileService', () => {
     expect(email.send).toHaveBeenCalledWith(
       expect.objectContaining({ to: 'ada@example.com', subject: expect.stringContaining('Welcome') }),
     );
+    expect(me.isNewSignup).toBe(true);
   });
 
-  it('does not send a welcome email when another request already claimed it (race)', async () => {
+  it('does not send a welcome email when another request already claimed it (race), and reports isNewSignup false', async () => {
     prisma.profile.findUnique.mockResolvedValueOnce({ ...PROFILE, welcomedAt: null });
     prisma.profile.updateMany.mockResolvedValueOnce({ count: 0 });
 
-    await service.getMe('user-1', 'ada@example.com');
+    const me = await service.getMe('user-1', 'ada@example.com');
 
     expect(email.send).not.toHaveBeenCalled();
+    expect(me.isNewSignup).toBe(false);
   });
 
-  it('skips the welcome email (without failing the request) when the JWT has no email claim', async () => {
+  it('skips the welcome email (without failing the request) when the JWT has no email claim, but still reports isNewSignup', async () => {
     prisma.profile.findUnique.mockResolvedValueOnce({ ...PROFILE, welcomedAt: null });
     prisma.profile.updateMany.mockResolvedValueOnce({ count: 1 });
 
-    await expect(service.getMe('user-1', undefined)).resolves.toBeDefined();
+    const me = await service.getMe('user-1', undefined);
     expect(email.send).not.toHaveBeenCalled();
+    expect(me.isNewSignup).toBe(true);
   });
 
   it('updateProfile only sends fields present on the dto', async () => {

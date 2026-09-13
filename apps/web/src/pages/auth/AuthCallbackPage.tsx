@@ -13,9 +13,9 @@ import { supabase } from '@/lib/supabaseClient';
  * OAuth flows (Google) carry a `?code=` param that needs an explicit
  * exchange. `handled` guards against React 18 StrictMode's double effect
  * invocation calling exchangeCodeForSession twice with an already-used code.
- * `justConfirmed` in the /portal navigation state triggers PortalLayout's
- * one-time welcome toast -- in practice this only fires for a real signup
- * confirmation today, since Google OAuth isn't configured yet.
+ * PortalLayout's one-time welcome toast is driven by the API's own
+ * `isNewSignup` signal (GET /auth/me), not anything decided here -- this
+ * page's only job is landing every real session on /portal.
  */
 export default function AuthCallbackPage() {
   const navigate = useNavigate();
@@ -37,7 +37,7 @@ export default function AuthCallbackPage() {
       supabase.auth.exchangeCodeForSession(window.location.href).then(({ error }) => {
         navigate(error ? '/login' : '/portal', {
           replace: true,
-          state: error ? { authError: error.message } : { justConfirmed: true },
+          state: error ? { authError: error.message } : undefined,
         });
       });
       return;
@@ -45,7 +45,7 @@ export default function AuthCallbackPage() {
 
     if (status === 'authenticated') {
       handled.current = true;
-      navigate('/portal', { replace: true, state: { justConfirmed: true } });
+      navigate('/portal', { replace: true });
     } else if (status === 'anonymous') {
       handled.current = true;
       navigate('/login', {

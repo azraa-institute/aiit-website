@@ -1,7 +1,9 @@
 import { Injectable, Logger } from '@nestjs/common';
 
 const RESEND_URL = 'https://api.resend.com/emails';
-const FROM = 'AIIT <noreply@aiit.network>';
+// Matches the sender name Supabase's own auth emails (Confirm signup etc.)
+// already use -- was 'AIIT' here, which read as inconsistent next to them.
+const FROM = 'Azraa Institute of Information Technology <noreply@aiit.network>';
 
 export interface SendEmailInput {
   to: string;

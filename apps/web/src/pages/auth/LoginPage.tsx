@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import type { ChangeEvent, FocusEvent, FormEvent } from 'react';
-import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { Link, useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 import { Seo } from '@/lib/Seo';
 import { Button } from '@/components/primitives/Button';
 import { TextField, PasswordField } from '@/components/common/Field';
@@ -20,11 +20,18 @@ export default function LoginPage() {
   const navigate = useNavigate();
   const location = useLocation();
   const state = location.state as LocationState | null;
+  // Set by lib/api.ts's hard redirect after a 403 "account deleted"
+  // response -- a real page load, not client-side navigation, so it can
+  // only carry this via the URL, not location.state like authError below.
+  const [searchParams] = useSearchParams();
+  const deleted = searchParams.get('reason') === 'deleted';
   const [mode, setMode] = useState<Mode>('password');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [emailTouched, setEmailTouched] = useState(false);
-  const [error, setError] = useState<string | undefined>(state?.authError);
+  const [error, setError] = useState<string | undefined>(
+    deleted ? undefined : state?.authError,
+  );
   const [submitting, setSubmitting] = useState(false);
   const [magicLinkSent, setMagicLinkSent] = useState(false);
 
@@ -113,8 +120,12 @@ export default function LoginPage() {
     <>
       <Seo title="Sign In" path="/login" noindex />
       <AuthLayout
-        title="Welcome back"
-        intro="Sign in to continue your courses, track progress and access your certificates."
+        title={deleted ? 'Account deleted' : 'Welcome back'}
+        intro={
+          deleted
+            ? "Your AIIT account has been deleted. You're welcome to create a new one any time."
+            : 'Sign in to continue your courses, track progress and access your certificates.'
+        }
         social={
           magicLinkSent ? undefined : (
             <>

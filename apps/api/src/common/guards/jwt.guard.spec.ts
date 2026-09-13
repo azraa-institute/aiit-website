@@ -1,4 +1,4 @@
-import { ExecutionContext, UnauthorizedException } from '@nestjs/common';
+import { ExecutionContext, ForbiddenException, UnauthorizedException } from '@nestjs/common';
 import { generateKeyPairSync, sign as cryptoSign, type KeyObject } from 'crypto';
 import { JwtGuard } from './jwt.guard';
 import { PrismaService } from '../prisma/prisma.service';
@@ -110,7 +110,7 @@ describe('JwtGuard', () => {
   });
 
   it('attaches { userId, role, email } to the request for a valid token + profile', async () => {
-    prisma.profile.findUnique.mockResolvedValueOnce({ role: 'admin' });
+    prisma.profile.findUnique.mockResolvedValueOnce({ role: 'admin', status: 'active' });
     const token = signToken(privateKey, 'user-1', 3600, 'ada@example.com');
     const request: { headers: { authorization: string }; user?: unknown } = {
       headers: { authorization: `Bearer ${token}` },
@@ -123,12 +123,12 @@ describe('JwtGuard', () => {
     expect(request.user).toEqual({ userId: 'user-1', role: 'admin', email: 'ada@example.com' });
     expect(prisma.profile.findUnique).toHaveBeenCalledWith({
       where: { id: 'user-1' },
-      select: { role: true },
+      select: { role: true, status: true },
     });
   });
 
   it('attaches an undefined email when the token has no email claim', async () => {
-    prisma.profile.findUnique.mockResolvedValueOnce({ role: 'learner' });
+    prisma.profile.findUnique.mockResolvedValueOnce({ role: 'learner', status: 'active' });
     const token = signToken(privateKey, 'user-1', 3600);
     const request: { headers: { authorization: string }; user?: unknown } = {
       headers: { authorization: `Bearer ${token}` },
@@ -140,4 +140,15 @@ describe('JwtGuard', () => {
     await expect(guard.canActivate(context)).resolves.toBe(true);
     expect(request.user).toEqual({ userId: 'user-1', role: 'learner', email: undefined });
   });
+
+  it.each(['pending_deletion', 'suspended'] as const)(
+    'rejects a valid token for a %s profile with ForbiddenException',
+    async (status) => {
+      prisma.profile.findUnique.mockResolvedValueOnce({ role: 'learner', status });
+      const token = signToken(privateKey, 'user-1', 3600);
+      await expect(guard.canActivate(contextWithHeader(`Bearer ${token}`))).rejects.toBeInstanceOf(
+        ForbiddenException,
+      );
+    },
+  );
 });

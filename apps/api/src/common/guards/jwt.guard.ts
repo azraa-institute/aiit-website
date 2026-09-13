@@ -1,4 +1,4 @@
-import { CanActivate, ExecutionContext, Injectable, UnauthorizedException } from '@nestjs/common';
+import { CanActivate, ExecutionContext, ForbiddenException, Injectable, UnauthorizedException } from '@nestjs/common';
 import { createPublicKey, verify as verifySignature } from 'crypto';
 import type { webcrypto } from 'crypto';
 import type { Request } from 'express';
@@ -59,10 +59,19 @@ export class JwtGuard implements CanActivate {
 
     const profile = await this.prisma.profile.findUnique({
       where: { id: sub },
-      select: { role: true },
+      select: { role: true, status: true },
     });
     if (!profile) {
       throw new UnauthorizedException('No profile found for this account.');
+    }
+    // A profile row is never actually erased on deletion (see
+    // ProfileService.requestDeletion) -- it's a soft flag, kept as an
+    // internal record. This is the enforcement half of that: a real
+    // Supabase session for this account can still be issued (nothing
+    // revokes it there), but every API call now correctly refuses it
+    // instead of quietly continuing to work as if nothing happened.
+    if (profile.status !== 'active') {
+      throw new ForbiddenException('This account has been deleted.');
     }
 
     request.user = { userId: sub, role: profile.role, email };

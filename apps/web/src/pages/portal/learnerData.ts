@@ -86,9 +86,21 @@ export function loadLearner(): Promise<LearnerRecord> {
   return inFlight;
 }
 
-/** Call after any action that changes the learner record server-side (enroll, submit, mark-read, profile edit) so the next mount/refetch picks up the change. */
+/**
+ * Every mounted useLearner() instance registers itself here so
+ * invalidateLearner() can tell all of them to refetch, not just whichever
+ * component happened to call it -- e.g. saving a profile photo on
+ * ProfilePage now also updates PortalLayout's topbar avatar immediately,
+ * since PortalLayout stays mounted underneath it (it's the layout, not a
+ * sibling route) and previously only picked up the change on its own next
+ * mount.
+ */
+const listeners = new Set<() => void>();
+
+/** Call after any action that changes the learner record server-side (enroll, submit, mark-read, profile edit) -- refetches every mounted useLearner() instance, not just the caller's. */
 export function invalidateLearner(): void {
   inFlight = null;
+  listeners.forEach((notify) => notify());
 }
 
 export type LearnerState =
@@ -103,15 +115,24 @@ export type LearnerState =
  *
  * `refetch()` invalidates the shared cache and reloads -- call it after an
  * action that changes the record server-side (submitting an assignment,
- * marking a notification read). It only affects the calling component's own
- * hook instance; other already-mounted useLearner() callers (e.g. the
- * topbar's unread badge) pick up the change on their own next mount, not
- * instantly -- there's no cross-component cache broadcast, matching this
- * codebase's plain useState/useEffect convention (no React Query/SWR).
+ * marking a notification read, saving a profile edit). Every mounted
+ * useLearner() instance refetches, via the `listeners` broadcast above --
+ * e.g. PortalLayout's topbar avatar updates immediately when ProfilePage
+ * saves a new photo, even though PortalLayout is the layout underneath it
+ * (always mounted, not a sibling route) rather than the component that
+ * called refetch().
  */
 export function useLearner(): LearnerState & { refetch: () => void } {
   const [reloadToken, setReloadToken] = useState(0);
   const [state, setState] = useState<LearnerState>({ status: 'loading', learner: null, error: null });
+
+  useEffect(() => {
+    const notify = () => setReloadToken((t) => t + 1);
+    listeners.add(notify);
+    return () => {
+      listeners.delete(notify);
+    };
+  }, []);
 
   useEffect(() => {
     let alive = true;
@@ -133,12 +154,7 @@ export function useLearner(): LearnerState & { refetch: () => void } {
     };
   }, [reloadToken]);
 
-  function refetch() {
-    invalidateLearner();
-    setReloadToken((t) => t + 1);
-  }
-
-  return { ...state, refetch };
+  return { ...state, refetch: invalidateLearner };
 }
 
 /* ---- Derived helpers (pure, data-driven) ---- */

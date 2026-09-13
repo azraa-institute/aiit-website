@@ -1,9 +1,18 @@
--- Isolated on purpose (see 20260912000001_auth_trigger for why): ALTERing
--- auth.users needs privileges the pooler connection role may not have. If
--- this migration fails in production for that reason, the fallback is the
--- same as that one -- run this statement by hand via Supabase Dashboard ->
--- SQL Editor, then
--- `prisma migrate resolve --applied 20260913015000_auth_users_meta_column`.
+-- CONFIRMED IN PRODUCTION: this statement itself cannot run there --
+-- ALTERing auth.users fails with "must be owner of table users" (42501)
+-- even from the Supabase Dashboard's SQL Editor. That's a platform-level
+-- protection on GoTrue's own schema, not a connection-role scoping issue
+-- like the CREATE TRIGGER/SELECT cases elsewhere in this migration
+-- history (see 20260912000001_auth_trigger) -- there is no elevated
+-- connection on a Supabase project that can restructure auth.users by
+-- hand. If this migration ever shows as failed against production again
+-- (e.g. after a database reset), the only fix is
+-- `prisma migrate resolve --applied 20260913015000_auth_users_meta_column`
+-- with NO attempt to actually run the SQL below first -- confirm via
+-- `select column_name from information_schema.columns where
+-- table_schema='auth' and table_name='users'` that raw_user_meta_data is
+-- already there (it always has been, on every real Supabase project)
+-- before resolving.
 --
 -- A genuine no-op against real Supabase, which has always had this column
 -- (IF NOT EXISTS). Exists purely so CI's from-scratch migration replay --

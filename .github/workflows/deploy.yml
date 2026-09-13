@@ -75,17 +75,19 @@ jobs:
       # the fallback above is contingency documentation, not a report that
       # it was needed.)
       #
-      # FOURTH one-time step, possibly needed on 20260913015000_auth_users_
-      # meta_column: an ALTER TABLE on auth.users, a step up from the SELECT
-      # above. Added AFTER 20260913020000_backfill_profile_names had
-      # already been applied, timestamped to sort before it anyway --
-      # confirmed against a real Postgres that `prisma migrate deploy`
-      # applies a new, not-yet-recorded migration regardless of where its
-      # timestamp falls relative to already-applied ones, so this isn't a
-      # problem. Same fallback shape if this migration specifically fails:
-      # run its one statement by hand via Supabase Dashboard -> SQL Editor,
-      # then
+      # FOURTH one-time step, CONFIRMED NEEDED (unlike the first three,
+      # which were contingencies) on 20260913015000_auth_users_meta_column:
+      # its ALTER TABLE on auth.users failed in production with "must be
+      # owner of table users" (42501) -- and unlike the SELECT/TRIGGER
+      # cases above, this ISN'T a role-scoping issue the Supabase Dashboard
+      # SQL Editor can get around: ALTERing auth.users structure is blocked
+      # for everyone on a Supabase project, full stop. The column this
+      # migration adds has always existed on real Supabase anyway (an
+      # earlier migration already successfully read it), so there is
+      # nothing to actually apply -- the fix is purely
       #   npx prisma migrate resolve --applied 20260913015000_auth_users_meta_column --schema apps/api/prisma/schema.prisma
+      # with no SQL run by hand first. Once resolved, no future
+      # `migrate deploy` run touches this migration again.
       - name: Apply pending migrations
         run: npm exec -w apps/api -- prisma migrate deploy
         env:

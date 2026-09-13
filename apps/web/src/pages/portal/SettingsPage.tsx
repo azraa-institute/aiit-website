@@ -66,11 +66,29 @@ export default function SettingsPage() {
  * only drives which link is highlighted as "active" while scrolling. */
 function SettingsNav() {
   const [activeId, setActiveId] = useState<string>(SETTINGS_NAV_ITEMS[0].id);
+  // Some sections (Linked accounts) can render nothing -- e.g. an
+  // email/password-only account has no Google identity to manage -- so the
+  // nav link list is derived from which section elements actually exist in
+  // the DOM, not the static id list, otherwise a link could point at nothing.
+  const [availableIds, setAvailableIds] = useState<Set<string>>(() => new Set());
 
   useEffect(() => {
-    const elements = SETTINGS_NAV_ITEMS.map((item) => document.getElementById(item.id)).filter(
-      (el): el is HTMLElement => el !== null,
-    );
+    const panels = document.querySelector('.settings-panels');
+    if (!panels) return;
+
+    const allIds = SETTINGS_NAV_ITEMS.map((item) => item.id);
+    const sync = () => setAvailableIds(new Set(allIds.filter((id) => document.getElementById(id))));
+    sync();
+
+    const mutation = new MutationObserver(sync);
+    mutation.observe(panels, { childList: true, subtree: true });
+    return () => mutation.disconnect();
+  }, []);
+
+  useEffect(() => {
+    const elements = [...availableIds]
+      .map((id) => document.getElementById(id))
+      .filter((el): el is HTMLElement => el !== null);
     if (elements.length === 0) return;
 
     const observer = new IntersectionObserver(
@@ -84,11 +102,13 @@ function SettingsNav() {
     );
     elements.forEach((el) => observer.observe(el));
     return () => observer.disconnect();
-  }, []);
+  }, [availableIds]);
+
+  const items = SETTINGS_NAV_ITEMS.filter((item) => availableIds.has(item.id));
 
   return (
     <nav className="settings-nav" aria-label="Settings sections">
-      {SETTINGS_NAV_ITEMS.map((item) => (
+      {items.map((item) => (
         <a
           key={item.id}
           href={`#${item.id}`}

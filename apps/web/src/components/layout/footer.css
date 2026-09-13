@@ -264,7 +264,12 @@
   width: clamp(220px, 55vw, 320px);
   aspect-ratio: 1;
   z-index: 0;
-  opacity: 0.14;
+  /* The sphere's own dots/lines already carry their final target
+     opacity (see FooterNetworkGraphic's champagne rgba values) -- this
+     wrapper opacity used to ALSO scale that down, compounding into a
+     result far fainter than either number alone suggested. It now only
+     does the mobile-recedes-a-touch de-emphasis, not double duty. */
+  opacity: 0.55;
   pointer-events: none;
 }
 @media (min-width: 640px) {
@@ -272,15 +277,15 @@
     right: -12%;
     bottom: -62%;
     width: clamp(360px, 40vw, 480px);
-    opacity: 0.22;
+    opacity: 0.8;
   }
 }
 @media (min-width: 1200px) {
   .site-footer__network {
     right: -10%;
     bottom: -60%;
-    width: clamp(500px, 34vw, 640px);
-    opacity: 0.28;
+    width: clamp(500px, 35vw, 650px);
+    opacity: 1;
   }
 }
 .site-footer__network-art {

@@ -1,10 +1,11 @@
 /**
- * A dense, fine digital-earth field for the footer's institutional strip --
- * many small dots and thin contour/mesh arcs standing in for a topographic
- * globe, rather than a few bold latitude/longitude lines. No stroked outer
- * boundary: the sphere reads through the density and fade of the field
- * itself. Deterministic (fixed seed) so it's computed once, not per render.
- * Pure SVG, no image assets, no animation.
+ * A large digital-earth sphere for the footer's institutional strip: real
+ * 3D orthographic projection (a tilted sphere, latitude/longitude great
+ * circles, and a uniformly-sampled surface point cloud), not a flat wavy
+ * grid -- the tilt is what makes the lat/long lines read as genuine
+ * ellipse-arc curvature instead of nearly-straight horizontal bands.
+ * Deterministic (fixed seed) so it's computed once, not per render. Pure
+ * SVG, no image assets, no animation.
  */
 function mulberry32(a: number) {
   return () => {
@@ -16,10 +17,33 @@ function mulberry32(a: number) {
   };
 }
 
-const SIZE = 600;
-const CX = 300;
-const CY = 300;
-const R = 280;
+const SIZE = 680;
+const CX = 340;
+const CY = 340;
+const R = 320;
+/** Tilt around the horizontal axis -- without this, latitude/longitude
+ * circles viewed face-on project as near-straight lines (the "flat grid"
+ * look this replaces); tilted, they project as genuine ellipse arcs. */
+const TILT = (26 * Math.PI) / 180;
+const COS_T = Math.cos(TILT);
+const SIN_T = Math.sin(TILT);
+
+interface Point3 {
+  x: number;
+  y: number;
+  z: number;
+}
+
+/** Sphere point at (latitude phi, longitude lambda), both in radians, after
+ * the fixed tilt rotation -- z > 0 is the visible (front) hemisphere. */
+function project(phi: number, lambda: number): Point3 {
+  const x0 = Math.cos(phi) * Math.cos(lambda);
+  const y0 = Math.sin(phi);
+  const z0 = Math.cos(phi) * Math.sin(lambda);
+  const y1 = y0 * COS_T - z0 * SIN_T;
+  const z1 = y0 * SIN_T + z0 * COS_T;
+  return { x: x0 * R, y: y1 * R, z: z1 * R };
+}
 
 interface Dot {
   x: number;
@@ -29,72 +53,90 @@ interface Dot {
 }
 
 interface GlobeField {
-  contours: string[];
-  fine: string[];
+  latitudes: string[];
+  longitudes: string[];
   dots: Dot[];
+}
+
+/** Builds one ring (fixed phi, sweeping lambda, or fixed lambda sweeping
+ * phi) as one or more front-hemisphere-only path fragments -- broken at
+ * the terminator (z crossing zero) so the path never draws through the
+ * back of the sphere. */
+function ringPaths(steps: number, at: (t: number) => Point3): string[] {
+  const pts: Point3[] = [];
+  for (let i = 0; i <= steps; i++) pts.push(at((i / steps) * Math.PI * 2));
+
+  const paths: Point3[][] = [];
+  let current: Point3[] = [];
+  for (const p of pts) {
+    if (p.z >= -R * 0.02) {
+      current.push(p);
+    } else if (current.length > 1) {
+      paths.push(current);
+      current = [];
+    } else {
+      current = [];
+    }
+  }
+  if (current.length > 1) paths.push(current);
+
+  return paths
+    .filter((seg) => seg.length > 1)
+    .map((seg) => {
+      const d = seg
+        .map((p, i) => `${i === 0 ? 'M' : 'L'} ${(CX + p.x).toFixed(1)} ${(CY - p.y).toFixed(1)}`)
+        .join(' ');
+      return d;
+    });
 }
 
 function buildGlobeField(): GlobeField {
   const rnd = mulberry32(20260914);
-  const contours: string[] = [];
-  const fine: string[] = [];
+  const latitudes: string[] = [];
+  const longitudes: string[] = [];
   const dots: Dot[] = [];
 
-  // Wavy horizontal contour bands -- a topographic feel rather than clean
-  // latitude ellipses.
-  const bandCount = 16;
-  for (let i = 0; i < bandCount; i++) {
-    const t = (i + 0.5) / bandCount;
-    const dy = (t - 0.5) * 2 * R * 0.94;
-    const half = Math.sqrt(Math.max(R * R - dy * dy, 0)) * (0.92 + rnd() * 0.06);
-    const y = CY + dy;
-    const segs = 6 + Math.floor(rnd() * 3);
-    let d = `M ${(CX - half).toFixed(1)} ${y.toFixed(1)}`;
-    for (let s = 1; s <= segs; s++) {
-      const x = CX - half + (2 * half * s) / segs;
-      const prevX = CX - half + (2 * half * (s - 1)) / segs;
-      const midX = (x + prevX) / 2;
-      const wob = (rnd() - 0.5) * 9;
-      d += ` Q ${midX.toFixed(1)} ${(y + wob).toFixed(1)} ${x.toFixed(1)} ${(y + (rnd() - 0.5) * 5).toFixed(1)}`;
-    }
-    contours.push(d);
+  // Latitude rings -- circles of constant phi, swept across longitude.
+  const latSteps = 10;
+  for (let i = 1; i < latSteps; i++) {
+    const phi = (i / latSteps - 0.5) * Math.PI * 0.94;
+    latitudes.push(...ringPaths(72, (lambda) => project(phi, lambda)));
   }
 
-  // Fainter longitude-like sweeps -- capped well short of the true radius so
-  // no single arc traces the sphere's outer edge.
-  const longCount = 10;
-  for (let i = 0; i < longCount; i++) {
-    const angle = (i / (longCount - 1)) * Math.PI;
-    const rx = R * (0.22 + 0.56 * Math.abs(Math.sin(angle)));
-    fine.push(`M ${CX} ${CY - R} A ${rx.toFixed(1)} ${R} 0 0 1 ${CX} ${CY + R}`);
+  // Longitude rings -- meridians, swept across latitude.
+  const lonSteps = 14;
+  for (let i = 0; i < lonSteps; i++) {
+    const lambda = (i / lonSteps) * Math.PI * 2;
+    longitudes.push(...ringPaths(72, (phi) => project((phi / (Math.PI * 2)) * Math.PI - Math.PI / 2, lambda)));
   }
 
-  // Dense point field with radial fade toward the rim and toward the poles,
-  // plus varied brightness so it doesn't read as a flat grid.
-  const target = 280;
-  let tries = 0;
-  while (dots.length < target && tries < target * 10) {
-    tries++;
-    const a = rnd() * Math.PI * 2;
-    const rr = R * Math.sqrt(rnd());
-    const x = CX + Math.cos(a) * rr;
-    const y = CY + Math.sin(a) * rr * 0.98;
-    const edgeFalloff = Math.pow(rr / R, 3);
-    const poleFalloff = Math.pow(Math.abs(y - CY) / R, 2);
-    if (rnd() < edgeFalloff * 0.55 + poleFalloff * 0.3) continue;
+  // Uniformly-sampled surface point cloud (area-uniform, not a lat/long
+  // grid sample, so density reads as organic rather than banded).
+  const target = 950;
+  for (let i = 0; i < target; i++) {
+    const lambda = rnd() * Math.PI * 2;
+    const phi = Math.asin(2 * rnd() - 1);
+    const p = project(phi, lambda);
+    if (p.z < -R * 0.16) continue; // just past the terminator -- skip
+
+    const front = Math.min(Math.max((p.z / R + 0.16) / 1.16, 0), 1); // 0 (edge) .. 1 (facing)
+    const edgeR = Math.hypot(p.x, p.y) / R;
+    const edgeFalloff = Math.pow(edgeR, 4);
+    if (rnd() < edgeFalloff * 0.4) continue;
 
     const tier = rnd();
-    const bright = tier > 0.9;
-    const mid = tier > 0.55;
+    const bright = tier > 0.94;
+    const mid = tier > 0.6;
+    const brightness = 0.35 + front * 0.65;
     dots.push({
-      x,
-      y,
-      r: bright ? 1.3 + rnd() * 0.6 : mid ? 0.9 + rnd() * 0.5 : 0.5 + rnd() * 0.4,
-      o: bright ? 0.45 + rnd() * 0.15 : mid ? 0.3 + rnd() * 0.12 : 0.16 + rnd() * 0.12,
+      x: p.x,
+      y: p.y,
+      r: bright ? 1.4 + rnd() * 0.7 : mid ? 0.9 + rnd() * 0.5 : 0.55 + rnd() * 0.4,
+      o: (bright ? 0.5 + rnd() * 0.18 : mid ? 0.32 + rnd() * 0.14 : 0.18 + rnd() * 0.12) * brightness,
     });
   }
 
-  return { contours, fine, dots };
+  return { latitudes, longitudes, dots };
 }
 
 const FIELD = buildGlobeField();
@@ -102,19 +144,19 @@ const FIELD = buildGlobeField();
 export function FooterNetworkGraphic({ className }: { className?: string }) {
   return (
     <svg className={className} viewBox={`0 0 ${SIZE} ${SIZE}`} aria-hidden="true" fill="none">
-      <g stroke="rgba(195,165,109,0.12)" strokeWidth="0.6">
-        {FIELD.fine.map((d, i) => (
-          <path key={`f${i}`} d={d} />
+      <g stroke="rgba(190,157,99,0.16)" strokeWidth="0.75">
+        {FIELD.longitudes.map((d, i) => (
+          <path key={`lon${i}`} d={d} />
         ))}
       </g>
-      <g stroke="rgba(195,165,109,0.2)" strokeWidth="0.6">
-        {FIELD.contours.map((d, i) => (
-          <path key={`c${i}`} d={d} />
+      <g stroke="rgba(190,157,99,0.26)" strokeWidth="0.9">
+        {FIELD.latitudes.map((d, i) => (
+          <path key={`lat${i}`} d={d} />
         ))}
       </g>
-      <g fill="#d7be8c">
+      <g fill="#d7bb84">
         {FIELD.dots.map((p, i) => (
-          <circle key={i} cx={p.x} cy={p.y} r={p.r} opacity={p.o} />
+          <circle key={i} cx={CX + p.x} cy={CY - p.y} r={p.r} opacity={p.o} />
         ))}
       </g>
     </svg>

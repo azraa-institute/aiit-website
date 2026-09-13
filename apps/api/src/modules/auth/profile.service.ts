@@ -95,6 +95,56 @@ export class ProfileService {
       where: { id: userId },
       data: { status: 'pending_deletion', deletionRequestedAt: new Date() },
     });
+    await this.banSupabaseUser(userId);
+  }
+
+  /**
+   * Disables the account's actual Supabase session, on top of (not instead
+   * of) JwtGuard's own status check -- that check is the real, always-on
+   * enforcement regardless of whether this call succeeds; this just closes
+   * the narrower gap where a *fresh* sign-in attempt would otherwise still
+   * succeed at Supabase's layer and land briefly on /portal before the
+   * first API call bounces it. Best-effort like EmailService: never throws,
+   * since the profile is already correctly marked pending_deletion above
+   * and JwtGuard already blocks it either way -- losing this extra step
+   * shouldn't fail the whole deletion request.
+   *
+   * ban_duration accepts a Go duration string; there's no literal
+   * "forever", so this uses Supabase's own documented example for an
+   * effectively-permanent ban. (Unbanning, if an admin-restore flow is
+   * ever built, is the same call with ban_duration: "none" -- not needed
+   * anywhere in this codebase today.)
+   */
+  private async banSupabaseUser(userId: string): Promise<void> {
+    const supabaseUrl = process.env.SUPABASE_URL;
+    const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+    if (!supabaseUrl || !serviceRoleKey) {
+      this.logger.warn(
+        `SUPABASE_SERVICE_ROLE_KEY not set -- account ${userId} marked pending_deletion, but its live Supabase session was not banned (JwtGuard's status check still blocks API access either way).`,
+      );
+      return;
+    }
+
+    try {
+      const res = await fetch(new URL(`/auth/v1/admin/users/${userId}`, supabaseUrl), {
+        method: 'PUT',
+        headers: {
+          apikey: serviceRoleKey,
+          Authorization: `Bearer ${serviceRoleKey}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ ban_duration: '876000h' }),
+      });
+      if (!res.ok) {
+        const body = await res.text().catch(() => '');
+        this.logger.error(`Failed to ban Supabase user ${userId} (${res.status}): ${body}`);
+      }
+    } catch (error) {
+      this.logger.error(
+        `Error banning Supabase user ${userId}.`,
+        error instanceof Error ? error.stack : String(error),
+      );
+    }
   }
 
   /**

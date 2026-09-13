@@ -20,14 +20,26 @@ const PROFILE = {
 };
 
 describe('ProfileService', () => {
+  const originalSupabaseUrl = process.env.SUPABASE_URL;
+  const originalServiceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
   let service: ProfileService;
   let prisma: {
     profile: { findUnique: jest.Mock; update: jest.Mock; updateMany: jest.Mock };
     $queryRaw: jest.Mock;
   };
   let email: { send: jest.Mock };
+  let fetchSpy: jest.SpiedFunction<typeof fetch>;
+
+  afterAll(() => {
+    process.env.SUPABASE_URL = originalSupabaseUrl;
+    process.env.SUPABASE_SERVICE_ROLE_KEY = originalServiceRoleKey;
+  });
 
   beforeEach(async () => {
+    delete process.env.SUPABASE_URL;
+    delete process.env.SUPABASE_SERVICE_ROLE_KEY;
+    fetchSpy = jest.spyOn(global, 'fetch').mockResolvedValue(new Response(null, { status: 200 }));
+
     prisma = {
       profile: { findUnique: jest.fn(), update: jest.fn(), updateMany: jest.fn() },
       $queryRaw: jest.fn(),
@@ -43,6 +55,10 @@ describe('ProfileService', () => {
     }).compile();
 
     service = moduleRef.get(ProfileService);
+  });
+
+  afterEach(() => {
+    fetchSpy.mockRestore();
   });
 
   it('returns the mapped profile for getMe (already welcomed -- no email sent)', async () => {
@@ -123,12 +139,59 @@ describe('ProfileService', () => {
     });
   });
 
-  it('requestDeletion marks the profile pending_deletion with a timestamp', async () => {
-    prisma.profile.update.mockResolvedValueOnce(PROFILE);
-    await service.requestDeletion('user-1');
-    expect(prisma.profile.update).toHaveBeenCalledWith({
-      where: { id: 'user-1' },
-      data: { status: 'pending_deletion', deletionRequestedAt: expect.any(Date) },
+  describe('requestDeletion', () => {
+    it('marks the profile pending_deletion with a timestamp', async () => {
+      prisma.profile.update.mockResolvedValueOnce(PROFILE);
+      await service.requestDeletion('user-1');
+      expect(prisma.profile.update).toHaveBeenCalledWith({
+        where: { id: 'user-1' },
+        data: { status: 'pending_deletion', deletionRequestedAt: expect.any(Date) },
+      });
+    });
+
+    it('does not attempt to ban the Supabase user when SUPABASE_SERVICE_ROLE_KEY is unset', async () => {
+      process.env.SUPABASE_URL = 'https://test-project.supabase.co';
+      prisma.profile.update.mockResolvedValueOnce(PROFILE);
+      await service.requestDeletion('user-1');
+      expect(fetchSpy).not.toHaveBeenCalled();
+    });
+
+    it('bans the Supabase user via the Admin API when configured', async () => {
+      process.env.SUPABASE_URL = 'https://test-project.supabase.co';
+      process.env.SUPABASE_SERVICE_ROLE_KEY = 'service-role-secret';
+      prisma.profile.update.mockResolvedValueOnce(PROFILE);
+
+      await service.requestDeletion('user-1');
+
+      expect(fetchSpy).toHaveBeenCalledWith(
+        new URL('https://test-project.supabase.co/auth/v1/admin/users/user-1'),
+        expect.objectContaining({
+          method: 'PUT',
+          headers: expect.objectContaining({
+            apikey: 'service-role-secret',
+            Authorization: 'Bearer service-role-secret',
+          }),
+          body: JSON.stringify({ ban_duration: '876000h' }),
+        }),
+      );
+    });
+
+    it('does not throw when the Supabase ban call fails', async () => {
+      process.env.SUPABASE_URL = 'https://test-project.supabase.co';
+      process.env.SUPABASE_SERVICE_ROLE_KEY = 'service-role-secret';
+      prisma.profile.update.mockResolvedValueOnce(PROFILE);
+      fetchSpy.mockResolvedValueOnce(new Response('nope', { status: 500 }));
+
+      await expect(service.requestDeletion('user-1')).resolves.toBeUndefined();
+    });
+
+    it('does not throw when the Supabase ban call rejects outright', async () => {
+      process.env.SUPABASE_URL = 'https://test-project.supabase.co';
+      process.env.SUPABASE_SERVICE_ROLE_KEY = 'service-role-secret';
+      prisma.profile.update.mockResolvedValueOnce(PROFILE);
+      fetchSpy.mockRejectedValueOnce(new Error('network down'));
+
+      await expect(service.requestDeletion('user-1')).resolves.toBeUndefined();
     });
   });
 

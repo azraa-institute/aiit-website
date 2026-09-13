@@ -89,6 +89,25 @@ export function BellIcon({ className }: IconProps) {
   );
 }
 
+export function ArrowRightIcon({ className }: IconProps) {
+  return (
+    <svg
+      width={16}
+      height={10}
+      viewBox="0 0 16 10"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={1.3}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+      className={className}
+    >
+      <path d="M10.5 1l4 4-4 4M14 5H1" />
+    </svg>
+  );
+}
+
 export function ChevronRightIcon({ className }: IconProps) {
   return (
     <svg {...common} width={10} height={10} viewBox="0 0 10 10" className={className}>

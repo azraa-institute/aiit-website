@@ -2,11 +2,27 @@ import { Link } from 'react-router-dom';
 import { useScrollReveal } from '@/lib/useScrollReveal';
 import { RESOURCES } from '@/data/resources';
 import { editorialSections, shortCategory } from '@/lib/resourceEditorial';
-import { formatDate, slugify } from '@/lib/format';
+import { formatDate, pluralize, slugify } from '@/lib/format';
+import { Plate } from '@/components/primitives/Plate';
+import type { Motif } from '@/components/primitives/Plate';
+import { PortalEmpty } from './PortalEmpty';
+import { ArrowRightIcon, BookIcon } from './content-icons';
 
 const BY_DATE = [...RESOURCES].sort((a, b) => (a.publishedAt < b.publishedAt ? 1 : -1));
 const LEAD = BY_DATE.filter((r) => r.featured).slice(0, 1)[0] ?? BY_DATE[0];
 const STREAM = BY_DATE.filter((r) => r.id !== LEAD?.id).slice(0, 6);
+
+/** Presentational only -- maps each real category to one of Plate's existing
+ * motif keywords, so the featured card gets a restrained abstract AIIT
+ * pattern instead of a literal stock photo. Falls back to 'lattice' for any
+ * category not listed here, so nothing breaks if categories change. */
+const CATEGORY_MOTIF: Record<string, Motif> = {
+  'AI & Generative AI': 'signal',
+  'Tech Explainers': 'lattice',
+  'Cloud, Networking & Infrastructure': 'mesh',
+  'Careers & Job Search': 'flow',
+  'Study Abroad / Online': 'horizon',
+};
 
 export default function PortalResourcesPage() {
   useScrollReveal([]);
@@ -16,56 +32,79 @@ export default function PortalResourcesPage() {
     <div className="portal-page">
       <header className="portal-page__head" data-reveal>
         <p className="portal-eyebrow">Learning resources</p>
-        <h1 className="portal-page__title">Keep learning between lessons</h1>
+        <h1 className="portal-page__title">Your AIIT learning library</h1>
         <p className="portal-page__intro">
-          Guides, explainers and career resources from AIIT — the same library that sits behind{' '}
+          Practical guides, technical explainers and career resources curated to help you keep
+          progressing beyond your courses — the same library that sits behind{' '}
           <Link to="/resources">AIIT Resources</Link>.
         </p>
       </header>
 
-      {LEAD ? (
-        <Link to={`/resources/${LEAD.slug}`} className="pres-lead" data-reveal>
-          <span className="pres-lead__cat">{shortCategory(LEAD.category)}</span>
-          <span className="pres-lead__title">{LEAD.title}</span>
-          <span className="pres-lead__excerpt">{LEAD.excerpt}</span>
-          <span className="pres-lead__meta">
-            {formatDate(LEAD.publishedAt, { day: 'numeric', month: 'long', year: 'numeric' })}
-            {' · '}
-            {LEAD.readMinutes} min read
-          </span>
-        </Link>
-      ) : null}
-
-      <section className="portal-section" data-reveal>
-        <p className="portal-eyebrow">Latest</p>
-        <ul className="pres-stream" role="list">
-          {STREAM.map((r) => (
-            <li key={r.id}>
-              <Link to={`/resources/${r.slug}`} className="pres-stream__item">
-                <span className="pres-stream__cat">{shortCategory(r.category)}</span>
-                <span className="pres-stream__title">{r.title}</span>
-                <span className="pres-stream__meta">{r.readMinutes} min</span>
-              </Link>
-            </li>
-          ))}
-        </ul>
-      </section>
-
-      <section className="portal-section" data-reveal>
-        <p className="portal-eyebrow">By topic</p>
-        <ul className="pres-topics" role="list">
-          {sections.map((s) => (
-            <li key={s.name}>
-              <Link to={`/resources?field=${slugify(s.short)}`} className="pres-topic">
-                <span className="pres-topic__name">{s.name}</span>
-                <span className="pres-topic__count">
-                  {s.count} {s.count === 1 ? 'article' : 'articles'}
+      {RESOURCES.length === 0 ? (
+        <PortalEmpty
+          icon={<BookIcon />}
+          title="Nothing here yet"
+          body="New learning resources will appear here as they are published."
+        />
+      ) : (
+        <>
+          {LEAD ? (
+            <Link to={`/resources/${LEAD.slug}`} className="pres-lead" data-reveal>
+              <div className="pres-lead__copy">
+                <span className="pres-lead__cat">{shortCategory(LEAD.category)}</span>
+                <h2 className="pres-lead__title">{LEAD.title}</h2>
+                <p className="pres-lead__excerpt">{LEAD.excerpt}</p>
+                <span className="pres-lead__meta">
+                  {formatDate(LEAD.publishedAt, { day: 'numeric', month: 'short', year: 'numeric' })}
+                  <span className="pres-dot" aria-hidden="true" />
+                  {pluralize(LEAD.readMinutes, 'min')} read
+                  <span className="pres-lead__go">
+                    Read <ArrowRightIcon />
+                  </span>
                 </span>
-              </Link>
-            </li>
-          ))}
-        </ul>
-      </section>
+              </div>
+              <div className="pres-lead__art">
+                <Plate source={CATEGORY_MOTIF[LEAD.category] ?? 'lattice'} seed={LEAD.slug} tone="paper" ratio={1} />
+              </div>
+            </Link>
+          ) : null}
+
+          <section className="portal-section" data-reveal>
+            <p className="portal-eyebrow">Latest</p>
+            <ul className="pres-stream" role="list">
+              {STREAM.map((r) => (
+                <li key={r.id}>
+                  <Link to={`/resources/${r.slug}`} className="pres-stream__item">
+                    <span className="pres-stream__cat">{shortCategory(r.category)}</span>
+                    <h3 className="pres-stream__title">{r.title}</h3>
+                    <span className="pres-stream__meta">
+                      {pluralize(r.readMinutes, 'min')} read
+                      <ArrowRightIcon className="pres-stream__arrow" />
+                    </span>
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </section>
+
+          <section className="portal-section" data-reveal>
+            <p className="portal-eyebrow">By topic</p>
+            <ul className="pres-topics" role="list">
+              {sections.map((s) => (
+                <li key={s.name}>
+                  <Link to={`/resources?field=${slugify(s.short)}`} className="pres-topic">
+                    <span className="pres-topic__name">{s.name}</span>
+                    <span className="pres-topic__count">
+                      {s.count} {s.count === 1 ? 'resource' : 'resources'}
+                      <ArrowRightIcon className="pres-topic__arrow" />
+                    </span>
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </section>
+        </>
+      )}
     </div>
   );
 }

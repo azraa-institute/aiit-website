@@ -8,6 +8,7 @@ import { Button } from '@/components/primitives/Button';
  * No fabricated cards, counts or activity.
  */
 export function PortalEmpty({
+  icon,
   eyebrow,
   title,
   body,
@@ -16,6 +17,10 @@ export function PortalEmpty({
   aside,
   className,
 }: {
+  /** A small glyph shown inside a fine circular ring above the title -- a
+   * subtle visual anchor, not a stock illustration. Optional; existing
+   * callers that don't pass one render exactly as before. */
+  icon?: React.ReactNode;
   eyebrow?: string;
   title: string;
   body: string;
@@ -29,6 +34,11 @@ export function PortalEmpty({
   return (
     <div className={cn('portal-empty', className)}>
       <div className="portal-empty__inner">
+        {icon ? (
+          <span className="portal-empty__icon" aria-hidden="true">
+            {icon}
+          </span>
+        ) : null}
         {eyebrow ? <p className="portal-empty__eyebrow">{eyebrow}</p> : null}
         <h2 className="portal-empty__title">{title}</h2>
         <p className="portal-empty__body">{body}</p>

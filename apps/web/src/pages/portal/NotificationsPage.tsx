@@ -1,4 +1,5 @@
 import { Link } from 'react-router-dom';
+import type { ComponentType } from 'react';
 import type { Notification } from '@aiit/shared';
 import { useScrollReveal } from '@/lib/useScrollReveal';
 import { formatDate } from '@/lib/format';
@@ -7,6 +8,7 @@ import { apiFetch } from '@/lib/api';
 import { useLearner } from './learnerData';
 import { PortalEmpty } from './PortalEmpty';
 import { PortalLoader } from './PortalLoader';
+import { BookIcon, ClipboardCheckIcon, AwardIcon, CalendarIcon, InfoIcon, BellIcon, ChevronRightIcon } from './content-icons';
 
 const KIND_LABEL: Record<Notification['kind'], string> = {
   course: 'Course',
@@ -14,6 +16,14 @@ const KIND_LABEL: Record<Notification['kind'], string> = {
   assignment: 'Assignment',
   webinar: 'Webinar',
   system: 'AIIT',
+};
+
+const KIND_ICON: Record<Notification['kind'], ComponentType<{ className?: string }>> = {
+  course: BookIcon,
+  certificate: AwardIcon,
+  assignment: ClipboardCheckIcon,
+  webinar: CalendarIcon,
+  system: InfoIcon,
 };
 
 export default function NotificationsPage() {
@@ -24,7 +34,7 @@ export default function NotificationsPage() {
   if (state.status === 'error') return null;
 
   const items = [...state.learner.notifications].sort((a, b) => (a.createdAt < b.createdAt ? 1 : -1));
-  const hasUnread = items.some((n) => !n.read);
+  const unreadCount = items.filter((n) => !n.read).length;
 
   async function markRead(id: string) {
     try {
@@ -48,12 +58,13 @@ export default function NotificationsPage() {
         <div className="portal-page__head-row">
           <div>
             <p className="portal-eyebrow">Notifications</p>
-            <h1 className="portal-page__title">What&apos;s new</h1>
+            <h1 className="portal-page__title">Notifications</h1>
             <p className="portal-page__intro">
-              Course announcements, grades, certificates and webinar reminders — newest first.
+              Stay up to date with your courses and learning activity
+              {unreadCount > 0 ? ` — ${unreadCount} unread` : ''}.
             </p>
           </div>
-          {hasUnread ? (
+          {unreadCount > 0 ? (
             <Button as="button" variant="secondary" size="sm" onClick={markAllRead}>
               Mark all as read
             </Button>
@@ -63,20 +74,28 @@ export default function NotificationsPage() {
 
       {items.length === 0 ? (
         <PortalEmpty
+          icon={<BellIcon />}
           title="You're all caught up"
-          body="Announcements from your courses, new grades and webinar reminders will appear here as they happen."
+          body="New course announcements, grades, certificates and webinar reminders will appear here."
         />
       ) : (
         <ul className="notes" role="list">
           {items.map((n) => {
+            const Icon = KIND_ICON[n.kind];
             const inner = (
               <>
-                <span className="notes__kind">{KIND_LABEL[n.kind]}</span>
+                <span className="notes__icon" aria-hidden="true">
+                  <Icon />
+                </span>
                 <span className="notes__text">
+                  <span className="notes__kind">{KIND_LABEL[n.kind]}</span>
                   <span className="notes__title">{n.title}</span>
                   {n.body ? <span className="notes__body">{n.body}</span> : null}
                 </span>
-                <span className="notes__at">{formatDate(n.createdAt, { day: 'numeric', month: 'short' })}</span>
+                <span className="notes__meta">
+                  <span className="notes__at">{formatDate(n.createdAt, { day: 'numeric', month: 'short' })}</span>
+                  {n.href ? <ChevronRightIcon className="notes__chevron" /> : null}
+                </span>
               </>
             );
             return (

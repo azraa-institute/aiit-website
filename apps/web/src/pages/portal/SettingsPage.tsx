@@ -100,6 +100,9 @@ function SignInSecuritySection() {
       setPasswordError(error.message);
       return;
     }
+    // Best-effort notice, not part of the critical path -- see the same
+    // call on ResetPasswordPage.
+    apiFetch('/auth/notify-password-changed', { method: 'POST' }).catch(() => {});
     setPasswordMessage('Password updated.');
     setNewPassword('');
     setConfirmPassword('');

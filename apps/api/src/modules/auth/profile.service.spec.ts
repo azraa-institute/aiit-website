@@ -143,4 +143,21 @@ describe('ProfileService', () => {
       await expect(service.emailExists('nobody@example.com')).resolves.toBe(false);
     });
   });
+
+  describe('notifyPasswordChanged', () => {
+    it('sends a security-notice email to the caller', async () => {
+      await service.notifyPasswordChanged('ada@example.com');
+      expect(email.send).toHaveBeenCalledWith(
+        expect.objectContaining({
+          to: 'ada@example.com',
+          subject: expect.stringContaining('password was changed'),
+        }),
+      );
+    });
+
+    it('skips sending (without throwing) when the JWT has no email claim', async () => {
+      await expect(service.notifyPasswordChanged(undefined)).resolves.toBeUndefined();
+      expect(email.send).not.toHaveBeenCalled();
+    });
+  });
 });

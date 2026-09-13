@@ -2052,6 +2052,36 @@
   font-size: var(--fs-sm);
   word-break: break-all;
 }
+.settings-section__secret {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-3);
+  background: var(--ivory);
+  border-radius: var(--radius-sm);
+}
+.settings-section__secret code {
+  flex: 1 1 auto;
+  min-width: 0;
+  font-size: var(--fs-sm);
+  word-break: break-all;
+}
+.settings-section__copy {
+  display: grid;
+  place-items: center;
+  flex: 0 0 auto;
+  width: 28px;
+  height: 28px;
+  border-radius: var(--radius-sm);
+  color: var(--ink-muted);
+  transition:
+    color var(--dur-fast) var(--ease-out),
+    background var(--dur-fast) var(--ease-out);
+}
+.settings-section__copy:hover {
+  color: var(--brass-deep);
+  background: var(--accent-wash);
+}
 
 @media (prefers-reduced-motion: reduce) {
   .settings-nav__link,

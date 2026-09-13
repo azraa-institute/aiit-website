@@ -4,7 +4,7 @@ import { supabase } from '@/lib/supabaseClient';
 import { TextField } from '@/components/common/Field';
 import { Button } from '@/components/primitives/Button';
 import { cn } from '@/lib/cn';
-import { ShieldIcon } from './settings-icons';
+import { ShieldIcon, CopyIcon, CheckIcon } from './settings-icons';
 
 /**
  * Two-factor authentication (TOTP) via Supabase Auth's MFA API -- a core
@@ -22,6 +22,7 @@ export function SecurityFactorsSection() {
   const [verifying, setVerifying] = useState(false);
   const [actionError, setActionError] = useState<string>();
   const [unenrollingId, setUnenrollingId] = useState<string>();
+  const [secretCopied, setSecretCopied] = useState(false);
 
   useEffect(() => {
     void loadFactors();
@@ -60,7 +61,21 @@ export function SecurityFactorsSection() {
       setActionError(error.message);
       return;
     }
+    setSecretCopied(false);
     setPending({ factorId: data.id, qrCode: data.totp.qr_code, secret: data.totp.secret });
+  }
+
+  async function handleCopySecret() {
+    if (!pending) return;
+    try {
+      await navigator.clipboard.writeText(pending.secret);
+      setSecretCopied(true);
+      setTimeout(() => setSecretCopied(false), 2000);
+    } catch {
+      // Clipboard access can be blocked (permissions, non-secure context) --
+      // the key is still shown as plain text, so this just skips the
+      // "copied" confirmation rather than failing the enroll flow.
+    }
   }
 
   async function handleVerify() {
@@ -87,6 +102,7 @@ export function SecurityFactorsSection() {
     setPending(null);
     setCode('');
     setActionError(undefined);
+    setSecretCopied(false);
   }
 
   async function handleUnenroll(factorId: string) {
@@ -174,9 +190,19 @@ export function SecurityFactorsSection() {
             width={180}
             height={180}
           />
-          <p className="settings__body">
-            Can&apos;t scan it? Enter this key manually: <code>{pending.secret}</code>
-          </p>
+          <p className="settings__body">Can&apos;t scan it? Enter this key manually:</p>
+          <div className="settings-section__secret">
+            <code>{pending.secret}</code>
+            <button
+              type="button"
+              className="settings-section__copy"
+              onClick={handleCopySecret}
+              aria-label={secretCopied ? 'Copied' : 'Copy key'}
+              title={secretCopied ? 'Copied' : 'Copy key'}
+            >
+              {secretCopied ? <CheckIcon /> : <CopyIcon />}
+            </button>
+          </div>
           <TextField
             label="6-digit code"
             value={code}

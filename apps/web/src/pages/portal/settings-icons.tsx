@@ -90,6 +90,23 @@ export function LinkIcon({ className }: IconProps) {
   );
 }
 
+export function CopyIcon({ className }: IconProps) {
+  return (
+    <svg {...common} className={className}>
+      <rect x="6.5" y="6.5" width="9" height="9" rx="1.2" />
+      <path d="M4.5 11.5h-1c-.6 0-1-.4-1-1v-7c0-.6.4-1 1-1h7c.6 0 1 .4 1 1v1" />
+    </svg>
+  );
+}
+
+export function CheckIcon({ className }: IconProps) {
+  return (
+    <svg {...common} className={className}>
+      <path d="m3.5 9.5 3.5 3.5 7.5-8" />
+    </svg>
+  );
+}
+
 export function CameraIcon({ className }: IconProps) {
   return (
     <svg {...common} width={16} height={16} viewBox="0 0 18 18" className={className}>

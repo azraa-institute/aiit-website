@@ -136,8 +136,13 @@ export function SecurityFactorsSection() {
       {pending ? (
         <div className="settings-section__mfa-enroll">
           <p className="settings__body">Scan this QR code with your authenticator app, then enter the 6-digit code it shows.</p>
+          {/* data.totp.qr_code from supabase.auth.mfa.enroll() is already a
+              complete data: URI (confirmed against Supabase's own docs) --
+              wrapping it in another data:image/svg+xml;utf-8, prefix (the
+              previous code here) double-encoded it into something no
+              browser can render, which is why the QR never showed up. */}
           <img
-            src={`data:image/svg+xml;utf-8,${encodeURIComponent(pending.qrCode)}`}
+            src={pending.qrCode}
             alt="Authenticator QR code"
             className="settings-section__mfa-qr"
             width={180}

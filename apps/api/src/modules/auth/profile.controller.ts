@@ -32,6 +32,6 @@ export class ProfileController {
   @Delete()
   @HttpCode(HttpStatus.NO_CONTENT)
   async requestDeletion(@CurrentUser() user: AuthenticatedUser): Promise<void> {
-    await this.profiles.requestDeletion(user.userId);
+    await this.profiles.requestDeletion(user.userId, user.email);
   }
 }

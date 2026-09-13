@@ -20,10 +20,20 @@ const ME: Me = {
 
 describe('AuthController', () => {
   let controller: AuthController;
-  let profiles: { getMe: jest.Mock; emailExists: jest.Mock; notifyPasswordChanged: jest.Mock };
+  let profiles: {
+    getMe: jest.Mock;
+    emailExists: jest.Mock;
+    notifyPasswordChanged: jest.Mock;
+    notify2faEnabled: jest.Mock;
+  };
 
   beforeEach(async () => {
-    profiles = { getMe: jest.fn(), emailExists: jest.fn(), notifyPasswordChanged: jest.fn() };
+    profiles = {
+      getMe: jest.fn(),
+      emailExists: jest.fn(),
+      notifyPasswordChanged: jest.fn(),
+      notify2faEnabled: jest.fn(),
+    };
 
     const moduleRef = await Test.createTestingModule({
       controllers: [AuthController],
@@ -61,6 +71,13 @@ describe('AuthController', () => {
     it('delegates to ProfileService with the authenticated user email', async () => {
       await controller.notifyPasswordChanged({ userId: 'user-1', role: 'learner', email: 'ada@example.com' });
       expect(profiles.notifyPasswordChanged).toHaveBeenCalledWith('ada@example.com');
+    });
+  });
+
+  describe('notify2faEnabled', () => {
+    it('delegates to ProfileService with the authenticated user email', async () => {
+      await controller.notify2faEnabled({ userId: 'user-1', role: 'learner', email: 'ada@example.com' });
+      expect(profiles.notify2faEnabled).toHaveBeenCalledWith('ada@example.com');
     });
   });
 });

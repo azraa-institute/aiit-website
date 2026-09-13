@@ -31,4 +31,12 @@ export class AuthController {
   async notifyPasswordChanged(@CurrentUser() user: AuthenticatedUser): Promise<void> {
     await this.profiles.notifyPasswordChanged(user.email);
   }
+
+  /** Called by SecurityFactorsSection right after enrolling a TOTP factor succeeds -- see the note on ProfileService.notify2faEnabled. */
+  @Post('notify-2fa-enabled')
+  @UseGuards(JwtGuard)
+  @HttpCode(HttpStatus.NO_CONTENT)
+  async notify2faEnabled(@CurrentUser() user: AuthenticatedUser): Promise<void> {
+    await this.profiles.notify2faEnabled(user.email);
+  }
 }

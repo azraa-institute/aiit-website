@@ -90,11 +90,27 @@ export class ProfileService {
   }
 
   /** Soft: marks the account for deletion. A purge job is future work. */
-  async requestDeletion(userId: string): Promise<void> {
+  async requestDeletion(userId: string, email: string | undefined): Promise<void> {
     await this.prisma.profile.update({
       where: { id: userId },
       data: { status: 'pending_deletion', deletionRequestedAt: new Date() },
     });
+
+    if (email) {
+      await this.email.send({
+        to: email,
+        subject: 'Your AIIT account has been deleted',
+        html: brandedEmailHtml({
+          heading: 'Account deleted',
+          intro:
+            'Your AIIT account has been deleted, as you requested. You will no longer be able to sign in.',
+          ctaLabel: 'Visit AIIT',
+          ctaUrl: process.env.APP_URL ?? 'https://aiit.network',
+          footerNote: "If you didn't request this, contact us immediately at info@aiit.network.",
+        }),
+      });
+    }
+
     await this.banSupabaseUser(userId);
   }
 
@@ -167,6 +183,30 @@ export class ProfileService {
         ctaLabel: 'Review your account',
         ctaUrl: `${process.env.APP_URL ?? 'https://aiit.network'}/portal/settings`,
         footerNote: "If you didn't make this change, reset your password immediately and contact us at info@aiit.network.",
+      }),
+    });
+  }
+
+  /**
+   * Called by the frontend right after enrolling a TOTP factor succeeds
+   * (SecurityFactorsSection's handleVerify) -- 2FA enrollment happens
+   * entirely client-side via supabase.auth.mfa.*, with no backend
+   * involvement, so same as notifyPasswordChanged, this is the deliberate
+   * substitute for a server-side hook that doesn't exist. Best-effort:
+   * EmailService no-ops with a logged warning if it fails, never throws.
+   */
+  async notify2faEnabled(email: string | undefined): Promise<void> {
+    if (!email) return;
+    await this.email.send({
+      to: email,
+      subject: 'Two-factor authentication enabled on your AIIT account',
+      html: brandedEmailHtml({
+        heading: 'Two-factor authentication enabled',
+        intro:
+          "You'll now be asked for a code from your authenticator app each time you sign in to AIIT. If this wasn't you, remove the authenticator in Account Settings and contact us.",
+        ctaLabel: 'Review your account',
+        ctaUrl: `${process.env.APP_URL ?? 'https://aiit.network'}/portal/settings`,
+        footerNote: "If you didn't enable this, contact us immediately at info@aiit.network.",
       }),
     });
   }

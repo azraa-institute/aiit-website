@@ -18,7 +18,7 @@ const ME: Me = {
   isNewSignup: false,
 };
 
-const USER = { userId: 'user-1', role: 'learner' as const };
+const USER = { userId: 'user-1', role: 'learner' as const, email: 'ada@example.com' };
 
 describe('ProfileController', () => {
   let controller: ProfileController;
@@ -62,9 +62,9 @@ describe('ProfileController', () => {
     });
   });
 
-  it('delegates DELETE / to ProfileService.requestDeletion', async () => {
+  it('delegates DELETE / to ProfileService.requestDeletion with the caller email', async () => {
     profiles.requestDeletion.mockResolvedValueOnce(undefined);
     await controller.requestDeletion(USER);
-    expect(profiles.requestDeletion).toHaveBeenCalledWith('user-1');
+    expect(profiles.requestDeletion).toHaveBeenCalledWith('user-1', 'ada@example.com');
   });
 });

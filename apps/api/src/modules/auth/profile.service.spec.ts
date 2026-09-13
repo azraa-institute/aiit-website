@@ -142,17 +142,31 @@ describe('ProfileService', () => {
   describe('requestDeletion', () => {
     it('marks the profile pending_deletion with a timestamp', async () => {
       prisma.profile.update.mockResolvedValueOnce(PROFILE);
-      await service.requestDeletion('user-1');
+      await service.requestDeletion('user-1', 'ada@example.com');
       expect(prisma.profile.update).toHaveBeenCalledWith({
         where: { id: 'user-1' },
         data: { status: 'pending_deletion', deletionRequestedAt: expect.any(Date) },
       });
     });
 
+    it('sends an account-deleted email to the caller', async () => {
+      prisma.profile.update.mockResolvedValueOnce(PROFILE);
+      await service.requestDeletion('user-1', 'ada@example.com');
+      expect(email.send).toHaveBeenCalledWith(
+        expect.objectContaining({ to: 'ada@example.com', subject: expect.stringContaining('deleted') }),
+      );
+    });
+
+    it('skips the email (without throwing) when the JWT has no email claim', async () => {
+      prisma.profile.update.mockResolvedValueOnce(PROFILE);
+      await expect(service.requestDeletion('user-1', undefined)).resolves.toBeUndefined();
+      expect(email.send).not.toHaveBeenCalled();
+    });
+
     it('does not attempt to ban the Supabase user when SUPABASE_SERVICE_ROLE_KEY is unset', async () => {
       process.env.SUPABASE_URL = 'https://test-project.supabase.co';
       prisma.profile.update.mockResolvedValueOnce(PROFILE);
-      await service.requestDeletion('user-1');
+      await service.requestDeletion('user-1', 'ada@example.com');
       expect(fetchSpy).not.toHaveBeenCalled();
     });
 
@@ -161,7 +175,7 @@ describe('ProfileService', () => {
       process.env.SUPABASE_SERVICE_ROLE_KEY = 'service-role-secret';
       prisma.profile.update.mockResolvedValueOnce(PROFILE);
 
-      await service.requestDeletion('user-1');
+      await service.requestDeletion('user-1', 'ada@example.com');
 
       expect(fetchSpy).toHaveBeenCalledWith(
         new URL('https://test-project.supabase.co/auth/v1/admin/users/user-1'),
@@ -182,7 +196,7 @@ describe('ProfileService', () => {
       prisma.profile.update.mockResolvedValueOnce(PROFILE);
       fetchSpy.mockResolvedValueOnce(new Response('nope', { status: 500 }));
 
-      await expect(service.requestDeletion('user-1')).resolves.toBeUndefined();
+      await expect(service.requestDeletion('user-1', 'ada@example.com')).resolves.toBeUndefined();
     });
 
     it('does not throw when the Supabase ban call rejects outright', async () => {
@@ -191,7 +205,7 @@ describe('ProfileService', () => {
       prisma.profile.update.mockResolvedValueOnce(PROFILE);
       fetchSpy.mockRejectedValueOnce(new Error('network down'));
 
-      await expect(service.requestDeletion('user-1')).resolves.toBeUndefined();
+      await expect(service.requestDeletion('user-1', 'ada@example.com')).resolves.toBeUndefined();
     });
   });
 
@@ -220,6 +234,23 @@ describe('ProfileService', () => {
 
     it('skips sending (without throwing) when the JWT has no email claim', async () => {
       await expect(service.notifyPasswordChanged(undefined)).resolves.toBeUndefined();
+      expect(email.send).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('notify2faEnabled', () => {
+    it('sends a security-notice email to the caller', async () => {
+      await service.notify2faEnabled('ada@example.com');
+      expect(email.send).toHaveBeenCalledWith(
+        expect.objectContaining({
+          to: 'ada@example.com',
+          subject: expect.stringContaining('Two-factor authentication enabled'),
+        }),
+      );
+    });
+
+    it('skips sending (without throwing) when the JWT has no email claim', async () => {
+      await expect(service.notify2faEnabled(undefined)).resolves.toBeUndefined();
       expect(email.send).not.toHaveBeenCalled();
     });
   });

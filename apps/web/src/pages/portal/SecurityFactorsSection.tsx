@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import type { Factor } from '@supabase/supabase-js';
 import { supabase } from '@/lib/supabaseClient';
+import { apiFetch } from '@/lib/api';
 import { TextField } from '@/components/common/Field';
 import { Button } from '@/components/primitives/Button';
 
@@ -42,7 +43,17 @@ export function SecurityFactorsSection() {
     if (!supabase) return;
     setActionError(undefined);
     setEnrolling(true);
-    const { data, error } = await supabase.auth.mfa.enroll({ factorType: 'totp', friendlyName: 'Authenticator app' });
+    // issuer defaults to the Supabase project's own domain when omitted --
+    // that's what was actually showing up in authenticator apps as the
+    // entry name (alongside the account email, which TOTP's otpauth
+    // format always shows regardless of issuer -- that part is standard
+    // everywhere, e.g. a bank's authenticator entry reads "Chase: you@
+    // email.com").
+    const { data, error } = await supabase.auth.mfa.enroll({
+      factorType: 'totp',
+      friendlyName: 'Authenticator app',
+      issuer: 'AIIT',
+    });
     setEnrolling(false);
     if (error) {
       setActionError(error.message);
@@ -63,6 +74,9 @@ export function SecurityFactorsSection() {
     }
     setPending(null);
     setCode('');
+    // Best-effort notice, not part of the critical path -- the factor is
+    // already enrolled above regardless of whether this email goes out.
+    apiFetch('/auth/notify-2fa-enabled', { method: 'POST' }).catch(() => {});
     await loadFactors();
   }
 

@@ -75,9 +75,21 @@ export default function ProfilePage() {
     setError(undefined);
     setUploadingPhoto(true);
     try {
+      // A unique key per upload (not a stable `avatar.<ext>`) -- reusing the
+      // same key meant the public URL never changed between uploads, so the
+      // browser (and Supabase's storage CDN) kept serving the previously
+      // cached image bytes at that URL instead of the newly uploaded photo,
+      // which looked exactly like the old photo being "stuck".
       const ext = file.name.split('.').pop() ?? 'jpg';
-      const key = await uploadFile(AVATARS_BUCKET, `${session.user.id}/avatar.${ext}`, file);
+      const previousKey = profile.avatarKey;
+      const key = await uploadFile(AVATARS_BUCKET, `${session.user.id}/avatar-${Date.now()}.${ext}`, file);
       await apiFetch('/me', { method: 'PATCH', body: JSON.stringify({ avatarKey: key }) });
+      if (previousKey && previousKey !== key) {
+        // Best-effort cleanup of the file the new photo replaces -- if it
+        // fails, the new photo is already saved and showing, so it
+        // shouldn't surface as an error to the user.
+        removeFile(AVATARS_BUCKET, previousKey).catch(() => {});
+      }
       state.refetch();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Could not upload your photo.');

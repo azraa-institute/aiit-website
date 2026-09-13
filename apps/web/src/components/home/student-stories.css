@@ -104,7 +104,12 @@
 }
 .stories-photo--left {
   top: 0;
-  left: -20px;
+  /* Flush with the container edge, not bled past it -- on a real
+     1920px-class monitor (the most common desktop width, and right at
+     this tier's own lower bound once browser chrome/scrollbar are
+     accounted for) a negative offset here left the photo, and the
+     script text anchored to it below, clipped at the viewport edge. */
+  left: 0;
   border-radius: 220px 24px 190px 190px;
 }
 .stories-photo--left img {
@@ -112,7 +117,7 @@
 }
 .stories-photo--right {
   bottom: 0;
-  right: -20px;
+  right: 0;
   border-radius: 24px 220px 190px 190px;
 }
 .stories-photo--right img {
@@ -133,11 +138,11 @@
 }
 .stories-marginalia--left {
   top: 24px;
-  left: 240px;
+  left: 260px;
 }
 .stories-marginalia--right {
   bottom: 40px;
-  right: 240px;
+  right: 260px;
   text-align: right;
 }
 .stories-marginalia p {
@@ -176,9 +181,11 @@
 }
 .stories-script--left {
   /* Sits just beneath the left photo (which is 420px tall, anchored to
-     the container top), not beside it. */
+     the container top), not beside it. Pulled in from the photo's own
+     edge so it isn't sitting flush against the container/viewport
+     boundary. */
   top: 440px;
-  left: -20px;
+  left: 16px;
 }
 .stories-script__rule {
   display: block;
@@ -189,7 +196,7 @@
 }
 .stories-script--right {
   top: 24px;
-  right: 0;
+  right: 16px;
   text-align: right;
 }
 
@@ -199,7 +206,7 @@
   position: absolute;
   z-index: 0;
   top: 0;
-  right: 40px;
+  right: 56px;
   width: 300px;
   height: 190px;
   opacity: 0.85;
@@ -275,7 +282,10 @@
 
 .stories-cards {
   display: flex;
-  align-items: stretch;
+  /* Center, not stretch: the three roles have their own fixed heights
+     (see below) so the center card can stay visually dominant instead
+     of the row stretching the side cards to match it. */
+  align-items: center;
   justify-content: center;
   gap: clamp(1rem, 1.5vw, 1.5rem);
 }
@@ -290,16 +300,22 @@
   border: 1px solid rgba(150, 120, 75, 0.1);
   border-radius: 20px;
   box-shadow: 0 10px 35px rgba(50, 40, 25, 0.06);
+  /* A hard clip so no combination of name/role/quote length can ever
+     visually spill past the card edge -- the line-clamps below are
+     sized to fit comfortably inside these heights, this is the safety
+     net if any single line still runs long. */
+  overflow: hidden;
   animation: story-in var(--dur-slow) var(--ease-out) both;
 }
 .stories-card--prev,
 .stories-card--next {
   display: none;
-  /* Verified against available deck width at 1024px (this tier's own
-     lower bound, with no framing photos to compete with — see the
-     1900px+ tier below for that budget): 2*side + center + 2*gap must
-     clear ~795px there without wrapping/overflowing. */
+  /* Fixed, not min-height: every review must render at the exact same
+     card height regardless of its own quote/name/role length, or the
+     deck's total height shifts per active review -- which visibly
+     moved the bottom-anchored right photo between reviews. */
   width: clamp(210px, 21vw, 310px);
+  height: clamp(300px, 26vw, 350px);
   opacity: 0.85;
   cursor: pointer;
   transition: opacity var(--dur-fast) var(--ease-out);
@@ -310,7 +326,7 @@
 }
 .stories-card--center {
   width: clamp(300px, 30vw, 450px);
-  min-height: clamp(300px, 26vw, 390px);
+  height: clamp(380px, 32vw, 430px);
   box-shadow:
     0 10px 35px rgba(50, 40, 25, 0.06),
     0 0 0 1px rgba(154, 123, 79, 0.08),
@@ -363,7 +379,7 @@
   font-size: 21px;
   line-height: 1.5;
   color: #24211d;
-  -webkit-line-clamp: 7;
+  -webkit-line-clamp: 6;
 }
 .stories-card--prev .stories-card__text p,
 .stories-card--next .stories-card__text p {
@@ -552,13 +568,13 @@
    RESPONSIVE
    ============================================================ */
 
-/* Below 1900px there is no longer genuine room beside the carousel for
+/* Below 1860px there is no longer genuine room beside the carousel for
    the full-size editorial photographs without crowding it — the
    photos, handwritten scripts, marginalia and map motif step aside,
    leaving the carousel/heading/CTA as the clean, art-directed core.
    (Verified by arithmetic against the fixed photo/arrow/card widths
    above, not a guessed round number — this environment's tooling
-   can't render a live 1900px+ viewport to confirm visually.) */
+   can't render a live 1860px+ viewport to confirm visually.) */
 .stories-photo,
 .stories-marginalia,
 .stories-script,
@@ -566,7 +582,7 @@
   display: none;
 }
 
-@media (min-width: 1900px) {
+@media (min-width: 1860px) {
   .stories-photo,
   .stories-marginalia,
   .stories-script,
@@ -639,7 +655,10 @@
     padding: 1.5rem;
   }
   .stories-card--center {
-    min-height: 0;
+    /* Only one card is ever shown at this width (no side cards, no
+       framing photo to keep steady against), so it can size to its
+       own content instead of a fixed height. */
+    height: auto;
   }
   .stories-card--center .stories-card__text p {
     font-size: 18px;

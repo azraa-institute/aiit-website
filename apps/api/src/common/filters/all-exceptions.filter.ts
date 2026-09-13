@@ -33,7 +33,14 @@ export class AllExceptionsFilter implements ExceptionFilter {
       ? {
           error: {
             code: HttpStatus[status] ?? 'ERROR',
-            message: exception.message,
+            // ValidationPipe throws a bare BadRequestException whose own
+            // .message is the unhelpful generic "Bad Request Exception" --
+            // the actual per-field messages ("email must be an email")
+            // only exist in its response body's `message` array, otherwise
+            // surfaced solely via `details` below, which callers (the
+            // frontend's ApiError) never read. Prefer that array, joined,
+            // whenever it's there.
+            message: readableMessage(exception),
             details: extractDetails(exception.getResponse()),
           },
         }
@@ -60,4 +67,12 @@ function extractDetails(response: string | object): unknown {
     return Array.isArray(message) ? message : undefined;
   }
   return undefined;
+}
+
+function readableMessage(exception: HttpException): string {
+  const details = extractDetails(exception.getResponse());
+  if (Array.isArray(details) && details.length > 0 && details.every((d) => typeof d === 'string')) {
+    return (details as string[]).join(' ');
+  }
+  return exception.message;
 }

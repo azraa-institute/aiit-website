@@ -525,29 +525,87 @@
   background: var(--red);
   box-shadow: 0 0 0 2px var(--paper);
 }
+.portal-topbar__id-wrap {
+  position: relative;
+}
 .portal-topbar__id {
   display: flex;
   align-items: center;
   gap: 0.5rem;
   padding: 0.25rem 0.5rem 0.25rem 0.35rem;
+  border: 0;
+  background: none;
+  font-family: inherit;
+  cursor: pointer;
   border-radius: var(--radius-pill);
   transition: background var(--dur-fast) var(--ease-out);
 }
-.portal-topbar__id:hover {
+.portal-topbar__id:hover,
+.portal-topbar__id[aria-expanded='true'] {
   background: var(--accent-wash);
+}
+.portal-topbar__id-text {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  min-width: 0;
+  line-height: 1.25;
 }
 .portal-topbar__id-name {
   font-size: var(--fs-sm);
   color: var(--ink-soft);
-  max-width: 12ch;
+  max-width: 14ch;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.portal-topbar__id-headline {
+  font-size: 0.7rem;
+  color: var(--ink-muted);
+  max-width: 16ch;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 @media (max-width: 560px) {
-  .portal-topbar__id-name {
+  .portal-topbar__id-text {
     display: none;
   }
+}
+
+.portal-topbar__id-menu {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  z-index: 30;
+  min-width: 170px;
+  padding: 0.35rem;
+  background: var(--paper);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-panel);
+}
+.portal-topbar__id-menu-item {
+  display: block;
+  width: 100%;
+  padding: 0.5rem 0.6rem;
+  border: 0;
+  background: none;
+  font-family: inherit;
+  font-size: var(--fs-sm);
+  color: var(--ink-soft);
+  text-align: left;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: background var(--dur-fast) var(--ease-out);
+}
+.portal-topbar__id-menu-item:hover {
+  background: var(--accent-wash);
+}
+.portal-topbar__id-menu-item--danger {
+  margin-top: 0.25rem;
+  padding-top: 0.6rem;
+  border-top: 1px solid var(--line);
 }
 
 /* View + page transition */

@@ -62,6 +62,14 @@ jobs:
       # NOT predict production success -- CI's ephemeral Postgres owns its
       # own auth.users as superuser, so CREATE TRIGGER always succeeds
       # there regardless of what happens against the real database.
+      #
+      # THIRD one-time step, possibly needed on 20260913020000_backfill_
+      # profile_names: its UPDATE statement reads auth.users (a SELECT, not
+      # DDL this time), which the pooler role may equally lack a grant for.
+      # Same fallback shape if this step fails on that migration
+      # specifically: run its two statements by hand via Supabase Dashboard
+      # -> SQL Editor, then
+      #   npx prisma migrate resolve --applied 20260913020000_backfill_profile_names --schema apps/api/prisma/schema.prisma
       - name: Apply pending migrations
         run: npm exec -w apps/api -- prisma migrate deploy
         env:

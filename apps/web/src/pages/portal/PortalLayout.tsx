@@ -53,7 +53,9 @@ export default function PortalLayout() {
   const learnerState = useLearner();
   const [menuOpen, setMenuOpen] = useState(false);
   const [showWelcome, setShowWelcome] = useState(false);
+  const [profileMenuOpen, setProfileMenuOpen] = useState(false);
   const menuCloseRef = useRef<HTMLButtonElement>(null);
+  const profileMenuRef = useRef<HTMLDivElement>(null);
   const shownWelcome = useRef(false);
 
   useLockBodyScroll(menuOpen);
@@ -75,6 +77,7 @@ export default function PortalLayout() {
 
   useEffect(() => {
     setMenuOpen(false);
+    setProfileMenuOpen(false);
   }, [location.pathname]);
 
   // Focus management + Escape for the mobile nav.
@@ -87,6 +90,23 @@ export default function PortalLayout() {
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
   }, [menuOpen]);
+
+  // Click-outside + Escape for the profile menu.
+  useEffect(() => {
+    if (!profileMenuOpen) return;
+    const onPointerDown = (e: PointerEvent) => {
+      if (!profileMenuRef.current?.contains(e.target as Node)) setProfileMenuOpen(false);
+    };
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setProfileMenuOpen(false);
+    };
+    document.addEventListener('pointerdown', onPointerDown);
+    window.addEventListener('keydown', onKey);
+    return () => {
+      document.removeEventListener('pointerdown', onPointerDown);
+      window.removeEventListener('keydown', onKey);
+    };
+  }, [profileMenuOpen]);
 
   const learner = learnerState.learner;
   const unread = learner?.notifications.filter((n) => !n.read).length ?? 0;
@@ -221,10 +241,44 @@ export default function PortalLayout() {
                 />
               </svg>
             </NavLink>
-            <Link to="/portal/profile" className="portal-topbar__id">
-              <Avatar name={learner?.profile.name} photoUrl={avatarUrl} size="sm" className="portal-topbar__id-mark" />
-              <span className="portal-topbar__id-name">{firstName ?? 'Your profile'}</span>
-            </Link>
+            <div className="portal-topbar__id-wrap" ref={profileMenuRef}>
+              <button
+                type="button"
+                className="portal-topbar__id"
+                aria-haspopup="menu"
+                aria-expanded={profileMenuOpen}
+                onClick={() => setProfileMenuOpen((open) => !open)}
+              >
+                <Avatar name={learner?.profile.name} photoUrl={avatarUrl} size="sm" className="portal-topbar__id-mark" />
+                <span className="portal-topbar__id-text">
+                  <span className="portal-topbar__id-name">{firstName ?? 'Your profile'}</span>
+                  {learner?.profile.headline ? (
+                    <span className="portal-topbar__id-headline">{learner.profile.headline}</span>
+                  ) : null}
+                </span>
+              </button>
+
+              {profileMenuOpen && (
+                <div className="portal-topbar__id-menu" role="menu">
+                  <Link
+                    to="/portal/profile"
+                    role="menuitem"
+                    className="portal-topbar__id-menu-item"
+                    onClick={() => setProfileMenuOpen(false)}
+                  >
+                    View profile
+                  </Link>
+                  <button
+                    type="button"
+                    role="menuitem"
+                    className="portal-topbar__id-menu-item portal-topbar__id-menu-item--danger"
+                    onClick={handleSignOut}
+                  >
+                    Sign out
+                  </button>
+                </div>
+              )}
+            </div>
           </div>
         </header>
 

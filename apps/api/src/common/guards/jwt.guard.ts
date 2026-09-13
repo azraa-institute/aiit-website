@@ -1,4 +1,11 @@
-import { CanActivate, ExecutionContext, ForbiddenException, Injectable, UnauthorizedException } from '@nestjs/common';
+import {
+  CanActivate,
+  ExecutionContext,
+  ForbiddenException,
+  Injectable,
+  Logger,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { createPublicKey, verify as verifySignature } from 'crypto';
 import type { webcrypto } from 'crypto';
 import type { Request } from 'express';
@@ -44,6 +51,7 @@ const SUPPORTED_ALGS: Record<string, { digest: string; dsaEncoding?: 'ieee-p1363
  */
 @Injectable()
 export class JwtGuard implements CanActivate {
+  private readonly logger = new Logger(JwtGuard.name);
   private jwksCache: SupabaseJwk[] | undefined;
 
   constructor(private readonly prisma: PrismaService) {}
@@ -55,7 +63,7 @@ export class JwtGuard implements CanActivate {
       throw new UnauthorizedException('Missing or malformed Authorization header.');
     }
 
-    const { sub, email } = await this.verifyAndExtractSubject(token);
+    const { sub, email, aal } = await this.verifyAndExtractSubject(token);
 
     const profile = await this.prisma.profile.findUnique({
       where: { id: sub },
@@ -74,11 +82,48 @@ export class JwtGuard implements CanActivate {
       throw new ForbiddenException('This account has been deleted.');
     }
 
+    // MfaChallenge (frontend) is only a UX gate -- it stops the sign-in
+    // *flow* from reaching /portal, but a request already holding a valid
+    // aal1 token could otherwise call the API directly without ever
+    // completing the second factor. This is the real enforcement: mirrors
+    // Supabase's own documented MFA-via-RLS pattern, just applied here
+    // instead of in an RLS policy, since this API connects with the
+    // service-role connection where RLS is defense-in-depth, not the real
+    // gate (same as every other RLS policy in this codebase).
+    if (aal !== 'aal2' && (await this.requiresAal2(sub))) {
+      throw new UnauthorizedException('This account requires two-factor verification for this session.');
+    }
+
     request.user = { userId: sub, role: profile.role, email };
     return true;
   }
 
-  private async verifyAndExtractSubject(token: string): Promise<{ sub: string; email?: string }> {
+  /**
+   * Fails OPEN (treats the account as not requiring aal2) if the query
+   * itself errors -- e.g. a permissions issue on auth.mfa_factors that
+   * differs from the grants already proven to work on auth.users. The
+   * alternative, failing closed, would turn any transient problem with
+   * this one narrow check into a full outage for every authenticated
+   * request, not just the aal2 one it protects.
+   */
+  private async requiresAal2(userId: string): Promise<boolean> {
+    try {
+      const rows = await this.prisma.$queryRaw<{ has_verified_factor: boolean }[]>`
+        SELECT EXISTS(
+          SELECT 1 FROM auth.mfa_factors WHERE user_id = ${userId} AND status = 'verified'
+        ) AS has_verified_factor
+      `;
+      return rows[0]?.has_verified_factor ?? false;
+    } catch (error) {
+      this.logger.error(
+        `Could not check auth.mfa_factors for user ${userId} -- treating this request as if no MFA factor is enrolled.`,
+        error instanceof Error ? error.stack : String(error),
+      );
+      return false;
+    }
+  }
+
+  private async verifyAndExtractSubject(token: string): Promise<{ sub: string; email?: string; aal?: string }> {
     const parts = token.split('.');
     if (parts.length !== 3) {
       throw new UnauthorizedException('Invalid or expired session.');
@@ -86,7 +131,7 @@ export class JwtGuard implements CanActivate {
     const [headerB64, payloadB64, signatureB64] = parts;
 
     let header: { alg?: string; kid?: string };
-    let payload: { sub?: string; exp?: number; email?: string };
+    let payload: { sub?: string; exp?: number; email?: string; aal?: string };
     try {
       header = JSON.parse(Buffer.from(headerB64, 'base64url').toString('utf8'));
       payload = JSON.parse(Buffer.from(payloadB64, 'base64url').toString('utf8'));
@@ -115,7 +160,7 @@ export class JwtGuard implements CanActivate {
       throw new UnauthorizedException('Invalid or expired session.');
     }
 
-    return { sub: payload.sub, email: payload.email };
+    return { sub: payload.sub, email: payload.email, aal: payload.aal };
   }
 
   private async getKey(kid: string): Promise<SupabaseJwk> {

@@ -22,10 +22,11 @@ function signToken(
   subject: string,
   expiresInSeconds: number,
   email?: string,
+  aal?: string,
 ): string {
   const header = base64url(JSON.stringify({ alg: 'ES256', kid: KID, typ: 'JWT' }));
   const payload = base64url(
-    JSON.stringify({ sub: subject, exp: Math.floor(Date.now() / 1000) + expiresInSeconds, email }),
+    JSON.stringify({ sub: subject, exp: Math.floor(Date.now() / 1000) + expiresInSeconds, email, aal }),
   );
   const signature = cryptoSign('sha256', Buffer.from(`${header}.${payload}`), {
     key: privateKey,
@@ -36,7 +37,7 @@ function signToken(
 
 describe('JwtGuard', () => {
   const originalUrl = process.env.SUPABASE_URL;
-  let prisma: { profile: { findUnique: jest.Mock } };
+  let prisma: { profile: { findUnique: jest.Mock }; $queryRaw: jest.Mock };
   let guard: JwtGuard;
   let privateKey: KeyObject;
   let jwk: Record<string, unknown>;
@@ -62,7 +63,12 @@ describe('JwtGuard', () => {
 
   beforeEach(() => {
     process.env.SUPABASE_URL = SUPABASE_URL;
-    prisma = { profile: { findUnique: jest.fn() } };
+    prisma = {
+      profile: { findUnique: jest.fn() },
+      // Default: no verified MFA factor, so existing tests below (none of
+      // which care about MFA) don't need to know this query exists.
+      $queryRaw: jest.fn().mockResolvedValue([{ has_verified_factor: false }]),
+    };
     guard = new JwtGuard(prisma as unknown as PrismaService);
   });
 
@@ -151,4 +157,36 @@ describe('JwtGuard', () => {
       );
     },
   );
+
+  describe('AAL2 enforcement (2FA)', () => {
+    it('allows an aal1 token when the account has no verified MFA factor', async () => {
+      prisma.profile.findUnique.mockResolvedValueOnce({ role: 'learner', status: 'active' });
+      prisma.$queryRaw.mockResolvedValueOnce([{ has_verified_factor: false }]);
+      const token = signToken(privateKey, 'user-1', 3600, undefined, 'aal1');
+      await expect(guard.canActivate(contextWithHeader(`Bearer ${token}`))).resolves.toBe(true);
+    });
+
+    it('rejects an aal1 token when the account has a verified MFA factor', async () => {
+      prisma.profile.findUnique.mockResolvedValueOnce({ role: 'learner', status: 'active' });
+      prisma.$queryRaw.mockResolvedValueOnce([{ has_verified_factor: true }]);
+      const token = signToken(privateKey, 'user-1', 3600, undefined, 'aal1');
+      await expect(guard.canActivate(contextWithHeader(`Bearer ${token}`))).rejects.toBeInstanceOf(
+        UnauthorizedException,
+      );
+    });
+
+    it('allows an aal2 token when the account has a verified MFA factor', async () => {
+      prisma.profile.findUnique.mockResolvedValueOnce({ role: 'learner', status: 'active' });
+      prisma.$queryRaw.mockResolvedValueOnce([{ has_verified_factor: true }]);
+      const token = signToken(privateKey, 'user-1', 3600, undefined, 'aal2');
+      await expect(guard.canActivate(contextWithHeader(`Bearer ${token}`))).resolves.toBe(true);
+    });
+
+    it('fails open (allows access) when the auth.mfa_factors query itself errors', async () => {
+      prisma.profile.findUnique.mockResolvedValueOnce({ role: 'learner', status: 'active' });
+      prisma.$queryRaw.mockRejectedValueOnce(new Error('permission denied for table mfa_factors'));
+      const token = signToken(privateKey, 'user-1', 3600, undefined, 'aal1');
+      await expect(guard.canActivate(contextWithHeader(`Bearer ${token}`))).resolves.toBe(true);
+    });
+  });
 });

@@ -12,6 +12,7 @@ import { LANGUAGES } from '@/data/languages';
 import { useLearner } from './learnerData';
 import { PortalLoader } from './PortalLoader';
 import { SecurityFactorsSection } from './SecurityFactorsSection';
+import { LinkedAccountsSection } from './LinkedAccountsSection';
 
 const COUNTRY_OPTIONS = [{ value: '', label: 'Not set' }, ...COUNTRIES.map((c) => ({ value: c.code, label: c.name }))];
 const LANGUAGE_OPTIONS = LANGUAGES.map((l) => ({ value: l.code, label: l.name }));
@@ -32,6 +33,7 @@ export default function SettingsPage() {
       </header>
 
       <SignInSecuritySection />
+      <LinkedAccountsSection />
       <RegionLanguageSection />
       <SecurityFactorsSection />
       <DangerZoneSection />

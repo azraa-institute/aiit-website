@@ -5,7 +5,9 @@ import { Seo } from '@/lib/Seo';
 import { Button } from '@/components/primitives/Button';
 import { TextField, PasswordField } from '@/components/common/Field';
 import { supabase } from '@/lib/supabaseClient';
+import { needsMfaChallenge } from '@/lib/mfa';
 import { AuthLayout, GoogleAuthButton } from './AuthLayout';
+import { MfaChallenge } from './MfaChallenge';
 
 interface LocationState {
   from?: { pathname: string };
@@ -34,6 +36,7 @@ export default function LoginPage() {
   );
   const [submitting, setSubmitting] = useState(false);
   const [magicLinkSent, setMagicLinkSent] = useState(false);
+  const [mfaPending, setMfaPending] = useState(false);
 
   const emailValid = EMAIL_RE.test(email.trim());
   const emailError = emailTouched && email.length > 0 && !emailValid ? 'Enter a valid email address.' : undefined;
@@ -95,6 +98,15 @@ export default function LoginPage() {
       return;
     }
 
+    if (await needsMfaChallenge()) {
+      setMfaPending(true);
+      return;
+    }
+
+    navigate(state?.from?.pathname ?? '/portal', { replace: true });
+  }
+
+  function onMfaVerified() {
     navigate(state?.from?.pathname ?? '/portal', { replace: true });
   }
 
@@ -120,14 +132,16 @@ export default function LoginPage() {
     <>
       <Seo title="Sign In" path="/login" noindex />
       <AuthLayout
-        title={deleted ? 'Account deleted' : 'Welcome back'}
+        title={mfaPending ? 'Two-factor authentication' : deleted ? 'Account deleted' : 'Welcome back'}
         intro={
-          deleted
-            ? "Your AIIT account has been deleted. You're welcome to create a new one any time."
-            : 'Sign in to continue your courses, track progress and access your certificates.'
+          mfaPending
+            ? 'Enter the code from your authenticator app to finish signing in.'
+            : deleted
+              ? "Your AIIT account has been deleted. You're welcome to create a new one any time."
+              : 'Sign in to continue your courses, track progress and access your certificates.'
         }
         social={
-          magicLinkSent ? undefined : (
+          magicLinkSent || mfaPending ? undefined : (
             <>
               <GoogleAuthButton onClick={() => onOAuthSignIn('google')} />
             </>
@@ -139,7 +153,9 @@ export default function LoginPage() {
           </>
         }
       >
-        {magicLinkSent ? (
+        {mfaPending ? (
+          <MfaChallenge onVerified={onMfaVerified} />
+        ) : magicLinkSent ? (
           <p className="auth__done">
             Check your inbox for a sign-in link. It expires shortly and only works once.
           </p>

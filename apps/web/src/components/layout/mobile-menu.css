@@ -81,6 +81,19 @@
   outline: none;
 }
 
+/* Below ~344px, the full-wordmark logo at its default 40px height (a ~208px-
+   wide image at its fixed aspect ratio) plus the two 44px icon buttons no
+   longer fit the bar's available width, pushing the actions group past the
+   screen edge -- confirmed via measurement, not a hypothetical. Shrinking
+   the logo here (the search/close controls are fixed-size touch targets,
+   so the logo is the only side with room to give) keeps both fully on
+   screen down to real small-Android-phone widths (~320px). */
+@media (max-width: 380px) {
+  .mobile-menu__bar .aiit-logo {
+    height: 32px;
+  }
+}
+
 /* ---- Primary navigation — the editorial list ---- */
 .mobile-menu__nav {
   position: relative;

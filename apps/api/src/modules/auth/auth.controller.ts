@@ -13,6 +13,6 @@ export class AuthController {
   @Get('me')
   @UseGuards(JwtGuard)
   getMe(@CurrentUser() user: AuthenticatedUser): Promise<Me> {
-    return this.profiles.getMe(user.userId);
+    return this.profiles.getMe(user.userId, user.email);
   }
 }

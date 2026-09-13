@@ -1,6 +1,7 @@
 import { NotFoundException } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
 import { PrismaService } from '../../common/prisma/prisma.service';
+import { EmailService } from '../../common/email/email.service';
 import { ProfileService } from './profile.service';
 
 const PROFILE = {
@@ -13,27 +14,38 @@ const PROFILE = {
   avatarKey: null,
   preferences: {},
   deletionRequestedAt: null,
+  welcomedAt: new Date('2026-01-01T00:00:00.000Z'),
   createdAt: new Date('2026-01-01T00:00:00.000Z'),
   updatedAt: new Date('2026-01-02T00:00:00.000Z'),
 };
 
 describe('ProfileService', () => {
   let service: ProfileService;
-  let prisma: { profile: { findUnique: jest.Mock; update: jest.Mock } };
+  let prisma: {
+    profile: { findUnique: jest.Mock; update: jest.Mock; updateMany: jest.Mock };
+  };
+  let email: { send: jest.Mock };
 
   beforeEach(async () => {
-    prisma = { profile: { findUnique: jest.fn(), update: jest.fn() } };
+    prisma = {
+      profile: { findUnique: jest.fn(), update: jest.fn(), updateMany: jest.fn() },
+    };
+    email = { send: jest.fn() };
 
     const moduleRef = await Test.createTestingModule({
-      providers: [ProfileService, { provide: PrismaService, useValue: prisma }],
+      providers: [
+        ProfileService,
+        { provide: PrismaService, useValue: prisma },
+        { provide: EmailService, useValue: email },
+      ],
     }).compile();
 
     service = moduleRef.get(ProfileService);
   });
 
-  it('returns the mapped profile for getMe', async () => {
+  it('returns the mapped profile for getMe (already welcomed -- no email sent)', async () => {
     prisma.profile.findUnique.mockResolvedValueOnce(PROFILE);
-    await expect(service.getMe('user-1')).resolves.toEqual({
+    await expect(service.getMe('user-1', 'ada@example.com')).resolves.toEqual({
       id: 'user-1',
       role: 'learner',
       status: 'active',
@@ -46,11 +58,45 @@ describe('ProfileService', () => {
       updatedAt: '2026-01-02T00:00:00.000Z',
     });
     expect(prisma.profile.findUnique).toHaveBeenCalledWith({ where: { id: 'user-1' } });
+    expect(prisma.profile.updateMany).not.toHaveBeenCalled();
+    expect(email.send).not.toHaveBeenCalled();
   });
 
   it('throws NotFoundException when getMe finds no profile', async () => {
     prisma.profile.findUnique.mockResolvedValueOnce(null);
-    await expect(service.getMe('missing')).rejects.toBeInstanceOf(NotFoundException);
+    await expect(service.getMe('missing', 'ada@example.com')).rejects.toBeInstanceOf(NotFoundException);
+  });
+
+  it('sends a welcome email exactly once, the first time getMe sees an unwelcomed profile', async () => {
+    prisma.profile.findUnique.mockResolvedValueOnce({ ...PROFILE, welcomedAt: null });
+    prisma.profile.updateMany.mockResolvedValueOnce({ count: 1 });
+
+    await service.getMe('user-1', 'ada@example.com');
+
+    expect(prisma.profile.updateMany).toHaveBeenCalledWith({
+      where: { id: 'user-1', welcomedAt: null },
+      data: { welcomedAt: expect.any(Date) },
+    });
+    expect(email.send).toHaveBeenCalledWith(
+      expect.objectContaining({ to: 'ada@example.com', subject: expect.stringContaining('Welcome') }),
+    );
+  });
+
+  it('does not send a welcome email when another request already claimed it (race)', async () => {
+    prisma.profile.findUnique.mockResolvedValueOnce({ ...PROFILE, welcomedAt: null });
+    prisma.profile.updateMany.mockResolvedValueOnce({ count: 0 });
+
+    await service.getMe('user-1', 'ada@example.com');
+
+    expect(email.send).not.toHaveBeenCalled();
+  });
+
+  it('skips the welcome email (without failing the request) when the JWT has no email claim', async () => {
+    prisma.profile.findUnique.mockResolvedValueOnce({ ...PROFILE, welcomedAt: null });
+    prisma.profile.updateMany.mockResolvedValueOnce({ count: 1 });
+
+    await expect(service.getMe('user-1', undefined)).resolves.toBeDefined();
+    expect(email.send).not.toHaveBeenCalled();
   });
 
   it('updateProfile only sends fields present on the dto', async () => {

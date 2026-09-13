@@ -8,6 +8,8 @@ import { PrismaService } from '../prisma/prisma.service';
 export interface AuthenticatedUser {
   userId: string;
   role: Role;
+  /** From the JWT's own `email` claim -- always present for the email/password and Google sign-in flows this project supports. */
+  email?: string;
 }
 
 export type AuthenticatedRequest = Request & { user?: AuthenticatedUser };
@@ -53,7 +55,7 @@ export class JwtGuard implements CanActivate {
       throw new UnauthorizedException('Missing or malformed Authorization header.');
     }
 
-    const sub = await this.verifyAndExtractSubject(token);
+    const { sub, email } = await this.verifyAndExtractSubject(token);
 
     const profile = await this.prisma.profile.findUnique({
       where: { id: sub },
@@ -63,11 +65,11 @@ export class JwtGuard implements CanActivate {
       throw new UnauthorizedException('No profile found for this account.');
     }
 
-    request.user = { userId: sub, role: profile.role };
+    request.user = { userId: sub, role: profile.role, email };
     return true;
   }
 
-  private async verifyAndExtractSubject(token: string): Promise<string> {
+  private async verifyAndExtractSubject(token: string): Promise<{ sub: string; email?: string }> {
     const parts = token.split('.');
     if (parts.length !== 3) {
       throw new UnauthorizedException('Invalid or expired session.');
@@ -75,7 +77,7 @@ export class JwtGuard implements CanActivate {
     const [headerB64, payloadB64, signatureB64] = parts;
 
     let header: { alg?: string; kid?: string };
-    let payload: { sub?: string; exp?: number };
+    let payload: { sub?: string; exp?: number; email?: string };
     try {
       header = JSON.parse(Buffer.from(headerB64, 'base64url').toString('utf8'));
       payload = JSON.parse(Buffer.from(payloadB64, 'base64url').toString('utf8'));
@@ -104,7 +106,7 @@ export class JwtGuard implements CanActivate {
       throw new UnauthorizedException('Invalid or expired session.');
     }
 
-    return payload.sub;
+    return { sub: payload.sub, email: payload.email };
   }
 
   private async getKey(kid: string): Promise<SupabaseJwk> {

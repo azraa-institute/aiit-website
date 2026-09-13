@@ -17,10 +17,15 @@ function base64url(input: Buffer | string): string {
   return Buffer.from(input).toString('base64url');
 }
 
-function signToken(privateKey: KeyObject, subject: string, expiresInSeconds: number): string {
+function signToken(
+  privateKey: KeyObject,
+  subject: string,
+  expiresInSeconds: number,
+  email?: string,
+): string {
   const header = base64url(JSON.stringify({ alg: 'ES256', kid: KID, typ: 'JWT' }));
   const payload = base64url(
-    JSON.stringify({ sub: subject, exp: Math.floor(Date.now() / 1000) + expiresInSeconds }),
+    JSON.stringify({ sub: subject, exp: Math.floor(Date.now() / 1000) + expiresInSeconds, email }),
   );
   const signature = cryptoSign('sha256', Buffer.from(`${header}.${payload}`), {
     key: privateKey,
@@ -104,8 +109,26 @@ describe('JwtGuard', () => {
     );
   });
 
-  it('attaches { userId, role } to the request for a valid token + profile', async () => {
+  it('attaches { userId, role, email } to the request for a valid token + profile', async () => {
     prisma.profile.findUnique.mockResolvedValueOnce({ role: 'admin' });
+    const token = signToken(privateKey, 'user-1', 3600, 'ada@example.com');
+    const request: { headers: { authorization: string }; user?: unknown } = {
+      headers: { authorization: `Bearer ${token}` },
+    };
+    const context = {
+      switchToHttp: () => ({ getRequest: () => request }),
+    } as unknown as ExecutionContext;
+
+    await expect(guard.canActivate(context)).resolves.toBe(true);
+    expect(request.user).toEqual({ userId: 'user-1', role: 'admin', email: 'ada@example.com' });
+    expect(prisma.profile.findUnique).toHaveBeenCalledWith({
+      where: { id: 'user-1' },
+      select: { role: true },
+    });
+  });
+
+  it('attaches an undefined email when the token has no email claim', async () => {
+    prisma.profile.findUnique.mockResolvedValueOnce({ role: 'learner' });
     const token = signToken(privateKey, 'user-1', 3600);
     const request: { headers: { authorization: string }; user?: unknown } = {
       headers: { authorization: `Bearer ${token}` },
@@ -115,10 +138,6 @@ describe('JwtGuard', () => {
     } as unknown as ExecutionContext;
 
     await expect(guard.canActivate(context)).resolves.toBe(true);
-    expect(request.user).toEqual({ userId: 'user-1', role: 'admin' });
-    expect(prisma.profile.findUnique).toHaveBeenCalledWith({
-      where: { id: 'user-1' },
-      select: { role: true },
-    });
+    expect(request.user).toEqual({ userId: 'user-1', role: 'learner', email: undefined });
   });
 });

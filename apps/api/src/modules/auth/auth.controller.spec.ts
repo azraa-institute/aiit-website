@@ -35,9 +35,11 @@ describe('AuthController', () => {
     controller = moduleRef.get(AuthController);
   });
 
-  it('delegates to ProfileService.getMe with the authenticated user id', async () => {
+  it('delegates to ProfileService.getMe with the authenticated user id and email', async () => {
     profiles.getMe.mockResolvedValueOnce(ME);
-    await expect(controller.getMe({ userId: 'user-1', role: 'learner' })).resolves.toEqual(ME);
-    expect(profiles.getMe).toHaveBeenCalledWith('user-1');
+    await expect(
+      controller.getMe({ userId: 'user-1', role: 'learner', email: 'ada@example.com' }),
+    ).resolves.toEqual(ME);
+    expect(profiles.getMe).toHaveBeenCalledWith('user-1', 'ada@example.com');
   });
 });

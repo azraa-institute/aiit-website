@@ -1,10 +1,14 @@
+import { useEffect, useRef, useState } from 'react';
 import { TECHNOLOGY_DOMAINS } from '@/data/technologies';
 import { COURSES } from '@/data/courses';
 import { cn } from '@/lib/cn';
+import { useLockBodyScroll } from '@/lib/useLockBodyScroll';
+import { Button } from '@/components/primitives/Button';
 import './course-filters.css';
 
 export interface CourseQuery {
   q: string;
+  /** Comma-joined values for multi-select categories; '' = no filter. */
   domain: string;
   level: string;
   status: string;
@@ -14,10 +18,10 @@ export interface CourseQuery {
 
 export const DEFAULT_QUERY: CourseQuery = {
   q: '',
-  domain: 'all',
-  level: 'all',
-  status: 'all',
-  pricing: 'all',
+  domain: '',
+  level: '',
+  status: '',
+  pricing: '',
   sort: 'featured',
 };
 
@@ -43,11 +47,21 @@ export const SORTS = [
   { value: 'rating', label: 'Overall rating' },
 ];
 
+function toList(v: string): string[] {
+  return v ? v.split(',').filter(Boolean) : [];
+}
+function toValue(list: string[]): string {
+  return list.join(',');
+}
+function toggled(current: string, value: string): string {
+  const list = toList(current);
+  return toValue(list.includes(value) ? list.filter((v) => v !== value) : [...list, value]);
+}
+
 interface CourseFiltersProps {
   query: CourseQuery;
   onChange: (patch: Partial<CourseQuery>) => void;
   onReset: () => void;
-  resultCount: number;
 }
 
 /** Domains that actually have at least one course in the catalogue. */
@@ -56,114 +70,272 @@ const DOMAINS_WITH_COURSES = TECHNOLOGY_DOMAINS.filter((d) =>
   DOMAIN_IDS_WITH_COURSES.has(d.id),
 ).sort((a, b) => a.order - b.order);
 
-export function CourseFilters({ query, onChange, onReset, resultCount }: CourseFiltersProps) {
+const activeCount = (q: CourseQuery) =>
+  toList(q.domain).length + toList(q.level).length + toList(q.status).length + toList(q.pricing).length;
+
+const LABELS = {
+  domain: (v: string) => DOMAINS_WITH_COURSES.find((d) => d.slug === v)?.name ?? v,
+  level: (v: string) => v,
+  status: (v: string) => STATUSES.find((s) => s.value === v)?.label ?? v,
+  pricing: (v: string) => PRICING.find((p) => p.value === v)?.label ?? v,
+} as const;
+
+export function CourseFilters({ query, onChange, onReset }: CourseFiltersProps) {
   const dirty = JSON.stringify(query) !== JSON.stringify(DEFAULT_QUERY);
+  const nFilters = activeCount(query);
+
+  const [popoverOpen, setPopoverOpen] = useState(false);
+  const [sheetOpen, setSheetOpen] = useState(false);
+  const popoverRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!popoverOpen) return;
+    const onPointerDown = (e: PointerEvent) => {
+      if (!popoverRef.current?.contains(e.target as Node)) setPopoverOpen(false);
+    };
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setPopoverOpen(false);
+    };
+    document.addEventListener('pointerdown', onPointerDown);
+    window.addEventListener('keydown', onKey);
+    return () => {
+      document.removeEventListener('pointerdown', onPointerDown);
+      window.removeEventListener('keydown', onKey);
+    };
+  }, [popoverOpen]);
+
+  useLockBodyScroll(sheetOpen);
+
+  const selectedChips = (
+    ['domain', 'level', 'status', 'pricing'] as const
+  ).flatMap((key) => toList(query[key]).map((value) => ({ key, value })));
 
   return (
-    <div className="course-filters">
-      <div className="course-filters__search">
+    <div className="course-toolbar">
+      <div className="course-search">
         <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true">
           <circle cx="7" cy="7" r="5.5" fill="none" stroke="currentColor" strokeWidth="1.4" />
-          <path d="M11 11l4 4" stroke="currentColor" strokeWidth="1.4" />
+          <path d="M11 11l4 4" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
         </svg>
         <input
           type="search"
-          placeholder="Search courses, e.g. “machine learning”"
+          placeholder="Search courses, technology, certification…"
           value={query.q}
           onChange={(e) => onChange({ q: e.target.value })}
           aria-label="Search courses"
         />
+        {query.q && (
+          <button
+            type="button"
+            className="course-search__clear"
+            onClick={() => onChange({ q: '' })}
+            aria-label="Clear search"
+          >
+            <svg width="12" height="12" viewBox="0 0 12 12" aria-hidden="true">
+              <path d="M2 2l8 8M10 2l-8 8" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
+            </svg>
+          </button>
+        )}
       </div>
 
-      <div className="course-filters__row">
-        <FilterGroup label="Domain">
-          <Chip active={query.domain === 'all'} onClick={() => onChange({ domain: 'all' })}>
+      <div className="course-toolbar__row">
+        <div className="course-quickchips">
+          <Chip active={!query.domain} onClick={() => onChange({ domain: '' })}>
             All
           </Chip>
           {DOMAINS_WITH_COURSES.map((d) => (
             <Chip
               key={d.id}
-              active={query.domain === d.slug}
-              onClick={() => onChange({ domain: query.domain === d.slug ? 'all' : d.slug })}
+              active={toList(query.domain).includes(d.slug)}
+              onClick={() => onChange({ domain: toggled(query.domain, d.slug) })}
             >
               {d.name}
             </Chip>
           ))}
-        </FilterGroup>
-      </div>
-
-      <div className="course-filters__row course-filters__row--split">
-        <FilterGroup label="Level">
-          {LEVELS.map((l) => (
-            <Chip
-              key={l}
-              active={query.level === l}
-              onClick={() => onChange({ level: query.level === l ? 'all' : l })}
-            >
-              {l}
-            </Chip>
-          ))}
-        </FilterGroup>
-
-        <FilterGroup label="Status">
-          {STATUSES.map((s) => (
-            <Chip
-              key={s.value}
-              active={query.status === s.value}
-              onClick={() => onChange({ status: query.status === s.value ? 'all' : s.value })}
-            >
-              {s.label}
-            </Chip>
-          ))}
-        </FilterGroup>
-
-        <FilterGroup label="Pricing">
-          {PRICING.map((p) => (
-            <Chip
-              key={p.value}
-              active={query.pricing === p.value}
-              onClick={() => onChange({ pricing: query.pricing === p.value ? 'all' : p.value })}
-            >
-              {p.label}
-            </Chip>
-          ))}
-        </FilterGroup>
-      </div>
-
-      <div className="course-filters__foot">
-        <p className="course-filters__count">
-          <strong>{resultCount}</strong> {resultCount === 1 ? 'course' : 'courses'}
-        </p>
-        <div className="course-filters__sort">
-          <label htmlFor="course-sort">Sort</label>
-          <select
-            id="course-sort"
-            value={query.sort}
-            onChange={(e) => onChange({ sort: e.target.value })}
-          >
-            {SORTS.map((s) => (
-              <option key={s.value} value={s.value}>
-                {s.label}
-              </option>
-            ))}
-          </select>
         </div>
-        {dirty && (
-          <button className="course-filters__reset" onClick={onReset}>
+
+        <div className="course-toolbar__controls">
+          <div className="course-filterbtn-wrap" ref={popoverRef}>
+            <button
+              type="button"
+              className="course-filterbtn"
+              aria-haspopup="dialog"
+              aria-expanded={popoverOpen}
+              onClick={() => setPopoverOpen((v) => !v)}
+            >
+              Filters
+              {nFilters > 0 && <span className="course-filterbtn__count">{nFilters}</span>}
+              <ChevronIcon />
+            </button>
+            {popoverOpen && (
+              <div className="course-filter-popover" role="dialog" aria-label="Filter courses">
+                <FilterGroups query={query} onChange={onChange} />
+                <div className="course-filter-popover__foot">
+                  {dirty && (
+                    <button type="button" className="course-filters__reset" onClick={onReset}>
+                      Clear all
+                    </button>
+                  )}
+                  <Button as="button" type="button" size="sm" onClick={() => setPopoverOpen(false)}>
+                    Done
+                  </Button>
+                </div>
+              </div>
+            )}
+          </div>
+
+          <button
+            type="button"
+            className="course-filterbtn course-filterbtn--mobile"
+            onClick={() => setSheetOpen(true)}
+          >
+            Filters
+            {nFilters > 0 && <span className="course-filterbtn__count">{nFilters}</span>}
+          </button>
+
+          <div className="course-sort">
+            <label htmlFor="course-sort">Sort</label>
+            <select id="course-sort" value={query.sort} onChange={(e) => onChange({ sort: e.target.value })}>
+              {SORTS.map((s) => (
+                <option key={s.value} value={s.value}>
+                  {s.label}
+                </option>
+              ))}
+            </select>
+            <ChevronIcon />
+          </div>
+        </div>
+      </div>
+
+      {selectedChips.length > 0 && (
+        <div className="selected-filters">
+          {selectedChips.map(({ key, value }) => (
+            <button
+              key={`${key}:${value}`}
+              type="button"
+              className="selected-filters__chip"
+              onClick={() => onChange({ [key]: toggled(query[key], value) })}
+            >
+              {LABELS[key](value)}
+              <span aria-hidden="true">×</span>
+            </button>
+          ))}
+          <button type="button" className="selected-filters__clear" onClick={onReset}>
             Clear all
           </button>
-        )}
-      </div>
+        </div>
+      )}
+
+      {sheetOpen && (
+        <div className="course-filter-sheet" role="dialog" aria-label="Filter courses" aria-modal="true">
+          <div className="course-filter-sheet__scrim" onClick={() => setSheetOpen(false)} />
+          <div className="course-filter-sheet__panel">
+            <div className="course-filter-sheet__head">
+              <p>Filters</p>
+              <button type="button" onClick={() => setSheetOpen(false)} aria-label="Close filters">
+                <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true">
+                  <path d="m3 3 10 10M13 3 3 13" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+                </svg>
+              </button>
+            </div>
+            <div className="course-filter-sheet__body">
+              <FilterGroups query={query} onChange={onChange} />
+            </div>
+            <div className="course-filter-sheet__foot">
+              {dirty && (
+                <button type="button" className="course-filters__reset" onClick={onReset}>
+                  Clear all
+                </button>
+              )}
+              <Button as="button" type="button" size="sm" onClick={() => setSheetOpen(false)}>
+                Apply filters
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
 
-function FilterGroup({ label, children }: { label: string; children: React.ReactNode }) {
+/** Shared checkbox groups -- rendered inside both the desktop popover and the
+ * mobile sheet, so the two never drift apart. */
+function FilterGroups({
+  query,
+  onChange,
+}: {
+  query: CourseQuery;
+  onChange: (patch: Partial<CourseQuery>) => void;
+}) {
   return (
-    <div className="filter-group">
-      <span className="filter-group__label">{label}</span>
-      <div className="filter-group__chips">{children}</div>
+    <>
+      <CheckGroup label="Domain">
+        {DOMAINS_WITH_COURSES.map((d) => (
+          <Check
+            key={d.id}
+            checked={toList(query.domain).includes(d.slug)}
+            onChange={() => onChange({ domain: toggled(query.domain, d.slug) })}
+          >
+            {d.name}
+          </Check>
+        ))}
+      </CheckGroup>
+      <CheckGroup label="Level">
+        {LEVELS.map((l) => (
+          <Check key={l} checked={toList(query.level).includes(l)} onChange={() => onChange({ level: toggled(query.level, l) })}>
+            {l}
+          </Check>
+        ))}
+      </CheckGroup>
+      <CheckGroup label="Status">
+        {STATUSES.map((s) => (
+          <Check
+            key={s.value}
+            checked={toList(query.status).includes(s.value)}
+            onChange={() => onChange({ status: toggled(query.status, s.value) })}
+          >
+            {s.label}
+          </Check>
+        ))}
+      </CheckGroup>
+      <CheckGroup label="Pricing">
+        {PRICING.map((p) => (
+          <Check
+            key={p.value}
+            checked={toList(query.pricing).includes(p.value)}
+            onChange={() => onChange({ pricing: toggled(query.pricing, p.value) })}
+          >
+            {p.label}
+          </Check>
+        ))}
+      </CheckGroup>
+    </>
+  );
+}
+
+function CheckGroup({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <div className="filter-check-group">
+      <span className="filter-check-group__label">{label}</span>
+      <div className="filter-check-group__items">{children}</div>
     </div>
+  );
+}
+
+function Check({
+  checked,
+  onChange,
+  children,
+}: {
+  checked: boolean;
+  onChange: () => void;
+  children: React.ReactNode;
+}) {
+  return (
+    <label className="filter-check">
+      <input type="checkbox" checked={checked} onChange={onChange} />
+      <span>{children}</span>
+    </label>
   );
 }
 
@@ -180,5 +352,13 @@ function Chip({
     <button className={cn('chip', active && 'chip--active')} onClick={onClick} aria-pressed={active}>
       {children}
     </button>
+  );
+}
+
+function ChevronIcon() {
+  return (
+    <svg width="10" height="7" viewBox="0 0 10 7" aria-hidden="true" className="chevron-icon">
+      <path d="M1 1l4 4 4-4" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
   );
 }

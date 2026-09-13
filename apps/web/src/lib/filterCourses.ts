@@ -14,17 +14,27 @@ const FEATURED_ORDER = [
   'crs-blockchain',
 ];
 
+/** Query fields for multi-select categories are comma-joined slugs/values
+ * (e.g. domain: "ai,cloud-computing") -- empty string means "no filter". */
+function toList(v: string): string[] {
+  return v ? v.split(',').filter(Boolean) : [];
+}
+
 export function filterAndSortCourses(courses: Course[], q: CourseQuery): Course[] {
   const term = q.q.trim().toLowerCase();
+  const domains = toList(q.domain);
+  const levels = toList(q.level);
+  const statuses = toList(q.status);
+  const pricings = toList(q.pricing);
 
   let out = courses.filter((c) => {
-    if (q.domain !== 'all') {
+    if (domains.length) {
       const d = getDomain(c.domainId);
-      if (d?.slug !== q.domain) return false;
+      if (!d || !domains.includes(d.slug)) return false;
     }
-    if (q.level !== 'all' && c.level !== q.level) return false;
-    if (q.status !== 'all' && !c.statuses.includes(q.status as Course['statuses'][number])) return false;
-    if (q.pricing !== 'all' && c.pricing !== q.pricing) return false;
+    if (levels.length && !levels.includes(c.level)) return false;
+    if (statuses.length && !statuses.some((s) => c.statuses.includes(s as Course['statuses'][number]))) return false;
+    if (pricings.length && !pricings.includes(c.pricing)) return false;
     if (term) {
       const hay = `${c.title} ${c.summary} ${c.description} ${getDomain(c.domainId)?.name ?? ''}`.toLowerCase();
       if (!hay.includes(term)) return false;

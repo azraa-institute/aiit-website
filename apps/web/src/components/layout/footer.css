@@ -75,6 +75,17 @@
   }
 }
 
+/* The newsletter box needs real width for its input + button -- give it
+   its own full-width row until there's a 5-column layout to sit in. */
+.site-footer__col--newsletter {
+  grid-column: 1 / -1;
+}
+@media (min-width: 1200px) {
+  .site-footer__col--newsletter {
+    grid-column: auto;
+  }
+}
+
 .site-footer__col h3 {
   font-family: var(--font-ui);
   font-size: var(--fs-eyebrow);

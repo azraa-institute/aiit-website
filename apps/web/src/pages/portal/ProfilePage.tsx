@@ -47,9 +47,13 @@ export default function ProfilePage() {
     setSaved(false);
     setSaving(true);
     try {
+      // Send the real trimmed value, even when empty -- `|| undefined` here
+      // previously dropped a cleared field from the request body entirely
+      // (JSON.stringify omits `undefined` properties), so clearing the
+      // headline and saving silently left the old value in place server-side.
       await apiFetch('/me', {
         method: 'PATCH',
-        body: JSON.stringify({ name: name.trim() || undefined, headline: headline.trim() || undefined }),
+        body: JSON.stringify({ name: name.trim(), headline: headline.trim() }),
       });
       state.refetch();
       setSaved(true);

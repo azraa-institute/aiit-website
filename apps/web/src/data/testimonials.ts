@@ -107,5 +107,7 @@ export const STUDENT_STORIES: StudentStory[] = [
 
 export const STUDENT_STORY_COUNT = STUDENT_STORIES.length;
 
-export const REVIEWS_HEADING = 'What our students across the world are saying';
-export const REVIEWS_EYEBROW = 'Our Reviews';
+export const REVIEWS_HEADING = 'Real Learners. Real Impact.';
+export const REVIEWS_EYEBROW = 'Student Stories';
+export const REVIEWS_SUBTITLE =
+  'Hear from our global community of learners who are building new skills, advancing their careers, and creating a better tomorrow.';

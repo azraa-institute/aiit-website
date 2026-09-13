@@ -88,6 +88,21 @@ export function CourseFilters({ query, onChange, onReset }: CourseFiltersProps) 
   const [sheetOpen, setSheetOpen] = useState(false);
   const popoverRef = useRef<HTMLDivElement>(null);
 
+  // The search box keeps its own local value and syncs to the URL-backed
+  // query on a short debounce, instead of being driven directly by
+  // query.q -- round-tripping every keystroke through useSearchParams()
+  // couldn't keep up with normal typing speed and was dropping characters.
+  const [localQ, setLocalQ] = useState(query.q);
+  useEffect(() => {
+    setLocalQ(query.q);
+  }, [query.q]);
+  useEffect(() => {
+    if (localQ === query.q) return;
+    const id = setTimeout(() => onChange({ q: localQ }), 250);
+    return () => clearTimeout(id);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [localQ]);
+
   useEffect(() => {
     if (!popoverOpen) return;
     const onPointerDown = (e: PointerEvent) => {
@@ -120,15 +135,18 @@ export function CourseFilters({ query, onChange, onReset }: CourseFiltersProps) 
         <input
           type="search"
           placeholder="Search courses, technology, certification…"
-          value={query.q}
-          onChange={(e) => onChange({ q: e.target.value })}
+          value={localQ}
+          onChange={(e) => setLocalQ(e.target.value)}
           aria-label="Search courses"
         />
-        {query.q && (
+        {localQ && (
           <button
             type="button"
             className="course-search__clear"
-            onClick={() => onChange({ q: '' })}
+            onClick={() => {
+              setLocalQ('');
+              onChange({ q: '' });
+            }}
             aria-label="Clear search"
           >
             <svg width="12" height="12" viewBox="0 0 12 12" aria-hidden="true">

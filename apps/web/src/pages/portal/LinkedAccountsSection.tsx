@@ -64,7 +64,11 @@ export function LinkedAccountsSection() {
 
   if (loadError) {
     return (
-      <section id="linked-accounts" className="settings-section" data-reveal>
+      // No data-reveal here: this section mounts only after its own async
+      // identities fetch resolves, well after the page's one-time scroll-
+      // reveal observer (useScrollReveal) has already been set up -- it
+      // would never get observed and would sit at opacity:0 forever.
+      <section id="linked-accounts" className="settings-section">
         <div className="settings-section__head">
           <span className="settings-section__icon">
             <LinkIcon />
@@ -86,7 +90,7 @@ export function LinkedAccountsSection() {
   const canUnlink = identities.length > 1;
 
   return (
-    <section id="linked-accounts" className="settings-section" data-reveal>
+    <section id="linked-accounts" className="settings-section">
       <div className="settings-section__head">
         <span className="settings-section__icon">
           <LinkIcon />

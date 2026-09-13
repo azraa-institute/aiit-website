@@ -22,6 +22,7 @@ export default function ProfilePage() {
 
   const [name, setName] = useState('');
   const [headline, setHeadline] = useState('');
+  const [phone, setPhone] = useState('');
   const [saving, setSaving] = useState(false);
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
   const [error, setError] = useState<string>();
@@ -31,6 +32,7 @@ export default function ProfilePage() {
     if (state.status === 'ready' && !initialized) {
       setName(state.learner.profile.name ?? '');
       setHeadline(state.learner.profile.headline ?? '');
+      setPhone(state.learner.profile.phone ?? '');
       setInitialized(true);
     }
   }, [state, initialized]);
@@ -53,7 +55,7 @@ export default function ProfilePage() {
       // headline and saving silently left the old value in place server-side.
       await apiFetch('/me', {
         method: 'PATCH',
-        body: JSON.stringify({ name: name.trim(), headline: headline.trim() }),
+        body: JSON.stringify({ name: name.trim(), headline: headline.trim(), phone: phone.trim() }),
       });
       state.refetch();
       setSaved(true);
@@ -139,6 +141,14 @@ export default function ProfilePage() {
             onChange={(e) => setHeadline(e.target.value)}
             maxLength={200}
             hint="A short line about you, shown alongside your name."
+          />
+          <TextField
+            label="Phone"
+            type="tel"
+            value={phone}
+            onChange={(e) => setPhone(e.target.value)}
+            maxLength={30}
+            hint="Optional -- not used for sign-in or verification, just contact info."
           />
           <TextField
             label="Email"

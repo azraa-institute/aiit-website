@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react';
 import type { Factor } from '@supabase/supabase-js';
 import { supabase } from '@/lib/supabaseClient';
-import { apiFetch } from '@/lib/api';
 import { TextField } from '@/components/common/Field';
 import { Button } from '@/components/primitives/Button';
 
@@ -74,9 +73,9 @@ export function SecurityFactorsSection() {
     }
     setPending(null);
     setCode('');
-    // Best-effort notice, not part of the critical path -- the factor is
-    // already enrolled above regardless of whether this email goes out.
-    apiFetch('/auth/notify-2fa-enabled', { method: 'POST' }).catch(() => {});
+    // Supabase's own native "MFA method added" security notification
+    // (Dashboard -> Authentication -> Emails -> Security) handles telling
+    // the user about this now -- no app-level call needed.
     await loadFactors();
   }
 

@@ -74,6 +74,7 @@ export class ProfileService {
       data: {
         ...(dto.name !== undefined && { name: dto.name }),
         ...(dto.headline !== undefined && { headline: dto.headline }),
+        ...(dto.phone !== undefined && { phone: dto.phone }),
         ...(dto.country !== undefined && { country: dto.country }),
         ...(dto.avatarKey !== undefined && { avatarKey: dto.avatarKey }),
       },
@@ -163,53 +164,15 @@ export class ProfileService {
     }
   }
 
-  /**
-   * Called by the frontend right after a password change succeeds --
-   * ResetPasswordPage (via a recovery-link session) and SettingsPage (a
-   * logged-in user changing it directly) both call supabase.auth.updateUser
-   * client-side with no backend involvement, so there's no natural
-   * server-side hook for "a password just changed"; this is the deliberate
-   * substitute. Best-effort like the welcome email: EmailService no-ops
-   * with a logged warning if it fails, never throws.
-   */
-  async notifyPasswordChanged(email: string | undefined): Promise<void> {
-    if (!email) return;
-    await this.email.send({
-      to: email,
-      subject: 'Your AIIT password was changed',
-      html: brandedEmailHtml({
-        heading: 'Password changed',
-        intro: 'The password on your AIIT account was just changed. If this was you, no action is needed.',
-        ctaLabel: 'Review your account',
-        ctaUrl: `${process.env.APP_URL ?? 'https://aiit.network'}/portal/settings`,
-        footerNote: "If you didn't make this change, reset your password immediately and contact us at info@aiit.network.",
-      }),
-    });
-  }
-
-  /**
-   * Called by the frontend right after enrolling a TOTP factor succeeds
-   * (SecurityFactorsSection's handleVerify) -- 2FA enrollment happens
-   * entirely client-side via supabase.auth.mfa.*, with no backend
-   * involvement, so same as notifyPasswordChanged, this is the deliberate
-   * substitute for a server-side hook that doesn't exist. Best-effort:
-   * EmailService no-ops with a logged warning if it fails, never throws.
-   */
-  async notify2faEnabled(email: string | undefined): Promise<void> {
-    if (!email) return;
-    await this.email.send({
-      to: email,
-      subject: 'Two-factor authentication enabled on your AIIT account',
-      html: brandedEmailHtml({
-        heading: 'Two-factor authentication enabled',
-        intro:
-          "You'll now be asked for a code from your authenticator app each time you sign in to AIIT. If this wasn't you, remove the authenticator in Account Settings and contact us.",
-        ctaLabel: 'Review your account',
-        ctaUrl: `${process.env.APP_URL ?? 'https://aiit.network'}/portal/settings`,
-        footerNote: "If you didn't enable this, contact us immediately at info@aiit.network.",
-      }),
-    });
-  }
+  // notifyPasswordChanged and notify2faEnabled used to live here -- removed
+  // in favor of Supabase's own native "Security" notification emails
+  // (Dashboard -> Authentication -> Emails -> Security), which cover both
+  // events (and more) more robustly: they fire on the real GoTrue event
+  // itself, not only on the specific frontend call sites this app happened
+  // to wire, so e.g. a password changed some other way still notifies the
+  // user. requestDeletion's email stays custom below -- deletion is a soft
+  // flag in this app's own database, not a real Supabase user deletion, so
+  // there's no native event to hook for it.
 
   /**
    * Backs ForgotPasswordPage's "no account found" message. auth.users isn't
@@ -240,6 +203,7 @@ function toMe(profile: Profile, isNewSignup: boolean): Me {
     status: profile.status,
     name: profile.name,
     headline: profile.headline,
+    phone: profile.phone,
     country: profile.country,
     avatarKey: profile.avatarKey,
     preferences: profile.preferences as Record<string, unknown>,

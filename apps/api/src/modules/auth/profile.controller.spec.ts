@@ -10,6 +10,7 @@ const ME: Me = {
   status: 'active',
   name: 'Ada',
   headline: null,
+  phone: null,
   country: null,
   avatarKey: null,
   preferences: {},

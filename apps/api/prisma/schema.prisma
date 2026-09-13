@@ -42,6 +42,10 @@ model Profile {
   status              ProfileStatus @default(active)
   name                String?
   headline            String?
+  // Plain contact-info string, not a real phone-auth/SMS-MFA field -- no
+  // format validation beyond a length cap. This app has no phone-based
+  // sign-in or verification of any kind.
+  phone               String?
   country             String?       @db.Char(2) // ISO 3166-1 alpha-2
   avatarKey           String?       @map("avatar_key") // object-storage key, not a URL
   preferences         Json          @default("{}")

@@ -10,6 +10,7 @@ const PROFILE = {
   status: 'active',
   name: null,
   headline: null,
+  phone: null,
   country: null,
   avatarKey: null,
   preferences: {},
@@ -69,6 +70,7 @@ describe('ProfileService', () => {
       status: 'active',
       name: null,
       headline: null,
+      phone: null,
       country: null,
       avatarKey: null,
       preferences: {},
@@ -127,6 +129,15 @@ describe('ProfileService', () => {
     expect(prisma.profile.update).toHaveBeenCalledWith({
       where: { id: 'user-1' },
       data: { name: 'Ada' },
+    });
+  });
+
+  it('updateProfile includes phone when present on the dto (including clearing it to empty)', async () => {
+    prisma.profile.update.mockResolvedValueOnce({ ...PROFILE, phone: '' });
+    await service.updateProfile('user-1', { phone: '' });
+    expect(prisma.profile.update).toHaveBeenCalledWith({
+      where: { id: 'user-1' },
+      data: { phone: '' },
     });
   });
 
@@ -221,37 +232,6 @@ describe('ProfileService', () => {
     });
   });
 
-  describe('notifyPasswordChanged', () => {
-    it('sends a security-notice email to the caller', async () => {
-      await service.notifyPasswordChanged('ada@example.com');
-      expect(email.send).toHaveBeenCalledWith(
-        expect.objectContaining({
-          to: 'ada@example.com',
-          subject: expect.stringContaining('password was changed'),
-        }),
-      );
-    });
-
-    it('skips sending (without throwing) when the JWT has no email claim', async () => {
-      await expect(service.notifyPasswordChanged(undefined)).resolves.toBeUndefined();
-      expect(email.send).not.toHaveBeenCalled();
-    });
-  });
-
-  describe('notify2faEnabled', () => {
-    it('sends a security-notice email to the caller', async () => {
-      await service.notify2faEnabled('ada@example.com');
-      expect(email.send).toHaveBeenCalledWith(
-        expect.objectContaining({
-          to: 'ada@example.com',
-          subject: expect.stringContaining('Two-factor authentication enabled'),
-        }),
-      );
-    });
-
-    it('skips sending (without throwing) when the JWT has no email claim', async () => {
-      await expect(service.notify2faEnabled(undefined)).resolves.toBeUndefined();
-      expect(email.send).not.toHaveBeenCalled();
-    });
-  });
+  // notifyPasswordChanged and notify2faEnabled tests removed along with
+  // the methods themselves -- see the comment in profile.service.ts.
 });

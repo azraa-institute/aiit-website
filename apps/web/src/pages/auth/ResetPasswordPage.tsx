@@ -5,7 +5,6 @@ import { Seo } from '@/lib/Seo';
 import { Button } from '@/components/primitives/Button';
 import { PasswordField } from '@/components/common/Field';
 import { supabase } from '@/lib/supabaseClient';
-import { apiFetch } from '@/lib/api';
 import { AuthLayout } from './AuthLayout';
 
 export default function ResetPasswordPage() {
@@ -41,10 +40,9 @@ export default function ResetPasswordPage() {
       setError(updateError.message);
       return;
     }
-    // Best-effort notice, not part of the critical path -- the password
-    // change already succeeded above regardless of whether this email goes
-    // out, so a failure here shouldn't block or alarm the user.
-    apiFetch('/auth/notify-password-changed', { method: 'POST' }).catch(() => {});
+    // Supabase's own native "Password Changed" security notification
+    // (Dashboard -> Authentication -> Emails -> Security) handles telling
+    // the user about this now -- no app-level call needed.
     setDone(true);
   }
 

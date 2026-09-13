@@ -11,6 +11,12 @@ export class UpdateProfileDto {
   @MaxLength(200)
   headline?: string;
 
+  /** Plain contact-info string -- not validated as a real phone number (no phone-based sign-in or verification anywhere in this app). */
+  @IsOptional()
+  @IsString()
+  @MaxLength(30)
+  phone?: string;
+
   @IsOptional()
   @IsISO31661Alpha2()
   country?: string;

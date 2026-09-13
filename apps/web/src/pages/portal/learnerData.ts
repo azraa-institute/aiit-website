@@ -21,6 +21,7 @@ import { supabase } from '@/lib/supabaseClient';
 export interface LearnerProfile {
   name: string | null;
   headline: string | null;
+  phone: string | null;
   country: string | null;
   avatarKey: string | null;
   preferences: Record<string, unknown>;
@@ -65,6 +66,7 @@ async function fetchLearner(): Promise<LearnerRecord> {
     profile: {
       name: me.name,
       headline: me.headline,
+      phone: me.phone,
       country: me.country,
       avatarKey: me.avatarKey,
       preferences: me.preferences,

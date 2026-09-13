@@ -55,9 +55,10 @@ jobs:
 
       # The shadow database used by the diff step below must exist as an
       # empty Postgres database — Prisma manages schemas/tables inside it
-      # but doesn't create the database itself. auth.users itself then gets
-      # seeded (see the next step) ahead of the real migrations, in both
-      # this database and the shadow one.
+      # but doesn't create the database itself. The 20260910235959_stub_auth_schema
+      # migration (see prisma/migrations/) creates a minimal auth.users
+      # ahead of the real migration, in both this database and the shadow
+      # one, purely by being replayed in order — no manual seeding needed.
       - name: Create the shadow database
         run: psql "postgresql://postgres:postgres@localhost:5432/postgres" -c "CREATE DATABASE shadow;"
 
@@ -66,23 +67,10 @@ jobs:
       # comment on is_admin() in the profiles migration) -- so CI's plain
       # Postgres container needs it stubbed directly, in both the main and
       # shadow databases, before any migration that calls it can apply.
-      #
-      # raw_user_meta_data is pre-created here for the same reason, on the
-      # same table the 20260910235959_stub_auth_schema migration creates:
-      # real Supabase's auth.users has always had that column (Google/
-      # email-password signup metadata), but the minimal CI stub didn't
-      # carry it until 20260913020000_backfill_profile_names started
-      # reading it. Creating auth.users here, before that migration's own
-      # `CREATE TABLE IF NOT EXISTS` runs, makes that later statement a
-      # genuine no-op (matching how it already behaves against real
-      # Supabase) instead of rewriting an already-applied migration file,
-      # which would break its checksum against production's migration
-      # history.
-      - name: Stub auth.uid() and auth.users for CI's plain Postgres
+      - name: Stub auth.uid() for CI's plain Postgres
         run: |
           for db in test shadow; do
             psql "postgresql://postgres:postgres@localhost:5432/$db" -c 'CREATE SCHEMA IF NOT EXISTS auth;'
-            psql "postgresql://postgres:postgres@localhost:5432/$db" -c 'CREATE TABLE IF NOT EXISTS auth.users (id UUID NOT NULL PRIMARY KEY, raw_user_meta_data JSONB);'
             psql "postgresql://postgres:postgres@localhost:5432/$db" -c 'CREATE OR REPLACE FUNCTION auth.uid() RETURNS uuid LANGUAGE sql STABLE AS $$ SELECT NULL::uuid $$;'
           done
 

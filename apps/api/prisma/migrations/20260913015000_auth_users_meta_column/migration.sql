@@ -1,0 +1,19 @@
+-- Isolated on purpose (see 20260912000001_auth_trigger for why): ALTERing
+-- auth.users needs privileges the pooler connection role may not have. If
+-- this migration fails in production for that reason, the fallback is the
+-- same as that one -- run this statement by hand via Supabase Dashboard ->
+-- SQL Editor, then
+-- `prisma migrate resolve --applied 20260913015000_auth_users_meta_column`.
+--
+-- A genuine no-op against real Supabase, which has always had this column
+-- (IF NOT EXISTS). Exists purely so CI's from-scratch migration replay --
+-- which starts from a minimal stub auth.users (see
+-- 20260910235959_stub_auth_schema) rather than a real Supabase schema --
+-- has the column in place before 20260913020000_backfill_profile_names
+-- reads it. Deliberately timestamped to run before that migration despite
+-- being added after it was already applied to production: confirmed
+-- against a real Postgres that `prisma migrate deploy` applies a new,
+-- not-yet-recorded migration regardless of where its timestamp sorts
+-- relative to already-applied ones -- it does not require new migrations
+-- to sort after the latest applied one.
+ALTER TABLE auth.users ADD COLUMN IF NOT EXISTS raw_user_meta_data JSONB;

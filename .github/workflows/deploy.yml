@@ -70,6 +70,22 @@ jobs:
       # specifically: run its two statements by hand via Supabase Dashboard
       # -> SQL Editor, then
       #   npx prisma migrate resolve --applied 20260913020000_backfill_profile_names --schema apps/api/prisma/schema.prisma
+      # (Confirmed in production: this one applied cleanly on the first
+      # try, so the pooler role does have read access to auth.users here --
+      # the fallback above is contingency documentation, not a report that
+      # it was needed.)
+      #
+      # FOURTH one-time step, possibly needed on 20260913015000_auth_users_
+      # meta_column: an ALTER TABLE on auth.users, a step up from the SELECT
+      # above. Added AFTER 20260913020000_backfill_profile_names had
+      # already been applied, timestamped to sort before it anyway --
+      # confirmed against a real Postgres that `prisma migrate deploy`
+      # applies a new, not-yet-recorded migration regardless of where its
+      # timestamp falls relative to already-applied ones, so this isn't a
+      # problem. Same fallback shape if this migration specifically fails:
+      # run its one statement by hand via Supabase Dashboard -> SQL Editor,
+      # then
+      #   npx prisma migrate resolve --applied 20260913015000_auth_users_meta_column --schema apps/api/prisma/schema.prisma
       - name: Apply pending migrations
         run: npm exec -w apps/api -- prisma migrate deploy
         env:

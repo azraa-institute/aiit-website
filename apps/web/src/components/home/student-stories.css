@@ -293,6 +293,13 @@
 .stories-card {
   position: relative;
   display: grid;
+  /* Without an explicit column, the lone implicit "auto" column can
+     size itself to a child's max-content width (the -webkit-box quote
+     paragraph's own shrink-to-fit sizing) instead of the card's actual
+     available width -- confirmed via computed grid-template-columns
+     resolving wider than the card's own content box. minmax(0, 1fr)
+     pins it to exactly the available width regardless of content. */
+  grid-template-columns: minmax(0, 1fr);
   align-content: start;
   gap: var(--space-4);
   padding: clamp(1.5rem, 1rem + 2vw, 2.25rem);
@@ -363,12 +370,21 @@
 
 .stories-card__text {
   margin: 0;
+  /* .stories-card is a grid container; grid/flex items default to
+     min-width:auto (their content's own intrinsic width), not 0. The
+     -webkit-box paragraph inside sizes itself by shrink-to-fit, and
+     without this that intrinsic width could win, widening this grid
+     item past the card's actual (fixed) track width -- text then
+     wraps as if the box were that wider size, and the excess gets
+     silently sliced off mid-word by the card's overflow:hidden. */
+  min-width: 0;
 }
 .stories-card__text p {
   display: -webkit-box;
   -webkit-box-orient: vertical;
   -webkit-line-clamp: 6;
   overflow: hidden;
+  width: 100%;
   margin: 0;
   font-family: var(--font-display);
   line-height: 1.5;

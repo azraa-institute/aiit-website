@@ -7,7 +7,7 @@ import { supabase } from '@/lib/supabaseClient';
 import { apiFetch } from '@/lib/api';
 import { cn } from '@/lib/cn';
 import { TextField, PasswordField, SelectField } from '@/components/common/Field';
-import { MIN_PASSWORD_LENGTH, passwordMeetsRequirements, PasswordRequirementsList } from '@/components/common/PasswordRequirements';
+import { PASSWORD_HINT, passwordMeetsRequirements, PasswordRequirementsList } from '@/components/common/PasswordRequirements';
 import { Button } from '@/components/primitives/Button';
 import { COUNTRIES } from '@/data/countries';
 import { LANGUAGES } from '@/data/languages';
@@ -168,7 +168,7 @@ function SignInSecuritySection() {
       return;
     }
     if (!passwordMeetsRequirements(newPassword)) {
-      setPasswordError(`Use at least ${MIN_PASSWORD_LENGTH} characters, with a letter and a number.`);
+      setPasswordError(`${PASSWORD_HINT}.`);
       return;
     }
     if (newPassword !== confirmPassword) {
@@ -254,7 +254,7 @@ function SignInSecuritySection() {
               label="New password"
               value={newPassword}
               onChange={(e) => setNewPassword(e.target.value)}
-              hint={`At least ${MIN_PASSWORD_LENGTH} characters, with a letter and a number`}
+              hint={PASSWORD_HINT}
               required
             />
             <PasswordRequirementsList password={newPassword} />

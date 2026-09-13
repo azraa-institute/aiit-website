@@ -5,7 +5,7 @@ import { Seo } from '@/lib/Seo';
 import { Button } from '@/components/primitives/Button';
 import { TextField, PasswordField } from '@/components/common/Field';
 import { PasswordStrengthMeter } from '@/components/common/PasswordStrengthMeter';
-import { MIN_PASSWORD_LENGTH, passwordMeetsRequirements, PasswordRequirementsList } from '@/components/common/PasswordRequirements';
+import { PASSWORD_HINT, passwordMeetsRequirements, PasswordRequirementsList } from '@/components/common/PasswordRequirements';
 import { supabase } from '@/lib/supabaseClient';
 import { AuthLayout, GoogleAuthButton } from './AuthLayout';
 
@@ -38,10 +38,7 @@ export default function RegisterPage() {
   const firstNameError = touched.firstName && firstName.trim().length === 0 ? 'First name is required.' : undefined;
   const lastNameError = touched.lastName && lastName.trim().length === 0 ? 'Last name is required.' : undefined;
   const emailError = touched.email && email.length > 0 && !emailValid ? 'Enter a valid email address.' : undefined;
-  const passwordError =
-    touched.password && password.length > 0 && !passwordValid
-      ? `Use at least ${MIN_PASSWORD_LENGTH} characters, with a letter and a number.`
-      : undefined;
+  const passwordError = touched.password && password.length > 0 && !passwordValid ? `${PASSWORD_HINT}.` : undefined;
 
   function markTouched(field: keyof TouchedState) {
     setTouched((t) => ({ ...t, [field]: true }));
@@ -185,7 +182,7 @@ export default function RegisterPage() {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               onBlur={() => markTouched('password')}
-              hint={`At least ${MIN_PASSWORD_LENGTH} characters, with a letter and a number`}
+              hint={PASSWORD_HINT}
               error={passwordError}
             />
             <PasswordStrengthMeter password={password} />

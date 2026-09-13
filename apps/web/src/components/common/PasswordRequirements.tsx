@@ -3,19 +3,25 @@ import './password-requirements.css';
 
 export const MIN_PASSWORD_LENGTH = 8;
 
+/** Kept in one place so every password-entry point states the exact same
+ * requirement -- update here if the Supabase setting below ever changes. */
+export const PASSWORD_HINT = `At least ${MIN_PASSWORD_LENGTH} characters, with a letter, a number and a symbol`;
+
 export interface PasswordRequirement {
   label: string;
   met: boolean;
 }
 
 /** Mirrors the Supabase project's "Password requirements" setting (Auth ->
- * Providers -> Email): minimum length plus at least one letter and one
- * digit. Keep in sync if that setting ever changes. */
+ * Providers -> Email): lowercase + uppercase letters, digits, and symbols,
+ * min length 8. Keep in sync if that setting ever changes. Symbol set
+ * matches Supabase's own allowed list (!@#$%^&*()_+-=[]{};'\:"|<>?,./`~). */
 export function passwordRequirements(password: string): PasswordRequirement[] {
   return [
     { label: `At least ${MIN_PASSWORD_LENGTH} characters`, met: password.length >= MIN_PASSWORD_LENGTH },
     { label: 'A letter', met: /[a-zA-Z]/.test(password) },
     { label: 'A number', met: /\d/.test(password) },
+    { label: 'A symbol', met: /[!@#$%^&*()_+\-=[\]{};':"\\|<>?,./`~]/.test(password) },
   ];
 }
 

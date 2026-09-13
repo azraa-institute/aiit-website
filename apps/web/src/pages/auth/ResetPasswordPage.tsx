@@ -4,7 +4,7 @@ import { Link } from 'react-router-dom';
 import { Seo } from '@/lib/Seo';
 import { Button } from '@/components/primitives/Button';
 import { PasswordField } from '@/components/common/Field';
-import { MIN_PASSWORD_LENGTH, passwordMeetsRequirements, PasswordRequirementsList } from '@/components/common/PasswordRequirements';
+import { PASSWORD_HINT, passwordMeetsRequirements, PasswordRequirementsList } from '@/components/common/PasswordRequirements';
 import { supabase } from '@/lib/supabaseClient';
 import { AuthLayout } from './AuthLayout';
 
@@ -20,7 +20,7 @@ export default function ResetPasswordPage() {
     const confirmPassword = String(data.get('confirmPassword') ?? '');
 
     if (!passwordMeetsRequirements(password)) {
-      setError(`Use at least ${MIN_PASSWORD_LENGTH} characters, with a letter and a number.`);
+      setError(`${PASSWORD_HINT}.`);
       return;
     }
     if (password !== confirmPassword) {
@@ -74,7 +74,7 @@ export default function ResetPasswordPage() {
               label="New password"
               name="password"
               autoComplete="new-password"
-              hint={`At least ${MIN_PASSWORD_LENGTH} characters, with a letter and a number`}
+              hint={PASSWORD_HINT}
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required

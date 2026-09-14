@@ -149,19 +149,30 @@ export type LearnerState =
  * (always mounted, not a sibling route) rather than the component that
  * called refetch().
  */
-export function useLearner(): LearnerState & { refetch: () => void } {
+/**
+ * `enabled` (default true) lets a caller outside the portal shell -- the
+ * public header's account widget, which needs the same name/avatar the
+ * portal topbar shows but must never fetch for a signed-out visitor --
+ * gate the fetch on its own auth check. No existing portal caller passes
+ * this, so they're all unaffected; skipping the fetch just leaves the
+ * hook parked at its initial 'loading' state until enabled flips true.
+ */
+export function useLearner(options?: { enabled?: boolean }): LearnerState & { refetch: () => void } {
+  const enabled = options?.enabled ?? true;
   const [reloadToken, setReloadToken] = useState(0);
   const [state, setState] = useState<LearnerState>({ status: 'loading', learner: null, error: null });
 
   useEffect(() => {
+    if (!enabled) return;
     const notify = () => setReloadToken((t) => t + 1);
     listeners.add(notify);
     return () => {
       listeners.delete(notify);
     };
-  }, []);
+  }, [enabled]);
 
   useEffect(() => {
+    if (!enabled) return;
     let alive = true;
     if (reloadToken > 0) setState({ status: 'loading', learner: null, error: null });
     loadLearner()
@@ -179,7 +190,7 @@ export function useLearner(): LearnerState & { refetch: () => void } {
     return () => {
       alive = false;
     };
-  }, [reloadToken]);
+  }, [enabled, reloadToken]);
 
   return { ...state, refetch: invalidateLearner };
 }

@@ -35,6 +35,23 @@ export function Header({ overHero = false }: HeaderProps) {
     setOpenGroup(null);
   }, [location.pathname]);
 
+  /* Ctrl+K / Cmd+K opens the site search instead of the browser's own
+     "search with default engine" shortcut -- preventDefault beats it out
+     because that binding runs through the page's normal keydown handling
+     in Chromium/Edge/Firefox (unlike e.g. Ctrl+T, which never reaches the
+     page at all). */
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
+        e.preventDefault();
+        setMenuOpen(false);
+        setSearchOpen(true);
+      }
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, []);
+
   /* Hover intent: a short close delay stops the panel flickering when the
      cursor crosses the gap between the trigger and the panel. */
   const openNow = useCallback((label: string) => {

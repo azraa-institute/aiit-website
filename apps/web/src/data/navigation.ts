@@ -37,16 +37,13 @@ export const PRIMARY_NAV: NavItem[] = [
 ];
 
 /**
- * Footer "QUICK LINKS" — from aiit.network, with "AIIT Shop" added here so the
- * store (a secondary, non-core area) stays reachable without sitting in the
- * primary learning navigation.
+ * Footer "QUICK LINKS". Deliberately excludes anything already in
+ * FOOTER_NAV.explore below (Courses, AIIT Resources, AIIT Shop all used to
+ * be listed in both columns at once -- the same link twice, side by side).
  */
 export const FOOTER_QUICK_LINKS = [
   { label: 'Affiliate', to: '/affiliate' },
   { label: 'AIIT Blueprint', to: '/aiit-blueprint' },
-  { label: 'AIIT Resources', to: '/resources' },
-  { label: 'Courses', to: '/courses' },
-  { label: 'AIIT Shop', to: '/shop' },
   { label: 'Privacy Policy', to: '/privacy-policy' },
   { label: 'Terms and Conditions', to: '/terms' },
 ];

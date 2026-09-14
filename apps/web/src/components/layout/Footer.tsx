@@ -97,7 +97,7 @@ export function Footer() {
                 </li>
                 <li>
                   <PhoneIcon />
-                  <span>
+                  <span className="site-footer__contact-tight">
                     Tel.: <a href={`tel:${SITE.contact.phoneHref}`}>{SITE.contact.phone}</a>
                   </span>
                 </li>
@@ -107,7 +107,7 @@ export function Footer() {
                 </li>
                 <li>
                   <ClockIcon />
-                  <span>{SITE.contact.hours}</span>
+                  <span className="site-footer__contact-tight">{SITE.contact.hours}</span>
                 </li>
               </ul>
             </div>

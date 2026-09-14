@@ -30,7 +30,13 @@
 
 @media (min-width: 900px) {
   .site-footer__top {
-    grid-template-columns: minmax(240px, 1fr) 2.6fr;
+    /* The brand column caps out instead of taking a fixed share of the
+       row -- on a wide viewport that let it keep growing right along with
+       the nav columns, which stayed a flat 5-across split, so the whole
+       block read as bunched into the page's middle with the two sides
+       going unused. Capping it hands that extra width to the nav columns
+       (and their contact info / phone number) instead. */
+    grid-template-columns: minmax(220px, 300px) 1fr;
   }
 }
 
@@ -67,11 +73,18 @@
 @media (min-width: 700px) {
   .site-footer__cols {
     grid-template-columns: repeat(3, 1fr);
+    gap: var(--space-7) var(--space-6);
   }
 }
 @media (min-width: 1200px) {
   .site-footer__cols {
-    grid-template-columns: repeat(5, 1fr);
+    /* Weighted, not a flat 5x1fr split -- Learning now (a thumbnail +
+       full course titles) and Contact (an address, a phone number, an
+       email, hours) both carry more text than a short link list, so an
+       equal share left them the tightest columns in the row despite
+       having the most to fit; that's what was forcing the phone number
+       onto its own second line. */
+    grid-template-columns: 0.9fr 1.3fr 0.85fr 1.05fr 1fr;
   }
 }
 
@@ -177,6 +190,13 @@
   display: flex;
   align-items: flex-start;
   gap: var(--space-3);
+}
+/* The phone number and hours are short enough to always sit on one line --
+   at the column's narrowest they were still wrapping mid-string (e.g.
+   "+91 93422" / "95383"), which read as broken, not just tight. The
+   address is genuinely long and is meant to wrap across lines. */
+.site-footer__contact-tight {
+  white-space: nowrap;
 }
 .site-footer__contact svg {
   flex-shrink: 0;

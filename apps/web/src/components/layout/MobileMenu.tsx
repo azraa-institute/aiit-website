@@ -3,6 +3,7 @@ import { Link, useLocation } from 'react-router-dom';
 import { PRIMARY_NAV } from '@/data/navigation';
 import { SITE } from '@/data/site';
 import { useLockBodyScroll } from '@/lib/useLockBodyScroll';
+import { useAccountMenu } from '@/lib/useAccountMenu';
 import { cn } from '@/lib/cn';
 import { Button } from '@/components/primitives/Button';
 import { SocialLinks } from '@/components/common/SocialLinks';
@@ -29,6 +30,7 @@ function isChildCurrent(childTo: string, pathname: string, search: string) {
 export function MobileMenu({ open, onClose, onOpenSearch }: MobileMenuProps) {
   const { pathname, search } = useLocation();
   const [openGroup, setOpenGroup] = useState<string | null>(null);
+  const { authenticated, returnTarget, returnLabel, signOut } = useAccountMenu();
   useLockBodyScroll(open);
 
   // On open, auto-expand whichever group (if any) contains the current page —
@@ -164,9 +166,30 @@ export function MobileMenu({ open, onClose, onOpenSearch }: MobileMenuProps) {
           >
             Start learning
           </Button>
-          <Link to="/login" className="mobile-menu__login" onClick={onClose}>
-            Login
-          </Link>
+          {authenticated ? (
+            <div className="mobile-menu__account">
+              <Link to="/portal/profile" className="mobile-menu__account-item" onClick={onClose}>
+                View profile
+              </Link>
+              <Link to={returnTarget} className="mobile-menu__account-item" onClick={onClose}>
+                {returnLabel}
+              </Link>
+              <button
+                type="button"
+                className="mobile-menu__account-item mobile-menu__account-item--danger"
+                onClick={() => {
+                  onClose();
+                  signOut();
+                }}
+              >
+                Sign out
+              </button>
+            </div>
+          ) : (
+            <Link to="/login" className="mobile-menu__login" onClick={onClose}>
+              Login
+            </Link>
+          )}
         </div>
 
         <div className="mobile-menu__utility">

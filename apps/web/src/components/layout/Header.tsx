@@ -6,6 +6,7 @@ import { SocialLinks } from '@/components/common/SocialLinks';
 import { MobileMenu } from './MobileMenu';
 import { SiteSearch } from './SiteSearch';
 import { Logo } from './Logo';
+import { HeaderAccount } from './HeaderAccount';
 import './header.css';
 
 interface HeaderProps {
@@ -227,9 +228,7 @@ export function Header({ overHero = false }: HeaderProps) {
                 <path d="M11 11l4.5 4.5" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
               </svg>
             </button>
-            <Link to="/login" className="site-header__login">
-              Login
-            </Link>
+            <HeaderAccount />
             <SocialLinks className="site-header__social" />
             <button
               className="site-header__burger"

@@ -332,6 +332,32 @@
   outline: none;
 }
 
+/* ---- Account: replaces .mobile-menu__login once a session exists ---- */
+.mobile-menu__account {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-2);
+}
+.mobile-menu__account-item {
+  font-family: 'Source Serif 4', var(--font-ui);
+  font-size: var(--fs-xs);
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--fg-muted);
+  padding: var(--space-2) var(--space-3);
+  transition: color var(--dur-fast) var(--ease-out);
+}
+.mobile-menu__account-item:hover,
+.mobile-menu__account-item:focus-visible {
+  color: var(--fg);
+  outline: none;
+}
+.mobile-menu__account-item--danger {
+  color: var(--red-tint);
+}
+
 .mobile-menu__utility {
   margin-top: var(--space-6);
   padding-top: var(--space-5);
@@ -397,6 +423,7 @@
   .mobile-menu__group a,
   .mobile-menu__icon,
   .mobile-menu__login,
+  .mobile-menu__account-item,
   .mobile-menu__cta-btn::before,
   .mobile-menu__social .social-links__link {
     transition: none;

@@ -319,6 +319,62 @@
   color: #fff;
 }
 
+/* ---- Account: replaces .site-header__login once a session exists ---- */
+.site-header__account {
+  position: relative;
+  display: none;
+}
+.site-header__account-toggle {
+  display: inline-grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  border-radius: var(--radius-pill);
+  color: inherit;
+  transition: background var(--dur-fast) var(--ease-out);
+}
+.site-header__account-toggle:hover,
+.site-header__account-toggle[aria-expanded='true'] {
+  background: var(--accent-wash);
+}
+.site-header__account-menu {
+  position: absolute;
+  top: calc(100% + 10px);
+  right: 0;
+  z-index: 10;
+  min-width: 180px;
+  padding: 0.35rem;
+  background: var(--surface-raised);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-panel);
+  color: var(--ink);
+}
+.site-header__account-item {
+  display: block;
+  width: 100%;
+  padding: 0.55rem 0.65rem;
+  border: 0;
+  background: none;
+  text-align: left;
+  font-family: var(--font-ui);
+  font-size: var(--fs-sm);
+  color: var(--ink-soft);
+  border-radius: var(--radius-sm);
+  transition: background var(--dur-fast) var(--ease-out);
+}
+.site-header__account-item:hover,
+.site-header__account-item:focus-visible {
+  background: var(--accent-wash);
+  outline: none;
+}
+.site-header__account-item--danger {
+  margin-top: 0.25rem;
+  padding-top: 0.65rem;
+  border-top: 1px solid var(--line);
+  color: var(--red-deep);
+}
+
 .site-header__social {
   display: none;
 }
@@ -366,6 +422,9 @@
   .site-header__login {
     display: inline-flex;
   }
+  .site-header__account {
+    display: inline-flex;
+  }
   .site-header__social {
     display: flex;
   }
@@ -385,6 +444,8 @@
   .site-header__panel-link::before,
   .site-header__panel-arrow,
   .site-header__search-toggle,
+  .site-header__account-toggle,
+  .site-header__account-item,
   .site-header__burger span {
     transition: none;
   }

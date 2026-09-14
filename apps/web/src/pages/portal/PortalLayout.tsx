@@ -8,6 +8,7 @@ import { Logo } from '@/components/layout/Logo';
 import { Toast } from '@/components/common/Toast';
 import { Avatar } from '@/components/common/Avatar';
 import { publicFileUrl } from '@/lib/storage';
+import { clearPortalReturn } from '@/lib/portalReturn';
 import { useLearner, greetingName } from './learnerData';
 import { PortalAtmosphere } from './PortalAtmosphere';
 import { PortalLoader } from './PortalLoader';
@@ -79,6 +80,12 @@ export default function PortalLayout() {
     setMenuOpen(false);
     setProfileMenuOpen(false);
   }, [location.pathname]);
+
+  // Back inside the portal shell -- whatever "Return to X" the public
+  // header was offering no longer applies until the next time they leave.
+  useEffect(() => {
+    clearPortalReturn();
+  }, []);
 
   // Focus management + Escape for the mobile nav.
   useEffect(() => {

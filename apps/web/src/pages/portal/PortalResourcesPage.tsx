@@ -4,8 +4,13 @@ import { RESOURCES } from '@/data/resources';
 import { editorialSections, shortCategory } from '@/lib/resourceEditorial';
 import { formatDate, pluralize, slugify } from '@/lib/format';
 import { Plate } from '@/components/primitives/Plate';
+import { markPortalExit } from '@/lib/portalReturn';
 import { PortalEmpty } from './PortalEmpty';
 import { ArrowRightIcon, BookIcon } from './content-icons';
+
+/** Every link here leaves the portal shell for the public resources site --
+ * mark it so the header can offer "Return to Resources" once there. */
+const leavePortal = () => markPortalExit('resources');
 
 const BY_DATE = [...RESOURCES].sort((a, b) => (a.publishedAt < b.publishedAt ? 1 : -1));
 const LEAD = BY_DATE.filter((r) => r.featured).slice(0, 1)[0] ?? BY_DATE[0];
@@ -23,7 +28,10 @@ export default function PortalResourcesPage() {
         <p className="portal-page__intro">
           Practical guides, technical explainers and career resources curated to help you keep
           progressing beyond your courses — the same library that sits behind{' '}
-          <Link to="/resources">AIIT Resources</Link>.
+          <Link to="/resources" onClick={leavePortal}>
+            AIIT Resources
+          </Link>
+          .
         </p>
       </header>
 
@@ -36,7 +44,7 @@ export default function PortalResourcesPage() {
       ) : (
         <>
           {LEAD ? (
-            <Link to={`/resources/${LEAD.slug}`} className="pres-lead" data-reveal>
+            <Link to={`/resources/${LEAD.slug}`} className="pres-lead" onClick={leavePortal} data-reveal>
               <div className="pres-lead__copy">
                 <span className="pres-lead__cat">{shortCategory(LEAD.category)}</span>
                 <h2 className="pres-lead__title">{LEAD.title}</h2>
@@ -61,7 +69,7 @@ export default function PortalResourcesPage() {
             <ul className="pres-stream" role="list">
               {STREAM.map((r) => (
                 <li key={r.id}>
-                  <Link to={`/resources/${r.slug}`} className="pres-stream__item">
+                  <Link to={`/resources/${r.slug}`} className="pres-stream__item" onClick={leavePortal}>
                     <span className="pres-stream__cat">{shortCategory(r.category)}</span>
                     <h3 className="pres-stream__title">{r.title}</h3>
                     <span className="pres-stream__meta">
@@ -79,7 +87,7 @@ export default function PortalResourcesPage() {
             <ul className="pres-topics" role="list">
               {sections.map((s) => (
                 <li key={s.name}>
-                  <Link to={`/resources?field=${slugify(s.short)}`} className="pres-topic">
+                  <Link to={`/resources?field=${slugify(s.short)}`} className="pres-topic" onClick={leavePortal}>
                     <span className="pres-topic__name">{s.name}</span>
                     <span className="pres-topic__count">
                       {s.count} {s.count === 1 ? 'resource' : 'resources'}

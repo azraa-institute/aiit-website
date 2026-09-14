@@ -66,6 +66,21 @@ export function SiteSearch({ open, onClose }: SiteSearchProps) {
 
   useEffect(() => setActive(0), [term]);
 
+  const pick = useCallback(
+    (to: string) => {
+      onClose();
+      navigate(to);
+    },
+    [onClose, navigate],
+  );
+
+  /* Shared by Enter and the field's submit button: open whichever result is
+     currently highlighted. */
+  const submit = useCallback(() => {
+    const r = flatResults[active];
+    if (r) pick(r.to);
+  }, [flatResults, active, pick]);
+
   /* ---- Open / close lifecycle ---- */
   useEffect(() => {
     if (open) {
@@ -118,11 +133,7 @@ export function SiteSearch({ open, onClose }: SiteSearchProps) {
         e.preventDefault();
         setActive((i) => Math.max(i - 1, 0));
       } else if (e.key === 'Enter') {
-        const r = flatResults[active];
-        if (r) {
-          onClose();
-          navigate(r.to);
-        }
+        submit();
       } else if (e.key === 'Tab') {
         const nodes = panelRef.current?.querySelectorAll<HTMLElement>(
           'a[href], button:not([disabled]), input, [tabindex]:not([tabindex="-1"])',
@@ -141,19 +152,11 @@ export function SiteSearch({ open, onClose }: SiteSearchProps) {
     };
     document.addEventListener('keydown', onKey);
     return () => document.removeEventListener('keydown', onKey);
-  }, [mounted, flatResults, active, navigate, onClose]);
+  }, [mounted, flatResults, active, onClose, submit]);
 
   useEffect(() => {
     listRef.current?.querySelector('[data-active="true"]')?.scrollIntoView({ block: 'nearest' });
   }, [active]);
-
-  const pick = useCallback(
-    (to: string) => {
-      onClose();
-      navigate(to);
-    },
-    [onClose, navigate],
-  );
 
   if (!mounted) return null;
 
@@ -194,14 +197,37 @@ export function SiteSearch({ open, onClose }: SiteSearchProps) {
             type="search"
             value={term}
             onChange={(e) => setTerm(e.target.value)}
-            placeholder="Search courses, resources and pages"
+            placeholder="Search courses, resources and pages…"
             aria-label="Search the site"
             aria-controls="site-search-results"
             autoComplete="off"
             autoCorrect="off"
             spellCheck={false}
           />
-          <span className="site-search__underline" aria-hidden="true" />
+          <span className="site-search__divider" aria-hidden="true" />
+          {/* Decorative only — no voice search is wired up yet. */}
+          <svg className="site-search__mic" width="18" height="18" viewBox="0 0 18 18" aria-hidden="true">
+            <rect x="6.5" y="1.5" width="5" height="8.5" rx="2.5" fill="none" stroke="currentColor" strokeWidth="1.4" />
+            <path
+              d="M3.5 8.5v.75a5.5 5.5 0 0 0 11 0V8.5M9 14.75v2M6.25 16.75h5.5"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="1.4"
+              strokeLinecap="round"
+            />
+          </svg>
+          <button
+            type="button"
+            className="site-search__submit"
+            onClick={submit}
+            disabled={flatResults.length === 0}
+            aria-label="Go to top result"
+          >
+            <svg width="16" height="16" viewBox="0 0 20 20" aria-hidden="true">
+              <circle cx="8.5" cy="8.5" r="6" fill="none" stroke="currentColor" strokeWidth="1.7" />
+              <path d="M13 13l5 5" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" />
+            </svg>
+          </button>
         </div>
 
         <div className="site-search__body" id="site-search-results" ref={listRef}>

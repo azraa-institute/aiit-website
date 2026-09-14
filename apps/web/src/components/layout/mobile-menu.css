@@ -155,7 +155,7 @@
   flex: 1;
   font-family: 'Source Serif 4', var(--font-display);
   font-weight: var(--fw-medium);
-  font-size: clamp(1.35rem, 1.12rem + 1.6vw, 1.8rem);
+  font-size: clamp(1rem, 0.9rem + 0.9vw, 1.25rem);
   line-height: 1.1;
   letter-spacing: var(--tracking-display);
   transition: transform var(--dur-base) var(--ease-out);
@@ -255,7 +255,7 @@
   display: block;
   padding: var(--space-3) 0 var(--space-3) calc(0.72rem + clamp(var(--space-3), 3.4vw, var(--space-5)));
   font-family: 'Source Serif 4', var(--font-ui);
-  font-size: var(--fs-body);
+  font-size: var(--fs-sm);
   color: var(--fg-muted);
   transition: color var(--dur-fast) var(--ease-out);
 }
@@ -318,7 +318,7 @@
 }
 .mobile-menu__login {
   font-family: 'Source Serif 4', var(--font-ui);
-  font-size: var(--fs-sm);
+  font-size: var(--fs-xs);
   font-weight: 600;
   letter-spacing: 0.08em;
   text-transform: uppercase;

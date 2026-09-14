@@ -9,8 +9,14 @@
    back toward the icon.
 
    Palette + type follow the site: warm ivory surface, near-black
-   text, one brass accent, Georgia for labels / metadata, Cormorant
-   Garamond (600) for the search headline and placeholder.
+   text, one brass accent. The field itself is a rounded bar (glass
+   icon, input, a decorative mic -- no voice search is wired up --
+   and a circular ink submit button) in the site's --font-ui,
+   --surface-raised/--ink palette. The "Search AIIT" label, the "Try"
+   eyebrow + result-group labels, and the pre-type suggestion rows
+   all use Source Serif 4 -- the same header-nav identity font --
+   instead of the old Cormorant Garamond (too delicate at this size)
+   and Georgia.
    ============================================================ */
 
 .site-search {
@@ -166,7 +172,11 @@
   padding: clamp(1rem, 2.4vw, 1.6rem) clamp(1.25rem, 3vw, 2rem) 0;
 }
 .site-search__label {
-  font-family: var(--font-accent);
+  /* Was Cormorant Garamond -- a delicate display italic never meant to run
+     this small (0.9rem), so it read thin/hard to see. Source Serif 4 has
+     a text-weight optical size built in, plus it matches the header's own
+     nav typeface now. */
+  font-family: 'Source Serif 4', var(--font-display);
   font-weight: 600;
   font-size: 0.9rem;
   letter-spacing: 0.08em;
@@ -198,15 +208,25 @@
   outline: none;
 }
 
-/* ---- Field: an open editorial input, no box ---- */
+/* ---- Field: a rounded search bar (glass icon, input, mic, submit
+   circle), in place of the old open editorial underline field. ---- */
 .site-search__field {
   position: relative;
   display: flex;
   align-items: center;
-  gap: clamp(0.6rem, 1.5vw, 1rem);
+  gap: clamp(0.55rem, 1.3vw, 0.85rem);
   margin: clamp(0.6rem, 1.6vw, 1.1rem) clamp(1.25rem, 3vw, 2rem) 0;
-  padding-bottom: clamp(0.75rem, 1.8vw, 1.15rem);
-  border-bottom: 1px solid var(--line-strong);
+  padding: 0.4rem 0.4rem 0.4rem clamp(1rem, 2vw, 1.25rem);
+  background: var(--surface-raised);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-pill);
+  transition:
+    border-color var(--dur-fast) var(--ease-out),
+    box-shadow var(--dur-fast) var(--ease-out);
+}
+.site-search__field:focus-within {
+  border-color: var(--accent-strong);
+  box-shadow: 0 0 0 3px var(--accent-wash);
 }
 .site-search__glass {
   flex-shrink: 0;
@@ -221,17 +241,16 @@
   min-width: 0;
   border: 0;
   background: transparent;
-  font-family: var(--font-accent);
-  font-weight: 600;
-  font-size: clamp(1.5rem, 1rem + 2.4vw, 2.4rem);
-  line-height: 1.15;
-  letter-spacing: 0.005em;
+  font-family: var(--font-ui);
+  font-weight: 400;
+  font-size: var(--fs-body);
+  line-height: 1.3;
   color: var(--fg);
-  padding: 0;
+  padding: 0.7rem 0;
 }
 .site-search__field input::placeholder {
   color: var(--fg-muted);
-  font-weight: 600;
+  font-weight: 400;
   opacity: 1;
 }
 .site-search__field input:focus {
@@ -242,19 +261,41 @@
   -webkit-appearance: none;
   display: none;
 }
-.site-search__underline {
-  position: absolute;
-  left: 0;
-  right: 0;
-  bottom: -1px;
-  height: 1.5px;
-  background: var(--accent-strong);
-  transform: scaleX(0);
-  transform-origin: left;
-  transition: transform 0.42s var(--ease-out);
+.site-search__divider {
+  flex-shrink: 0;
+  width: 1px;
+  height: 22px;
+  background: var(--line-strong);
 }
-.site-search__field:focus-within .site-search__underline {
-  transform: scaleX(1);
+.site-search__mic {
+  flex-shrink: 0;
+  color: var(--fg-faint);
+}
+@media (max-width: 420px) {
+  .site-search__divider,
+  .site-search__mic {
+    display: none;
+  }
+}
+.site-search__submit {
+  flex-shrink: 0;
+  display: inline-grid;
+  place-items: center;
+  width: 38px;
+  height: 38px;
+  border-radius: var(--radius-pill);
+  color: var(--paper);
+  background: var(--ink);
+  transition: background var(--dur-fast) var(--ease-out);
+}
+.site-search__submit:hover:not(:disabled),
+.site-search__submit:focus-visible {
+  background: var(--brass-deep);
+  outline: none;
+}
+.site-search__submit:disabled {
+  opacity: 0.35;
+  cursor: default;
 }
 
 /* ---- Body ---- */
@@ -269,7 +310,7 @@
 /* ---- "Try" shortcuts — editorial rows, not chips ---- */
 .site-search__try-label,
 .site-search__group-label {
-  font-family: var(--font-ui);
+  font-family: 'Source Serif 4', var(--font-ui);
   font-size: var(--fs-eyebrow);
   font-weight: var(--fw-strong);
   letter-spacing: var(--tracking-eyebrow);
@@ -292,7 +333,7 @@
   gap: var(--space-4);
   padding: 0.62rem 0.85rem;
   text-align: left;
-  font-family: var(--font-display);
+  font-family: 'Source Serif 4', var(--font-display);
   font-size: var(--fs-body);
   color: var(--fg-soft);
   border: 1px solid var(--line);
@@ -454,9 +495,6 @@
     margin: calc(var(--ab-h) + var(--header-h) + 0.5rem) clamp(0.6rem, 3vw, 1rem) 0;
     max-height: calc(100dvh - var(--ab-h) - var(--header-h) - 1.5rem);
   }
-  .site-search__field input {
-    font-size: clamp(1.35rem, 1rem + 4vw, 1.9rem);
-  }
   .site-search__result {
     grid-template-columns: 1fr auto;
     grid-template-areas:
@@ -501,8 +539,9 @@
   }
   .site-search__suggestion,
   .site-search__suggestion svg,
-  .site-search__underline,
+  .site-search__field,
   .site-search__glass,
+  .site-search__submit,
   .site-search__result,
   .site-search__result::before,
   .site-search__result-arrow,

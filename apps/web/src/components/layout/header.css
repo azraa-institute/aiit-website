@@ -289,6 +289,7 @@
 
 .site-header__login {
   display: none;
+  font-family: 'Source Serif 4', var(--font-display);
   font-size: var(--fs-sm);
   font-weight: var(--fw-medium);
   position: relative;

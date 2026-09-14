@@ -61,7 +61,7 @@ export const WEBINARS: Webinar[] = [
       'Partners and associations who want to introduce these programmes to their members',
     ],
     registrationUrl: '/webinar#register',
-    image: '/assets/webinar/aiit-free-webinar-v2.webp',
+    image: '/assets/webinar/aiit-free-webinar.webp',
     status: 'upcoming',
     featured: true,
   },
@@ -91,6 +91,6 @@ export const LIVE_EVENTS: LiveEvent[] = [
     speaker: 'AIIT Academy',
     registrationOpen: true,
     registrationUrl: '/webinar#register',
-    image: '/assets/webinar/aiit-free-webinar-v2.webp',
+    image: '/assets/webinar/aiit-free-webinar.webp',
   },
 ];

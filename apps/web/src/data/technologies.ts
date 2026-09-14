@@ -36,7 +36,7 @@ export const TECHNOLOGY_DOMAINS: TechnologyDomain[] = [
     motif: 'lattice',
     order: 0,
     primary: true,
-    image: '/assets/courses/ai-engineering-v2.jpg',
+    image: '/assets/courses/ai-engineering.jpg',
     courseCategoryIds: ['cat-ai'],
   },
   {
@@ -49,7 +49,7 @@ export const TECHNOLOGY_DOMAINS: TechnologyDomain[] = [
     motif: 'flow',
     order: 1,
     primary: true,
-    image: '/assets/courses/data-sci-and-analytics-v2.jpg',
+    image: '/assets/courses/data-sci-and-analytics.jpg',
     courseCategoryIds: ['cat-data'],
   },
   {
@@ -62,7 +62,7 @@ export const TECHNOLOGY_DOMAINS: TechnologyDomain[] = [
     motif: 'depth',
     order: 2,
     primary: true,
-    image: '/assets/courses/cloud-computing-fundamentals-v2.jpg',
+    image: '/assets/courses/cloud-computing-fundamentals.jpg',
     courseCategoryIds: ['cat-cloud'],
   },
   {
@@ -75,7 +75,7 @@ export const TECHNOLOGY_DOMAINS: TechnologyDomain[] = [
     motif: 'horizon',
     order: 3,
     primary: true,
-    image: '/assets/courses/quantum-computing-fundamentals-v2.jpg',
+    image: '/assets/courses/quantum-computing-fundamentals.jpg',
     courseCategoryIds: ['cat-quantum'],
   },
   {
@@ -88,7 +88,7 @@ export const TECHNOLOGY_DOMAINS: TechnologyDomain[] = [
     motif: 'signal',
     order: 4,
     primary: true,
-    image: '/assets/courses/edge-server-computing-v2.jpg',
+    image: '/assets/courses/edge-server-computing.jpg',
     courseCategoryIds: ['cat-edge'],
   },
   {
@@ -101,7 +101,7 @@ export const TECHNOLOGY_DOMAINS: TechnologyDomain[] = [
     motif: 'strata',
     order: 6,
     primary: false,
-    image: '/assets/courses/cisco-ccna-cisco-certified-network-associate-v2.jpg',
+    image: '/assets/courses/cisco-ccna-cisco-certified-network-associate.jpg',
     courseCategoryIds: ['cat-security'],
   },
   {
@@ -114,7 +114,7 @@ export const TECHNOLOGY_DOMAINS: TechnologyDomain[] = [
     motif: 'field',
     order: 7,
     primary: false,
-    image: '/assets/courses/blockchain-technology-v2.jpg',
+    image: '/assets/courses/blockchain-technology.jpg',
     courseCategoryIds: ['cat-blockchain'],
   },
   {

@@ -27,7 +27,7 @@ export const COURSES: Course[] = [
     enrolled: 76,
     statuses: ['special', 'featured'],
     instructorId: 'ins-aiit',
-    image: '/assets/courses/ai-engineering-v2.jpg',
+    image: '/assets/courses/ai-engineering.jpg',
     outcomes: [
       'Understand Artificial Intelligence concepts and workflows',
       'Develop machine learning models for predictive analytics',
@@ -84,7 +84,7 @@ export const COURSES: Course[] = [
     enrolled: 66,
     statuses: ['hot'],
     instructorId: 'ins-aiit',
-    image: '/assets/courses/generative-ai-and-large-language-models-llms-v2.jpg',
+    image: '/assets/courses/generative-ai-and-large-language-models-llms.jpg',
     outcomes: [
       'Understand Generative AI concepts and applications',
       'Explain how Large Language Models (LLMs) work',
@@ -139,7 +139,7 @@ export const COURSES: Course[] = [
     enrolled: 60,
     statuses: ['special'],
     instructorId: 'ins-aiit',
-    image: '/assets/courses/data-sci-and-analytics-v2.jpg',
+    image: '/assets/courses/data-sci-and-analytics.jpg',
     outcomes: [
       'Understand the fundamentals of Data Science and Analytics',
       'Collect, clean, and prepare datasets for analysis',
@@ -194,7 +194,7 @@ export const COURSES: Course[] = [
     enrolled: 295,
     statuses: ['featured'],
     instructorId: 'ins-aiit',
-    image: '/assets/courses/cloud-computing-fundamentals-v2.jpg',
+    image: '/assets/courses/cloud-computing-fundamentals.jpg',
     outcomes: [
       'Understand how cloud infrastructure works',
       'Explain the IaaS, PaaS and SaaS service models',
@@ -231,7 +231,7 @@ export const COURSES: Course[] = [
     enrolled: 65,
     statuses: ['featured'],
     instructorId: 'ins-aiit',
-    image: '/assets/courses/edge-server-computing-v2.jpg',
+    image: '/assets/courses/edge-server-computing.jpg',
     outcomes: [
       'Understand edge computing architecture',
       'Differentiate cloud, fog, and edge computing',
@@ -269,7 +269,7 @@ export const COURSES: Course[] = [
     enrolled: 57,
     statuses: ['hot'],
     instructorId: 'ins-aiit',
-    image: '/assets/courses/quantum-computing-fundamentals-v2.jpg',
+    image: '/assets/courses/quantum-computing-fundamentals.jpg',
     outcomes: [
       'Understand quantum computing principles',
       'Differentiate classical and quantum computing',
@@ -307,7 +307,7 @@ export const COURSES: Course[] = [
     enrolled: 76,
     statuses: ['featured', 'special'],
     instructorId: 'ins-aiit',
-    image: '/assets/courses/cisco-ccna-cisco-certified-network-associate-v2.jpg',
+    image: '/assets/courses/cisco-ccna-cisco-certified-network-associate.jpg',
     outcomes: [
       'Configure, manage and troubleshoot Cisco networks',
       'Master Network Fundamentals and Network Access',
@@ -346,7 +346,7 @@ export const COURSES: Course[] = [
     enrolled: 49,
     statuses: ['hot'],
     instructorId: 'ins-aiit',
-    image: '/assets/courses/ethical-hacking-cyber-security-by-aiit-network-v2.jpg',
+    image: '/assets/courses/ethical-hacking-cyber-security-by-aiit-network.jpg',
     outcomes: [
       'Understand core cyber security concepts',
       'Perform reconnaissance and vulnerability scanning',
@@ -383,7 +383,7 @@ export const COURSES: Course[] = [
     enrolled: 70,
     statuses: ['featured'],
     instructorId: 'ins-aiit',
-    image: '/assets/courses/blockchain-technology-v2.jpg',
+    image: '/assets/courses/blockchain-technology.jpg',
     outcomes: [
       'Understand blockchain architecture and how blockchain networks work',
       'Explain consensus mechanisms',

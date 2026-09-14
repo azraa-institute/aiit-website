@@ -1,0 +1,527 @@
+/* ============================================================
+   TERMS BOOK — the interactive-document presentation for /terms only.
+   Privacy Policy keeps the conventional scrolling LegalDocument (see
+   legal-document.css) -- this page is a deliberate departure: an
+   editorial "institutional publication" read one page at a time, styled
+   entirely from the site's own tokens (paper/ivory/ink/brass, Source
+   Serif 4 for headings, Google Sans for UI) rather than any new palette.
+   ============================================================ */
+
+.termsbook {
+  /* A step warmer/deeper than the page's own --paper background, so the
+     stage the document sits in reads as a distinct "room" the page is
+     resting in -- the brief's "enough contrast for the document to stand
+     out" -- without introducing a new color outside the token set. */
+  background: var(--ivory-deep);
+  padding-block: clamp(3rem, 2rem + 4vw, 5.5rem) clamp(3.5rem, 2.5rem + 5vw, 6.5rem);
+  border-bottom: 1px solid var(--line);
+}
+
+.termsbook__intro {
+  max-width: 640px;
+  margin-inline: auto;
+  text-align: center;
+}
+.termsbook__eyebrow {
+  justify-content: center;
+}
+.termsbook__intro-text {
+  margin-top: var(--space-4);
+  font-size: var(--fs-lead);
+  line-height: 1.6;
+  color: var(--fg-soft);
+}
+
+/* ---- Stage + stack ---- */
+.termsbook__stage {
+  margin-top: clamp(2.5rem, 2rem + 3vw, 4rem);
+}
+.termsbook__leaves {
+  position: relative;
+  max-width: 720px;
+  margin-inline: auto;
+  padding: 44px 22px 56px;
+}
+
+.termsbook__leaf {
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+}
+.termsbook__leaf--back-1,
+.termsbook__leaf--back-2 {
+  position: absolute;
+  inset: 0;
+  box-shadow: var(--shadow-panel);
+  pointer-events: none;
+}
+.termsbook__leaf--back-2 {
+  top: 40px;
+  right: 4px;
+  bottom: 16px;
+  left: 32px;
+  background: var(--ivory);
+  transform: rotate(-2.2deg);
+  opacity: 0.55;
+  z-index: 1;
+}
+.termsbook__leaf--back-1 {
+  top: 26px;
+  right: 14px;
+  bottom: 22px;
+  left: 18px;
+  background: var(--surface);
+  transform: rotate(1.4deg);
+  opacity: 0.8;
+  z-index: 2;
+}
+.termsbook__ruled {
+  width: 60%;
+  height: auto;
+  margin: 20% auto 0;
+  color: var(--line-strong);
+  stroke: currentColor;
+  stroke-width: 2;
+}
+
+.termsbook__leaf--active {
+  position: relative;
+  z-index: 3;
+  background: var(--paper);
+  box-shadow: var(--shadow-lift);
+  padding: clamp(2rem, 1.5rem + 2.5vw, 3.5rem) clamp(1.5rem, 1rem + 3vw, 4rem);
+  min-height: 420px;
+}
+
+/* Radial paper grain -- extremely fine, restrained; a texture, not a
+   demo of one. Invisible unless you're close to the screen. */
+.termsbook__leaf--active::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background-image: radial-gradient(circle at 1px 1px, rgba(20, 17, 15, 0.025) 1px, transparent 0);
+  background-size: 3px 3px;
+  pointer-events: none;
+}
+
+/* ---- Page-turn entrance (the active leaf only; the two back leaves stay
+   still, ambient depth -- the brief's "controlled, professional", not a
+   full-stack choreography). --enter-x is a custom property, not a bare
+   28px in the keyframes, so it can shrink on narrow screens (below) --
+   at 320-375px the leaves container's own side padding is only ~10px,
+   and transforms do factor into the page's scrollable-overflow region
+   mid-animation, so the full desktop distance briefly pushed the leaf
+   past the viewport edge for a fraction of the transition. */
+.termsbook__leaf--active {
+  --enter-x: 28px;
+}
+@keyframes termsbook-enter-next {
+  from {
+    opacity: 0;
+    transform: translateX(var(--enter-x)) rotate(1.4deg) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0) rotate(0deg) scale(1);
+  }
+}
+@keyframes termsbook-enter-prev {
+  from {
+    opacity: 0;
+    transform: translateX(calc(-1 * var(--enter-x))) rotate(-1.4deg) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0) rotate(0deg) scale(1);
+  }
+}
+.termsbook__leaf--active.is-entering-next {
+  animation: termsbook-enter-next 520ms var(--ease-out);
+}
+.termsbook__leaf--active.is-entering-prev {
+  animation: termsbook-enter-prev 520ms var(--ease-out);
+}
+/* prefers-reduced-motion: a plain, brief fade -- not the page-turn
+   transform, but still a real transition, not a silent jump-cut. */
+@keyframes termsbook-enter-reduced {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+.termsbook__leaf--active.is-reduced {
+  animation: termsbook-enter-reduced 150ms linear;
+}
+
+/* ---- Cover ---- */
+.termsbook__cover {
+  text-align: center;
+  padding-block: clamp(1rem, 0.5rem + 2vw, 2rem);
+}
+.termsbook__cover-logo {
+  height: 34px;
+  width: auto;
+  margin-inline: auto;
+}
+.termsbook__cover-kicker {
+  margin-top: var(--space-4);
+  font-family: var(--font-ui);
+  font-size: var(--fs-eyebrow);
+  font-weight: 700;
+  letter-spacing: var(--tracking-eyebrow);
+  text-transform: uppercase;
+  color: var(--fg-muted);
+}
+.termsbook__cover-rule {
+  width: 56px;
+  height: 1px;
+  margin: var(--space-5) auto;
+  background: var(--brass);
+}
+.termsbook__cover-title {
+  font-family: 'Source Serif 4', var(--font-display);
+  font-weight: 600;
+  font-size: clamp(1.9rem, 1.5rem + 2.2vw, 3.4rem);
+  line-height: 1.14;
+  letter-spacing: -0.005em;
+  color: var(--ink);
+}
+.termsbook__cover-title:focus-visible {
+  outline: none;
+}
+.termsbook__cover-effective {
+  margin-top: var(--space-5);
+  font-family: var(--font-ui);
+  font-size: var(--fs-sm);
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  color: var(--brass-deep);
+}
+.termsbook__cover-hint {
+  margin: var(--space-6) auto 0;
+  max-width: 46ch;
+  font-size: var(--fs-sm);
+  line-height: 1.65;
+  color: var(--fg-soft);
+}
+
+/* ---- Content pages ---- */
+.termsbook__page-head {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-4);
+  padding-bottom: var(--space-5);
+  border-bottom: 1px solid var(--line);
+}
+.termsbook__folio {
+  font-family: var(--font-ui);
+  font-size: var(--fs-eyebrow);
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  color: var(--brass-deep);
+  font-variant-numeric: tabular-nums;
+}
+.termsbook__page-title {
+  font-family: 'Source Serif 4', var(--font-display);
+  font-weight: 600;
+  font-size: clamp(1.4rem, 1.2rem + 1vw, 1.9rem);
+  letter-spacing: -0.005em;
+  color: var(--ink);
+}
+.termsbook__page-title:focus-visible {
+  outline: none;
+}
+
+.termsbook__page-body {
+  margin-top: var(--space-6);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-7);
+}
+.termsbook__section-title {
+  font-family: var(--font-ui);
+  font-size: var(--fs-sm);
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--fg-muted);
+  margin-bottom: var(--space-3);
+}
+.termsbook__page-body p {
+  font-size: 1.0625rem;
+  line-height: 1.72;
+  color: var(--ink-soft);
+}
+.termsbook__page-body p + p {
+  margin-top: var(--space-3);
+}
+.termsbook__lead {
+  font-weight: 600;
+  color: var(--ink);
+}
+.termsbook__group {
+  margin-top: var(--space-3);
+}
+.termsbook__group-label {
+  font-size: var(--fs-xs);
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--fg-faint);
+  margin-bottom: var(--space-2);
+}
+.termsbook__list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  margin-top: var(--space-2);
+  padding-left: 1.2em;
+}
+.termsbook__list li {
+  font-size: 1.0625rem;
+  line-height: 1.65;
+  color: var(--ink-soft);
+  list-style: disc;
+}
+.termsbook__clause {
+  margin-top: var(--space-4);
+  padding: var(--space-4) var(--space-5);
+  background: var(--accent-wash);
+  border-left: 2px solid var(--brass);
+  border-radius: var(--radius-sm);
+  font-size: var(--fs-sm);
+  line-height: 1.6;
+  color: var(--ink-soft);
+}
+.termsbook__clause-label {
+  display: block;
+  margin-bottom: var(--space-2);
+  font-family: var(--font-ui);
+  font-size: var(--fs-xs);
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--brass-deep);
+}
+.termsbook__closing {
+  font-size: var(--fs-sm);
+  color: var(--fg-muted);
+}
+.termsbook__closing + .termsbook__closing {
+  margin-top: var(--space-2);
+}
+
+.termsbook__page-foot {
+  margin-top: var(--space-7);
+  padding-top: var(--space-4);
+  border-top: 1px solid var(--line);
+  font-family: var(--font-ui);
+  font-size: var(--fs-xs);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--fg-faint);
+  font-variant-numeric: tabular-nums;
+}
+
+/* ---- Controls ---- */
+.termsbook__controls {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: clamp(1rem, 0.6rem + 2vw, 2.5rem);
+  margin-top: clamp(2rem, 1.5rem + 2vw, 3rem);
+  flex-wrap: wrap;
+}
+
+.termsbook__nav-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-family: var(--font-ui);
+  font-size: var(--fs-sm);
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  color: var(--ink-soft);
+  padding: var(--space-2) 0;
+  transition:
+    color var(--dur-fast) var(--ease-out),
+    gap var(--dur-fast) var(--ease-out);
+}
+.termsbook__nav-btn svg {
+  transition: transform var(--dur-fast) var(--ease-out);
+}
+.termsbook__nav-btn:hover:not(:disabled),
+.termsbook__nav-btn:focus-visible:not(:disabled) {
+  color: var(--ink);
+  outline: none;
+}
+.termsbook__nav-btn:hover:not(:disabled) svg,
+.termsbook__nav-btn:focus-visible:not(:disabled) svg {
+  transform: translateX(3px);
+}
+.termsbook__nav-btn:first-child:hover:not(:disabled) svg,
+.termsbook__nav-btn:first-child:focus-visible:not(:disabled) svg {
+  transform: translateX(-3px);
+}
+.termsbook__nav-btn:disabled {
+  color: var(--fg-faint);
+  cursor: default;
+}
+
+.termsbook__counter {
+  font-family: var(--font-ui);
+  font-size: var(--fs-xs);
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--fg-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+/* ---- Contents (TOC) ---- */
+.termsbook__toc-wrap {
+  position: relative;
+}
+.termsbook__toc-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-family: var(--font-ui);
+  font-size: var(--fs-sm);
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  color: var(--ink-soft);
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-pill);
+  transition:
+    background var(--dur-fast) var(--ease-out),
+    color var(--dur-fast) var(--ease-out);
+}
+.termsbook__toc-toggle:hover,
+.termsbook__toc-toggle:focus-visible {
+  background: var(--accent-wash);
+  color: var(--ink);
+  outline: none;
+}
+.termsbook__toc-chevron {
+  width: 12px;
+  height: 12px;
+  transition: transform var(--dur-base) var(--ease-out);
+}
+.termsbook__toc-chevron.is-open {
+  transform: rotate(180deg);
+}
+
+.termsbook__toc-panel {
+  position: absolute;
+  bottom: calc(100% + 10px);
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 20;
+  width: max-content;
+  min-width: 240px;
+  max-width: min(320px, calc(100vw - 2 * var(--gutter)));
+  max-height: min(360px, 60vh);
+  overflow-y: auto;
+  padding: var(--space-3);
+  background: var(--surface-raised);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-panel);
+}
+.termsbook__toc-panel ol {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.termsbook__toc-panel button {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  width: 100%;
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-sm);
+  text-align: left;
+  font-family: var(--font-ui);
+  font-size: var(--fs-sm);
+  color: var(--ink-soft);
+  transition: background var(--dur-fast) var(--ease-out);
+}
+.termsbook__toc-panel button:hover,
+.termsbook__toc-panel button:focus-visible {
+  background: var(--accent-wash);
+  outline: none;
+}
+.termsbook__toc-panel button.is-active {
+  color: var(--accent-strong);
+  font-weight: 600;
+}
+.termsbook__toc-num {
+  flex-shrink: 0;
+  width: 1.4em;
+  font-size: var(--fs-xs);
+  color: var(--fg-faint);
+  font-variant-numeric: tabular-nums;
+}
+
+/* ---- Responsive ---- */
+@media (max-width: 640px) {
+  .termsbook__leaves {
+    padding: 26px 10px 34px;
+  }
+  .termsbook__leaf--back-2 {
+    top: 22px;
+    right: 2px;
+    bottom: 10px;
+    left: 16px;
+  }
+  .termsbook__leaf--back-1 {
+    top: 14px;
+    right: 6px;
+    bottom: 14px;
+    left: 8px;
+  }
+  .termsbook__leaf--active {
+    padding: clamp(1.5rem, 1.2rem + 2vw, 2rem) clamp(1.1rem, 0.9rem + 2vw, 1.5rem);
+    min-height: 320px;
+    --enter-x: 8px;
+  }
+  .termsbook__controls {
+    gap: var(--space-4);
+  }
+  .termsbook__nav-btn span {
+    display: none;
+  }
+}
+
+@media (min-width: 700px) {
+  .termsbook__page-body {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    column-gap: clamp(2rem, 1.5rem + 2vw, 3rem);
+    row-gap: var(--space-7);
+    align-items: start;
+  }
+  .termsbook__page-body .termsbook__closing {
+    grid-column: 1 / -1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .termsbook__leaf--active.is-entering-next,
+  .termsbook__leaf--active.is-entering-prev {
+    animation: none;
+  }
+  .termsbook__nav-btn,
+  .termsbook__nav-btn svg,
+  .termsbook__toc-toggle,
+  .termsbook__toc-chevron,
+  .termsbook__toc-panel button {
+    transition: none;
+  }
+}

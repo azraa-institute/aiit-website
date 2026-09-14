@@ -10,9 +10,11 @@
 
    Palette + type follow the site: warm ivory surface, near-black
    text, one brass accent. The field itself is a rounded bar (glass
-   icon, input, a decorative mic -- no voice search is wired up --
-   and a circular ink submit button) in the site's --font-ui,
-   --surface-raised/--ink palette. The "Search AIIT" label, the "Try"
+   icon, input, a mic button wired to the browser's SpeechRecognition
+   API via useVoiceSearch.ts -- rendered only where that API exists,
+   pulses red while listening -- and a circular ink submit button) in
+   the site's --font-ui, --surface-raised/--ink palette. The "Search
+   AIIT" label, the "Try"
    eyebrow + result-group labels, and the pre-type suggestion rows
    all use Source Serif 4 -- the same header-nav identity font --
    instead of the old Cormorant Garamond (too delicate at this size)
@@ -269,7 +271,35 @@
 }
 .site-search__mic {
   flex-shrink: 0;
+  display: inline-grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  border-radius: var(--radius-pill);
   color: var(--fg-faint);
+  transition:
+    color var(--dur-fast) var(--ease-out),
+    background var(--dur-fast) var(--ease-out);
+}
+.site-search__mic:hover,
+.site-search__mic:focus-visible {
+  color: var(--accent-strong);
+  background: var(--accent-wash);
+  outline: none;
+}
+.site-search__mic[data-listening] {
+  color: var(--red);
+  background: rgba(192, 43, 35, 0.1);
+  animation: search-mic-pulse 1.4s var(--ease-in-out) infinite;
+}
+@keyframes search-mic-pulse {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 rgba(192, 43, 35, 0.22);
+  }
+  50% {
+    box-shadow: 0 0 0 6px rgba(192, 43, 35, 0);
+  }
 }
 @media (max-width: 420px) {
   .site-search__divider,
@@ -537,10 +567,14 @@
     opacity: 1;
     transform: none;
   }
+  .site-search__mic[data-listening] {
+    animation: none;
+  }
   .site-search__suggestion,
   .site-search__suggestion svg,
   .site-search__field,
   .site-search__glass,
+  .site-search__mic,
   .site-search__submit,
   .site-search__result,
   .site-search__result::before,

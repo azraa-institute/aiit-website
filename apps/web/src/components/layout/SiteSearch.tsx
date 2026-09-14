@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useLockBodyScroll } from '@/lib/useLockBodyScroll';
 import { useReducedMotion } from '@/lib/useReducedMotion';
+import { useVoiceSearch } from '@/lib/useVoiceSearch';
 import { searchSite, splitMatch, SEARCH_TYPE_ORDER, type SearchType } from '@/lib/siteSearch';
 import './site-search.css';
 
@@ -81,6 +82,9 @@ export function SiteSearch({ open, onClose }: SiteSearchProps) {
     if (r) pick(r.to);
   }, [flatResults, active, pick]);
 
+  const handleTranscript = useCallback((transcript: string) => setTerm(transcript), []);
+  const voice = useVoiceSearch({ onTranscript: handleTranscript });
+
   /* ---- Open / close lifecycle ---- */
   useEffect(() => {
     if (open) {
@@ -107,6 +111,7 @@ export function SiteSearch({ open, onClose }: SiteSearchProps) {
     }
     // closing
     setEntered(false);
+    voice.stop();
     const btn = document.querySelector<HTMLElement>('.site-header__search-toggle');
     const unmount = window.setTimeout(() => setMounted(false), reduced ? 0 : CLOSE_MS);
     const refocus = window.setTimeout(() => btn?.focus(), reduced ? 0 : CLOSE_MS);
@@ -196,7 +201,10 @@ export function SiteSearch({ open, onClose }: SiteSearchProps) {
             ref={inputRef}
             type="search"
             value={term}
-            onChange={(e) => setTerm(e.target.value)}
+            onChange={(e) => {
+              voice.stop();
+              setTerm(e.target.value);
+            }}
             placeholder="Search courses, resources and pages…"
             aria-label="Search the site"
             aria-controls="site-search-results"
@@ -205,17 +213,36 @@ export function SiteSearch({ open, onClose }: SiteSearchProps) {
             spellCheck={false}
           />
           <span className="site-search__divider" aria-hidden="true" />
-          {/* Decorative only — no voice search is wired up yet. */}
-          <svg className="site-search__mic" width="18" height="18" viewBox="0 0 18 18" aria-hidden="true">
-            <rect x="6.5" y="1.5" width="5" height="8.5" rx="2.5" fill="none" stroke="currentColor" strokeWidth="1.4" />
-            <path
-              d="M3.5 8.5v.75a5.5 5.5 0 0 0 11 0V8.5M9 14.75v2M6.25 16.75h5.5"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="1.4"
-              strokeLinecap="round"
-            />
-          </svg>
+          {voice.supported && (
+            <button
+              type="button"
+              className="site-search__mic"
+              data-listening={voice.listening || undefined}
+              onClick={voice.toggle}
+              aria-pressed={voice.listening}
+              aria-label={voice.listening ? 'Stop voice search' : 'Search by voice'}
+            >
+              <svg width="18" height="18" viewBox="0 0 18 18" aria-hidden="true">
+                <rect x="6.5" y="1.5" width="5" height="8.5" rx="2.5" fill="none" stroke="currentColor" strokeWidth="1.4" />
+                <path
+                  d="M3.5 8.5v.75a5.5 5.5 0 0 0 11 0V8.5M9 14.75v2M6.25 16.75h5.5"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="1.4"
+                  strokeLinecap="round"
+                />
+              </svg>
+            </button>
+          )}
+          <span className="visually-hidden" aria-live="polite">
+            {voice.status === 'listening'
+              ? 'Listening…'
+              : voice.status === 'denied'
+                ? 'Microphone access denied.'
+                : voice.status === 'no-speech'
+                  ? "Didn't catch that."
+                  : ''}
+          </span>
           <button
             type="button"
             className="site-search__submit"

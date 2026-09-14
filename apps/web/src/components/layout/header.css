@@ -56,6 +56,9 @@
 /* ---- Desktop nav ---- */
 .site-header__nav {
   display: none;
+  /* A deliberate departure from --font-ui (Google Sans) for just the
+     primary nav labels -- Source Serif 4, per the owner's choice. */
+  font-family: 'Source Serif 4', var(--font-display);
 }
 
 .site-header__nav > ul {

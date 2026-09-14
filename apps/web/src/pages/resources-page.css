@@ -23,7 +23,7 @@
 
 .res-kicker {
   display: block;
-  font-family: var(--font-ui);
+  font-family: var(--res-serif);
   font-size: var(--fs-eyebrow);
   font-weight: 700;
   letter-spacing: 0.24em;

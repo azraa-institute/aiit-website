@@ -19,6 +19,13 @@
   background: var(--paper);
 }
 
+/* The shared .eyebrow utility (global.css) went to Source Serif 4 for the
+   public site's editorial pages; the portal stays on plain --font-ui, its
+   own established typeface for every label here. */
+.portal .eyebrow {
+  font-family: var(--font-ui);
+}
+
 @media (min-width: 1024px) {
   .portal {
     display: grid;

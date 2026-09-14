@@ -5,13 +5,20 @@
    "Advantage Map" alternating text/panel treatment, an
    indexed "Certification Atlas", and a dark closing statement.
    Source Serif 4 is scoped to this page only (see
-   index.html), same pattern as Affiliate/Blueprint/homepage.
+   index.html), same pattern as Affiliate/Blueprint/homepage --
+   the hero's italic emphasis and eyebrow labels, the reasons/
+   tracks section titles, and the discipline-list names (which
+   already carried --tracking-display, a serif-heading treatment,
+   despite inheriting the plain --font-ui body font before this).
    ============================================================ */
 
 .wj-hero__emphasis,
 .wj-reasons__title,
 .wj-tracks__title,
-.wj-final__heading em {
+.wj-final__heading em,
+.wj-hero__eyebrow,
+.wj-hero__disciplines-label,
+.wj-hero__discipline-name-inner {
   font-family: 'Source Serif 4', var(--font-display);
 }
 

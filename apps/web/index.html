@@ -13,32 +13,32 @@
       as="image"
       href="/assets/brand/azraa-institute-of-information-technology-official-logo-black.png"
     />
-    <!-- Cormorant Garamond: italic weights for the homepage "learner's
-         journey" cursive accent; upright 600/700 added for the Affiliate
-         page's editorial headings (bold enough to stay readable at display
-         size — see affiliate-page.css). Google Sans: the site's UI/body
-         typeface (--font-ui in tokens.css) -- headings stay on native
-         Georgia (--font-display), everything else (body copy, buttons,
-         forms) uses Google Sans, a free OFL-licensed geometric sans (in
-         the same family as Grok's Universal Sans, which isn't freely
-         licensed). Source Serif 4: the header nav, on both desktop and
-         mobile -- site-header__nav's primary nav labels and
-         site-header__login (header.css), plus their mobile-menu
-         equivalents mobile-menu__label, mobile-menu__login and the
-         expanded submenu links under mobile-menu__group a
-         (mobile-menu.css); also the site search overlay's
-         site-search__label, site-search__try-label /
-         site-search__group-label and site-search__suggestion
-         (site-search.css), so the search surface carries the same nav
-         identity; also the homepage roadmap's AIIT Advantage bar --
-         advantage-bar__label and advantage-bar__text, numbers included
-         via inheritance (learning-ecosystem.css). A deliberate serif
-         departure from --font-ui/--font-accent in all of those spots,
-         not used anywhere else. -->
+    <!-- Google Sans: the site's UI/body typeface (--font-ui in tokens.css)
+         -- headings stay on native Georgia (--font-display), everything
+         else (body copy, buttons, forms) uses Google Sans, a free
+         OFL-licensed geometric sans (in the same family as Grok's
+         Universal Sans, which isn't freely licensed).
+
+         Source Serif 4: the site's one deliberate accent/editorial serif
+         (--font-accent in tokens.css), used everywhere a page wants a
+         serif departure from --font-ui/--font-display -- was Cormorant
+         Garamond until the whole site was swept over to Source Serif 4
+         (2026-09) for one consistent accent identity. Loaded as the full
+         variable range (upright + italic, weight 200-900) rather than
+         enumerating specific static weights, since usages span everything
+         from italic 500 script accents to upright 700 display headings:
+         the header nav + mobile menu (header.css, mobile-menu.css), the
+         site search overlay (site-search.css), the homepage roadmap's
+         AIIT Advantage bar (learning-ecosystem.css) and Learner's Journey
+         accent words (vision-journey.css), the student-stories quote
+         marks/script annotations, and the Affiliate/Blueprint/Why-Join/
+         Resources pages' editorial headings (each scoped to its own page
+         via a literal font-family, not --font-accent, per the comment at
+         the top of that page's CSS). -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
-      href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,600;0,700;1,500;1,600&family=Google+Sans:ital,opsz,wght@0,17..18,400..700;1,17..18,400..700&family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,600;1,8..60,400&display=swap"
+      href="https://fonts.googleapis.com/css2?family=Google+Sans:ital,opsz,wght@0,17..18,400..700;1,17..18,400..700&family=Source+Serif+4:ital,opsz,wght@0,8..60,200..900;1,8..60,200..900&display=swap"
       rel="stylesheet"
     />
     <style>

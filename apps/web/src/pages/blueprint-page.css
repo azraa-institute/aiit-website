@@ -2,9 +2,9 @@
    AIIT BLUEPRINT — "your academic passport." An original visual
    language: a single branching pathway (not a map), an editorial
    destination list, a numbered global-pathway sequence, and an
-   archival document treatment for the visa notice. Cormorant
-   Garamond is scoped to this page only (see index.html), same
-   pattern as the Affiliate and homepage-transition pages.
+   archival document treatment for the visa notice. Source Serif 4
+   is scoped to this page only (see index.html), same pattern as
+   the Affiliate and homepage-transition pages.
    ============================================================ */
 
 .blueprint-hero-title,
@@ -13,7 +13,7 @@
 .blueprint-journey__word,
 .blueprint-notice__title,
 .blueprint-journey__sub em {
-  font-family: 'Cormorant Garamond', var(--font-display);
+  font-family: 'Source Serif 4', var(--font-display);
 }
 
 /* ---- 01 · Hero ---- */

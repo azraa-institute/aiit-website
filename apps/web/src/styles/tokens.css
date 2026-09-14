@@ -85,15 +85,17 @@
   --font-display: Georgia, 'Times New Roman', 'Times', serif;
   --font-ui:
     'Google Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif;
-  /* One deliberate accent typeface — Cormorant Garamond italic, the family
-     the display scale below was originally tuned against. Used in exactly
-     one place (the homepage "learner's journey" section) as a sophisticated
-     script accent, never for body copy or as a second UI font. */
-  --font-accent: 'Cormorant Garamond', Georgia, 'Times New Roman', serif;
+  /* The site's one accent/editorial serif beyond Georgia -- Source Serif 4,
+     also the header-nav identity font (header.css, mobile-menu.css,
+     site-search.css). Used wherever a page wants a deliberate serif accent
+     (italic emphasis, big display numerals/headings) instead of --font-ui
+     or the plainer --font-display. Was Cormorant Garamond until the whole
+     site was swept over to Source Serif 4 for consistency. */
+  --font-accent: 'Source Serif 4', Georgia, 'Times New Roman', serif;
 
   /* Fluid display scale (clamp: min, vw, max).
-     Trimmed ~7% from the Cormorant scale — Georgia's tall x-height reads
-     roughly one step larger at the same pixel size. */
+     Trimmed ~7% from the old Cormorant-tuned scale — Georgia's tall
+     x-height reads roughly one step larger at the same pixel size. */
   --fs-display-1: clamp(2.7rem, 1.55rem + 5.9vw, 6.75rem);
   --fs-display-2: clamp(2.25rem, 1.45rem + 4.1vw, 4.7rem);
   --fs-display-3: clamp(1.9rem, 1.45rem + 2.3vw, 3.15rem);

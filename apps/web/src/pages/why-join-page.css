@@ -4,7 +4,7 @@
    floating discipline modules, a connected seven-reason
    "Advantage Map" alternating text/panel treatment, an
    indexed "Certification Atlas", and a dark closing statement.
-   Cormorant Garamond is scoped to this page only (see
+   Source Serif 4 is scoped to this page only (see
    index.html), same pattern as Affiliate/Blueprint/homepage.
    ============================================================ */
 
@@ -12,7 +12,7 @@
 .wj-reasons__title,
 .wj-tracks__title,
 .wj-final__heading em {
-  font-family: 'Cormorant Garamond', var(--font-display);
+  font-family: 'Source Serif 4', var(--font-display);
 }
 
 /* ---- 01 · Hero ---- */

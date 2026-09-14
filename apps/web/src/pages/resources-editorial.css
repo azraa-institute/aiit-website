@@ -1,14 +1,14 @@
 /* ============================================================
    AIIT RESOURCES — shared editorial atoms
    Loaded by both the Resources index and the article page.
-   Cormorant Garamond is scoped to these roots only (600/700,
+   Source Serif 4 is scoped to these roots only (500/600/700,
    never thin) so the all-Georgia rest of the site is untouched.
    ============================================================ */
 .res-masthead,
 .res-index,
 .res-body,
 .article-shell {
-  --res-serif: 'Cormorant Garamond', Georgia, 'Times New Roman', serif;
+  --res-serif: 'Source Serif 4', Georgia, 'Times New Roman', serif;
 }
 
 .res-tag {

@@ -1,9 +1,9 @@
 /* ============================================================
    THE LEARNER'S JOURNEY — signature editorial composition.
    Scoped entirely to this one section. Four milestones alternate between
-   the bold display serif and an italic accent face (Cormorant Garamond —
-   see tokens.css), stepping toward the AIIT launch film on the right. A
-   full-width close breaks out of the two-column grid beneath it.
+   the bold display serif and an italic accent face (--font-accent, Source
+   Serif 4 — see tokens.css), stepping toward the AIIT launch film on the
+   right. A full-width close breaks out of the two-column grid beneath it.
    ============================================================ */
 
 .vision-journey {

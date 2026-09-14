@@ -1,6 +1,6 @@
 /* ============================================================
    AFFILIATE PROGRAM — an original AIIT signature section.
-   Two typefaces scoped to this page only: Cormorant Garamond (upright,
+   Two typefaces scoped to this page only: Source Serif 4 (upright,
    600/700) for editorial headings, Inter for interface text and the
    numeral-heavy calculator (see index.html for the font loads; every
    other page stays on native Georgia).
@@ -11,11 +11,12 @@
 .affiliate-section-title,
 .affiliate-close-statement,
 .pathway__title {
-  font-family: 'Cormorant Garamond', var(--font-display);
+  font-family: 'Source Serif 4', var(--font-display);
 }
-/* Big numerals stay on Inter, not Cormorant — these are financial/interface
-   data (calculator payout, rate figures), and Cormorant's numeral glyphs
-   don't carry proper tabular-figure support: pairing it with
+/* Big numerals stay on Inter, not the serif accent — these are financial/
+   interface data (calculator payout, rate figures), and Cormorant
+   Garamond's numeral glyphs didn't carry proper tabular-figure support:
+   pairing it with
    `font-variant-numeric: tabular-nums` rendered "$10" as "$I O". Inter is
    built for exactly this. */
 .affiliate-hero__intro,
@@ -555,7 +556,7 @@
   width: clamp(2.5rem, 4vw, 3.5rem);
   display: grid;
   place-items: center;
-  font-family: 'Cormorant Garamond', var(--font-display);
+  font-family: 'Source Serif 4', var(--font-display);
   font-weight: 700;
   font-size: var(--fs-subhead);
   color: var(--fg-faint);

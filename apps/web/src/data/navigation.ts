@@ -60,17 +60,17 @@ export const FOOTER_POPULAR_COURSES = [
   {
     label: 'Cloud Computing Fundamentals',
     to: '/courses/cloud-computing-fundamentals',
-    image: '/assets/courses/cloud-computing-fundamentals.jpg',
+    image: '/assets/courses/cloud-computing-fundamentals-v2.jpg',
   },
   {
     label: 'Cisco CCNA (Cisco Certified Network Associate)',
     to: '/courses/cisco-ccna-cisco-certified-network-associate',
-    image: '/assets/courses/cisco-ccna-cisco-certified-network-associate.jpg',
+    image: '/assets/courses/cisco-ccna-cisco-certified-network-associate-v2.jpg',
   },
   {
     label: 'Quantum Computing Fundamentals',
     to: '/courses/quantum-computing-fundamentals',
-    image: '/assets/courses/quantum-computing-fundamentals.jpg',
+    image: '/assets/courses/quantum-computing-fundamentals-v2.jpg',
   },
 ];
 

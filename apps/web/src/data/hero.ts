@@ -27,7 +27,7 @@ export const HERO_SLIDES: HeroSlide[] = [
     id: 'webinar',
     heading: 'Join our free live webinar',
     subtext: 'Mastering Modern Information Technology',
-    image: '/assets/webinar/aiit-free-webinar.webp',
+    image: '/assets/webinar/aiit-free-webinar-v2.webp',
     motif: 'signal',
     cta: { label: 'Learn more', to: '/webinar' },
   },

@@ -26,9 +26,14 @@ interface PlateProps {
   /**
    * How a real image fills the frame.
    * 'cover' (default) crops to the `ratio` box; 'natural' drops the fixed
-   * ratio and shows the whole image at its own aspect. Ignored for motif art.
+   * ratio and shows the whole image at its own aspect; 'contain' keeps the
+   * fixed `ratio` box (so surrounding grids/cards stay aligned) but letterboxes
+   * the image within it rather than cropping -- for images whose own aspect
+   * ratio doesn't match the box and where nothing may be cropped (e.g. a
+   * poster-style course thumbnail with text near its edges). Ignored for
+   * motif art.
    */
-  fit?: 'cover' | 'natural';
+  fit?: 'cover' | 'natural' | 'contain';
 }
 
 function hash(str: string): number {
@@ -77,12 +82,26 @@ export function Plate({
 
   if (url) {
     const natural = fit === 'natural';
+    const contain = fit === 'contain';
     return (
       <div
         className={`plate${natural ? ' plate--natural' : ''} ${className ?? ''}`}
-        style={natural ? undefined : { aspectRatio: String(ratio) }}
+        style={
+          natural
+            ? undefined
+            : {
+                aspectRatio: String(ratio),
+                ...(contain && tone === 'ink' ? { background: '#14110f' } : {}),
+              }
+        }
       >
-        <img src={assetUrl(url)} alt={alt} loading="lazy" decoding="async" />
+        <img
+          src={assetUrl(url)}
+          alt={alt}
+          loading="lazy"
+          decoding="async"
+          style={contain ? { objectFit: 'contain' } : undefined}
+        />
       </div>
     );
   }

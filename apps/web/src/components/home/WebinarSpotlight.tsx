@@ -56,7 +56,7 @@ export function WebinarSpotlight() {
           </div>
 
           <div className="webinar-spot__visual">
-            <Plate source={w.image} seed={`webinar-${w.id}`} motif="signal" tone="ink" ratio={3 / 4} />
+            <Plate source={w.image} seed={`webinar-${w.id}`} motif="signal" tone="ink" ratio={3 / 4} fit="contain" />
             <ul className="webinar-spot__agenda" role="list">
               {w.agenda.map((a) => (
                 <li key={a.title}>{a.title}</li>

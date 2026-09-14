@@ -18,7 +18,7 @@ export function CoursePathRow({ enrolled }: { enrolled: Enrollment }) {
   return (
     <article className="cpath" data-done={done ? '' : undefined}>
       <Link to={`/courses/${course.slug}`} className="cpath__plate" aria-hidden="true" tabIndex={-1}>
-        <Plate source={course.image} seed={course.slug} motif={course.domain?.motif} ratio={1} />
+        <Plate source={course.image} seed={course.slug} motif={course.domain?.motif} ratio={1} fit="contain" />
       </Link>
 
       <div className="cpath__body">

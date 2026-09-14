@@ -112,6 +112,7 @@ export function CourseCard({ course, layout = 'grid', index }: CourseCardProps) 
           motif={domain?.motif}
           ratio={layout === 'feature' ? 16 / 10 : 4 / 3}
           className="course-card__media"
+          fit="contain"
         />
         {rich && <span className="course-card__sheen" aria-hidden="true" />}
         {typeof index === 'number' && (

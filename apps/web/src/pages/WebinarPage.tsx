@@ -124,7 +124,15 @@ export default function WebinarPage() {
                 <Countdown startsAt={w.startsAt} fallback="Date to be announced" />
               </div>
             </div>
-            <Plate source={w.image} seed={`webinar-page-${w.id}`} motif="signal" ratio={3 / 4} className="webinar-page__feature-media" alt="" />
+            <Plate
+              source={w.image}
+              seed={`webinar-page-${w.id}`}
+              motif="signal"
+              ratio={3 / 4}
+              fit="contain"
+              className="webinar-page__feature-media"
+              alt=""
+            />
           </div>
 
           <div className="webinar-page__agenda" data-reveal>

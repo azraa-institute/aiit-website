@@ -136,7 +136,7 @@ export default function CourseDetailPage() {
               </div>
 
               <aside className="course-detail__enroll" data-reveal>
-                <Plate source={course.image} seed={course.slug} motif={domain?.motif} ratio={4 / 3} />
+                <Plate source={course.image} seed={course.slug} motif={domain?.motif} ratio={4 / 3} fit="contain" />
                 <div className="course-detail__enroll-body">
                   <div className="course-detail__price">
                     {course.priceWas && (

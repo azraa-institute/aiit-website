@@ -75,7 +75,18 @@ export function HeroSlideshow() {
       <div className="hero__stage">
         {HERO_SLIDES.map((s, i) => (
           <div key={s.id} className={cn('hero__bg', i === active && 'is-active')} aria-hidden="true">
-            <Plate source={s.image} seed={`hero-${s.id}`} motif={s.motif} tone="ink" ratio={16 / 9} alt="" />
+            <Plate
+              source={s.image}
+              seed={`hero-${s.id}`}
+              motif={s.motif}
+              tone="ink"
+              ratio={16 / 9}
+              // The webinar slide reuses the portrait webinar flyer, which
+              // doesn't match this landscape box -- contain keeps its full
+              // boundary visible instead of cropping it to fill the frame.
+              fit={s.id === 'webinar' ? 'contain' : 'cover'}
+              alt=""
+            />
           </div>
         ))}
         <div className="hero__scrim" aria-hidden="true" />

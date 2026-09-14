@@ -82,6 +82,7 @@ export function FeaturedCourses() {
                 seed={featured.slug}
                 motif={featuredDomain?.motif}
                 ratio={16 / 9}
+                fit="contain"
                 alt=""
               />
             </Link>
@@ -132,7 +133,14 @@ export function FeaturedCourses() {
                     <Arrow />
                   </span>
                   <span className="courses-index__row-preview" aria-hidden="true">
-                    <Plate source={course.image} seed={course.slug} motif={domain?.motif} ratio={16 / 9} alt="" />
+                    <Plate
+                      source={course.image}
+                      seed={course.slug}
+                      motif={domain?.motif}
+                      ratio={16 / 9}
+                      fit="contain"
+                      alt=""
+                    />
                   </span>
                 </Link>
               );

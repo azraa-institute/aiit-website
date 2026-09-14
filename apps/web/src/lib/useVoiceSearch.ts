@@ -88,6 +88,10 @@ export function useVoiceSearch({ onTranscript }: UseVoiceSearchOptions) {
       for (let i = 0; i < e.results.length; i++) {
         transcript += e.results[i]?.[0]?.transcript ?? '';
       }
+      // Chrome infers sentence-ending punctuation on the final result (e.g.
+      // "cybersecurity" comes back as "Cybersecurity."), which then fails
+      // to substring-match anything in the search index. Strip it.
+      transcript = transcript.trim().replace(/[.,!?;:]+$/, '');
       if (transcript) onTranscriptRef.current(transcript);
     };
     recognition.onerror = (e) => {

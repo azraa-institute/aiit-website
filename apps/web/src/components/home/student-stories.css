@@ -79,8 +79,10 @@
 /* ============================================================
    LEFT / RIGHT EDITORIAL PHOTOGRAPHS — organic asymmetric crops,
    embedded into the page rather than placed in a card. Hidden below
-   1440px, where there is no longer genuine room for them beside the
-   carousel without crowding it (see the responsive block below).
+   1440px (no room at all beside the carousel); shown at a smaller
+   size from 1440–1859px (deck cards are narrowed too, to free up
+   room); shown at full size from 1860px up, where the section's
+   container itself is widened (see the responsive block below).
    ============================================================ */
 .stories-photo {
   position: absolute;
@@ -584,13 +586,12 @@
    RESPONSIVE
    ============================================================ */
 
-/* Below 1860px there is no longer genuine room beside the carousel for
-   the full-size editorial photographs without crowding it — the
-   photos, handwritten scripts, marginalia and map motif step aside,
-   leaving the carousel/heading/CTA as the clean, art-directed core.
-   (Verified by arithmetic against the fixed photo/arrow/card widths
-   above, not a guessed round number — this environment's tooling
-   can't render a live 1860px+ viewport to confirm visually.) */
+/* Below 1440px there is no genuine room beside the carousel for the
+   editorial photographs at all, even at a reduced size — the photos,
+   handwritten scripts, marginalia and map motif step aside, leaving
+   the carousel/heading/CTA as the clean, art-directed core. Verified
+   live at 1440/1600/1859/1920px via a real rendered viewport (not
+   arithmetic alone) — see the two tiers below. */
 .stories-photo,
 .stories-marginalia,
 .stories-script,
@@ -598,13 +599,63 @@
   display: none;
 }
 
-@media (min-width: 1860px) {
+@media (min-width: 1440px) {
   .stories-photo,
   .stories-marginalia,
   .stories-script,
   .stories-globe {
     display: block;
   }
+}
+
+/* 1440–1859px: a smaller photo pair fits beside the carousel once the
+   section's own container is allowed past the site's normal 1480px
+   cap (to 1600px) and the deck's side cards are narrowed to 230/340px
+   (down from their normal fluid clamp, which would otherwise still
+   want ~310/450px here and collide with the photos). Superseded by
+   the full-size tier at 1860px, which reverts every value below back
+   up via its own more-specific (wider) override. */
+@media (min-width: 1440px) and (max-width: 1859px) {
+  .stories-photo {
+    width: 170px;
+    height: 325px;
+  }
+  .stories-marginalia--left {
+    left: 210px;
+  }
+  .stories-marginalia--right {
+    right: 210px;
+  }
+  .stories-script--left {
+    top: 345px;
+  }
+  .stories-globe {
+    right: 43px;
+    width: 230px;
+    height: 145px;
+  }
+  .stories-editorial__inner.container--wide {
+    max-width: 1600px;
+  }
+  .stories-deck {
+    padding-inline: 214px;
+  }
+  .stories-arrow--prev {
+    left: 160px;
+  }
+  .stories-arrow--next {
+    right: 160px;
+  }
+  .stories-card--prev,
+  .stories-card--next {
+    width: 230px;
+  }
+  .stories-card--center {
+    width: 340px;
+  }
+}
+
+@media (min-width: 1860px) {
   .stories-editorial__inner.container--wide {
     /* Wider than the site's normal 1480px container cap, scoped to this
        one section only — the full editorial composition (two framing

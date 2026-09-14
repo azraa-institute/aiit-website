@@ -23,10 +23,13 @@
   position: relative;
   display: block;
   isolation: isolate;
-  border-radius: var(--radius-sm);
+  border-radius: 6px;
   /* Layers, ring and lift need to escape the box. The image zoom is
      still clipped by .plate's own overflow:hidden. */
   overflow: visible;
+}
+.course-card__media-link .plate {
+  border-radius: 6px;
   transform: perspective(1100px) rotateX(calc(var(--cc-ry, 0) * 1deg))
     rotateY(calc(var(--cc-rx, 0) * 1deg));
   transition: transform var(--dur-slow) var(--ease-out);

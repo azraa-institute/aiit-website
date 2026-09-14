@@ -11,7 +11,10 @@
 .about-page__photo {
   width: 100%;
   border-radius: var(--radius-md);
-  aspect-ratio: 3 / 2;
+  /* Matches the new image's own ratio exactly -- it carries readable text
+     right into its corners, so cropping to the old 3:2 box would cut it
+     off rather than just recompose a photo. */
+  aspect-ratio: 16 / 9;
   object-fit: cover;
 }
 .about-page__mission-text {

@@ -3,6 +3,7 @@ import { Layout } from '@/components/layout/Layout';
 import { PageBanner } from '@/components/layout/PageBanner';
 import { Seo, organizationLd } from '@/lib/Seo';
 import { useScrollReveal } from '@/lib/useScrollReveal';
+import { assetUrl } from '@/lib/assetUrl';
 import { SITE } from '@/data/site';
 import { ABOUT_BLOCKS } from '@/data/ecosystem';
 import { PRIMARY_DOMAINS } from '@/data/technologies';
@@ -21,8 +22,8 @@ export default function AboutPage() {
       <Section tone="paper" size="lg">
         <div className="container container--wide about-page__intro">
           <img
-            src="/assets/about/aiit-about-us.webp"
-            alt="AIIT students and instructors learning together"
+            src={assetUrl('/assets/about/aiit-about-us.webp')}
+            alt="The AIIT global learning network"
             className="about-page__photo"
             loading="lazy"
             data-reveal

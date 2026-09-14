@@ -125,11 +125,11 @@
 
 .courses-index__feature-media {
   display: block;
-  border-radius: 4px;
+  border-radius: 6px;
   overflow: hidden;
 }
 .courses-index__feature-media .plate {
-  border-radius: 4px;
+  border-radius: 6px;
 }
 .courses-index__feature-media .plate img {
   transition:
@@ -354,7 +354,7 @@
     right: 0;
     width: clamp(150px, 14vw, 190px);
     aspect-ratio: 16 / 9;
-    border-radius: 4px;
+    border-radius: 6px;
     overflow: hidden;
     box-shadow: 0 14px 34px -12px rgba(20, 17, 15, 0.28);
     opacity: 0;
@@ -366,7 +366,7 @@
     z-index: 2;
   }
   .courses-index__row-preview .plate {
-    border-radius: 4px;
+    border-radius: 6px;
   }
   .courses-index__row:hover .courses-index__row-preview,
   .courses-index__row:focus-visible .courses-index__row-preview {

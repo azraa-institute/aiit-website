@@ -27,7 +27,10 @@ export const HERO_SLIDES: HeroSlide[] = [
     id: 'webinar',
     heading: 'Join our free live webinar',
     subtext: 'Mastering Modern Information Technology',
-    image: '/assets/webinar/aiit-free-webinar.webp',
+    // Deliberately its own file, not the /webinar page's flyer image: this
+    // slide needs a full-bleed photographic background like every other
+    // hero slide, not a portrait promotional poster.
+    image: '/assets/hero/live-webinar-session.webp',
     motif: 'signal',
     cta: { label: 'Learn more', to: '/webinar' },
   },

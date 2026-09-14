@@ -1150,6 +1150,10 @@
   display: block;
   width: 88px;
   cursor: pointer;
+  border-radius: 6px;
+}
+.cpath__plate .plate {
+  border-radius: 6px;
 }
 .cpath__body {
   flex: 1;

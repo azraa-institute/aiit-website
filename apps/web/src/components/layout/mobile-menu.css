@@ -254,7 +254,7 @@
 .mobile-menu__group a {
   display: block;
   padding: var(--space-3) 0 var(--space-3) calc(0.72rem + clamp(var(--space-3), 3.4vw, var(--space-5)));
-  font-family: var(--font-ui);
+  font-family: 'Source Serif 4', var(--font-ui);
   font-size: var(--fs-body);
   color: var(--fg-muted);
   transition: color var(--dur-fast) var(--ease-out);

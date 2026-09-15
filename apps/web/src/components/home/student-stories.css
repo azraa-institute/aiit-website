@@ -332,15 +332,16 @@
      every wider viewport anyway, so this is a no-op above ~1346px and
      just removes the one range that was genuinely too tight. */
   width: clamp(210px, 21vw, 310px);
-  /* 350px (the original clamp's own max) still wasn't tall enough for
-     every testimonial once paged through the full set at this card's
-     narrowest widths -- one clipped by as much as 22px. 390px is
-     comfortably clear of every testimonial checked, and still well
-     under .stories-card--center's 430px, so the deck's overall height
-     (driven by whichever card is tallest) is unchanged -- these are
-     the peripheral prev/next cards, never the one thing the deck's
-     height needs to stay stable around. */
-  height: 390px;
+  /* 460px -- raised from 390px now that .stories-card__role (the title
+     under the name/location) shows its complete text below the avatar
+     row instead of a single truncated line (see .stories-card__person
+     and .stories-card__role below); at this rule's narrowest rendered
+     width (~200px at exactly 1024px) the longest real title wraps to
+     several lines and needed 455px, confirmed live across all 10
+     testimonials. Still comfortably under .stories-card--center's own
+     height at this tier, so the center card stays the visually
+     dominant one. */
+  height: 460px;
   opacity: 0.85;
   cursor: pointer;
   transition: opacity var(--dur-fast) var(--ease-out);
@@ -350,13 +351,27 @@
   opacity: 1;
 }
 .stories-card--center {
-  width: clamp(300px, 30vw, 450px);
-  /* Flat 430px -- same reasoning as .stories-card--prev/next above:
-     32vw only drops below 430px for viewport < ~1344px, and the 380px
-     floor that range fell back to was too short for at least one real
-     testimonial (measured 16px of role-line clipping at exactly
-     1024px, the iPad Pro portrait / several Android tablets' width). */
-  height: 430px;
+  /* Widened from clamp(300px, 30vw, 450px) -- the featured quote now
+     renders in full (see .stories-card--center .stories-card__text p
+     below), and at the old 300px floor the longest real testimonial
+     needed ~685px of height to fit without clipping. A wider card means
+     fewer lines, which is both more readable and needs less height --
+     confirmed live this floor still leaves the flex row comfortable
+     room for both side cards at 1024px, the tightest width this rule
+     applies at (no overflow). */
+  width: clamp(380px, 36vw, 450px);
+  /* Flat, not auto/min-height -- same reasoning as .stories-card--prev/
+     next below: every review must render at the same height regardless
+     of its own quote length, or the deck's total height shifts per
+     active review, visibly moving the >=1860px bottom-anchored photo
+     between reviews. 600px is sized to the longest real testimonial's
+     full, unclamped text at this rule's narrowest rendered width
+     (~347px at exactly 1024px, where flex-shrink pulls it in from the
+     347px width clamp) -- confirmed live across all 10 testimonials at
+     1024/1200/1439px, zero clipping. The two wider tiers below (1440px+)
+     override this with their own, shorter flat heights since their
+     wider cards need fewer lines. */
+  height: 600px;
   box-shadow:
     0 10px 35px rgba(50, 40, 25, 0.06),
     0 0 0 1px rgba(154, 123, 79, 0.08),
@@ -415,10 +430,19 @@
   text-align: left;
 }
 .stories-card--center .stories-card__text p {
+  /* The featured card shows the COMPLETE quote -- undoes the generic
+     .stories-card__text p rule's line-clamp/-webkit-box/overflow-hidden
+     entirely (not just raising the clamp count) so the text flows as a
+     normal paragraph and the card's own height (above, and per-tier
+     below) is what's sized to fit it in full, rather than the text
+     being cut short with an ellipsis at a fixed line count regardless
+     of how much of the story that left out. */
+  display: block;
+  -webkit-line-clamp: unset;
+  overflow: visible;
   font-size: 21px;
   line-height: 1.5;
   color: #24211d;
-  -webkit-line-clamp: 6;
 }
 .stories-card--prev .stories-card__text p,
 .stories-card--next .stories-card__text p {
@@ -427,12 +451,21 @@
 }
 
 .stories-card__person {
+  /* Column, not row: the avatar+name row and the (now full, wrapping)
+     role/title line below it are two stacked blocks, not one flex row
+     -- squeezing the role text in beside the avatar was exactly what
+     forced it into a single truncated line. */
   display: flex;
-  align-items: center;
-  gap: var(--space-3);
+  flex-direction: column;
+  gap: var(--space-2);
   margin-top: auto;
   padding-top: var(--space-4);
   border-top: 1px solid var(--line);
+}
+.stories-card__person-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
 }
 .stories-card__avatar {
   flex-shrink: 0;
@@ -490,11 +523,14 @@
   text-overflow: ellipsis;
 }
 .stories-card__role {
+  /* Full text, centered, wrapping onto as many lines as it needs --
+     below the avatar/name row (see .stories-card__person above) rather
+     than squeezed beside it, so it no longer needs nowrap+ellipsis to
+     stay on one line. */
+  display: block;
+  text-align: center;
   font-size: 13.5px;
   color: var(--ink-faint);
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
 }
 
 /* ---- Hidden auto-advance timer — drives the same interval-based
@@ -680,9 +716,22 @@
   .stories-card--prev,
   .stories-card--next {
     width: 230px;
+    /* 440px -- raised from the base tier's 390px now that the complete
+       title wraps below the avatar row (see .stories-card__role);
+       confirmed live at this 230px width across all 10 testimonials. */
+    height: 440px;
   }
   .stories-card--center {
-    width: 340px;
+    /* Widened from 340px -- at this tier's own narrowest viewport
+       (1440px) there was still ~100px+ of unused space in the deck
+       (confirmed live), room the featured card can use to show its now-
+       unclamped full quote in fewer lines. 540px is sized to the
+       longest real testimonial at this 420px width -- confirmed live
+       across all 10 testimonials, zero clipping, and the deck's own
+       padding/arrow offsets above are untouched since only the card's
+       own width changed, not the column it sits in. */
+    width: 420px;
+    height: 540px;
   }
 }
 
@@ -705,9 +754,18 @@
   .stories-card--prev,
   .stories-card--next {
     width: 300px;
+    /* Back down to 390px (from the base tier's 460px) -- at this tier's
+       wider 300px card, the complete title needs only 385px, confirmed
+       live across all 10 testimonials. */
+    height: 390px;
   }
   .stories-card--center {
+    /* 510px -- sized to the longest real testimonial's full, unclamped
+       text (quote + the now-complete title below the avatar row) at
+       this tier's 460px width, confirmed live across all 10
+       testimonials with zero clipping. */
     width: 460px;
+    height: 510px;
   }
 }
 
@@ -773,8 +831,9 @@
     height: auto;
   }
   .stories-card--center .stories-card__text p {
+    /* Font size only -- no line-clamp override needed, the base rule
+       already shows the complete quote (display:block, no clamp). */
     font-size: 18px;
-    -webkit-line-clamp: 8;
   }
   .stories-progress {
     margin-top: 4.5rem;

@@ -259,14 +259,16 @@ export function StudentStories() {
                   <p>{s.quote}</p>
                 </blockquote>
                 <footer className="stories-card__person">
-                  <span className="stories-card__avatar" aria-hidden="true">
-                    {s.initials}
-                  </span>
-                  <span className="stories-card__who">
-                    <span className="stories-card__name">{s.name}</span>
-                    <span className="stories-card__loc">{s.location}</span>
-                    <span className="stories-card__role">{s.title}</span>
-                  </span>
+                  <div className="stories-card__person-row">
+                    <span className="stories-card__avatar" aria-hidden="true">
+                      {s.initials}
+                    </span>
+                    <span className="stories-card__who">
+                      <span className="stories-card__name">{s.name}</span>
+                      <span className="stories-card__loc">{s.location}</span>
+                    </span>
+                  </div>
+                  <span className="stories-card__role">{s.title}</span>
                 </footer>
               </article>
             ))}

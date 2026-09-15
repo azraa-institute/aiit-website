@@ -25,6 +25,37 @@ function RuledMark() {
   );
 }
 
+/** A quiet institutional seal watermark on the page background -- see
+ * the architecture note in legal-book.css for why it's positioned
+ * behind the book (negative z-index) rather than z-index: 0. Purely
+ * decorative: one per document, unaffected by which page is active. */
+function Stamp() {
+  return (
+    <svg className="legalbook__stamp" viewBox="0 0 200 200" aria-hidden="true" focusable="false">
+      <circle className="legalbook__stamp-ring" cx="100" cy="100" r="92" strokeWidth="1" />
+      <circle className="legalbook__stamp-ring" cx="100" cy="100" r="78" strokeWidth="0.75" />
+      {[0, 90, 180, 270].map((deg) => {
+        const rad = (deg * Math.PI) / 180;
+        const x1 = 100 + Math.sin(rad) * 92;
+        const y1 = 100 - Math.cos(rad) * 92;
+        const x2 = 100 + Math.sin(rad) * 100;
+        const y2 = 100 - Math.cos(rad) * 100;
+        return <line key={deg} className="legalbook__stamp-mark" x1={x1} y1={y1} x2={x2} y2={y2} />;
+      })}
+      <text className="legalbook__stamp-text" x="100" y="90" textAnchor="middle" style={{ fontSize: 32, fontFamily: "'Source Serif 4', serif", fontWeight: 600, letterSpacing: 0 }}>
+        AZ
+      </text>
+      <line className="legalbook__stamp-mark" x1="72" y1="108" x2="128" y2="108" strokeWidth="0.75" />
+      <text className="legalbook__stamp-text" x="100" y="124" textAnchor="middle">
+        OFFICIAL DOCUMENT
+      </text>
+      <text className="legalbook__stamp-text" x="100" y="136" textAnchor="middle">
+        AIIT.NETWORK
+      </text>
+    </svg>
+  );
+}
+
 function ArrowIcon({ direction }: { direction: 'prev' | 'next' }) {
   const d = direction === 'prev' ? 'M8.5 2 3 7.5 8.5 13M3.5 7.5H16' : 'M7.5 2 13 7.5 7.5 13M12.5 7.5H0';
   return (
@@ -177,6 +208,7 @@ export function LegalBook({ doc, pages }: { doc: LegalDoc; pages: LegalBookPage[
 
   return (
     <div className="legalbook" ref={rootRef}>
+      <Stamp />
       <div className="container container--wide">
         <header className="legalbook__intro" data-reveal>
           <p className="eyebrow legalbook__eyebrow">{doc.eyebrow}</p>

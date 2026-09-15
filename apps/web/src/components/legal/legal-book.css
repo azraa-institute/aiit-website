@@ -18,13 +18,68 @@
    ============================================================ */
 
 .legalbook {
-  /* A step warmer/deeper than the page's own --paper background, so the
-     stage the document sits in reads as a distinct "room" the page is
-     resting in -- the brief's "enough contrast for the document to stand
-     out" -- without introducing a new color outside the token set. */
-  background: var(--ivory-deep);
+  /* A soft, warm-toned editorial backdrop (amber light + stone texture
+     at the edges) so the stage the document sits in reads as a distinct
+     "room" the page is resting in -- the brief's "enough contrast for
+     the document to stand out." Layered background, top to bottom:
+     1) a soft ivory wash, heaviest over the intro text up top and
+        fading out by the time the leaf stack begins, so the eyebrow/
+        intro stay easily readable against the photo regardless of
+        where its own light/dark areas happen to fall;
+     2) the photo itself, cover/centered;
+     3) --ivory-deep as the plain background COLOR -- shown behind the
+        photo's edges at unusual aspect ratios, and while it loads, so
+        this never regresses to a blank flash. */
+  background:
+    linear-gradient(180deg, rgba(250, 247, 240, 0.6) 0%, rgba(250, 247, 240, 0.28) 30%, rgba(250, 247, 240, 0) 60%),
+    var(--ivory-deep) url('/assets/legal/legal-book-bg.webp') no-repeat center center / cover;
   padding-block: clamp(3rem, 2rem + 4vw, 5.5rem) clamp(3.5rem, 2.5rem + 5vw, 6.5rem);
   border-bottom: 1px solid var(--line);
+  /* position:relative alone does NOT create a stacking context -- without
+     a z-index here too, .legalbook__stamp's negative z-index (below)
+     would escape this element entirely and stack against some much
+     higher, unrelated ancestor instead, likely landing behind an opaque
+     background elsewhere on the page and vanishing outright. */
+  position: relative;
+  z-index: 0;
+}
+
+/* ---- Stamp -- a quiet institutional seal watermark, reusing the same
+   concentric-ring motif the homepage's "Learning without Borders" globe
+   already established (see student-stories.css) rather than inventing a
+   second decorative language. Purely a background flourish: low-opacity,
+   aria-hidden, behind the book (z-index unset/auto vs the book's own
+   stacking), and never affects layout since it's fully absolute. */
+.legalbook__stamp {
+  position: absolute;
+  right: clamp(12px, 3vw, 56px);
+  bottom: clamp(12px, 3vw, 56px);
+  /* Negative, not 0/auto -- a positioned descendant with z-index:0/auto
+     paints AFTER (on top of) this stacking context's normal in-flow
+     content (.legalbook__intro, .legalbook__stage), per the CSS2.1
+     painting order; negative paints before it, i.e. genuinely behind. */
+  z-index: -1;
+  width: clamp(150px, 18vw, 260px);
+  height: clamp(150px, 18vw, 260px);
+  pointer-events: none;
+  opacity: 0.4;
+}
+.legalbook__stamp-ring {
+  fill: none;
+  stroke: var(--brass-deep);
+}
+.legalbook__stamp-text {
+  fill: var(--brass-deep);
+  font-family: var(--font-ui);
+  font-size: 6.6px;
+  font-weight: 700;
+  letter-spacing: 0.3em;
+}
+.legalbook__stamp-mark {
+  fill: none;
+  stroke: var(--brass-deep);
+  stroke-width: 1.1;
+  stroke-linecap: round;
 }
 
 .legalbook__intro {

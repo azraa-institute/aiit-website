@@ -118,7 +118,8 @@
 }
 
 .site-footer__col a,
-.site-footer__legal a {
+.site-footer__legal a,
+.site-footer__legal-btn {
   position: relative;
   display: inline;
   background-image: linear-gradient(var(--brass-tint), var(--brass-tint));
@@ -133,10 +134,16 @@
 .site-footer__col a:hover,
 .site-footer__col a:focus-visible,
 .site-footer__legal a:hover,
-.site-footer__legal a:focus-visible {
+.site-footer__legal a:focus-visible,
+.site-footer__legal-btn:hover,
+.site-footer__legal-btn:focus-visible {
   color: var(--ivory);
   background-size: 100% 1px;
   outline: none;
+}
+.site-footer__legal-btn {
+  font: inherit;
+  color: inherit;
 }
 
 .site-footer__by {
@@ -380,6 +387,7 @@
 @media (prefers-reduced-motion: reduce) {
   .site-footer__col a,
   .site-footer__legal a,
+  .site-footer__legal-btn,
   .site-footer__view-all svg {
     transition: color var(--dur-fast) var(--ease-out);
     background-size: 0 1px;

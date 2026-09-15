@@ -4,6 +4,7 @@ import { FOOTER_QUICK_LINKS, FOOTER_POPULAR_COURSES, FOOTER_NAV } from '@/data/n
 import { SocialLinks } from '@/components/common/SocialLinks';
 import { NewsletterForm } from '@/components/common/NewsletterForm';
 import { assetUrl } from '@/lib/assetUrl';
+import { useCookieConsent } from '@/lib/CookieConsentContext';
 import { Logo } from './Logo';
 import { FooterNetworkGraphic } from './FooterNetworkGraphic';
 import {
@@ -27,6 +28,7 @@ const HIGHLIGHTS = [
 const NETWORK_LABELS = ['Technology', 'People', 'Opportunity', 'Without borders'];
 
 export function Footer() {
+  const { openPreferences } = useCookieConsent();
   return (
     <footer className="site-footer on-ink">
       <div className="container container--wide">
@@ -152,6 +154,9 @@ export function Footer() {
           <div className="site-footer__legal">
             <Link to="/privacy-policy">Privacy Policy</Link>
             <Link to="/terms">Terms and Conditions</Link>
+            <button type="button" className="site-footer__legal-btn" onClick={openPreferences}>
+              Cookie Preferences
+            </button>
           </div>
           <p className="site-footer__closer">
             A more open tomorrow

@@ -69,11 +69,14 @@ export const PRIVACY_POLICY: LegalDoc = {
     {
       id: 'cookies-and-tracking',
       title: 'Cookies and tracking',
-      lead: 'Cookies help us run the platform and understand how it is used. You can manage your preferences through your browser settings at any time. We use:',
+      lead: 'Cookies help us run the platform and understand how it is used. We use:',
       items: [
-        'Essential cookies — required for core site functionality',
+        'Essential cookies — required for core site functionality, always active',
         'Analytics cookies — to understand visitor behaviour and improve the platform',
         'Preference cookies — to remember your settings',
+      ],
+      paragraphs: [
+        'You choose which non-essential cookies to allow the first time you visit, and can change your choice at any time from the "Cookie Preferences" link in the site footer. You can also manage cookies through your browser settings.',
       ],
     },
     {

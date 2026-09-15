@@ -5,6 +5,8 @@ import { RouteFallback } from '@/components/layout/RouteFallback';
 import { ChunkErrorBoundary, CHUNK_RELOAD_FLAG } from '@/components/layout/ChunkErrorBoundary';
 import { AuthProvider } from '@/lib/AuthContext';
 import { RequireAuth } from '@/components/auth/RequireAuth';
+import { CookieConsentProvider } from '@/lib/CookieConsentContext';
+import { CookieConsent } from '@/components/common/CookieConsent';
 
 /**
  * Fades out and removes the static #splash overlay (defined in index.html)
@@ -80,66 +82,69 @@ const NotFoundPage = lazy(() => import('@/pages/NotFoundPage'));
 export function App() {
   return (
     <AuthProvider>
-      <ScrollToTop />
-      <ChunkErrorBoundary>
-        <Suspense fallback={<RouteFallback />}>
-          <SplashGate />
-          <Routes>
-            <Route path="/" element={<HomePage />} />
-            <Route path="/about" element={<AboutPage />} />
-            <Route path="/courses" element={<CoursesPage />} />
-            <Route path="/courses/:slug" element={<CourseDetailPage />} />
-            <Route path="/resources" element={<ResourcesPage />} />
-            <Route path="/resources/:slug" element={<ResourceDetailPage />} />
-            <Route path="/webinar" element={<WebinarPage />} />
-            <Route path="/faqs" element={<FaqsPage />} />
-            <Route path="/contact" element={<ContactPage />} />
-            <Route path="/newsletter/confirm" element={<NewsletterConfirmPage />} />
-            <Route path="/newsletter/unsubscribe" element={<NewsletterUnsubscribePage />} />
-            <Route path="/verify/:credentialId" element={<VerifyCertificatePage />} />
-            <Route path="/shop" element={<ShopPage />} />
-            {/* Legacy slug — the product's slug was corrected. */}
-            <Route
-              path="/shop/laptop-stand-p43fallen-key"
-              element={<Navigate to="/shop/laptop-stand-p43f-allen-key" replace />}
-            />
-            <Route path="/shop/:slug" element={<ProductDetailPage />} />
-            <Route path="/instructors" element={<InstructorsPage />} />
-            <Route path="/why-join" element={<WhyJoinPage />} />
-            <Route path="/aiit-blueprint" element={<BlueprintPage />} />
-            <Route path="/affiliate" element={<AffiliatePage />} />
-            <Route path="/login" element={<LoginPage />} />
-            <Route path="/register" element={<RegisterPage />} />
-            <Route path="/forgot-password" element={<ForgotPasswordPage />} />
-            <Route path="/auth/callback" element={<AuthCallbackPage />} />
-            <Route path="/reset-password" element={<ResetPasswordPage />} />
+      <CookieConsentProvider>
+        <ScrollToTop />
+        <CookieConsent />
+        <ChunkErrorBoundary>
+          <Suspense fallback={<RouteFallback />}>
+            <SplashGate />
+            <Routes>
+              <Route path="/" element={<HomePage />} />
+              <Route path="/about" element={<AboutPage />} />
+              <Route path="/courses" element={<CoursesPage />} />
+              <Route path="/courses/:slug" element={<CourseDetailPage />} />
+              <Route path="/resources" element={<ResourcesPage />} />
+              <Route path="/resources/:slug" element={<ResourceDetailPage />} />
+              <Route path="/webinar" element={<WebinarPage />} />
+              <Route path="/faqs" element={<FaqsPage />} />
+              <Route path="/contact" element={<ContactPage />} />
+              <Route path="/newsletter/confirm" element={<NewsletterConfirmPage />} />
+              <Route path="/newsletter/unsubscribe" element={<NewsletterUnsubscribePage />} />
+              <Route path="/verify/:credentialId" element={<VerifyCertificatePage />} />
+              <Route path="/shop" element={<ShopPage />} />
+              {/* Legacy slug — the product's slug was corrected. */}
+              <Route
+                path="/shop/laptop-stand-p43fallen-key"
+                element={<Navigate to="/shop/laptop-stand-p43f-allen-key" replace />}
+              />
+              <Route path="/shop/:slug" element={<ProductDetailPage />} />
+              <Route path="/instructors" element={<InstructorsPage />} />
+              <Route path="/why-join" element={<WhyJoinPage />} />
+              <Route path="/aiit-blueprint" element={<BlueprintPage />} />
+              <Route path="/affiliate" element={<AffiliatePage />} />
+              <Route path="/login" element={<LoginPage />} />
+              <Route path="/register" element={<RegisterPage />} />
+              <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+              <Route path="/auth/callback" element={<AuthCallbackPage />} />
+              <Route path="/reset-password" element={<ResetPasswordPage />} />
 
-            <Route
-              path="/portal"
-              element={
-                <RequireAuth>
-                  <PortalLayout />
-                </RequireAuth>
-              }
-            >
-              <Route index element={<DashboardPage />} />
-              <Route path="courses" element={<MyCoursesPage />} />
-              <Route path="certificates" element={<CertificatesPage />} />
-              <Route path="assignments" element={<AssignmentsPage />} />
-              <Route path="resources" element={<PortalResourcesPage />} />
-              <Route path="webinars" element={<WebinarsPage />} />
-              <Route path="profile" element={<ProfilePage />} />
-              <Route path="notifications" element={<NotificationsPage />} />
-              <Route path="settings" element={<SettingsPage />} />
-            </Route>
+              <Route
+                path="/portal"
+                element={
+                  <RequireAuth>
+                    <PortalLayout />
+                  </RequireAuth>
+                }
+              >
+                <Route index element={<DashboardPage />} />
+                <Route path="courses" element={<MyCoursesPage />} />
+                <Route path="certificates" element={<CertificatesPage />} />
+                <Route path="assignments" element={<AssignmentsPage />} />
+                <Route path="resources" element={<PortalResourcesPage />} />
+                <Route path="webinars" element={<WebinarsPage />} />
+                <Route path="profile" element={<ProfilePage />} />
+                <Route path="notifications" element={<NotificationsPage />} />
+                <Route path="settings" element={<SettingsPage />} />
+              </Route>
 
-            <Route path="/privacy-policy" element={<LegalPage kind="privacy" />} />
-            <Route path="/terms" element={<LegalPage kind="terms" />} />
+              <Route path="/privacy-policy" element={<LegalPage kind="privacy" />} />
+              <Route path="/terms" element={<LegalPage kind="terms" />} />
 
-            <Route path="*" element={<NotFoundPage />} />
-          </Routes>
-        </Suspense>
-      </ChunkErrorBoundary>
+              <Route path="*" element={<NotFoundPage />} />
+            </Routes>
+          </Suspense>
+        </ChunkErrorBoundary>
+      </CookieConsentProvider>
     </AuthProvider>
   );
 }

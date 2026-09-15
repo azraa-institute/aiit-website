@@ -96,6 +96,23 @@ describe('ProfileService', () => {
     expect(email.send).not.toHaveBeenCalled();
   });
 
+  it('profileComplete is true once every required field is set, even with phoneVerifiedAt still null -- verification is paused (Twilio), not gating', async () => {
+    prisma.profile.findUnique.mockResolvedValueOnce({
+      ...PROFILE,
+      name: 'Ada Lovelace',
+      phone: '+14155552671',
+      qualification: "Bachelor's",
+      university: 'Example University',
+      country: 'NG',
+      city: 'Lagos',
+      address: '1 Example Street',
+      postalCode: '100001',
+    });
+    const me = await service.getMe('user-1', 'ada@example.com');
+    expect(me.profileComplete).toBe(true);
+    expect(me.phoneVerifiedAt).toBeNull();
+  });
+
   it('throws NotFoundException when getMe finds no profile', async () => {
     prisma.profile.findUnique.mockResolvedValueOnce(null);
     await expect(service.getMe('missing', 'ada@example.com')).rejects.toBeInstanceOf(NotFoundException);

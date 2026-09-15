@@ -3,14 +3,19 @@ import type { Prisma, Profile } from '@prisma/client';
 import type { Me } from '@aiit/shared';
 
 /**
- * The fields that must be non-empty (plus phoneVerifiedAt not null) before
- * `profileComplete` is true. `headline` and `avatarKey` are deliberately
- * NOT in this list -- they stay optional. Local to this service (not the
- * shared package) since it's the only consumer -- the frontend just reads
- * the computed `profileComplete` boolean below, it never needs the list
- * itself. `@aiit/shared` is type-only by convention (see its package.json);
- * keeping a real runtime array out of it avoids being the first thing to
- * break that.
+ * The fields that must be non-empty before `profileComplete` is true.
+ * `phone` is required here but its *verification* (phoneVerifiedAt) is
+ * deliberately NOT -- Twilio needs a paid Messaging Service to actually
+ * deliver the SMS-OTP, which is paused for now (see infra doc), so
+ * completeness only checks that a number was entered, not confirmed.
+ * confirmPhoneVerification()/POST /me/phone/confirm below stay in place
+ * for whenever Twilio is enabled; they just don't gate completeness today.
+ * `headline` and `avatarKey` are deliberately NOT in this list -- they stay
+ * optional. Local to this service (not the shared package) since it's the
+ * only consumer -- the frontend just reads the computed `profileComplete`
+ * boolean below, it never needs the list itself. `@aiit/shared` is
+ * type-only by convention (see its package.json); keeping a real runtime
+ * array out of it avoids being the first thing to break that.
  */
 const PROFILE_COMPLETION_FIELDS = [
   'name',
@@ -294,8 +299,6 @@ function toMe(profile: Profile, isNewSignup: boolean): Me {
     createdAt: profile.createdAt.toISOString(),
     updatedAt: profile.updatedAt.toISOString(),
     isNewSignup,
-    profileComplete:
-      PROFILE_COMPLETION_FIELDS.every((field) => Boolean(profile[field])) &&
-      profile.phoneVerifiedAt !== null,
+    profileComplete: PROFILE_COMPLETION_FIELDS.every((field) => Boolean(profile[field])),
   };
 }

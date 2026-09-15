@@ -114,16 +114,6 @@
   gap: var(--space-3);
   margin-top: var(--space-2);
 }
-.pcw-step__verified {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--space-3);
-  padding: var(--space-3) var(--space-4);
-  border-radius: var(--radius-md);
-  background: rgba(154, 123, 79, 0.1);
-}
-
 .pcw-tour {
   display: grid;
   gap: var(--space-3);

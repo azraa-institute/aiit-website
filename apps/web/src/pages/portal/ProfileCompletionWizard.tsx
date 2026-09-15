@@ -1,8 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
-import type { FormEvent } from 'react';
 import { apiFetch } from '@/lib/api';
-import { supabase } from '@/lib/supabaseClient';
 import { TextField, SelectField } from '@/components/common/Field';
 import { Button } from '@/components/primitives/Button';
 import { COUNTRIES } from '@/data/countries';
@@ -13,8 +11,8 @@ import './profile-completion-wizard.css';
 const COUNTRY_OPTIONS = [{ value: '', label: 'Select a country' }, ...COUNTRIES.map((c) => ({ value: c.code, label: c.name }))];
 const QUALIFICATION_OPTIONS = [{ value: '', label: 'Select your highest qualification' }, ...QUALIFICATIONS];
 
-const STEP_COUNT = 7;
-type Step = 1 | 2 | 3 | 4 | 5 | 6 | 7;
+const STEP_COUNT = 6;
+type Step = 1 | 2 | 3 | 4 | 5 | 6;
 
 interface ProfileCompletionWizardProps {
   open: boolean;
@@ -49,10 +47,6 @@ export function ProfileCompletionWizard({ open, profile, onClose, onComplete }: 
   const [postalCode, setPostalCode] = useState(profile.postalCode ?? '');
 
   const [phoneInput, setPhoneInput] = useState(profile.phone ?? '');
-  const [phoneVerified, setPhoneVerified] = useState(Boolean(profile.phoneVerifiedAt));
-  const [phoneCode, setPhoneCode] = useState('');
-  const [sendingCode, setSendingCode] = useState(false);
-  const [verifyingCode, setVerifyingCode] = useState(false);
 
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string>();
@@ -63,16 +57,6 @@ export function ProfileCompletionWizard({ open, profile, onClose, onComplete }: 
   useEffect(() => {
     if (open) setStep(1);
   }, [open]);
-
-  // Auto-advance past the verify-code step if the phone was already
-  // verified before this step was reached (e.g. reopening the wizard after
-  // a previous session already completed phone verification) -- done in an
-  // effect, not inline during render, so it doesn't trigger a "set state
-  // while rendering" warning.
-  useEffect(() => {
-    if (step === 3 && phoneVerified) next();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [step, phoneVerified]);
 
   useEffect(() => {
     if (!open) return;
@@ -112,52 +96,6 @@ export function ProfileCompletionWizard({ open, profile, onClose, onComplete }: 
     setStep((s) => (Math.max(s - 1, 1) as Step));
   }
 
-  async function handleSendCode(e: FormEvent) {
-    e.preventDefault();
-    setError(undefined);
-    if (!supabase) {
-      setError('Phone verification is not configured yet -- you can finish this later from your Profile.');
-      return;
-    }
-    setSendingCode(true);
-    const { error: err } = await supabase.auth.updateUser({ phone: phoneInput.trim() });
-    setSendingCode(false);
-    if (err) {
-      setError(err.message);
-      return;
-    }
-    next();
-  }
-
-  async function handleVerifyCode(e: FormEvent) {
-    e.preventDefault();
-    setError(undefined);
-    if (!supabase) {
-      setError('Phone verification is not configured yet -- you can finish this later from your Profile.');
-      return;
-    }
-    setVerifyingCode(true);
-    const { error: err } = await supabase.auth.verifyOtp({
-      phone: phoneInput.trim(),
-      token: phoneCode.trim(),
-      type: 'phone_change',
-    });
-    if (err) {
-      setVerifyingCode(false);
-      setError(err.message);
-      return;
-    }
-    try {
-      await apiFetch('/me/phone/confirm', { method: 'POST' });
-      setPhoneVerified(true);
-      next();
-    } catch (confirmErr) {
-      setError(confirmErr instanceof Error ? confirmErr.message : 'Could not confirm your phone number.');
-    } finally {
-      setVerifyingCode(false);
-    }
-  }
-
   async function handleFinish() {
     setError(undefined);
     setSaving(true);
@@ -166,6 +104,7 @@ export function ProfileCompletionWizard({ open, profile, onClose, onComplete }: 
         method: 'PATCH',
         body: JSON.stringify({
           name: name.trim(),
+          phone: phoneInput.trim(),
           qualification: qualification.trim(),
           university: university.trim(),
           country: country || undefined,
@@ -218,7 +157,7 @@ export function ProfileCompletionWizard({ open, profile, onClose, onComplete }: 
             </h2>
             <p className="pcw-step__body">
               A complete profile is required before you can enroll in courses or use your learner portal. It only
-              takes a couple of minutes -- name, education, location, and a verified phone number.
+              takes a couple of minutes -- name, phone number, education, and location.
             </p>
             <div className="pcw-step__actions">
               <Button as="button" onClick={next}>
@@ -232,68 +171,32 @@ export function ProfileCompletionWizard({ open, profile, onClose, onComplete }: 
         )}
 
         {step === 2 && (
-          <form className="pcw-step" onSubmit={handleSendCode}>
+          <div className="pcw-step">
             <h2 id="pcw-title" className="pcw-step__title">
               About you
             </h2>
             <TextField label="Full name" value={name} onChange={(e) => setName(e.target.value)} maxLength={200} required />
-            {phoneVerified ? (
-              <div className="pcw-step__verified">
-                <p className="pcw-step__body">Phone verified: {phoneInput}</p>
-                <Button as="button" type="button" variant="ghost" size="sm" onClick={next}>
-                  Continue
-                </Button>
-              </div>
-            ) : (
-              <>
-                <TextField
-                  label="Phone number"
-                  type="tel"
-                  value={phoneInput}
-                  onChange={(e) => setPhoneInput(e.target.value)}
-                  maxLength={16}
-                  hint="Include your country code, e.g. +2348012345678. We'll text you a verification code."
-                  required
-                />
-                <div className="pcw-step__actions">
-                  <Button as="button" type="submit" loading={sendingCode}>
-                    Send verification code
-                  </Button>
-                  <Button as="button" type="button" variant="ghost" onClick={back}>
-                    Back
-                  </Button>
-                </div>
-              </>
-            )}
-          </form>
-        )}
-
-        {step === 3 && !phoneVerified && (
-          <form className="pcw-step" onSubmit={handleVerifyCode}>
-            <h2 id="pcw-title" className="pcw-step__title">
-              Verify your phone
-            </h2>
-            <p className="pcw-step__body">We sent a code to {phoneInput}.</p>
             <TextField
-              label="6-digit code"
-              value={phoneCode}
-              onChange={(e) => setPhoneCode(e.target.value)}
-              inputMode="numeric"
-              maxLength={6}
-              autoComplete="one-time-code"
+              label="Phone number"
+              type="tel"
+              value={phoneInput}
+              onChange={(e) => setPhoneInput(e.target.value)}
+              maxLength={16}
+              hint="Include your country code, e.g. +2348012345678."
               required
             />
             <div className="pcw-step__actions">
-              <Button as="button" type="submit" loading={verifyingCode} disabled={phoneCode.length !== 6}>
-                Verify
+              <Button as="button" onClick={next} disabled={!name.trim() || !phoneInput.trim()}>
+                Continue
               </Button>
-              <Button as="button" type="button" variant="ghost" onClick={back}>
+              <Button as="button" variant="ghost" onClick={back}>
                 Back
               </Button>
             </div>
-          </form>
+          </div>
         )}
-        {step === 4 && (
+
+        {step === 3 && (
           <div className="pcw-step">
             <h2 id="pcw-title" className="pcw-step__title">
               Education
@@ -324,7 +227,7 @@ export function ProfileCompletionWizard({ open, profile, onClose, onComplete }: 
           </div>
         )}
 
-        {step === 5 && (
+        {step === 4 && (
           <div className="pcw-step">
             <h2 id="pcw-title" className="pcw-step__title">
               Where you're based
@@ -356,7 +259,7 @@ export function ProfileCompletionWizard({ open, profile, onClose, onComplete }: 
           </div>
         )}
 
-        {step === 6 && (
+        {step === 5 && (
           <div className="pcw-step">
             <h2 id="pcw-title" className="pcw-step__title">
               Know your way around
@@ -387,7 +290,7 @@ export function ProfileCompletionWizard({ open, profile, onClose, onComplete }: 
           </div>
         )}
 
-        {step === 7 && (
+        {step === 6 && (
           <div className="pcw-step">
             <h2 id="pcw-title" className="pcw-step__title">
               Review and finish
@@ -399,7 +302,7 @@ export function ProfileCompletionWizard({ open, profile, onClose, onComplete }: 
               </div>
               <div>
                 <dt>Phone</dt>
-                <dd>{phoneVerified ? `${phoneInput} (verified)` : '—'}</dd>
+                <dd>{phoneInput || '—'}</dd>
               </div>
               <div>
                 <dt>Qualification</dt>

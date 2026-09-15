@@ -7,6 +7,12 @@
   padding: var(--space-3) var(--space-5);
   background: var(--brass-tint);
   border-bottom: 1px solid rgba(20, 17, 15, 0.08);
+  /* .portal becomes a 2-column grid (rail + main) at >=1024px (portal.css);
+     without this, the banner is an uninvited 3rd in-flow grid item, which
+     pushes .portal-rail into column 2 and .portal__main into a narrow
+     column-1 row of its own -- a broken layout that only shows once the
+     wizard is dismissed (the banner is hidden while it's open). */
+  grid-column: 1 / -1;
 }
 .pcb__message {
   margin: 0;

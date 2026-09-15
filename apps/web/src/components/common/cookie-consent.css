@@ -74,6 +74,23 @@
   padding-right: 22px; /* clear the close control */
 }
 
+.cookie-panel__back {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: var(--space-3);
+  font-family: var(--font-ui);
+  font-size: var(--fs-xs);
+  font-weight: 600;
+  color: var(--fg-muted);
+  transition: color var(--dur-fast) var(--ease-out);
+}
+.cookie-panel__back:hover,
+.cookie-panel__back:focus-visible {
+  color: var(--brass-deep);
+  outline: none;
+}
+
 .cookie-panel__eyebrow {
   margin: 0;
   font-family: var(--font-ui);

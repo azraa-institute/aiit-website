@@ -56,6 +56,14 @@ function ArrowIcon() {
   );
 }
 
+function BackArrowIcon() {
+  return (
+    <svg width="13" height="10" viewBox="0 0 13 10" aria-hidden="true">
+      <path d="M5 1.2 1 5l4 3.8M1 5h12" fill="none" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
 function Toggle({
   label,
   checked,
@@ -97,6 +105,11 @@ function CookiePanel({ expanded }: { expanded: boolean }) {
   const [entranceClass] = useState(() => (hasPlayedEntrance ? 'cookie-panel--quick' : 'cookie-panel--auto'));
 
   const closeAction = choices === null ? dismissBanner : closePreferences;
+  // Only meaningful while still undecided -- that's the one case where
+  // "back" has a compact Accept/Decline view to actually return to.
+  // Once a choice already exists (reopened later from the footer),
+  // there's nothing to go back to, so the control doesn't render.
+  const canGoBack = expanded && choices === null;
 
   useEffect(() => {
     hasPlayedEntrance = true;
@@ -140,6 +153,12 @@ function CookiePanel({ expanded }: { expanded: boolean }) {
         {expanded ? (
           <div className="cookie-panel__expanded">
             <div className="cookie-panel__side">
+              {canGoBack && (
+                <button type="button" className="cookie-panel__back" onClick={closePreferences}>
+                  <BackArrowIcon />
+                  Back
+                </button>
+              )}
               <Eyebrow />
               <h2 className="cookie-panel__heading">Cookie preferences</h2>
               <p className="cookie-panel__body">

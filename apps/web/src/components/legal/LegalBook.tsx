@@ -42,9 +42,7 @@ function Stamp() {
         const y2 = 100 - Math.cos(rad) * 100;
         return <line key={deg} className="legalbook__stamp-mark" x1={x1} y1={y1} x2={x2} y2={y2} />;
       })}
-      <text className="legalbook__stamp-text" x="100" y="90" textAnchor="middle" style={{ fontSize: 32, fontFamily: "'Source Serif 4', serif", fontWeight: 600, letterSpacing: 0 }}>
-        AZ
-      </text>
+      <image href="/assets/legal/az-mark-brass.png" x="69" y="44" width="62" height="62" preserveAspectRatio="xMidYMid meet" />
       <line className="legalbook__stamp-mark" x1="72" y1="108" x2="128" y2="108" strokeWidth="0.75" />
       <text className="legalbook__stamp-text" x="100" y="124" textAnchor="middle">
         OFFICIAL DOCUMENT

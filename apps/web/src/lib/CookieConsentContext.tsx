@@ -63,6 +63,11 @@ interface CookieConsentContextValue {
   savePreferences: (choices: CookieConsentChoices) => void;
   openPreferences: () => void;
   closePreferences: () => void;
+  /** Closes the notice WITHOUT recording a decision (nothing is written to
+   * storage) -- for a plain close/dismiss control on the not-yet-decided
+   * notice. It reappears on the next full page load, same as if the
+   * visitor had never seen it, since no choice was actually made. */
+  dismissBanner: () => void;
 }
 
 const CookieConsentContext = createContext<CookieConsentContextValue | undefined>(undefined);
@@ -98,6 +103,10 @@ export function CookieConsentProvider({ children }: { children: ReactNode }) {
       savePreferences: decide,
       openPreferences: () => setPreferencesOpen(true),
       closePreferences: () => setPreferencesOpen(false),
+      dismissBanner: () => {
+        setBannerOpen(false);
+        setPreferencesOpen(false);
+      },
     }),
     [choices, bannerOpen, preferencesOpen, decide],
   );

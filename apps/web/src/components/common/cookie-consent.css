@@ -1,190 +1,288 @@
 /* ============================================================
-   COOKIE CONSENT — a first-visit banner (bottom bar) plus a preferences
-   modal reachable any time afterward from the footer. Styled from the
-   same tokens as the rest of the site (paper/ivory/ink/brass); no new
-   palette, no glassmorphism.
+   COOKIE CONSENT — a compact, editorial "Privacy & Cookies" notice,
+   deliberately NOT a conventional SaaS cookie bar: a small floating
+   panel anchored bottom-right (a bottom sheet on mobile), styled from
+   the same tokens as the rest of the site (warm ivory, deep ink,
+   champagne/gold brass) with a quiet, delayed slide-up entrance.
+   Functionality lives in CookieConsentContext.tsx / CookieConsent.tsx
+   -- this file is presentation only.
    ============================================================ */
 
-/* ---- Banner ---- */
-.cookie-banner {
+.cookie-panel {
   position: fixed;
-  left: 0;
-  right: 0;
-  bottom: 0;
+  right: clamp(16px, 3vw, 32px);
+  bottom: clamp(16px, 3vw, 32px);
   z-index: var(--z-toast);
-  background: var(--surface);
-  border-top: 1px solid var(--line);
-  box-shadow: 0 -8px 30px rgba(20, 17, 15, 0.12);
-  padding: var(--space-5) var(--gutter);
-  animation: cookie-banner-in var(--dur-slow) var(--ease-out) both;
-}
-@keyframes cookie-banner-in {
-  from {
-    opacity: 0;
-    transform: translateY(12px);
-  }
-}
-
-.cookie-banner__inner {
-  max-width: var(--container-wide);
-  margin-inline: auto;
   display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--space-6);
-  flex-wrap: wrap;
+  justify-content: flex-end;
+  pointer-events: none; /* only the card itself, not this positioning shell, should catch clicks */
 }
 
-.cookie-banner__text {
-  flex: 1 1 420px;
-  min-width: 0;
-  margin: 0;
-  font-size: var(--fs-sm);
-  line-height: 1.55;
-  color: var(--ink-soft);
+.cookie-panel__card {
+  position: relative;
+  pointer-events: auto;
+  width: min(388px, calc(100vw - 32px));
+  padding: 26px 24px 24px 30px;
+  background: var(--ivory);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-soft);
+  overflow: hidden;
 }
-.cookie-banner__title {
-  display: block;
-  margin-bottom: var(--space-1);
-  font-family: var(--font-display);
-  font-size: var(--fs-body);
-  font-weight: var(--fw-strong);
+.cookie-panel__card.is-expanded {
+  width: min(700px, calc(100vw - 32px));
+}
+
+/* A thin champagne/gold spine along the left edge -- the one accent
+   colour touch besides the eyebrow/links, standing in for a "cookie
+   icon" without literally drawing one. */
+.cookie-panel__spine {
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 3px;
+  background: linear-gradient(180deg, var(--brass-tint), var(--brass) 45%, var(--brass-deep));
+}
+
+.cookie-panel__close {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  border-radius: var(--radius-pill);
+  color: var(--fg-faint);
+  transition:
+    background var(--dur-fast) var(--ease-out),
+    color var(--dur-fast) var(--ease-out);
+}
+.cookie-panel__close:hover {
+  background: var(--accent-wash);
   color: var(--ink);
 }
-.cookie-banner__link {
-  color: var(--brass-deep);
-  font-weight: 600;
-  text-decoration: underline;
-  text-underline-offset: 2px;
-}
-
-.cookie-banner__actions {
-  display: flex;
-  align-items: center;
-  gap: var(--space-3);
-  flex-wrap: wrap;
-}
-
-/* ---- Preferences modal ---- */
-.cookie-modal {
-  position: fixed;
-  inset: 0;
-  z-index: var(--z-modal);
-  display: grid;
-  place-items: center;
-  padding: clamp(1rem, 4vw, 2.5rem);
-  background: rgba(20, 17, 15, 0.55);
-  animation: cookie-modal-scrim var(--dur-base) var(--ease-out);
-}
-@keyframes cookie-modal-scrim {
-  from {
-    opacity: 0;
-  }
-}
-
-.cookie-modal__card {
-  position: relative;
-  width: min(480px, 100%);
-  max-height: 90vh;
-  overflow-y: auto;
-  scrollbar-width: thin;
-  padding: clamp(1.75rem, 1.4rem + 1.6vw, 2.5rem);
-  background: var(--surface);
-  border-radius: var(--radius-lg);
-  box-shadow:
-    0 4px 12px rgba(20, 17, 15, 0.18),
-    0 40px 90px -30px rgba(20, 17, 15, 0.5);
-  animation: cookie-modal-in var(--dur-slow) var(--ease-out) both;
-}
-@keyframes cookie-modal-in {
-  from {
-    opacity: 0;
-    transform: scale(0.96) translateY(8px);
-  }
-}
-
-.cookie-modal__close {
-  position: absolute;
-  top: 1.1rem;
-  right: 1.1rem;
-  display: grid;
-  place-items: center;
-  width: 32px;
-  height: 32px;
-  border-radius: var(--radius-pill);
-  color: var(--ink-soft);
-  transition: background var(--dur-fast) var(--ease-out);
-}
-.cookie-modal__close:hover {
-  background: var(--accent-wash);
-}
-.cookie-modal__close:focus-visible {
+.cookie-panel__close:focus-visible {
   outline: none;
   box-shadow: 0 0 0 3px rgba(154, 123, 79, 0.25);
 }
 
-.cookie-modal__title {
-  margin: 0;
-  padding-right: var(--space-6);
-  font-family: var(--font-display);
-  font-weight: var(--fw-strong);
-  font-size: var(--fs-heading);
-  color: var(--ink);
-}
-.cookie-modal__intro {
-  margin: var(--space-3) 0 0;
-  font-size: var(--fs-sm);
-  line-height: 1.6;
-  color: var(--fg-soft);
+.cookie-panel__header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-4);
+  padding-right: 22px; /* clear the close control */
 }
 
-.cookie-modal__list {
-  list-style: none;
+.cookie-panel__eyebrow {
+  margin: 0;
+  font-family: var(--font-ui);
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--brass-deep);
+}
+
+.cookie-panel__heading {
+  margin: 10px 22px 0 0;
+  font-family: var(--font-accent);
+  font-weight: 600;
+  font-size: 1.3rem;
+  line-height: 1.22;
+  color: var(--ink);
+}
+.cookie-panel__card.is-expanded .cookie-panel__heading {
+  margin-right: 0;
+}
+
+.cookie-panel__body {
+  margin: 10px 0 0;
+  font-size: var(--fs-sm);
+  line-height: 1.62;
+  color: var(--ink-soft);
+}
+
+.cookie-panel__manage-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 14px;
+  font-family: var(--font-ui);
+  font-size: var(--fs-xs);
+  font-weight: 600;
+  color: var(--brass-deep);
+  transition: color var(--dur-fast) var(--ease-out);
+}
+.cookie-panel__manage-link:hover,
+.cookie-panel__manage-link:focus-visible {
+  color: var(--ink);
+  outline: none;
+}
+.cookie-panel__manage-link:hover .cookie-panel__manage-arrow {
+  transform: translateX(2px);
+}
+.cookie-panel__manage-arrow {
+  transition: transform var(--dur-fast) var(--ease-out);
+}
+
+.cookie-panel__fineprint {
+  margin: 14px 0 0;
+  font-size: 11px;
+  color: var(--fg-faint);
+}
+.cookie-panel__fineprint a {
+  color: var(--fg-muted);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+.cookie-panel__fineprint a:hover {
+  color: var(--brass-deep);
+}
+
+/* ---- Decorative sprig -- a thin hand-drawn line mark, never a literal
+   cookie glyph or emoji. ---- */
+.cookie-panel__leaf {
+  flex-shrink: 0;
+  width: 20px;
+  height: 22px;
+  margin-top: 1px;
+  fill: none;
+  stroke: var(--brass);
+  stroke-width: 1.1;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  opacity: 0.85;
+}
+.cookie-panel__side .cookie-panel__leaf {
+  width: 24px;
+  height: 26px;
   margin: var(--space-5) 0 0;
+}
+
+/* ---- Buttons -- normal case, moderate radius: a quieter register than
+   the site's bold uppercase marketing .btn, befitting a notice rather
+   than a call to action. Same ink/brass colour language throughout. ---- */
+.cookie-panel__actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 18px;
+}
+.cookie-panel__btn {
+  flex: 1 1 auto;
+  padding: 10px 16px;
+  border-radius: 10px;
+  font-family: var(--font-ui);
+  font-size: var(--fs-sm);
+  font-weight: 600;
+  text-align: center;
+  white-space: nowrap;
+  transition:
+    background var(--dur-fast) var(--ease-out),
+    color var(--dur-fast) var(--ease-out),
+    border-color var(--dur-fast) var(--ease-out);
+}
+.cookie-panel__btn--primary {
+  background: var(--ink);
+  color: var(--paper);
+  border: 1px solid var(--ink);
+}
+.cookie-panel__btn--primary:hover {
+  background: var(--brass-deep);
+  border-color: var(--brass-deep);
+}
+.cookie-panel__btn--secondary {
+  background: transparent;
+  color: var(--ink-soft);
+  border: 1px solid var(--line-strong);
+}
+.cookie-panel__btn--secondary:hover {
+  border-color: var(--brass);
+  color: var(--brass-deep);
+  background: var(--accent-wash);
+}
+.cookie-panel__btn:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(154, 123, 79, 0.25);
+}
+
+/* ============================================================
+   EXPANDED (preferences) -- two columns from ~640px: a narrow side
+   column carrying the same eyebrow/heading language, and the toggle
+   list + actions on the right. Below that width it stacks to one
+   column, same as the compact notice.
+   ============================================================ */
+.cookie-panel__expanded {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+}
+@media (min-width: 640px) {
+  .cookie-panel__expanded {
+    flex-direction: row;
+    gap: var(--space-6);
+  }
+  .cookie-panel__side {
+    flex: 0 0 190px;
+  }
+  .cookie-panel__main {
+    flex: 1 1 auto;
+    min-width: 0;
+  }
+}
+
+.cookie-panel__list {
+  list-style: none;
+  margin: 0;
   padding: 0;
   border-top: 1px solid var(--line);
 }
-.cookie-modal__row {
+.cookie-panel__row {
   display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--space-4);
+  align-items: flex-start;
+  gap: var(--space-3);
   padding-block: var(--space-4);
   border-bottom: 1px solid var(--line);
 }
-.cookie-modal__row-text {
+.cookie-panel__row-dot {
+  flex-shrink: 0;
+  width: 7px;
+  height: 7px;
+  margin-top: 5px;
+  border-radius: 50%;
+  border: 1px solid var(--brass-deep);
+}
+.cookie-panel__row-text {
+  flex: 1 1 auto;
+  min-width: 0;
   display: flex;
   flex-direction: column;
   gap: 2px;
-  min-width: 0;
 }
-.cookie-modal__row-title {
+.cookie-panel__row-title {
   font-size: var(--fs-sm);
   font-weight: 600;
   color: var(--ink);
 }
-.cookie-modal__row-body {
+.cookie-panel__row-body {
   font-size: var(--fs-xs);
   line-height: 1.5;
   color: var(--fg-muted);
 }
-.cookie-modal__locked {
+.cookie-panel__row-control {
   flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 4px;
+}
+.cookie-panel__row-locked {
   font-family: var(--font-ui);
-  font-size: var(--fs-xs);
+  font-size: 10px;
   font-weight: 700;
-  letter-spacing: 0.06em;
+  letter-spacing: 0.05em;
   text-transform: uppercase;
   color: var(--fg-faint);
-}
-
-.cookie-modal__actions {
-  display: flex;
-  align-items: center;
-  justify-content: flex-end;
-  gap: var(--space-3);
-  flex-wrap: wrap;
-  margin-top: var(--space-6);
 }
 
 /* ---- Toggle switch ---- */
@@ -197,18 +295,21 @@
   outline: none;
   box-shadow: 0 0 0 3px rgba(154, 123, 79, 0.25);
 }
+.cookie-toggle:disabled {
+  cursor: default;
+}
 .cookie-toggle__track {
   display: block;
-  width: 40px;
-  height: 22px;
+  width: 38px;
+  height: 21px;
   border-radius: var(--radius-pill);
   background: var(--line-strong);
   transition: background var(--dur-fast) var(--ease-out);
 }
 .cookie-toggle__thumb {
   display: block;
-  width: 16px;
-  height: 16px;
+  width: 15px;
+  height: 15px;
   margin: 3px;
   border-radius: 50%;
   background: var(--surface);
@@ -219,33 +320,101 @@
   background: var(--brass);
 }
 .cookie-toggle.is-on .cookie-toggle__thumb {
-  transform: translateX(18px);
+  transform: translateX(17px);
+}
+.cookie-toggle.is-locked {
+  opacity: 0.6;
 }
 
+/* ============================================================
+   ENTRANCE — a quiet delayed slide-up + fade, no bounce. The "auto"
+   variant is the one-time first appearance (page-load triggered); the
+   "quick" variant is any later, user-triggered open (the footer link,
+   or reopening after a dismiss) and skips the long delay entirely.
+   ============================================================ */
+.cookie-panel__card.cookie-panel--auto {
+  animation: cookie-panel-in 560ms var(--ease-out) 900ms both;
+}
+.cookie-panel__card.cookie-panel--quick {
+  animation: cookie-panel-in 320ms var(--ease-out) both;
+}
+@keyframes cookie-panel-in {
+  from {
+    opacity: 0;
+    transform: translateY(26px);
+  }
+}
+
+/* ============================================================
+   MOBILE — a refined bottom sheet, not the desktop floating card:
+   full width, rounded top corners only, a small drag-handle mark,
+   sized to its content rather than claiming the full screen.
+   ============================================================ */
 @media (max-width: 640px) {
-  .cookie-banner {
-    padding: var(--space-4);
+  .cookie-panel {
+    right: 0;
+    bottom: 0;
+    left: 0;
+    justify-content: center;
   }
-  .cookie-banner__inner {
-    gap: var(--space-4);
+  .cookie-panel__card {
+    width: 100%;
+    max-height: min(78vh, 620px);
+    overflow-y: auto;
+    scrollbar-width: thin;
+    padding: 22px 20px 20px;
+    border-radius: 18px 18px 0 0;
+    border-bottom: none;
   }
-  .cookie-banner__actions {
+  .cookie-panel__card.is-expanded {
     width: 100%;
   }
-  .cookie-banner__actions > * {
-    flex: 1 1 auto;
+  .cookie-panel__card::before {
+    content: '';
+    position: sticky;
+    top: 0;
+    display: block;
+    width: 36px;
+    height: 4px;
+    margin: -8px auto 14px;
+    border-radius: var(--radius-pill);
+    background: var(--line-strong);
+  }
+  .cookie-panel__spine {
+    width: 100%;
+    height: 3px;
+    inset: 0 0 auto 0;
+    background: linear-gradient(90deg, var(--brass-tint), var(--brass) 45%, var(--brass-deep));
+  }
+  .cookie-panel__close {
+    top: 16px;
+  }
+  .cookie-panel__actions {
+    flex-direction: column-reverse;
+  }
+  @keyframes cookie-panel-in {
+    from {
+      opacity: 0;
+      transform: translateY(100%);
+    }
   }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .cookie-banner,
-  .cookie-modal,
-  .cookie-modal__card {
-    animation: none;
+  .cookie-panel__card.cookie-panel--auto,
+  .cookie-panel__card.cookie-panel--quick {
+    animation: cookie-panel-fade 200ms linear both;
   }
+  .cookie-panel__manage-arrow,
+  .cookie-panel__close,
+  .cookie-panel__btn,
   .cookie-toggle__track,
-  .cookie-toggle__thumb,
-  .cookie-modal__close {
+  .cookie-toggle__thumb {
     transition: none;
+  }
+}
+@keyframes cookie-panel-fade {
+  from {
+    opacity: 0;
   }
 }

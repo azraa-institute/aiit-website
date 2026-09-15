@@ -191,9 +191,10 @@ export default function PortalLayout() {
         />
       )}
 
-      {learner && !learner.profileComplete && !wizardOpen ? (
-        <ProfileCompletionBanner onComplete={() => setWizardOpen(true)} />
-      ) : null}
+      <ProfileCompletionBanner
+        visible={Boolean(learner && !learner.profileComplete && !wizardOpen)}
+        onComplete={() => setWizardOpen(true)}
+      />
 
       {/* Navigation rail — the same markup is the desktop rail and the
           mobile slide-out panel; CSS switches presentation. */}

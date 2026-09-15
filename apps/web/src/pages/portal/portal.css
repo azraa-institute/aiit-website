@@ -463,6 +463,13 @@
   background: rgba(251, 248, 242, 0.86);
   backdrop-filter: saturate(1.1) blur(8px);
   border-bottom: 1px solid var(--line);
+  /* Forces its own compositing layer -- a defensive measure against a
+     known class of Chromium bug where a sticky element's region stops
+     repainting after a sibling higher up the page changes size (see
+     ProfileCompletionBanner.tsx's doc comment, which works around the
+     same issue from the other side by never mounting/unmounting that
+     sibling in the first place). Costs nothing, cheap insurance. */
+  will-change: transform;
 }
 .portal-topbar__menu {
   display: grid;

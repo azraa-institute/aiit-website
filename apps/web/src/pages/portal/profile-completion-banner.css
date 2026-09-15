@@ -14,6 +14,25 @@
      column-1 row of its own -- a broken layout that only shows once the
      wizard is dismissed (the banner is hidden while it's open). */
   grid-column: 1 / -1;
+  /* Always mounted -- see ProfileCompletionBanner.tsx's doc comment for why
+     (a real Chromium paint bug when this grid row is inserted fresh next to
+     .portal-topbar's position:sticky). Collapses via max-height instead of
+     mount/unmount. 200px comfortably fits the wrapped 2-line mobile case. */
+  max-height: 200px;
+  overflow: hidden;
+  transition:
+    max-height var(--dur-base) var(--ease-out),
+    padding var(--dur-base) var(--ease-out),
+    opacity var(--dur-fast) var(--ease-out),
+    border-color var(--dur-fast) var(--ease-out);
+}
+.pcb--collapsed {
+  max-height: 0;
+  padding-top: 0;
+  padding-bottom: 0;
+  opacity: 0;
+  border-bottom-color: transparent;
+  pointer-events: none;
 }
 .pcb__copy {
   min-width: 0;
@@ -36,5 +55,11 @@
 @media (max-width: 640px) {
   .pcb {
     padding: var(--space-3) var(--space-4);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pcb {
+    transition: none;
   }
 }

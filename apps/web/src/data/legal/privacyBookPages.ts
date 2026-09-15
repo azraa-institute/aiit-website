@@ -7,12 +7,14 @@ import type { LegalBookPage } from './types';
  *
  * Privacy Policy's sections are far less evenly sized than Terms &
  * Conditions': 'information-we-collect' (three labeled item groups) and
- * 'how-we-use-it' (a seven-item list) are each substantial on their
- * own, so they get a standalone page rather than being paired -- pairing
- * either with anything else would make that page's taller column blow
- * past the fixed leaf height and force internal scroll. Every other
- * section is short enough to pair two-up, same as the terms book.
- * `label` is a page running-head, not part of the legal text itself.
+ * 'how-we-use-it' (a seven-item list) are each substantial on their own,
+ * so they get a standalone page rather than being paired. 'cookies-and-
+ * tracking' also went standalone once it grew a second paragraph
+ * (disclosing the server-side consent-decision log) -- paired with
+ * anything else, that extra paragraph was enough to push the page's
+ * taller column past the fixed leaf height. Every other section is
+ * short enough to pair two-up, same as the terms book. `label` is a
+ * page running-head, not part of the legal text itself.
  */
 export const PRIVACY_BOOK_PAGES: LegalBookPage[] = [
   {
@@ -24,23 +26,26 @@ export const PRIVACY_BOOK_PAGES: LegalBookPage[] = [
     sectionIds: ['how-we-use-it'],
   },
   {
-    label: 'Sharing & Cookies',
-    sectionIds: ['sharing-of-your-information', 'cookies-and-tracking'],
+    label: 'Cookies & Tracking',
+    sectionIds: ['cookies-and-tracking'],
+  },
+  {
+    label: 'Sharing Your Information & Data Security',
+    sectionIds: ['sharing-of-your-information', 'data-security'],
     layout: 'two-col',
   },
   {
-    label: 'Security & Your Rights',
-    sectionIds: ['data-security', 'your-rights'],
+    label: "Your Rights & Children's Privacy",
+    sectionIds: ['your-rights', 'childrens-privacy'],
     layout: 'two-col',
   },
   {
-    label: "Children's Privacy & International Transfers",
-    sectionIds: ['childrens-privacy', 'international-data-transfers'],
+    label: 'International Transfers & Changes',
+    sectionIds: ['international-data-transfers', 'changes-to-this-policy'],
     layout: 'two-col',
   },
   {
-    label: 'Changes & Contact',
-    sectionIds: ['changes-to-this-policy', 'contact-us'],
-    layout: 'two-col',
+    label: 'Contact',
+    sectionIds: ['contact-us'],
   },
 ];

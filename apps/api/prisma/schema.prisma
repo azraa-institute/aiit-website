@@ -446,3 +446,34 @@ model AffiliateApplication {
   @@map("affiliate_applications")
   @@schema("public")
 }
+
+// An append-only audit trail for the cookie-consent panel (see
+// CookieConsentContext.tsx) -- every accept/decline/save is a NEW row,
+// never an update, so the full history of a visitor's choices over time
+// is preserved rather than overwritten. localStorage remains the source
+// of truth the frontend actually reads to decide whether to show the
+// panel; this table exists purely so a decision can be proven later
+// (date, choice, and by whom/where) if ever needed.
+model CookieConsentLog {
+  id          String   @id @default(uuid()) @db.Uuid
+  // A random id the frontend generates once and keeps in localStorage
+  // alongside the consent choice -- lets multiple decisions from the same
+  // browser over time be correlated without identifying the person. Not
+  // sent anywhere else and not itself a cross-site tracking mechanism.
+  visitorId   String   @map("visitor_id") @db.Uuid
+  // References auth.users.id, not a Prisma relation -- same convention
+  // as every other user reference in this schema (see Enrollment.userId).
+  // Null for an anonymous visitor; set when the browser happened to hold
+  // a valid session at the moment of the decision.
+  userId      String?  @map("user_id") @db.Uuid
+  analytics   Boolean
+  preferences Boolean
+  ipAddress   String?  @map("ip_address")
+  userAgent   String?  @map("user_agent")
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  @@index([visitorId])
+  @@index([userId])
+  @@map("cookie_consent_logs")
+  @@schema("public")
+}

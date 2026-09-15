@@ -106,6 +106,34 @@ export class JwtGuard implements CanActivate {
    * this one narrow check into a full outage for every authenticated
    * request, not just the aal2 one it protects.
    */
+  /**
+   * Best-effort identification for an endpoint that works for both
+   * signed-in and anonymous callers (e.g. cookie-consent logging) --
+   * unlike canActivate(), this never throws. Any failure (no header,
+   * expired, bad signature, no profile, deleted account) is treated
+   * identically as "anonymous", since there's no 401 response here to
+   * distinguish them for. Deliberately skips the aal2 MFA check
+   * canActivate() does -- that guards access to sensitive account
+   * actions, which this endpoint isn't.
+   */
+  async tryIdentify(request: Request): Promise<AuthenticatedUser | null> {
+    try {
+      const token = extractBearerToken(request.headers.authorization);
+      if (!token) return null;
+
+      const { sub, email } = await this.verifyAndExtractSubject(token);
+      const profile = await this.prisma.profile.findUnique({
+        where: { id: sub },
+        select: { role: true, status: true },
+      });
+      if (!profile || profile.status !== 'active') return null;
+
+      return { userId: sub, role: profile.role, email };
+    } catch {
+      return null;
+    }
+  }
+
   private async requiresAal2(userId: string): Promise<boolean> {
     try {
       const rows = await this.prisma.$queryRaw<{ has_verified_factor: boolean }[]>`

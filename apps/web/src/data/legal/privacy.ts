@@ -77,6 +77,7 @@ export const PRIVACY_POLICY: LegalDoc = {
       ],
       paragraphs: [
         'You choose which non-essential cookies to allow the first time you visit, and can change your choice at any time from the "Cookie Preferences" link in the site footer. You can also manage cookies through your browser settings.',
+        'We keep a record of each cookie choice you make (the choice itself, the date, and technical details such as your IP address) as evidence that consent was given, in line with our obligations under applicable data protection law.',
       ],
     },
     {

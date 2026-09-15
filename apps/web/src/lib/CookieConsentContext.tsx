@@ -1,5 +1,6 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 import type { ReactNode } from 'react';
+import { apiFetch } from './api';
 
 /**
  * The two cookie categories a visitor can actually turn on/off, matching
@@ -42,6 +43,37 @@ function writeStoredConsent(choices: CookieConsentChoices) {
     /* storage unavailable (private mode, blocked, etc.) -- consent still
        works for this tab via in-memory state, it just won't persist */
   }
+}
+
+const VISITOR_ID_KEY = 'aiit.cookie-consent.visitor-id';
+
+/** A random id kept separately from the consent choice itself (a distinct
+ * localStorage key) purely so repeat decisions from the same browser over
+ * time can be correlated in the server-side audit log (see
+ * CookieConsentLog in the API's schema.prisma) without identifying the
+ * visitor. Generated once and reused, not regenerated per decision. */
+function getOrCreateVisitorId(): string | null {
+  try {
+    const existing = localStorage.getItem(VISITOR_ID_KEY);
+    if (existing) return existing;
+    const id = crypto.randomUUID();
+    localStorage.setItem(VISITOR_ID_KEY, id);
+    return id;
+  } catch {
+    return null;
+  }
+}
+
+/** Best-effort, fire-and-forget: the audit log is a "nice to have" record,
+ * never something the consent UI blocks on or retries. localStorage (via
+ * writeStoredConsent) is the only thing the frontend actually depends on
+ * to decide whether to show the panel again. */
+function logConsentToServer(choices: CookieConsentChoices): void {
+  const visitorId = getOrCreateVisitorId();
+  if (!visitorId) return;
+  apiFetch('/consent', { method: 'POST', body: JSON.stringify({ visitorId, ...choices }) }).catch(() => {
+    /* best-effort -- a failed log write should never surface to the visitor */
+  });
 }
 
 /**
@@ -91,6 +123,7 @@ export function CookieConsentProvider({ children }: { children: ReactNode }) {
     setChoices(next);
     setBannerOpen(false);
     setPreferencesOpen(false);
+    logConsentToServer(next);
   }, []);
 
   const value = useMemo<CookieConsentContextValue>(

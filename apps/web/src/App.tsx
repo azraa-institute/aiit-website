@@ -5,6 +5,7 @@ import { RouteFallback } from '@/components/layout/RouteFallback';
 import { ChunkErrorBoundary, CHUNK_RELOAD_FLAG } from '@/components/layout/ChunkErrorBoundary';
 import { AuthProvider } from '@/lib/AuthContext';
 import { RequireAuth } from '@/components/auth/RequireAuth';
+import { RequireCompleteProfile } from '@/components/auth/RequireCompleteProfile';
 import { CookieConsentProvider } from '@/lib/CookieConsentContext';
 import { CookieConsent } from '@/components/common/CookieConsent';
 
@@ -127,11 +128,46 @@ export function App() {
                 }
               >
                 <Route index element={<DashboardPage />} />
-                <Route path="courses" element={<MyCoursesPage />} />
-                <Route path="certificates" element={<CertificatesPage />} />
-                <Route path="assignments" element={<AssignmentsPage />} />
-                <Route path="resources" element={<PortalResourcesPage />} />
-                <Route path="webinars" element={<WebinarsPage />} />
+                <Route
+                  path="courses"
+                  element={
+                    <RequireCompleteProfile>
+                      <MyCoursesPage />
+                    </RequireCompleteProfile>
+                  }
+                />
+                <Route
+                  path="certificates"
+                  element={
+                    <RequireCompleteProfile>
+                      <CertificatesPage />
+                    </RequireCompleteProfile>
+                  }
+                />
+                <Route
+                  path="assignments"
+                  element={
+                    <RequireCompleteProfile>
+                      <AssignmentsPage />
+                    </RequireCompleteProfile>
+                  }
+                />
+                <Route
+                  path="resources"
+                  element={
+                    <RequireCompleteProfile>
+                      <PortalResourcesPage />
+                    </RequireCompleteProfile>
+                  }
+                />
+                <Route
+                  path="webinars"
+                  element={
+                    <RequireCompleteProfile>
+                      <WebinarsPage />
+                    </RequireCompleteProfile>
+                  }
+                />
                 <Route path="profile" element={<ProfilePage />} />
                 <Route path="notifications" element={<NotificationsPage />} />
                 <Route path="settings" element={<SettingsPage />} />

@@ -11,12 +11,19 @@ const ME: Me = {
   name: null,
   headline: null,
   phone: null,
+  phoneVerifiedAt: null,
+  qualification: null,
+  university: null,
   country: null,
+  city: null,
+  address: null,
+  postalCode: null,
   avatarKey: null,
   preferences: {},
   createdAt: '2026-01-01T00:00:00.000Z',
   updatedAt: '2026-01-02T00:00:00.000Z',
   isNewSignup: false,
+  profileComplete: false,
 };
 
 describe('AuthController', () => {

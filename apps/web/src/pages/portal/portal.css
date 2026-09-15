@@ -19,6 +19,21 @@
   background: var(--paper);
 }
 
+/* Applied while the ProfileCompletionWizard is open -- the wizard itself is
+   mounted via a DOM portal into document.body (see ProfileCompletionWizard.tsx),
+   outside this subtree entirely, so blurring .portal here never touches it. */
+.portal--blurred {
+  filter: blur(6px);
+  pointer-events: none;
+  user-select: none;
+  transition: filter var(--dur-base) var(--ease-out);
+}
+@media (prefers-reduced-motion: reduce) {
+  .portal--blurred {
+    transition: none;
+  }
+}
+
 /* The shared .eyebrow utility (global.css) went to Source Serif 4 for the
    public site's editorial pages; the portal stays on plain --font-ui, its
    own established typeface for every label here. */
@@ -1927,11 +1942,26 @@
   text-transform: uppercase;
   color: var(--ink-muted);
 }
+.profile-details__subtitle {
+  margin-top: var(--space-5);
+  font-size: var(--fs-sm);
+  font-weight: 700;
+  letter-spacing: var(--tracking-wide);
+  text-transform: uppercase;
+  color: var(--ink-muted);
+}
 .profile-details__form {
   display: grid;
   gap: var(--space-4);
   max-width: 34rem;
   margin-top: var(--space-4);
+}
+.profile-details__actions {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+  margin-top: var(--space-2);
 }
 .profile-details__grid {
   display: grid;

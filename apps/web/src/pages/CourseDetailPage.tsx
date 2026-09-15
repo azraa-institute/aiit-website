@@ -15,6 +15,7 @@ import { Button } from '@/components/primitives/Button';
 import { Stars } from '@/components/common/Stars';
 import { CourseCard } from '@/components/course/CourseCard';
 import { RouteFallback } from '@/components/layout/RouteFallback';
+import { useLearner } from './portal/learnerData';
 import './course-detail.css';
 
 export default function CourseDetailPage() {
@@ -264,6 +265,10 @@ function EnrollAction({ course, comingSoon }: { course: Course; comingSoon: bool
   const navigate = useNavigate();
   const [enrolling, setEnrolling] = useState(false);
   const [error, setError] = useState<string>();
+  // Called unconditionally (hooks can't be conditional) -- `enabled` skips
+  // the actual fetch for anonymous/loading visitors, same pattern already
+  // used by the public header's account widget (see learnerData.ts).
+  const learnerState = useLearner({ enabled: status === 'authenticated' });
 
   if (status === 'loading') {
     return (
@@ -278,6 +283,20 @@ function EnrollAction({ course, comingSoon }: { course: Course; comingSoon: bool
       <Button as="link" to="/register" fullWidth size="lg" arrow>
         {comingSoon ? 'Join the waitlist' : 'Enroll now'}
       </Button>
+    );
+  }
+
+  if (learnerState.status === 'ready' && !learnerState.learner.profileComplete) {
+    return (
+      <>
+        <Button as="button" type="button" fullWidth size="lg" disabled>
+          {comingSoon ? 'Join the waitlist' : 'Enroll now'}
+        </Button>
+        <p className="course-detail__note">
+          Complete your profile before enrolling.{' '}
+          <Link to="/portal/profile">Finish your profile</Link>
+        </p>
+      </>
     );
   }
 

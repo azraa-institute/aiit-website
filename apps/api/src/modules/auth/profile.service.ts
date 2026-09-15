@@ -1,6 +1,27 @@
-import { Injectable, Logger, NotFoundException } from '@nestjs/common';
+import { BadRequestException, Injectable, Logger, NotFoundException } from '@nestjs/common';
 import type { Prisma, Profile } from '@prisma/client';
 import type { Me } from '@aiit/shared';
+
+/**
+ * The fields that must be non-empty (plus phoneVerifiedAt not null) before
+ * `profileComplete` is true. `headline` and `avatarKey` are deliberately
+ * NOT in this list -- they stay optional. Local to this service (not the
+ * shared package) since it's the only consumer -- the frontend just reads
+ * the computed `profileComplete` boolean below, it never needs the list
+ * itself. `@aiit/shared` is type-only by convention (see its package.json);
+ * keeping a real runtime array out of it avoids being the first thing to
+ * break that.
+ */
+const PROFILE_COMPLETION_FIELDS = [
+  'name',
+  'phone',
+  'country',
+  'city',
+  'address',
+  'postalCode',
+  'qualification',
+  'university',
+] as const satisfies readonly (keyof Profile)[];
 import { PrismaService } from '../../common/prisma/prisma.service';
 import { EmailService } from '../../common/email/email.service';
 import { brandedEmailHtml } from '../../common/email/branded-email';
@@ -59,9 +80,12 @@ export class ProfileService {
         heading: 'Welcome to AIIT',
         // This only ever sends on a real first-ever signup, so "pick up
         // where you left off" never applies -- there's nothing to resume yet.
-        intro: 'Your account is ready. Head to your learner portal to explore courses and start learning.',
-        ctaLabel: 'Go to your portal',
-        ctaUrl: portalUrl,
+        // Second sentence mirrors the in-app welcome toast (PortalLayout.tsx)
+        // and the ProfileCompletionBanner's own copy -- same message everywhere.
+        intro:
+          'Your account is ready. Head to your learner portal to explore courses and start learning. Please complete your profile first -- course enrollment and the rest of your portal stay locked until you do.',
+        ctaLabel: 'Complete your profile',
+        ctaUrl: `${portalUrl}/profile`,
         footerNote: "You're receiving this because you created an account on aiit.network.",
       }),
     });
@@ -74,12 +98,66 @@ export class ProfileService {
       data: {
         ...(dto.name !== undefined && { name: dto.name }),
         ...(dto.headline !== undefined && { headline: dto.headline }),
-        ...(dto.phone !== undefined && { phone: dto.phone }),
+        // Changing the phone number invalidates any previous verification --
+        // the new number hasn't been through POST /me/phone/confirm yet.
+        // Only clear it when phone is actually changing, not on every PATCH
+        // that happens to omit phone (undefined) or resend the same value.
+        ...(dto.phone !== undefined && { phone: dto.phone, phoneVerifiedAt: null }),
+        ...(dto.qualification !== undefined && { qualification: dto.qualification }),
+        ...(dto.university !== undefined && { university: dto.university }),
         ...(dto.country !== undefined && { country: dto.country }),
+        ...(dto.city !== undefined && { city: dto.city }),
+        ...(dto.address !== undefined && { address: dto.address }),
+        ...(dto.postalCode !== undefined && { postalCode: dto.postalCode }),
         ...(dto.avatarKey !== undefined && { avatarKey: dto.avatarKey }),
       },
     });
     return toMe(profile, false);
+  }
+
+  /**
+   * Marks the profile's phone as verified -- but only after checking the
+   * *auth* user's own phone_confirmed_at via the Supabase Admin API first
+   * (same admin-fetch pattern as banSupabaseUser below). A client calling
+   * this endpoint can't just claim verification: the phone on the auth user
+   * must actually be confirmed AND match what's on the profile, or this
+   * throws instead of silently no-op'ing (so the frontend can tell the
+   * learner what went wrong rather than looking like nothing happened).
+   */
+  async confirmPhoneVerification(userId: string): Promise<Me> {
+    const profile = await this.prisma.profile.findUnique({ where: { id: userId } });
+    if (!profile) throw new NotFoundException('Profile not found.');
+    if (!profile.phone) {
+      throw new BadRequestException('Set a phone number before confirming verification.');
+    }
+
+    const supabaseUrl = process.env.SUPABASE_URL;
+    const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+    if (!supabaseUrl || !serviceRoleKey) {
+      throw new BadRequestException('Phone verification is not configured on this server.');
+    }
+
+    const res = await fetch(new URL(`/auth/v1/admin/users/${userId}`, supabaseUrl), {
+      headers: { apikey: serviceRoleKey, Authorization: `Bearer ${serviceRoleKey}` },
+    });
+    if (!res.ok) {
+      const body = await res.text().catch(() => '');
+      this.logger.error(`Failed to fetch Supabase auth user ${userId} (${res.status}): ${body}`);
+      throw new BadRequestException('Could not verify phone number right now -- try again shortly.');
+    }
+    const authUser = (await res.json()) as { phone?: string; phone_confirmed_at?: string | null };
+
+    if (!authUser.phone_confirmed_at || authUser.phone !== profile.phone.replace(/^\+/, '')) {
+      throw new BadRequestException(
+        'This phone number has not been verified yet -- request and enter the SMS code first.',
+      );
+    }
+
+    const updated = await this.prisma.profile.update({
+      where: { id: userId },
+      data: { phoneVerifiedAt: new Date(authUser.phone_confirmed_at) },
+    });
+    return toMe(updated, false);
   }
 
   async updatePreferences(userId: string, dto: UpdatePreferencesDto): Promise<Me> {
@@ -204,11 +282,20 @@ function toMe(profile: Profile, isNewSignup: boolean): Me {
     name: profile.name,
     headline: profile.headline,
     phone: profile.phone,
+    phoneVerifiedAt: profile.phoneVerifiedAt?.toISOString() ?? null,
+    qualification: profile.qualification,
+    university: profile.university,
     country: profile.country,
+    city: profile.city,
+    address: profile.address,
+    postalCode: profile.postalCode,
     avatarKey: profile.avatarKey,
     preferences: profile.preferences as Record<string, unknown>,
     createdAt: profile.createdAt.toISOString(),
     updatedAt: profile.updatedAt.toISOString(),
     isNewSignup,
+    profileComplete:
+      PROFILE_COMPLETION_FIELDS.every((field) => Boolean(profile[field])) &&
+      profile.phoneVerifiedAt !== null,
   };
 }

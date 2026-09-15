@@ -42,11 +42,19 @@ model Profile {
   status              ProfileStatus @default(active)
   name                String?
   headline            String?
-  // Plain contact-info string, not a real phone-auth/SMS-MFA field -- no
-  // format validation beyond a length cap. This app has no phone-based
-  // sign-in or verification of any kind.
+  // Contact-info string; verification is via Supabase Auth's own phone-OTP
+  // flow (supabase.auth.updateUser({phone}) + verifyOtp), not modeled here.
+  // phoneVerifiedAt is only ever set by ProfileService.confirmPhoneVerification,
+  // which checks the *auth* user's phone_confirmed_at via the Supabase Admin
+  // API first -- this column is never trusted from a plain client PATCH.
   phone               String?
+  phoneVerifiedAt     DateTime?     @map("phone_verified_at") @db.Timestamptz(6)
+  qualification       String? // highest qualification, free text (UI offers a fixed picklist + "Other")
+  university          String? // institution attended -- AIIT is not itself an accredited university, this is the learner's own prior/current one
   country             String?       @db.Char(2) // ISO 3166-1 alpha-2
+  city                String?
+  address             String?
+  postalCode          String?       @map("postal_code")
   avatarKey           String?       @map("avatar_key") // object-storage key, not a URL
   preferences         Json          @default("{}")
   deletionRequestedAt DateTime?     @map("deletion_requested_at") @db.Timestamptz(6)

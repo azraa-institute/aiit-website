@@ -22,7 +22,13 @@ export interface LearnerProfile {
   name: string | null;
   headline: string | null;
   phone: string | null;
+  phoneVerifiedAt: string | null;
+  qualification: string | null;
+  university: string | null;
   country: string | null;
+  city: string | null;
+  address: string | null;
+  postalCode: string | null;
   avatarKey: string | null;
   preferences: Record<string, unknown>;
   joinedAt: string;
@@ -51,6 +57,8 @@ export interface LearnerRecord {
   webinars: WebinarRegistration[];
   /** True only right after a genuine first-ever signup (Google or email/password) -- the API's real signal for the portal's one-time welcome toast. */
   isNewSignup: boolean;
+  /** From the API's computed Me.profileComplete -- drives the completion wizard/banner and the RequireCompleteProfile route guard. */
+  profileComplete: boolean;
 }
 
 async function fetchLearner(): Promise<LearnerRecord> {
@@ -67,7 +75,13 @@ async function fetchLearner(): Promise<LearnerRecord> {
       name: me.name,
       headline: me.headline,
       phone: me.phone,
+      phoneVerifiedAt: me.phoneVerifiedAt,
+      qualification: me.qualification,
+      university: me.university,
       country: me.country,
+      city: me.city,
+      address: me.address,
+      postalCode: me.postalCode,
       avatarKey: me.avatarKey,
       preferences: me.preferences,
       joinedAt: me.createdAt,
@@ -78,6 +92,7 @@ async function fetchLearner(): Promise<LearnerRecord> {
     notifications,
     webinars: [],
     isNewSignup: me.isNewSignup,
+    profileComplete: me.profileComplete,
   };
 }
 

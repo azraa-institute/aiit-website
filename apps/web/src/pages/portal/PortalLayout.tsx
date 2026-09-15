@@ -7,6 +7,8 @@ import { useLockBodyScroll } from '@/lib/useLockBodyScroll';
 import { Logo } from '@/components/layout/Logo';
 import { Toast } from '@/components/common/Toast';
 import { Avatar } from '@/components/common/Avatar';
+import { ProfileCompletionWizard } from '@/components/portal/ProfileCompletionWizard';
+import { ProfileCompletionBanner } from '@/components/portal/ProfileCompletionBanner';
 import { publicFileUrl } from '@/lib/storage';
 import { clearPortalReturn } from '@/lib/portalReturn';
 import { useLearner, greetingName } from './learnerData';
@@ -55,11 +57,19 @@ export default function PortalLayout() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [showWelcome, setShowWelcome] = useState(false);
   const [profileMenuOpen, setProfileMenuOpen] = useState(false);
+  const [wizardOpen, setWizardOpen] = useState(false);
   const menuCloseRef = useRef<HTMLButtonElement>(null);
   const profileMenuRef = useRef<HTMLDivElement>(null);
   const shownWelcome = useRef(false);
+  // Auto-opens the wizard once per mount when the profile turns out
+  // incomplete -- a ref (not just checking profileComplete inline) so
+  // dismissing it (Skip) doesn't cause it to immediately reopen on the
+  // next render/refetch; the persistent ProfileCompletionBanner below
+  // covers reminding them from then on, and its own button can reopen it.
+  const autoOpenedWizard = useRef(false);
 
   useLockBodyScroll(menuOpen);
+  useLockBodyScroll(wizardOpen);
 
   // Real signal, not a heuristic: `isNewSignup` only comes back true on the
   // exact GET /auth/me call that just fired the API's one-time welcome
@@ -73,6 +83,19 @@ export default function PortalLayout() {
     if (learnerState.status === 'ready' && learnerState.learner.isNewSignup) {
       shownWelcome.current = true;
       setShowWelcome(true);
+    }
+  }, [learnerState]);
+
+  // Same one-shot-per-mount guard as the welcome toast above -- opens
+  // automatically the first time this mount sees an incomplete profile,
+  // but a later refetch (e.g. after Skip, or after the wizard's own
+  // Finish call) never reopens it on its own; ProfileCompletionBanner's
+  // button is what reopens it after that.
+  useEffect(() => {
+    if (autoOpenedWizard.current) return;
+    if (learnerState.status === 'ready' && !learnerState.learner.profileComplete) {
+      autoOpenedWizard.current = true;
+      setWizardOpen(true);
     }
   }, [learnerState]);
 
@@ -127,7 +150,7 @@ export default function PortalLayout() {
   }
 
   return (
-    <div className={cn('portal', menuOpen && 'portal--menu-open')}>
+    <div className={cn('portal', menuOpen && 'portal--menu-open', wizardOpen && 'portal--blurred')}>
       <Seo title="Learner portal" path="/portal" noindex />
       <PortalAtmosphere />
 
@@ -137,10 +160,18 @@ export default function PortalLayout() {
 
       {showWelcome && (
         <Toast
-          message={firstName ? `Welcome, ${firstName} — you're all set.` : "Welcome — you're all set."}
+          message={
+            firstName
+              ? `Welcome, ${firstName} — you're all set. Please complete your profile to unlock enrollment and your portal.`
+              : "Welcome — you're all set. Please complete your profile to unlock enrollment and your portal."
+          }
           onDismiss={() => setShowWelcome(false)}
         />
       )}
+
+      {learner && !learner.profileComplete && !wizardOpen ? (
+        <ProfileCompletionBanner onComplete={() => setWizardOpen(true)} />
+      ) : null}
 
       {/* Navigation rail — the same markup is the desktop rail and the
           mobile slide-out panel; CSS switches presentation. */}
@@ -334,6 +365,18 @@ export default function PortalLayout() {
           </button>
         </nav>
       </div>
+
+      {learner ? (
+        <ProfileCompletionWizard
+          open={wizardOpen}
+          profile={learner.profile}
+          onClose={() => setWizardOpen(false)}
+          onComplete={() => {
+            learnerState.refetch();
+            setWizardOpen(false);
+          }}
+        />
+      ) : null}
     </div>
   );
 }

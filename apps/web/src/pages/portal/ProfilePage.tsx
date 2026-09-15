@@ -4,15 +4,20 @@ import { useScrollReveal } from '@/lib/useScrollReveal';
 import { formatDate } from '@/lib/format';
 import { useAuth } from '@/lib/AuthContext';
 import { apiFetch } from '@/lib/api';
+import { supabase } from '@/lib/supabaseClient';
 import { uploadFile, publicFileUrl, removeFile } from '@/lib/storage';
 import { Avatar } from '@/components/common/Avatar';
-import { TextField } from '@/components/common/Field';
+import { TextField, SelectField } from '@/components/common/Field';
 import { Button } from '@/components/primitives/Button';
+import { COUNTRIES } from '@/data/countries';
+import { QUALIFICATIONS } from '@/data/qualifications';
 import { CameraIcon, LockIcon } from './settings-icons';
 import { useLearner } from './learnerData';
 import { PortalLoader } from './PortalLoader';
 
 const AVATARS_BUCKET = 'avatars';
+const COUNTRY_OPTIONS = [{ value: '', label: 'Select a country' }, ...COUNTRIES.map((c) => ({ value: c.code, label: c.name }))];
+const QUALIFICATION_OPTIONS = [{ value: '', label: 'Select your highest qualification' }, ...QUALIFICATIONS];
 
 export default function ProfilePage() {
   const { session } = useAuth();
@@ -23,17 +28,41 @@ export default function ProfilePage() {
 
   const [name, setName] = useState('');
   const [headline, setHeadline] = useState('');
-  const [phone, setPhone] = useState('');
+  const [qualification, setQualification] = useState('');
+  const [university, setUniversity] = useState('');
+  const [country, setCountry] = useState('');
+  const [city, setCity] = useState('');
+  const [address, setAddress] = useState('');
+  const [postalCode, setPostalCode] = useState('');
   const [saving, setSaving] = useState(false);
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
   const [error, setError] = useState<string>();
   const [saved, setSaved] = useState(false);
 
+  // Phone is deliberately its own mini-flow, not bundled into the main
+  // Save button -- a phone number only counts once it's been through
+  // Supabase's OTP verification (see handleSendPhoneCode/handleVerifyPhoneCode
+  // below), so editing it can't just silently ride along with an unrelated
+  // "Save changes" click.
+  const [phoneInput, setPhoneInput] = useState('');
+  const [editingPhone, setEditingPhone] = useState(false);
+  const [codeSent, setCodeSent] = useState(false);
+  const [phoneCode, setPhoneCode] = useState('');
+  const [sendingCode, setSendingCode] = useState(false);
+  const [verifyingCode, setVerifyingCode] = useState(false);
+  const [phoneError, setPhoneError] = useState<string>();
+
   useEffect(() => {
     if (state.status === 'ready' && !initialized) {
       setName(state.learner.profile.name ?? '');
       setHeadline(state.learner.profile.headline ?? '');
-      setPhone(state.learner.profile.phone ?? '');
+      setQualification(state.learner.profile.qualification ?? '');
+      setUniversity(state.learner.profile.university ?? '');
+      setCountry(state.learner.profile.country ?? '');
+      setCity(state.learner.profile.city ?? '');
+      setAddress(state.learner.profile.address ?? '');
+      setPostalCode(state.learner.profile.postalCode ?? '');
+      setPhoneInput(state.learner.profile.phone ?? '');
       setInitialized(true);
     }
   }, [state, initialized]);
@@ -56,7 +85,16 @@ export default function ProfilePage() {
       // headline and saving silently left the old value in place server-side.
       await apiFetch('/me', {
         method: 'PATCH',
-        body: JSON.stringify({ name: name.trim(), headline: headline.trim(), phone: phone.trim() }),
+        body: JSON.stringify({
+          name: name.trim(),
+          headline: headline.trim(),
+          qualification: qualification.trim(),
+          university: university.trim(),
+          country: country || undefined,
+          city: city.trim(),
+          address: address.trim(),
+          postalCode: postalCode.trim(),
+        }),
       });
       state.refetch();
       setSaved(true);
@@ -65,6 +103,64 @@ export default function ProfilePage() {
     } finally {
       setSaving(false);
     }
+  }
+
+  async function handleSendPhoneCode(e: FormEvent) {
+    e.preventDefault();
+    setPhoneError(undefined);
+    if (!supabase) {
+      setPhoneError('Phone verification is not configured yet.');
+      return;
+    }
+    setSendingCode(true);
+    const { error: err } = await supabase.auth.updateUser({ phone: phoneInput.trim() });
+    setSendingCode(false);
+    if (err) {
+      setPhoneError(err.message);
+      return;
+    }
+    setCodeSent(true);
+  }
+
+  async function handleVerifyPhoneCode(e: FormEvent) {
+    e.preventDefault();
+    setPhoneError(undefined);
+    if (!supabase) {
+      setPhoneError('Phone verification is not configured yet.');
+      return;
+    }
+    setVerifyingCode(true);
+    const { error: err } = await supabase.auth.verifyOtp({
+      phone: phoneInput.trim(),
+      token: phoneCode.trim(),
+      type: 'phone_change',
+    });
+    if (err) {
+      setVerifyingCode(false);
+      setPhoneError(err.message);
+      return;
+    }
+    try {
+      // Persists phone + phoneVerifiedAt on the Profile row -- the backend
+      // independently re-checks the auth user's phone_confirmed_at via the
+      // Supabase Admin API before trusting this, see ProfileService.
+      await apiFetch('/me/phone/confirm', { method: 'POST' });
+      state.refetch();
+      setEditingPhone(false);
+      setCodeSent(false);
+      setPhoneCode('');
+    } catch (confirmErr) {
+      setPhoneError(confirmErr instanceof Error ? confirmErr.message : 'Could not confirm your phone number.');
+    } finally {
+      setVerifyingCode(false);
+    }
+  }
+
+  function handleChangePhoneNumber() {
+    setPhoneError(undefined);
+    setCodeSent(false);
+    setPhoneCode('');
+    setEditingPhone(true);
   }
 
   async function handlePhotoChange(e: ChangeEvent<HTMLInputElement>) {
@@ -160,16 +256,23 @@ export default function ProfilePage() {
           {saved ? <p className="profile-edit__saved">Saved.</p> : null}
 
           <div className="profile-details__grid">
-            <TextField label="Name" value={name} onChange={(e) => setName(e.target.value)} maxLength={200} />
-            <TextField
-              label="Phone"
-              type="tel"
-              value={phone}
-              onChange={(e) => setPhone(e.target.value)}
-              maxLength={30}
-              hint="Optional -- not used for sign-in or verification."
+            <TextField label="Name" value={name} onChange={(e) => setName(e.target.value)} maxLength={200} required />
+            <SelectField
+              label="Highest qualification"
+              value={qualification}
+              onChange={(e) => setQualification(e.target.value)}
+              options={QUALIFICATION_OPTIONS}
+              required
             />
           </div>
+          <TextField
+            label="University / institution"
+            value={university}
+            onChange={(e) => setUniversity(e.target.value)}
+            maxLength={200}
+            hint="The institution you're attending or have attended -- not AIIT itself."
+            required
+          />
           <TextField
             label="Headline"
             value={headline}
@@ -177,6 +280,34 @@ export default function ProfilePage() {
             maxLength={200}
             hint="A short line about you, shown alongside your name."
           />
+
+          <h3 className="profile-details__subtitle">Location</h3>
+          <div className="profile-details__grid">
+            <SelectField
+              label="Country"
+              value={country}
+              onChange={(e) => setCountry(e.target.value)}
+              options={COUNTRY_OPTIONS}
+              required
+            />
+            <TextField label="City" value={city} onChange={(e) => setCity(e.target.value)} maxLength={120} required />
+          </div>
+          <div className="profile-details__grid">
+            <TextField
+              label="Address"
+              value={address}
+              onChange={(e) => setAddress(e.target.value)}
+              maxLength={300}
+              required
+            />
+            <TextField
+              label="Zip / postal code"
+              value={postalCode}
+              onChange={(e) => setPostalCode(e.target.value)}
+              maxLength={20}
+              required
+            />
+          </div>
 
           <div className="profile-details__readonly">
             <LockIcon className="profile-details__readonly-icon" />
@@ -194,6 +325,70 @@ export default function ProfilePage() {
             </Button>
           </div>
         </form>
+      </div>
+
+      <div className="profile-details" data-reveal>
+        <h2 className="profile-details__title">Phone verification</h2>
+        <p className="portal-page__intro">
+          A verified phone number is required to complete your profile.
+        </p>
+
+        {phoneError ? (
+          <p className="auth__alert" role="alert">
+            {phoneError}
+          </p>
+        ) : null}
+
+        {profile.phoneVerifiedAt && !editingPhone ? (
+          <div className="profile-details__readonly">
+            <LockIcon className="profile-details__readonly-icon" />
+            <div>
+              <p className="profile-details__readonly-label">Verified phone number</p>
+              <p className="profile-details__readonly-value">{profile.phone}</p>
+            </div>
+            <Button as="button" variant="ghost" size="sm" onClick={handleChangePhoneNumber}>
+              Change
+            </Button>
+          </div>
+        ) : !codeSent ? (
+          <form className="profile-details__form" onSubmit={handleSendPhoneCode}>
+            <TextField
+              label="Phone number"
+              type="tel"
+              value={phoneInput}
+              onChange={(e) => setPhoneInput(e.target.value)}
+              maxLength={16}
+              hint="Include your country code, e.g. +2348012345678."
+              required
+            />
+            <div className="profile-details__foot">
+              <Button as="button" type="submit" loading={sendingCode}>
+                Send verification code
+              </Button>
+            </div>
+          </form>
+        ) : (
+          <form className="profile-details__form" onSubmit={handleVerifyPhoneCode}>
+            <p className="portal-page__intro">We sent a code to {phoneInput}.</p>
+            <TextField
+              label="6-digit code"
+              value={phoneCode}
+              onChange={(e) => setPhoneCode(e.target.value)}
+              inputMode="numeric"
+              maxLength={6}
+              autoComplete="one-time-code"
+              required
+            />
+            <div className="profile-details__actions">
+              <Button as="button" type="submit" loading={verifyingCode} disabled={phoneCode.length !== 6}>
+                Verify and save
+              </Button>
+              <Button as="button" variant="ghost" onClick={handleChangePhoneNumber}>
+                Use a different number
+              </Button>
+            </div>
+          </form>
+        )}
       </div>
     </div>
   );

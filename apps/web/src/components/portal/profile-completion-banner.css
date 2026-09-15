@@ -1,0 +1,21 @@
+.pcb {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-5);
+  background: var(--brass-tint);
+  border-bottom: 1px solid rgba(20, 17, 15, 0.08);
+}
+.pcb__message {
+  margin: 0;
+  font-size: var(--fs-sm);
+  color: var(--ink);
+}
+
+@media (max-width: 640px) {
+  .pcb {
+    padding: var(--space-3) var(--space-4);
+  }
+}

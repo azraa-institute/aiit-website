@@ -1,4 +1,4 @@
-import { NotFoundException } from '@nestjs/common';
+import { BadRequestException, NotFoundException } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
 import { PrismaService } from '../../common/prisma/prisma.service';
 import { EmailService } from '../../common/email/email.service';
@@ -11,7 +11,13 @@ const PROFILE = {
   name: null,
   headline: null,
   phone: null,
+  phoneVerifiedAt: null,
+  qualification: null,
+  university: null,
   country: null,
+  city: null,
+  address: null,
+  postalCode: null,
   avatarKey: null,
   preferences: {},
   deletionRequestedAt: null,
@@ -71,12 +77,19 @@ describe('ProfileService', () => {
       name: null,
       headline: null,
       phone: null,
+      phoneVerifiedAt: null,
+      qualification: null,
+      university: null,
       country: null,
+      city: null,
+      address: null,
+      postalCode: null,
       avatarKey: null,
       preferences: {},
       createdAt: '2026-01-01T00:00:00.000Z',
       updatedAt: '2026-01-02T00:00:00.000Z',
       isNewSignup: false,
+      profileComplete: false,
     });
     expect(prisma.profile.findUnique).toHaveBeenCalledWith({ where: { id: 'user-1' } });
     expect(prisma.profile.updateMany).not.toHaveBeenCalled();
@@ -132,12 +145,80 @@ describe('ProfileService', () => {
     });
   });
 
-  it('updateProfile includes phone when present on the dto (including clearing it to empty)', async () => {
+  it('updateProfile includes phone when present on the dto (including clearing it to empty), and clears any previous verification', async () => {
     prisma.profile.update.mockResolvedValueOnce({ ...PROFILE, phone: '' });
     await service.updateProfile('user-1', { phone: '' });
     expect(prisma.profile.update).toHaveBeenCalledWith({
       where: { id: 'user-1' },
-      data: { phone: '' },
+      data: { phone: '', phoneVerifiedAt: null },
+    });
+  });
+
+  it('updateProfile includes the new profile-completion fields when present on the dto', async () => {
+    prisma.profile.update.mockResolvedValueOnce(PROFILE);
+    await service.updateProfile('user-1', {
+      qualification: "Bachelor's",
+      university: 'Example University',
+      city: 'Lagos',
+      address: '1 Example Street',
+      postalCode: '100001',
+    });
+    expect(prisma.profile.update).toHaveBeenCalledWith({
+      where: { id: 'user-1' },
+      data: {
+        qualification: "Bachelor's",
+        university: 'Example University',
+        city: 'Lagos',
+        address: '1 Example Street',
+        postalCode: '100001',
+      },
+    });
+  });
+
+  describe('confirmPhoneVerification', () => {
+    it('throws when the profile has no phone set', async () => {
+      prisma.profile.findUnique.mockResolvedValueOnce({ ...PROFILE, phone: null });
+      await expect(service.confirmPhoneVerification('user-1')).rejects.toBeInstanceOf(BadRequestException);
+    });
+
+    it('throws when Supabase env vars are not configured', async () => {
+      prisma.profile.findUnique.mockResolvedValueOnce({ ...PROFILE, phone: '+14155552671' });
+      await expect(service.confirmPhoneVerification('user-1')).rejects.toBeInstanceOf(BadRequestException);
+    });
+
+    it('throws when the auth user phone is not confirmed', async () => {
+      process.env.SUPABASE_URL = 'https://test-project.supabase.co';
+      process.env.SUPABASE_SERVICE_ROLE_KEY = 'service-role-secret';
+      prisma.profile.findUnique.mockResolvedValueOnce({ ...PROFILE, phone: '+14155552671' });
+      fetchSpy.mockResolvedValueOnce(
+        new Response(JSON.stringify({ phone: '14155552671', phone_confirmed_at: null }), { status: 200 }),
+      );
+      await expect(service.confirmPhoneVerification('user-1')).rejects.toBeInstanceOf(BadRequestException);
+    });
+
+    it('persists phoneVerifiedAt when the auth user phone is confirmed and matches', async () => {
+      process.env.SUPABASE_URL = 'https://test-project.supabase.co';
+      process.env.SUPABASE_SERVICE_ROLE_KEY = 'service-role-secret';
+      prisma.profile.findUnique.mockResolvedValueOnce({ ...PROFILE, phone: '+14155552671' });
+      fetchSpy.mockResolvedValueOnce(
+        new Response(
+          JSON.stringify({ phone: '14155552671', phone_confirmed_at: '2026-02-01T00:00:00.000Z' }),
+          { status: 200 },
+        ),
+      );
+      prisma.profile.update.mockResolvedValueOnce({
+        ...PROFILE,
+        phone: '+14155552671',
+        phoneVerifiedAt: new Date('2026-02-01T00:00:00.000Z'),
+      });
+
+      const me = await service.confirmPhoneVerification('user-1');
+
+      expect(prisma.profile.update).toHaveBeenCalledWith({
+        where: { id: 'user-1' },
+        data: { phoneVerifiedAt: new Date('2026-02-01T00:00:00.000Z') },
+      });
+      expect(me.phoneVerifiedAt).toBe('2026-02-01T00:00:00.000Z');
     });
   });
 

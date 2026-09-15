@@ -1,4 +1,4 @@
-import { Body, Controller, Delete, HttpCode, HttpStatus, Patch, UseGuards } from '@nestjs/common';
+import { Body, Controller, Delete, HttpCode, HttpStatus, Patch, Post, UseGuards } from '@nestjs/common';
 import { Throttle } from '@nestjs/throttler';
 import type { Me } from '@aiit/shared';
 import { JwtGuard, type AuthenticatedUser } from '../../common/guards/jwt.guard';
@@ -19,6 +19,18 @@ export class ProfileController {
     @Body() dto: UpdateProfileDto,
   ): Promise<Me> {
     return this.profiles.updateProfile(user.userId, dto);
+  }
+
+  /**
+   * Confirms phone verification -- called after the frontend completes
+   * Supabase Auth's own OTP flow (updateUser({phone}) + verifyOtp). Never
+   * trusts the client's say-so: checks the *auth* user's phone_confirmed_at
+   * via the Supabase Admin API server-side before persisting anything (see
+   * ProfileService.confirmPhoneVerification).
+   */
+  @Post('phone/confirm')
+  confirmPhoneVerification(@CurrentUser() user: AuthenticatedUser): Promise<Me> {
+    return this.profiles.confirmPhoneVerification(user.userId);
   }
 
   @Patch('preferences')

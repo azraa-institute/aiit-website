@@ -322,9 +322,25 @@
   /* Fixed, not min-height: every review must render at the exact same
      card height regardless of its own quote/name/role length, or the
      deck's total height shifts per active review -- which visibly
-     moved the bottom-anchored right photo between reviews. */
+     moved the bottom-anchored right photo between reviews.
+     Flat 350px, not clamp(300px, 26vw, 350px) -- 26vw only drops below
+     350px for viewport < ~1346px (the low end of the 3-card layout,
+     since it requires >=1024px to show at all), and the 300px floor
+     that range used to fall back to was too short for at least one
+     real testimonial's quote + person block, clipping the role line by
+     as much as 46px. 26vw was already clamped up to the same 350px for
+     every wider viewport anyway, so this is a no-op above ~1346px and
+     just removes the one range that was genuinely too tight. */
   width: clamp(210px, 21vw, 310px);
-  height: clamp(300px, 26vw, 350px);
+  /* 350px (the original clamp's own max) still wasn't tall enough for
+     every testimonial once paged through the full set at this card's
+     narrowest widths -- one clipped by as much as 22px. 390px is
+     comfortably clear of every testimonial checked, and still well
+     under .stories-card--center's 430px, so the deck's overall height
+     (driven by whichever card is tallest) is unchanged -- these are
+     the peripheral prev/next cards, never the one thing the deck's
+     height needs to stay stable around. */
+  height: 390px;
   opacity: 0.85;
   cursor: pointer;
   transition: opacity var(--dur-fast) var(--ease-out);
@@ -335,7 +351,12 @@
 }
 .stories-card--center {
   width: clamp(300px, 30vw, 450px);
-  height: clamp(380px, 32vw, 430px);
+  /* Flat 430px -- same reasoning as .stories-card--prev/next above:
+     32vw only drops below 430px for viewport < ~1344px, and the 380px
+     floor that range fell back to was too short for at least one real
+     testimonial (measured 16px of role-line clipping at exactly
+     1024px, the iPad Pro portrait / several Android tablets' width). */
+  height: 430px;
   box-shadow:
     0 10px 35px rgba(50, 40, 25, 0.06),
     0 0 0 1px rgba(154, 123, 79, 0.08),

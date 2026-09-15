@@ -1,4 +1,4 @@
-import { Suspense, useEffect, useRef, useState } from 'react';
+import { Suspense, useEffect, useMemo, useRef, useState } from 'react';
 import { NavLink, Outlet, Link, useNavigate, useLocation } from 'react-router-dom';
 import { Seo } from '@/lib/Seo';
 import { cn } from '@/lib/cn';
@@ -7,8 +7,11 @@ import { useLockBodyScroll } from '@/lib/useLockBodyScroll';
 import { Logo } from '@/components/layout/Logo';
 import { Toast } from '@/components/common/Toast';
 import { Avatar } from '@/components/common/Avatar';
+import { apiFetch } from '@/lib/api';
 import { ProfileCompletionWizard } from './ProfileCompletionWizard';
 import { ProfileCompletionBanner } from './ProfileCompletionBanner';
+import { GuidedTour } from './GuidedTour';
+import { PortalActionsProvider } from './PortalActionsContext';
 import { publicFileUrl } from '@/lib/storage';
 import { clearPortalReturn } from '@/lib/portalReturn';
 import { useLearner, greetingName } from './learnerData';
@@ -21,13 +24,15 @@ interface NavItem {
   label: string;
   end?: boolean;
   group: 'primary' | 'study' | 'account';
+  /** Matches a GuidedTour step's target id -- see GuidedTour.tsx's own doc comment on why these live on both the rail link and its BOTTOM_NAV counterpart. */
+  tourId?: string;
 }
 
 const NAV: NavItem[] = [
-  { to: '/portal', label: 'Dashboard', end: true, group: 'primary' },
-  { to: '/portal/courses', label: 'My courses', group: 'primary' },
-  { to: '/portal/certificates', label: 'Certificates', group: 'primary' },
-  { to: '/portal/assignments', label: 'Assignments', group: 'primary' },
+  { to: '/portal', label: 'Dashboard', end: true, group: 'primary', tourId: 'tour-dashboard' },
+  { to: '/portal/courses', label: 'My courses', group: 'primary', tourId: 'tour-courses' },
+  { to: '/portal/certificates', label: 'Certificates', group: 'primary', tourId: 'tour-certificates' },
+  { to: '/portal/assignments', label: 'Assignments', group: 'primary', tourId: 'tour-assignments' },
   { to: '/portal/resources', label: 'Learning resources', group: 'study' },
   { to: '/portal/webinars', label: 'Webinar registrations', group: 'study' },
   { to: '/portal/notifications', label: 'Notifications', group: 'study' },
@@ -43,10 +48,10 @@ const GROUP_LABEL: Record<NavItem['group'], string> = {
 
 /** Core destinations for the phone bottom nav, in priority order. */
 const BOTTOM_NAV = [
-  { to: '/portal', label: 'Home', end: true, icon: 'home' as const },
-  { to: '/portal/courses', label: 'Courses', icon: 'courses' as const },
-  { to: '/portal/certificates', label: 'Certificates', icon: 'award' as const },
-  { to: '/portal/assignments', label: 'Tasks', icon: 'tasks' as const },
+  { to: '/portal', label: 'Home', end: true, icon: 'home' as const, tourId: 'tour-dashboard' },
+  { to: '/portal/courses', label: 'Courses', icon: 'courses' as const, tourId: 'tour-courses' },
+  { to: '/portal/certificates', label: 'Certificates', icon: 'award' as const, tourId: 'tour-certificates' },
+  { to: '/portal/assignments', label: 'Tasks', icon: 'tasks' as const, tourId: 'tour-assignments' },
 ];
 
 export default function PortalLayout() {
@@ -58,6 +63,7 @@ export default function PortalLayout() {
   const [showWelcome, setShowWelcome] = useState(false);
   const [profileMenuOpen, setProfileMenuOpen] = useState(false);
   const [wizardOpen, setWizardOpen] = useState(false);
+  const [tourOpen, setTourOpen] = useState(false);
   const menuCloseRef = useRef<HTMLButtonElement>(null);
   const profileMenuRef = useRef<HTMLDivElement>(null);
   const shownWelcome = useRef(false);
@@ -149,6 +155,22 @@ export default function PortalLayout() {
     signOut().then(() => navigate('/login'));
   }
 
+  const portalActions = useMemo(
+    () => ({ openWizard: () => setWizardOpen(true), openTour: () => setTourOpen(true) }),
+    [],
+  );
+
+  /** Persists tour completion/skip to the same preferences JSON blob SettingsPage's language picker already uses -- informational (nothing currently gates on it; the tour is never auto-forced), but keeps the learner's choice on record per the redesign spec. Best-effort: a failed write shouldn't block closing the tour. */
+  function recordTourStatus(status: 'completed' | 'skipped') {
+    if (!learner) return;
+    apiFetch('/me/preferences', {
+      method: 'PATCH',
+      body: JSON.stringify({ preferences: { ...learner.profile.preferences, tour: status } }),
+    })
+      .then(() => learnerState.refetch())
+      .catch(() => {});
+  }
+
   return (
     <div className={cn('portal', menuOpen && 'portal--menu-open', wizardOpen && 'portal--blurred')}>
       <Seo title="Learner portal" path="/portal" noindex />
@@ -204,6 +226,7 @@ export default function PortalLayout() {
                     <NavLink
                       to={item.to}
                       end={item.end}
+                      data-tour={item.tourId}
                       className={({ isActive }) => cn('portal-rail__link', isActive && 'is-active')}
                     >
                       <span className="portal-rail__link-line" aria-hidden="true" />
@@ -283,6 +306,7 @@ export default function PortalLayout() {
               <button
                 type="button"
                 className="portal-topbar__id"
+                data-tour="tour-account"
                 aria-haspopup="menu"
                 aria-expanded={profileMenuOpen}
                 onClick={() => setProfileMenuOpen((open) => !open)}
@@ -333,9 +357,11 @@ export default function PortalLayout() {
                 </button>
               </div>
             ) : (
-              <Suspense fallback={<PortalLoader label="Loading section" />}>
-                <Outlet />
-              </Suspense>
+              <PortalActionsProvider value={portalActions}>
+                <Suspense fallback={<PortalLoader label="Loading section" />}>
+                  <Outlet />
+                </Suspense>
+              </PortalActionsProvider>
             )}
           </div>
         </main>
@@ -346,6 +372,7 @@ export default function PortalLayout() {
               key={item.to}
               to={item.to}
               end={item.end}
+              data-tour={item.tourId}
               className={({ isActive }) => cn('portal-bottomnav__item', isActive && 'is-active')}
             >
               <BottomIcon name={item.icon} />
@@ -371,12 +398,21 @@ export default function PortalLayout() {
           open={wizardOpen}
           profile={learner.profile}
           onClose={() => setWizardOpen(false)}
-          onComplete={() => {
+          onComplete={(action) => {
             learnerState.refetch();
             setWizardOpen(false);
+            if (action === 'tour') setTourOpen(true);
           }}
         />
       ) : null}
+
+      <GuidedTour
+        open={tourOpen}
+        onClose={(status) => {
+          setTourOpen(false);
+          recordTourStatus(status);
+        }}
+      />
     </div>
   );
 }

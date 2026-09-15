@@ -1,0 +1,220 @@
+/* ============================================================
+   GUIDED PORTAL TOUR — a second, distinct experience from the profile
+   wizard: a compact editorial card for the intro/completion bookends, and
+   an SVG-mask spotlight + floating tooltip for the 5 nav steps. Portal-
+   rendered into document.body (see GuidedTour.tsx) so PortalLayout's blur
+   filter, overflow and z-index never interfere.
+   ============================================================ */
+
+.gt-root {
+  position: relative;
+  z-index: var(--z-modal);
+}
+
+/* ---- Intro / completion bookend card — smaller and lighter than the
+   profile wizard's card, on purpose ("elegant and lightweight", not
+   a giant modal). ---- */
+.gt-scrim {
+  position: fixed;
+  inset: 0;
+  z-index: var(--z-modal);
+  display: grid;
+  place-items: center;
+  padding: clamp(1rem, 4vw, 2.5rem);
+  background: rgba(20, 17, 15, 0.6);
+  animation: gt-fade var(--dur-base) var(--ease-out);
+}
+@keyframes gt-fade {
+  from {
+    opacity: 0;
+  }
+}
+
+.gt-card {
+  position: relative;
+  width: min(360px, 92vw);
+  padding: var(--space-6) var(--space-6) var(--space-5);
+  background: var(--ink);
+  color: var(--ivory);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-lift);
+  text-align: center;
+  animation: gt-card-in var(--dur-slow) var(--ease-out) both;
+}
+@keyframes gt-card-in {
+  from {
+    opacity: 0;
+    transform: translateY(10px) scale(0.97);
+  }
+}
+
+/* ---- Shared editorial typography (both the card and the step tooltip) ---- */
+.gt-eyebrow {
+  margin: 0 0 var(--space-2);
+  font-family: var(--font-ui);
+  font-size: var(--fs-eyebrow);
+  font-weight: 700;
+  letter-spacing: var(--tracking-eyebrow);
+  text-transform: uppercase;
+  color: var(--brass-tint);
+}
+.gt-title {
+  margin: 0 0 var(--space-3);
+  font-family: var(--font-display);
+  font-size: var(--fs-subhead);
+  line-height: var(--lh-snug);
+  color: var(--ivory);
+}
+.gt-body {
+  margin: 0 0 var(--space-2);
+  font-size: var(--fs-sm);
+  line-height: var(--lh-body);
+  color: var(--fg-muted);
+}
+.gt-meta {
+  margin: 0 0 var(--space-5);
+  font-size: var(--fs-xs);
+  letter-spacing: var(--tracking-wide);
+  text-transform: uppercase;
+  color: var(--fg-faint);
+}
+.gt-card .gt-actions {
+  justify-content: center;
+}
+.gt-actions {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+  margin-top: var(--space-4);
+}
+
+.gt-close {
+  position: absolute;
+  top: 0.75rem;
+  right: 0.75rem;
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border-radius: var(--radius-pill);
+  background: rgba(244, 239, 231, 0.08);
+  color: var(--fg-muted);
+  transition: background var(--dur-fast) var(--ease-out);
+}
+.gt-close:hover {
+  background: rgba(244, 239, 231, 0.16);
+  color: var(--ivory);
+}
+.gt-close:focus-visible {
+  outline: 2px solid var(--brass-tint);
+  outline-offset: 2px;
+}
+
+/* ---- Spotlight overlay — a single full-viewport SVG; the mask cutout and
+   the brass ring are both driven by inline style x/y/width/height (set as
+   CSS, not raw attributes) so the transition above animates smoothly
+   between steps instead of jumping. ---- */
+.gt-spotlight {
+  position: fixed;
+  inset: 0;
+  width: 100vw;
+  height: 100vh;
+  z-index: calc(var(--z-modal) - 1);
+  pointer-events: none;
+}
+
+/* ---- Step tooltip ---- */
+.gt-tooltip {
+  position: fixed;
+  z-index: var(--z-modal);
+  width: min(320px, 92vw);
+  padding: var(--space-5);
+  background: var(--ink);
+  color: var(--ivory);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-lift);
+  transition:
+    left var(--dur-base) var(--ease-out),
+    top var(--dur-base) var(--ease-out),
+    opacity var(--dur-fast) var(--ease-out);
+}
+.gt-tooltip__count {
+  margin: 0 0 var(--space-2);
+  font-family: var(--font-ui);
+  font-size: var(--fs-xs);
+  font-weight: 700;
+  letter-spacing: var(--tracking-wide);
+  color: var(--fg-faint);
+}
+.gt-tooltip__title {
+  margin: 0 0 var(--space-3);
+  font-family: var(--font-display);
+  font-size: var(--fs-lead);
+  color: var(--ivory);
+}
+
+/* Short brass connector "tick" from the tooltip's edge toward the target --
+   a fixed-length stub rather than a precise point-to-point line, which
+   stays correct regardless of tooltip size without any rotation math. */
+.gt-tooltip[data-side]::before {
+  content: '';
+  position: absolute;
+  background: var(--brass);
+}
+.gt-tooltip[data-side='right']::before {
+  left: -20px;
+  top: 50%;
+  width: 20px;
+  height: 1.5px;
+  transform: translateY(-50%);
+}
+.gt-tooltip[data-side='left']::before {
+  right: -20px;
+  top: 50%;
+  width: 20px;
+  height: 1.5px;
+  transform: translateY(-50%);
+}
+.gt-tooltip[data-side='bottom']::before {
+  top: -20px;
+  left: 50%;
+  width: 1.5px;
+  height: 20px;
+  transform: translateX(-50%);
+}
+.gt-tooltip[data-side='top']::before {
+  bottom: -20px;
+  left: 50%;
+  width: 1.5px;
+  height: 20px;
+  transform: translateX(-50%);
+}
+
+/* ---- Mobile: dock as a bottom sheet instead of floating near the target
+   (the spotlight above still highlights the real element) -- sidesteps
+   collision-detection entirely on small screens, and the target is
+   guaranteed visible per the data-tour targeting strategy. ---- */
+.gt-tooltip[data-mobile] {
+  left: 0;
+  right: 0;
+  bottom: 0;
+  top: auto;
+  width: 100%;
+  border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+  padding: var(--space-5) var(--space-5) calc(var(--space-5) + env(safe-area-inset-bottom, 0px));
+}
+.gt-tooltip[data-mobile]::before {
+  content: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .gt-scrim,
+  .gt-card {
+    animation: none;
+  }
+  .gt-tooltip,
+  .gt-spotlight rect {
+    transition: none !important;
+  }
+}

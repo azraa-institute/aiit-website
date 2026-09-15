@@ -51,6 +51,11 @@ model Profile {
   phoneVerifiedAt     DateTime?     @map("phone_verified_at") @db.Timestamptz(6)
   qualification       String? // highest qualification, free text (UI offers a fixed picklist + "Other")
   university          String? // institution attended -- AIIT is not itself an accredited university, this is the learner's own prior/current one
+  fieldOfStudy        String?       @map("field_of_study")
+  currentStatus       String?       @map("current_status") // student / working professional / job seeker / other
+  learningGoal        String?       @map("learning_goal") // primary reason for joining, free text (UI offers a fixed picklist + "Other")
+  areasOfInterest     String[]      @default([]) @map("areas_of_interest") // AI, Data Science, Cybersecurity, etc. -- see data/learningAreas.ts
+  timeZone            String?       @map("time_zone") // IANA zone, e.g. "Africa/Lagos" -- client-detected default, editable
   country             String?       @db.Char(2) // ISO 3166-1 alpha-2
   city                String?
   address             String?

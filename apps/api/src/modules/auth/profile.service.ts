@@ -3,16 +3,24 @@ import type { Prisma, Profile } from '@prisma/client';
 import type { Me } from '@aiit/shared';
 
 /**
- * The fields that must be non-empty before `profileComplete` is true.
+ * The fields that must be non-empty before `profileComplete` is true --
+ * deliberately the minimal set (name, a phone number, country, highest
+ * qualification), not everything the onboarding wizard collects. University,
+ * field of study, current status, learning goals, areas of interest, city,
+ * address, postal code and time zone are all real wizard steps but stay
+ * non-gating, per the learner-onboarding redesign's data-minimization
+ * tiers -- collecting them helps personalize the experience, but withholding
+ * them shouldn't lock someone out of the portal.
+ *
  * `phone` is required here but its *verification* (phoneVerifiedAt) is
  * deliberately NOT -- Twilio needs a paid Messaging Service to actually
  * deliver the SMS-OTP, which is paused for now (see infra doc), so
  * completeness only checks that a number was entered, not confirmed.
  * confirmPhoneVerification()/POST /me/phone/confirm below stay in place
  * for whenever Twilio is enabled; they just don't gate completeness today.
- * `headline` and `avatarKey` are deliberately NOT in this list -- they stay
- * optional. Local to this service (not the shared package) since it's the
- * only consumer -- the frontend just reads the computed `profileComplete`
+ *
+ * Local to this service (not the shared package) since it's the only
+ * consumer -- the frontend just reads the computed `profileComplete`
  * boolean below, it never needs the list itself. `@aiit/shared` is
  * type-only by convention (see its package.json); keeping a real runtime
  * array out of it avoids being the first thing to break that.
@@ -21,11 +29,7 @@ const PROFILE_COMPLETION_FIELDS = [
   'name',
   'phone',
   'country',
-  'city',
-  'address',
-  'postalCode',
   'qualification',
-  'university',
 ] as const satisfies readonly (keyof Profile)[];
 import { PrismaService } from '../../common/prisma/prisma.service';
 import { EmailService } from '../../common/email/email.service';
@@ -110,6 +114,11 @@ export class ProfileService {
         ...(dto.phone !== undefined && { phone: dto.phone, phoneVerifiedAt: null }),
         ...(dto.qualification !== undefined && { qualification: dto.qualification }),
         ...(dto.university !== undefined && { university: dto.university }),
+        ...(dto.fieldOfStudy !== undefined && { fieldOfStudy: dto.fieldOfStudy }),
+        ...(dto.currentStatus !== undefined && { currentStatus: dto.currentStatus }),
+        ...(dto.learningGoal !== undefined && { learningGoal: dto.learningGoal }),
+        ...(dto.areasOfInterest !== undefined && { areasOfInterest: dto.areasOfInterest }),
+        ...(dto.timeZone !== undefined && { timeZone: dto.timeZone }),
         ...(dto.country !== undefined && { country: dto.country }),
         ...(dto.city !== undefined && { city: dto.city }),
         ...(dto.address !== undefined && { address: dto.address }),
@@ -290,6 +299,11 @@ function toMe(profile: Profile, isNewSignup: boolean): Me {
     phoneVerifiedAt: profile.phoneVerifiedAt?.toISOString() ?? null,
     qualification: profile.qualification,
     university: profile.university,
+    fieldOfStudy: profile.fieldOfStudy,
+    currentStatus: profile.currentStatus,
+    learningGoal: profile.learningGoal,
+    areasOfInterest: profile.areasOfInterest,
+    timeZone: profile.timeZone,
     country: profile.country,
     city: profile.city,
     address: profile.address,

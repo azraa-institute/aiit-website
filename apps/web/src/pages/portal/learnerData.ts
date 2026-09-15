@@ -25,6 +25,11 @@ export interface LearnerProfile {
   phoneVerifiedAt: string | null;
   qualification: string | null;
   university: string | null;
+  fieldOfStudy: string | null;
+  currentStatus: string | null;
+  learningGoal: string | null;
+  areasOfInterest: string[];
+  timeZone: string | null;
   country: string | null;
   city: string | null;
   address: string | null;
@@ -78,6 +83,11 @@ async function fetchLearner(): Promise<LearnerRecord> {
       phoneVerifiedAt: me.phoneVerifiedAt,
       qualification: me.qualification,
       university: me.university,
+      fieldOfStudy: me.fieldOfStudy,
+      currentStatus: me.currentStatus,
+      learningGoal: me.learningGoal,
+      areasOfInterest: me.areasOfInterest,
+      timeZone: me.timeZone,
       country: me.country,
       city: me.city,
       address: me.address,

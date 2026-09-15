@@ -16,6 +16,7 @@ import { useLearner } from './learnerData';
 import { PortalLoader } from './PortalLoader';
 import { SecurityFactorsSection } from './SecurityFactorsSection';
 import { LinkedAccountsSection } from './LinkedAccountsSection';
+import { usePortalActions } from './PortalActionsContext';
 
 const COUNTRY_OPTIONS = [{ value: '', label: 'Not set' }, ...COUNTRIES.map((c) => ({ value: c.code, label: c.name }))];
 const LANGUAGE_OPTIONS = LANGUAGES.map((l) => ({ value: l.code, label: l.name }));
@@ -299,6 +300,7 @@ function SignInSecuritySection() {
 
 function RegionLanguageSection() {
   const state = useLearner();
+  const { openTour } = usePortalActions();
   const [country, setCountry] = useState('');
   const [language, setLanguage] = useState('en');
   const [initialized, setInitialized] = useState(false);
@@ -368,6 +370,16 @@ function RegionLanguageSection() {
           Save preferences
         </Button>
       </form>
+
+      <div className="settings-section__row">
+        <div>
+          <p className="settings-section__row-title">Guided tour</p>
+          <p className="settings-section__row-body">Replay the orientation to your learner portal.</p>
+        </div>
+        <Button as="button" type="button" variant="secondary" size="sm" onClick={openTour}>
+          Take a tour
+        </Button>
+      </div>
     </section>
   );
 }

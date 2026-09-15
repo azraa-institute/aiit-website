@@ -14,6 +14,11 @@ const PROFILE = {
   phoneVerifiedAt: null,
   qualification: null,
   university: null,
+  fieldOfStudy: null,
+  currentStatus: null,
+  learningGoal: null,
+  areasOfInterest: [],
+  timeZone: null,
   country: null,
   city: null,
   address: null,
@@ -80,6 +85,11 @@ describe('ProfileService', () => {
       phoneVerifiedAt: null,
       qualification: null,
       university: null,
+      fieldOfStudy: null,
+      currentStatus: null,
+      learningGoal: null,
+      areasOfInterest: [],
+      timeZone: null,
       country: null,
       city: null,
       address: null,
@@ -96,21 +106,42 @@ describe('ProfileService', () => {
     expect(email.send).not.toHaveBeenCalled();
   });
 
-  it('profileComplete is true once every required field is set, even with phoneVerifiedAt still null -- verification is paused (Twilio), not gating', async () => {
+  it('profileComplete is true once the minimal required tier (name/phone/country/qualification) is set, even with phoneVerifiedAt still null -- verification is paused (Twilio), not gating', async () => {
     prisma.profile.findUnique.mockResolvedValueOnce({
       ...PROFILE,
       name: 'Ada Lovelace',
       phone: '+14155552671',
       qualification: "Bachelor's",
-      university: 'Example University',
       country: 'NG',
+    });
+    const me = await service.getMe('user-1', 'ada@example.com');
+    expect(me.profileComplete).toBe(true);
+    expect(me.phoneVerifiedAt).toBeNull();
+    // Non-required fields never gate completeness -- confirm they're simply
+    // reported as still-empty, not silently required after all.
+    expect(me.university).toBeNull();
+    expect(me.city).toBeNull();
+  });
+
+  it('profileComplete stays false while any of the minimal required tier is missing, regardless of how much else is filled in', async () => {
+    prisma.profile.findUnique.mockResolvedValueOnce({
+      ...PROFILE,
+      name: 'Ada Lovelace',
+      phone: '+14155552671',
+      qualification: "Bachelor's",
+      country: null, // the one missing required field
+      university: 'Example University',
+      fieldOfStudy: 'Computer Science',
+      currentStatus: 'student',
+      learningGoal: 'Advance my career',
+      areasOfInterest: ['ai', 'cybersecurity'],
+      timeZone: 'Africa/Lagos',
       city: 'Lagos',
       address: '1 Example Street',
       postalCode: '100001',
     });
     const me = await service.getMe('user-1', 'ada@example.com');
-    expect(me.profileComplete).toBe(true);
-    expect(me.phoneVerifiedAt).toBeNull();
+    expect(me.profileComplete).toBe(false);
   });
 
   it('throws NotFoundException when getMe finds no profile', async () => {
@@ -188,6 +219,27 @@ describe('ProfileService', () => {
         city: 'Lagos',
         address: '1 Example Street',
         postalCode: '100001',
+      },
+    });
+  });
+
+  it('updateProfile includes the goals-step fields when present on the dto', async () => {
+    prisma.profile.update.mockResolvedValueOnce(PROFILE);
+    await service.updateProfile('user-1', {
+      fieldOfStudy: 'Computer Science',
+      currentStatus: 'student',
+      learningGoal: 'Advance my career',
+      areasOfInterest: ['ai', 'cybersecurity'],
+      timeZone: 'Africa/Lagos',
+    });
+    expect(prisma.profile.update).toHaveBeenCalledWith({
+      where: { id: 'user-1' },
+      data: {
+        fieldOfStudy: 'Computer Science',
+        currentStatus: 'student',
+        learningGoal: 'Advance my career',
+        areasOfInterest: ['ai', 'cybersecurity'],
+        timeZone: 'Africa/Lagos',
       },
     });
   });

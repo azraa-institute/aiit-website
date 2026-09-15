@@ -1968,6 +1968,69 @@
   grid-template-columns: 1fr 1fr;
   gap: var(--space-4);
 }
+.profile-details__label {
+  margin: 0 0 var(--space-2);
+  font-size: var(--fs-xs);
+  font-weight: 700;
+  letter-spacing: var(--tracking-wide);
+  text-transform: uppercase;
+  color: var(--fg);
+}
+.profile-details__cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: var(--space-3);
+}
+.profile-details__card-option {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--space-2);
+  padding: var(--space-3) var(--space-4);
+  background: var(--surface);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-md);
+  color: var(--ink-soft);
+  font-family: var(--font-ui);
+  font-size: var(--fs-sm);
+  text-align: left;
+  transition:
+    border-color var(--dur-fast) var(--ease-out),
+    background var(--dur-fast) var(--ease-out),
+    color var(--dur-fast) var(--ease-out);
+}
+.profile-details__card-option-icon {
+  color: var(--brass-deep);
+}
+.profile-details__card-option:hover {
+  border-color: var(--brass);
+}
+.profile-details__card-option[aria-pressed='true'] {
+  background: var(--accent-wash);
+  border-color: var(--brass);
+  color: var(--ink);
+  font-weight: var(--fw-medium);
+}
+.profile-details__card-option:focus-visible {
+  outline: 2px solid var(--brass-deep);
+  outline-offset: 2px;
+}
+.profile-details__more {
+  max-width: 34rem;
+}
+.profile-details__more summary {
+  font-size: var(--fs-sm);
+  font-weight: var(--fw-medium);
+  color: var(--fg-muted);
+  cursor: pointer;
+}
+.profile-details__more[open] summary {
+  margin-bottom: var(--space-3);
+  color: var(--fg);
+}
+.profile-details__more .profile-details__grid {
+  margin-top: var(--space-3);
+}
 .profile-details__readonly {
   display: flex;
   align-items: center;
@@ -2208,6 +2271,28 @@
   gap: var(--space-3);
   max-width: 28rem;
   margin-top: var(--space-3);
+}
+.settings-section__row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4);
+  max-width: 28rem;
+  margin-top: var(--space-4);
+  padding: var(--space-4);
+  background: var(--surface-raised);
+  border-radius: var(--radius-md);
+}
+.settings-section__row-title {
+  margin: 0;
+  font-size: var(--fs-sm);
+  font-weight: var(--fw-medium);
+  color: var(--ink);
+}
+.settings-section__row-body {
+  margin: 0.15rem 0 0;
+  font-size: var(--fs-xs);
+  color: var(--ink-muted);
 }
 .settings-section__confirm {
   display: grid;

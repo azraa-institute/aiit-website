@@ -3,10 +3,11 @@
   align-items: center;
   justify-content: space-between;
   flex-wrap: wrap;
-  gap: var(--space-3);
+  gap: var(--space-4);
   padding: var(--space-3) var(--space-5);
-  background: var(--brass-tint);
-  border-bottom: 1px solid rgba(20, 17, 15, 0.08);
+  background: var(--ink);
+  color: var(--ivory);
+  border-bottom: 1px solid var(--line-invert);
   /* .portal becomes a 2-column grid (rail + main) at >=1024px (portal.css);
      without this, the banner is an uninvited 3rd in-flow grid item, which
      pushes .portal-rail into column 2 and .portal__main into a narrow
@@ -14,10 +15,22 @@
      wizard is dismissed (the banner is hidden while it's open). */
   grid-column: 1 / -1;
 }
+.pcb__copy {
+  min-width: 0;
+}
+.pcb__eyebrow {
+  margin: 0 0 0.2rem;
+  font-family: var(--font-ui);
+  font-size: var(--fs-xs);
+  font-weight: 700;
+  letter-spacing: var(--tracking-eyebrow);
+  text-transform: uppercase;
+  color: var(--brass-tint);
+}
 .pcb__message {
   margin: 0;
   font-size: var(--fs-sm);
-  color: var(--ink);
+  color: var(--fg-muted);
 }
 
 @media (max-width: 640px) {

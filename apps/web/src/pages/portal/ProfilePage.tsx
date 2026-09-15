@@ -10,6 +10,10 @@ import { TextField, SelectField } from '@/components/common/Field';
 import { Button } from '@/components/primitives/Button';
 import { COUNTRIES } from '@/data/countries';
 import { QUALIFICATIONS } from '@/data/qualifications';
+import { CURRENT_STATUSES } from '@/data/currentStatus';
+import { LEARNING_GOALS } from '@/data/learningGoals';
+import { LEARNING_AREAS } from '@/data/learningAreas';
+import { detectTimeZone, timeZoneOptions } from '@/data/timeZones';
 import { splitPhone, combinePhone } from '@/lib/phone';
 import { CameraIcon, LockIcon } from './SettingsIcons';
 import { useLearner } from './learnerData';
@@ -19,6 +23,8 @@ import { PortalLoader } from './PortalLoader';
 const AVATARS_BUCKET = 'avatars';
 const COUNTRY_OPTIONS = [{ value: '', label: 'Select a country' }, ...COUNTRIES.map((c) => ({ value: c.code, label: c.name }))];
 const QUALIFICATION_OPTIONS = [{ value: '', label: 'Select your highest qualification' }, ...QUALIFICATIONS];
+const STATUS_OPTIONS = [{ value: '', label: 'Select one' }, ...CURRENT_STATUSES];
+const GOAL_OPTIONS = [{ value: '', label: 'Select your primary goal' }, ...LEARNING_GOALS];
 
 export default function ProfilePage() {
   const { session } = useAuth();
@@ -33,8 +39,13 @@ export default function ProfilePage() {
   const [phoneNational, setPhoneNational] = useState('');
   const [qualification, setQualification] = useState('');
   const [university, setUniversity] = useState('');
+  const [fieldOfStudy, setFieldOfStudy] = useState('');
+  const [currentStatus, setCurrentStatus] = useState('');
+  const [learningGoal, setLearningGoal] = useState('');
+  const [areasOfInterest, setAreasOfInterest] = useState<string[]>([]);
   const [country, setCountry] = useState('');
   const [city, setCity] = useState('');
+  const [timeZone, setTimeZone] = useState('');
   const [address, setAddress] = useState('');
   const [postalCode, setPostalCode] = useState('');
   const [saving, setSaving] = useState(false);
@@ -51,8 +62,13 @@ export default function ProfilePage() {
       setPhoneNational(national);
       setQualification(state.learner.profile.qualification ?? '');
       setUniversity(state.learner.profile.university ?? '');
+      setFieldOfStudy(state.learner.profile.fieldOfStudy ?? '');
+      setCurrentStatus(state.learner.profile.currentStatus ?? '');
+      setLearningGoal(state.learner.profile.learningGoal ?? '');
+      setAreasOfInterest(state.learner.profile.areasOfInterest ?? []);
       setCountry(state.learner.profile.country ?? '');
       setCity(state.learner.profile.city ?? '');
+      setTimeZone(state.learner.profile.timeZone || detectTimeZone());
       setAddress(state.learner.profile.address ?? '');
       setPostalCode(state.learner.profile.postalCode ?? '');
       setInitialized(true);
@@ -64,6 +80,10 @@ export default function ProfilePage() {
 
   const { profile } = state.learner;
   const photoUrl = publicFileUrl(AVATARS_BUCKET, profile.avatarKey);
+
+  function toggleArea(value: string) {
+    setAreasOfInterest((prev) => (prev.includes(value) ? prev.filter((v) => v !== value) : [...prev, value]));
+  }
 
   async function handleSave(e: FormEvent) {
     e.preventDefault();
@@ -83,8 +103,13 @@ export default function ProfilePage() {
           phone: combinePhone(phoneCountry, phoneNational),
           qualification: qualification.trim(),
           university: university.trim(),
+          fieldOfStudy: fieldOfStudy.trim(),
+          currentStatus: currentStatus.trim(),
+          learningGoal: learningGoal.trim(),
+          areasOfInterest,
           country: country || undefined,
           city: city.trim(),
+          timeZone: timeZone.trim(),
           address: address.trim(),
           postalCode: postalCode.trim(),
         }),
@@ -206,8 +231,21 @@ export default function ProfilePage() {
             onChange={(e) => setUniversity(e.target.value)}
             maxLength={200}
             hint="The institution you're attending or have attended -- not AIIT itself."
-            required
           />
+          <div className="profile-details__grid">
+            <TextField
+              label="Field of study / discipline"
+              value={fieldOfStudy}
+              onChange={(e) => setFieldOfStudy(e.target.value)}
+              maxLength={120}
+            />
+            <SelectField
+              label="Current status"
+              value={currentStatus}
+              onChange={(e) => setCurrentStatus(e.target.value)}
+              options={STATUS_OPTIONS}
+            />
+          </div>
           <TextField
             label="Headline"
             value={headline}
@@ -228,7 +266,38 @@ export default function ProfilePage() {
             />
           </div>
 
+          <h3 className="profile-details__subtitle">Learning</h3>
+          <SelectField
+            label="Primary learning goal"
+            value={learningGoal}
+            onChange={(e) => setLearningGoal(e.target.value)}
+            options={GOAL_OPTIONS}
+          />
+          <div>
+            <p className="profile-details__label">Areas of interest</p>
+            <div className="profile-details__cards" role="group" aria-label="Areas of interest">
+              {LEARNING_AREAS.map(({ value, label, Icon }) => {
+                const selected = areasOfInterest.includes(value);
+                return (
+                  <button
+                    key={value}
+                    type="button"
+                    className="profile-details__card-option"
+                    aria-pressed={selected}
+                    onClick={() => toggleArea(value)}
+                  >
+                    <Icon className="profile-details__card-option-icon" />
+                    <span>{label}</span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
           <h3 className="profile-details__subtitle">Location</h3>
+          <p className="portal-page__intro">
+            Your location helps us present dates, webinars and learning activities in the right local time.
+          </p>
           <div className="profile-details__grid">
             <SelectField
               label="Country"
@@ -237,24 +306,26 @@ export default function ProfilePage() {
               options={COUNTRY_OPTIONS}
               required
             />
-            <TextField label="City" value={city} onChange={(e) => setCity(e.target.value)} maxLength={120} required />
+            <TextField label="City" value={city} onChange={(e) => setCity(e.target.value)} maxLength={120} />
           </div>
-          <div className="profile-details__grid">
-            <TextField
-              label="Address"
-              value={address}
-              onChange={(e) => setAddress(e.target.value)}
-              maxLength={300}
-              required
-            />
-            <TextField
-              label="Zip / postal code"
-              value={postalCode}
-              onChange={(e) => setPostalCode(e.target.value)}
-              maxLength={20}
-              required
-            />
-          </div>
+          <SelectField
+            label="Time zone"
+            value={timeZone}
+            onChange={(e) => setTimeZone(e.target.value)}
+            options={timeZoneOptions(timeZone)}
+          />
+          <details className="profile-details__more">
+            <summary>Address (optional)</summary>
+            <div className="profile-details__grid">
+              <TextField label="Address" value={address} onChange={(e) => setAddress(e.target.value)} maxLength={300} />
+              <TextField
+                label="Zip / postal code"
+                value={postalCode}
+                onChange={(e) => setPostalCode(e.target.value)}
+                maxLength={20}
+              />
+            </div>
+          </details>
 
           <div className="profile-details__readonly">
             <LockIcon className="profile-details__readonly-icon" />

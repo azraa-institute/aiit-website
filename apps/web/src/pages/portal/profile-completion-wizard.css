@@ -1,9 +1,10 @@
 /* ============================================================
-   PROFILE COMPLETION WIZARD — same scrim/card/close pattern as
-   components/common/enrollment-popup.css, restyled for the portal's
-   ink/brass palette instead of the public site's red accent. Mounted via
-   a DOM portal (see ProfileCompletionWizard.tsx) so PortalLayout's blur
-   filter on the shell behind it never touches this card.
+   PROFILE COMPLETION WIZARD — a two-zone editorial composition: a dark
+   institutional visual panel (left, becomes a compact header under
+   ~860px) and the actual form (right). Mounted via a DOM portal (see
+   ProfileCompletionWizard.tsx) so PortalLayout's blur filter on the shell
+   behind it never touches this card. Same scrim/focus-trap/close pattern
+   as components/common/enrollment-popup.css and GuidedTour's own card.
    ============================================================ */
 .pcw-scrim {
   position: fixed;
@@ -12,7 +13,7 @@
   display: grid;
   place-items: center;
   padding: clamp(1rem, 4vw, 2.5rem);
-  background: rgba(20, 17, 15, 0.55);
+  background: rgba(20, 17, 15, 0.6);
   animation: pcw-scrim-in var(--dur-base) var(--ease-out);
 }
 @keyframes pcw-scrim-in {
@@ -21,43 +22,167 @@
   }
 }
 
-.pcw-card {
+.pcw-shell {
   position: relative;
-  width: min(480px, 94vw);
+  width: min(880px, 96vw);
   max-height: 92vh;
   overflow: auto;
   scrollbar-width: thin;
-  padding: var(--space-6);
+  display: grid;
+  grid-template-columns: 1fr;
   background: var(--surface);
   border-radius: var(--radius-lg);
   box-shadow:
     0 4px 12px rgba(20, 17, 15, 0.18),
     0 40px 90px -30px rgba(20, 17, 15, 0.5);
-  animation: pcw-card-in var(--dur-slow) var(--ease-out) both;
+  animation: pcw-shell-in var(--dur-slow) var(--ease-out) both;
 }
-@keyframes pcw-card-in {
+@keyframes pcw-shell-in {
   from {
     opacity: 0;
-    transform: scale(0.96) translateY(8px);
+    transform: scale(0.97) translateY(8px);
+  }
+}
+@media (min-width: 860px) {
+  .pcw-shell {
+    grid-template-columns: minmax(240px, 32%) 1fr;
+    max-height: 88vh;
   }
 }
 
-.pcw-card__head {
+/* ---- Left visual panel — a compact header on mobile, a full editorial
+   column at >=860px. Reuses the same hand-drawn contour+node "learning
+   network" motif established in PortalAtmosphere.tsx, restyled small and
+   dark. ---- */
+.pcw-visual {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  padding: var(--space-5) var(--space-6);
+  background: var(--ink);
+  color: var(--ivory);
+  overflow: hidden;
+  border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+}
+@media (min-width: 860px) {
+  .pcw-visual {
+    border-radius: var(--radius-lg) 0 0 var(--radius-lg);
+    padding: var(--space-7) var(--space-6) var(--space-6);
+  }
+}
+
+.pcw-visual__brand {
   display: flex;
   align-items: center;
+  gap: var(--space-2);
+  z-index: 1;
+}
+.pcw-visual__logo {
+  height: 22px;
+  width: auto;
+}
+.pcw-visual__brand-sub {
+  font-family: var(--font-ui);
+  font-size: var(--fs-xs);
+  letter-spacing: var(--tracking-wide);
+  text-transform: uppercase;
+  color: var(--fg-faint);
+}
+
+.pcw-visual__motif {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0.55;
+  pointer-events: none;
+}
+@media (max-width: 859px) {
+  .pcw-visual__motif {
+    opacity: 0.3;
+  }
+}
+.pcwv-contour {
+  fill: none;
+  stroke: var(--line-invert);
+  stroke-width: 1;
+}
+.pcwv-link {
+  stroke: rgba(216, 201, 176, 0.3);
+  stroke-width: 1;
+}
+.pcwv-node {
+  fill: rgba(216, 201, 176, 0.5);
+  transition: r var(--dur-base) var(--ease-out), fill var(--dur-base) var(--ease-out);
+}
+.pcwv-node.is-active {
+  fill: var(--brass-tint);
+}
+
+.pcw-visual__copy {
+  position: relative;
+  z-index: 1;
+  margin-top: auto;
+}
+.pcw-visual__eyebrow {
+  margin: 0 0 var(--space-2);
+  font-family: var(--font-ui);
+  font-size: var(--fs-eyebrow);
+  font-weight: 700;
+  letter-spacing: var(--tracking-eyebrow);
+  text-transform: uppercase;
+  color: var(--brass-tint);
+}
+.pcw-visual__title {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: var(--fs-subhead);
+  line-height: var(--lh-snug);
+  color: var(--ivory);
+}
+@media (max-width: 859px) {
+  .pcw-visual__copy {
+    margin-top: var(--space-2);
+  }
+  .pcw-visual__title {
+    font-size: var(--fs-lead);
+  }
+}
+
+/* ---- Right column — the actual form ---- */
+.pcw-content {
+  padding: var(--space-5) var(--space-6) var(--space-6);
+}
+@media (min-width: 860px) {
+  .pcw-content {
+    padding: var(--space-6) var(--space-7) var(--space-6);
+  }
+}
+
+.pcw-content__head {
+  display: flex;
+  align-items: flex-start;
   justify-content: space-between;
   gap: var(--space-3);
 }
-.pcw-card__progress {
+.pcw-progress__eyebrow {
   margin: 0;
-  font-family: var(--font-ui, inherit);
+  font-family: var(--font-ui);
   font-size: var(--fs-xs);
   font-weight: 700;
-  letter-spacing: var(--tracking-wide);
+  letter-spacing: var(--tracking-eyebrow);
   text-transform: uppercase;
   color: var(--ink-muted);
 }
-.pcw-card__close {
+.pcw-progress__count {
+  margin: 0.1rem 0 0;
+  font-family: var(--font-display);
+  font-size: var(--fs-sm);
+  color: var(--ink);
+}
+
+.pcw-close {
   display: grid;
   place-items: center;
   width: 30px;
@@ -67,27 +192,35 @@
   color: var(--ink-soft);
   transition: background var(--dur-fast) var(--ease-out);
 }
-.pcw-card__close:hover {
+.pcw-close:hover {
   background: rgba(20, 17, 15, 0.12);
 }
-.pcw-card__close:focus-visible {
+.pcw-close:focus-visible {
   outline: 2px solid var(--brass-deep);
   outline-offset: 2px;
 }
 
-.pcw-card__bar {
-  margin-top: var(--space-3);
-  height: 4px;
-  border-radius: var(--radius-pill);
-  background: rgba(20, 17, 15, 0.08);
-  overflow: hidden;
+/* Subtle horizontal step indicator -- deliberately not a plain progress
+   bar. Each label brightens as its step is reached/passed; a hairline
+   connects them. */
+.pcw-steps {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1) var(--space-4);
+  margin: var(--space-3) 0 0;
+  padding-bottom: var(--space-3);
+  border-bottom: 1px solid var(--line);
 }
-.pcw-card__bar-fill {
-  display: block;
-  height: 100%;
-  background: var(--brass);
-  border-radius: inherit;
-  transition: width var(--dur-slow) var(--ease-out);
+.pcw-steps span {
+  font-family: var(--font-ui);
+  font-size: var(--fs-xs);
+  letter-spacing: var(--tracking-wide);
+  text-transform: uppercase;
+  color: var(--fg-faint);
+}
+.pcw-steps span.is-done {
+  color: var(--brass-deep);
+  font-weight: 700;
 }
 
 .pcw-step {
@@ -114,53 +247,168 @@
   gap: var(--space-3);
   margin-top: var(--space-2);
 }
-.pcw-tour {
+
+.pcw-field-label {
+  margin: 0 0 var(--space-2);
+  font-size: var(--fs-xs);
+  font-weight: 700;
+  letter-spacing: var(--tracking-wide);
+  text-transform: uppercase;
+  color: var(--fg);
+}
+
+/* ---- Welcome step's benefit checklist ---- */
+.pcw-benefits {
   display: grid;
-  gap: var(--space-3);
+  gap: var(--space-2);
   margin: 0;
   padding: 0;
   list-style: none;
 }
-.pcw-tour li {
-  padding: var(--space-3) var(--space-4);
-  border-radius: var(--radius-md);
-  background: rgba(20, 17, 15, 0.03);
+.pcw-benefits li {
+  position: relative;
+  padding-left: var(--space-6);
   font-size: var(--fs-sm);
   color: var(--ink-soft);
 }
-.pcw-tour strong {
-  color: var(--ink);
+.pcw-benefits li::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0.35em;
+  width: 14px;
+  height: 8px;
+  border-left: 1.6px solid var(--brass-deep);
+  border-bottom: 1.6px solid var(--brass-deep);
+  transform: rotate(-45deg);
 }
 
-.pcw-review {
+/* ---- Goals step's selectable interest cards ---- */
+.pcw-cards {
   display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
   gap: var(--space-3);
-  margin: 0;
 }
-.pcw-review > div {
+.pcw-card-option {
   display: flex;
-  justify-content: space-between;
-  gap: var(--space-4);
-  padding-bottom: var(--space-2);
-  border-bottom: 1px solid var(--line);
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--space-2);
+  padding: var(--space-3) var(--space-4);
+  background: var(--surface);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-md);
+  color: var(--ink-soft);
+  font-family: var(--font-ui);
+  font-size: var(--fs-sm);
+  text-align: left;
+  transition:
+    border-color var(--dur-fast) var(--ease-out),
+    background var(--dur-fast) var(--ease-out),
+    color var(--dur-fast) var(--ease-out);
 }
-.pcw-review dt {
+.pcw-card-option__icon {
+  color: var(--brass-deep);
+}
+.pcw-card-option:hover {
+  border-color: var(--brass);
+}
+.pcw-card-option[aria-pressed='true'] {
+  background: var(--accent-wash);
+  border-color: var(--brass);
+  color: var(--ink);
+  font-weight: var(--fw-medium);
+}
+.pcw-card-option:focus-visible {
+  outline: 2px solid var(--brass-deep);
+  outline-offset: 2px;
+}
+
+/* ---- Review step — "profile passport" ---- */
+.pcw-passport {
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+}
+.pcw-passport__head {
+  padding: var(--space-4) var(--space-5);
+  background: var(--ink);
+  color: var(--ivory);
+}
+.pcw-passport__brand {
+  margin: 0;
+  font-family: var(--font-ui);
+  font-size: var(--fs-xs);
+  font-weight: 700;
+  letter-spacing: var(--tracking-eyebrow);
+  color: var(--brass-tint);
+}
+.pcw-passport__kind {
+  margin: 0.15rem 0 0;
+  font-family: var(--font-display);
+  font-size: var(--fs-lead);
+  color: var(--ivory);
+}
+.pcw-passport__section {
+  padding: var(--space-4) var(--space-5);
+  border-top: 1px solid var(--line);
+}
+.pcw-passport__section-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: var(--space-2);
+}
+.pcw-passport__label {
+  margin: 0;
+  font-family: var(--font-ui);
   font-size: var(--fs-xs);
   font-weight: 700;
   letter-spacing: var(--tracking-wide);
   text-transform: uppercase;
   color: var(--ink-muted);
 }
-.pcw-review dd {
+.pcw-passport__edit {
+  font-family: var(--font-ui);
+  font-size: var(--fs-xs);
+  font-weight: 700;
+  letter-spacing: var(--tracking-wide);
+  text-transform: uppercase;
+  color: var(--brass-deep);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+.pcw-passport__edit:hover {
+  color: var(--ink);
+}
+.pcw-passport__list {
+  display: grid;
+  gap: var(--space-2);
+  margin: 0;
+}
+.pcw-passport__list > div {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--space-4);
+}
+.pcw-passport__list dt {
+  font-size: var(--fs-xs);
+  color: var(--ink-muted);
+}
+.pcw-passport__list dd {
   margin: 0;
   text-align: right;
   font-size: var(--fs-sm);
   color: var(--ink);
+  max-width: 60%;
 }
 
 @media (prefers-reduced-motion: reduce) {
   .pcw-scrim,
-  .pcw-card {
+  .pcw-shell {
     animation: none;
+  }
+  .pcwv-node {
+    transition: none;
   }
 }

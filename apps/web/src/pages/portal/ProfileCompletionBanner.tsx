@@ -14,12 +14,15 @@ interface ProfileCompletionBannerProps {
  */
 export function ProfileCompletionBanner({ onComplete }: ProfileCompletionBannerProps) {
   return (
-    <div className="pcb" role="status">
-      <p className="pcb__message">
-        Please complete your profile -- course enrollment and your portal content stay locked until you do.
-      </p>
+    <div className="pcb on-ink" role="status">
+      <div className="pcb__copy">
+        <p className="pcb__eyebrow">Complete your profile</p>
+        <p className="pcb__message">
+          Finish your learner profile to unlock course enrollment, certificates and your learning activities.
+        </p>
+      </div>
       <Button as="button" type="button" size="sm" onClick={onComplete}>
-        Complete your profile
+        Continue profile
       </Button>
     </div>
   );

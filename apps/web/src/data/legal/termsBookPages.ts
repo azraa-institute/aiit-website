@@ -1,10 +1,12 @@
+import type { LegalBookPage } from './types';
+
 /**
  * Groups TERMS_AND_CONDITIONS' sections (terms.ts) into the interactive
- * book's pages — presentation only, references existing sections by id.
- * Never splits a section across two pages.
+ * LegalBook's pages — presentation only, references existing sections by
+ * id. Never splits a section across two pages.
  *
  * The book viewer holds every page to the same fixed physical height
- * (see terms-book.css), so pagination here is what keeps that height
+ * (see legal-book.css), so pagination here is what keeps that height
  * from being cramped (forcing internal scroll) on some pages and empty
  * on others: every page uses a two-column layout, which keeps each
  * page's vertical need to roughly the taller of its columns rather
@@ -17,13 +19,7 @@
  * information as a third section) stays a clean pair instead. `label`
  * is a page running-head, not part of the legal text itself.
  */
-export interface TermsBookPage {
-  label: string;
-  sectionIds: string[];
-  layout?: 'single' | 'two-col';
-}
-
-export const TERMS_BOOK_PAGES: TermsBookPage[] = [
+export const TERMS_BOOK_PAGES: LegalBookPage[] = [
   {
     label: 'About & Eligibility',
     sectionIds: ['about-aiit', 'eligibility'],

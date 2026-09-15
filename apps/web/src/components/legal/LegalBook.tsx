@@ -1,23 +1,21 @@
 import { useCallback, useEffect, useId, useMemo, useRef, useState } from 'react';
-import type { LegalDoc, LegalSection } from '@/data/legal/types';
-import { TERMS_BOOK_PAGES } from '@/data/legal/termsBookPages';
+import type { LegalBookPage, LegalDoc, LegalSection } from '@/data/legal/types';
 import { useReducedMotion } from '@/lib/useReducedMotion';
 import { useScrollReveal } from '@/lib/useScrollReveal';
 import { cn } from '@/lib/cn';
 import { Logo } from '@/components/layout/Logo';
-import './terms-book.css';
+import './legal-book.css';
 
 function folio(i: number): string {
   return String(i + 1).padStart(2, '0');
 }
 
-/** The same abstract ruled-line page mark LegalDocument's cover uses for
- * Terms — reused here (not reinvented) for the decoy pages behind the
- * active leaf, so a page reads as "a document" without rendering real
- * upcoming text twice. */
+/** An abstract ruled-line page mark for the decoy pages stacked behind
+ * the active leaf, so a page reads as "a document" without rendering
+ * real upcoming text twice. */
 function RuledMark() {
   return (
-    <svg className="termsbook__ruled" viewBox="0 0 200 120" aria-hidden="true" focusable="false">
+    <svg className="legalbook__ruled" viewBox="0 0 200 120" aria-hidden="true" focusable="false">
       <line x1="20" y1="14" x2="180" y2="14" />
       <line x1="20" y1="34" x2="160" y2="34" />
       <line x1="20" y1="54" x2="170" y2="54" />
@@ -38,21 +36,25 @@ function ArrowIcon({ direction }: { direction: 'prev' | 'next' }) {
 
 function SectionBody({ section }: { section: LegalSection }) {
   return (
-    <div className="termsbook__section" key={section.id}>
-      <h3 className="termsbook__section-title">{section.title}</h3>
-      {section.lead && <p className="termsbook__lead">{section.lead}</p>}
-      {section.groups?.map((g) => (
-        <div className="termsbook__group" key={g.label ?? g.items[0]}>
-          {g.label && <p className="termsbook__group-label">{g.label}</p>}
-          <ul className="termsbook__list">
-            {g.items.map((item) => (
-              <li key={item}>{item}</li>
-            ))}
-          </ul>
+    <div className="legalbook__section" key={section.id}>
+      <h3 className="legalbook__section-title">{section.title}</h3>
+      {section.lead && <p className="legalbook__lead">{section.lead}</p>}
+      {section.groups && (
+        <div className="legalbook__groups">
+          {section.groups.map((g) => (
+            <div className="legalbook__group" key={g.label ?? g.items[0]}>
+              {g.label && <p className="legalbook__group-label">{g.label}</p>}
+              <ul className="legalbook__list">
+                {g.items.map((item) => (
+                  <li key={item}>{item}</li>
+                ))}
+              </ul>
+            </div>
+          ))}
         </div>
-      ))}
+      )}
       {section.items && (
-        <ul className="termsbook__list">
+        <ul className="legalbook__list">
           {section.items.map((item) => (
             <li key={item}>{item}</li>
           ))}
@@ -62,8 +64,8 @@ function SectionBody({ section }: { section: LegalSection }) {
         <p key={p}>{p}</p>
       ))}
       {section.clause && (
-        <p className="termsbook__clause">
-          <span className="termsbook__clause-label">Key clause</span>
+        <p className="legalbook__clause">
+          <span className="legalbook__clause-label">Key clause</span>
           {section.clause}
         </p>
       )}
@@ -72,22 +74,24 @@ function SectionBody({ section }: { section: LegalSection }) {
 }
 
 /**
- * The Terms & Conditions page as an interactive document: a cover, then
- * one legal page at a time behind a book-like page-turn transition, with
- * 2 decorative leaves stacked behind the active one for depth. Terms-only
- * (see LegalPage.tsx) -- Privacy Policy keeps the conventional scrolling
- * LegalDocument reading experience.
+ * A legal document (Terms & Conditions, Privacy Policy) as an interactive
+ * book: a cover, then one page at a time behind a book-like page-turn
+ * transition, with 2 decorative leaves stacked behind the active one for
+ * depth. Shared by both /terms and /privacy-policy (see LegalPage.tsx) --
+ * each passes its own LegalDoc plus its own LegalBookPage[] pagination
+ * (termsBookPages.ts / privacyBookPages.ts), since the two documents'
+ * sections carry very different amounts of content.
  *
  * The book viewer is a fixed-size stage: every leaf (cover included)
  * renders at the same width/height regardless of how much content it
  * holds, so paging never moves the viewport or the surrounding page --
  * only the leaf's own body area ever scrolls, and only if a page's
- * content genuinely can't fit (see terms-book.css for the height and
- * the .termsbook__page-body overflow rule).
+ * content genuinely can't fit (see legal-book.css for the height and
+ * the .legalbook__page-body overflow rule).
  */
-export function TermsBook({ doc }: { doc: LegalDoc }) {
-  // page 0 = cover, 1..N = TERMS_BOOK_PAGES (1-indexed to match the visible "01/10").
-  const total = TERMS_BOOK_PAGES.length;
+export function LegalBook({ doc, pages }: { doc: LegalDoc; pages: LegalBookPage[] }) {
+  // page 0 = cover, 1..N = pages (1-indexed to match the visible "01/N").
+  const total = pages.length;
   const [page, setPage] = useState(0);
   const [direction, setDirection] = useState<'next' | 'prev' | null>(null);
   const [animKey, setAnimKey] = useState(0);
@@ -128,9 +132,9 @@ export function TermsBook({ doc }: { doc: LegalDoc }) {
   // anywhere in this component) -- that's the whole point of a fixed stage.
   useEffect(() => {
     headingRef.current?.focus({ preventScroll: true });
-    const label = page === 0 ? `Cover, ${doc.title}` : `Page ${page} of ${total}, ${TERMS_BOOK_PAGES[page - 1].label}`;
+    const label = page === 0 ? `Cover, ${doc.title}` : `Page ${page} of ${total}, ${pages[page - 1].label}`;
     if (liveRef.current) liveRef.current.textContent = label;
-  }, [page, total, doc.title]);
+  }, [page, total, doc.title, pages]);
 
   // Keyboard nav (Left/Right/Home/End) while focus is anywhere inside the book.
   useEffect(() => {
@@ -168,21 +172,21 @@ export function TermsBook({ doc }: { doc: LegalDoc }) {
     else goPrev();
   };
 
-  const bookPage = page > 0 ? TERMS_BOOK_PAGES[page - 1] : null;
+  const bookPage = page > 0 ? pages[page - 1] : null;
   const enterClass = reduced ? 'is-reduced' : direction === 'prev' ? 'is-entering-prev' : 'is-entering-next';
 
   return (
-    <div className="termsbook" ref={rootRef}>
+    <div className="legalbook" ref={rootRef}>
       <div className="container container--wide">
-        <header className="termsbook__intro" data-reveal>
-          <p className="eyebrow termsbook__eyebrow">{doc.eyebrow}</p>
-          <p className="termsbook__intro-text">{doc.intro}</p>
+        <header className="legalbook__intro" data-reveal>
+          <p className="eyebrow legalbook__eyebrow">{doc.eyebrow}</p>
+          <p className="legalbook__intro-text">{doc.intro}</p>
         </header>
 
-        <div className="termsbook__stage" data-reveal>
+        <div className="legalbook__stage" data-reveal>
           <button
             type="button"
-            className="termsbook__arrow termsbook__arrow--prev"
+            className="legalbook__arrow legalbook__arrow--prev"
             onClick={goPrev}
             disabled={page === 0}
             aria-label="Previous page"
@@ -190,18 +194,18 @@ export function TermsBook({ doc }: { doc: LegalDoc }) {
             <ArrowIcon direction="prev" />
           </button>
 
-          <div className="termsbook__book">
-            <div className="termsbook__toc-wrap">
+          <div className="legalbook__book">
+            <div className="legalbook__toc-wrap">
               <button
                 type="button"
-                className="termsbook__toc-toggle"
+                className="legalbook__toc-toggle"
                 aria-expanded={tocOpen}
                 aria-controls={`${tocId}-panel`}
                 onClick={() => setTocOpen((o) => !o)}
               >
                 Contents
                 <svg
-                  className={cn('termsbook__toc-chevron', tocOpen && 'is-open')}
+                  className={cn('legalbook__toc-chevron', tocOpen && 'is-open')}
                   viewBox="0 0 16 16"
                   aria-hidden="true"
                 >
@@ -216,15 +220,15 @@ export function TermsBook({ doc }: { doc: LegalDoc }) {
                 </svg>
               </button>
               {tocOpen && (
-                <div className="termsbook__toc-panel" id={`${tocId}-panel`}>
+                <div className="legalbook__toc-panel" id={`${tocId}-panel`}>
                   <ol>
                     <li>
                       <button type="button" className={page === 0 ? 'is-active' : undefined} onClick={() => { goTo(0); setTocOpen(false); }}>
-                        <span className="termsbook__toc-num">·</span>
+                        <span className="legalbook__toc-num">·</span>
                         Cover
                       </button>
                     </li>
-                    {TERMS_BOOK_PAGES.map((p, i) => (
+                    {pages.map((p, i) => (
                       <li key={p.label}>
                         <button
                           type="button"
@@ -234,7 +238,7 @@ export function TermsBook({ doc }: { doc: LegalDoc }) {
                             setTocOpen(false);
                           }}
                         >
-                          <span className="termsbook__toc-num">{folio(i)}</span>
+                          <span className="legalbook__toc-num">{folio(i)}</span>
                           {p.label}
                         </button>
                       </li>
@@ -244,47 +248,45 @@ export function TermsBook({ doc }: { doc: LegalDoc }) {
               )}
             </div>
 
-            <div className="termsbook__leaves">
-              <div className="termsbook__leaf termsbook__leaf--back-2" aria-hidden="true">
+            <div className="legalbook__leaves">
+              <div className="legalbook__leaf legalbook__leaf--back-2" aria-hidden="true">
                 <RuledMark />
               </div>
-              <div className="termsbook__leaf termsbook__leaf--back-1" aria-hidden="true">
+              <div className="legalbook__leaf legalbook__leaf--back-1" aria-hidden="true">
                 <RuledMark />
               </div>
 
               <div
-                className={cn('termsbook__leaf', 'termsbook__leaf--active', enterClass, page === 0 && 'is-cover')}
+                className={cn('legalbook__leaf', 'legalbook__leaf--active', enterClass, page === 0 && 'is-cover')}
                 key={animKey}
                 onTouchStart={onTouchStart}
                 onTouchEnd={onTouchEnd}
               >
                 {page === 0 ? (
-                  <div className="termsbook__cover">
-                    <Logo variant="dark" className="termsbook__cover-logo" />
-                    <p className="termsbook__cover-kicker">Azraa Institute of Information Technology</p>
-                    <div className="termsbook__cover-rule" aria-hidden="true" />
-                    <h1 className="termsbook__cover-title" ref={headingRef} tabIndex={-1}>
-                      Website Terms
-                      <br />
-                      &amp; Conditions
+                  <div className="legalbook__cover">
+                    <Logo variant="dark" className="legalbook__cover-logo" />
+                    <p className="legalbook__cover-kicker">Azraa Institute of Information Technology</p>
+                    <div className="legalbook__cover-rule" aria-hidden="true" />
+                    <h1 className="legalbook__cover-title" ref={headingRef} tabIndex={-1}>
+                      {doc.title}
                     </h1>
-                    <p className="termsbook__cover-effective">
+                    <p className="legalbook__cover-effective">
                       {doc.effectiveLabel}: {doc.effectiveDate}
                     </p>
-                    <p className="termsbook__cover-hint">{doc.intro}</p>
+                    <p className="legalbook__cover-hint">{doc.intro}</p>
                   </div>
                 ) : (
-                  <article className="termsbook__page" aria-labelledby={`${tocId}-heading`}>
-                    <div className="termsbook__page-head">
-                      <span className="termsbook__folio">{folio(page - 1)}</span>
-                      <h2 className="termsbook__page-title" id={`${tocId}-heading`} ref={headingRef} tabIndex={-1}>
+                  <article className="legalbook__page" aria-labelledby={`${tocId}-heading`}>
+                    <div className="legalbook__page-head">
+                      <span className="legalbook__folio">{folio(page - 1)}</span>
+                      <h2 className="legalbook__page-title" id={`${tocId}-heading`} ref={headingRef} tabIndex={-1}>
                         {bookPage!.label}
                       </h2>
                     </div>
                     <div
                       className={cn(
-                        'termsbook__page-body',
-                        bookPage!.layout === 'two-col' && 'termsbook__page-body--two-col',
+                        'legalbook__page-body',
+                        bookPage!.layout === 'two-col' && 'legalbook__page-body--two-col',
                       )}
                     >
                       {bookPage!.sectionIds.map((id) => {
@@ -293,7 +295,7 @@ export function TermsBook({ doc }: { doc: LegalDoc }) {
                       })}
                       {page === total &&
                         doc.closing.map((line) => (
-                          <p className="termsbook__closing" key={line}>
+                          <p className="legalbook__closing" key={line}>
                             {line}
                           </p>
                         ))}
@@ -301,9 +303,9 @@ export function TermsBook({ doc }: { doc: LegalDoc }) {
                   </article>
                 )}
 
-                <p className="termsbook__page-foot">
+                <p className="legalbook__page-foot">
                   AIIT.NETWORK <span aria-hidden="true">·</span>{' '}
-                  {page === 0 ? 'TERMS & CONDITIONS' : `${folio(page - 1)} / ${folio(total - 1)}`}
+                  {page === 0 ? doc.title.toUpperCase() : `${folio(page - 1)} / ${folio(total - 1)}`}
                 </p>
               </div>
             </div>
@@ -311,7 +313,7 @@ export function TermsBook({ doc }: { doc: LegalDoc }) {
 
           <button
             type="button"
-            className="termsbook__arrow termsbook__arrow--next"
+            className="legalbook__arrow legalbook__arrow--next"
             onClick={goNext}
             disabled={page === total}
             aria-label="Next page"

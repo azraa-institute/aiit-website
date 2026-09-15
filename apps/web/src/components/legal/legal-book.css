@@ -1,23 +1,23 @@
 /* ============================================================
-   TERMS BOOK — the interactive-document presentation for /terms only.
-   Privacy Policy keeps the conventional scrolling LegalDocument (see
-   legal-document.css) -- this page is a deliberate departure: an
-   editorial "institutional publication" read one page at a time, styled
-   entirely from the site's own tokens (paper/ivory/ink/brass, Source
-   Serif 4 for headings, Google Sans for UI) rather than any new palette.
+   LEGAL BOOK — the interactive-document presentation shared by /terms
+   and /privacy-policy (see LegalPage.tsx, termsBookPages.ts and
+   privacyBookPages.ts): an editorial "institutional publication" read
+   one page at a time, styled entirely from the site's own tokens
+   (paper/ivory/ink/brass, Source Serif 4 for headings, Google Sans for
+   UI) rather than any new palette.
 
    Architecture note (read before touching layout): the paper visuals
-   (.termsbook__leaf--back-1/2, the grain, the shadows, the colors) are
+   (.legalbook__leaf--back-1/2, the grain, the shadows, the colors) are
    intentionally untouched here -- only the STAGE around them changed.
    Every leaf, cover included, now renders at one fixed height (see
-   .termsbook__leaf--active below) so paging never resizes the viewer or
+   .legalbook__leaf--active below) so paging never resizes the viewer or
    moves the surrounding page; only a page's own body area scrolls
    internally, and only if its content can't fit. The back leaves are
    pure decoration (position: absolute, out of flow) and never affect
    that height.
    ============================================================ */
 
-.termsbook {
+.legalbook {
   /* A step warmer/deeper than the page's own --paper background, so the
      stage the document sits in reads as a distinct "room" the page is
      resting in -- the brief's "enough contrast for the document to stand
@@ -27,15 +27,15 @@
   border-bottom: 1px solid var(--line);
 }
 
-.termsbook__intro {
+.legalbook__intro {
   max-width: 640px;
   margin-inline: auto;
   text-align: center;
 }
-.termsbook__eyebrow {
+.legalbook__eyebrow {
   justify-content: center;
 }
-.termsbook__intro-text {
+.legalbook__intro-text {
   margin-top: var(--space-4);
   font-size: var(--fs-lead);
   line-height: 1.6;
@@ -47,7 +47,7 @@
    stack) in the middle. This row is what makes the arrows sit "beside
    the book" instead of in a control bar underneath it.
    ============================================================ */
-.termsbook__stage {
+.legalbook__stage {
   margin-top: clamp(2.5rem, 2rem + 3vw, 4rem);
   display: flex;
   align-items: center;
@@ -57,7 +57,7 @@
   margin-inline: auto;
 }
 
-.termsbook__book {
+.legalbook__book {
   display: flex;
   flex-direction: column;
   align-items: stretch;
@@ -67,7 +67,7 @@
 }
 
 /* ---- Side navigation -- small, refined, always beside the book ---- */
-.termsbook__arrow {
+.legalbook__arrow {
   flex: 0 0 auto;
   display: grid;
   place-items: center;
@@ -83,24 +83,24 @@
     color var(--dur-fast) var(--ease-out),
     opacity var(--dur-fast) var(--ease-out);
 }
-.termsbook__arrow:hover:not(:disabled) {
+.legalbook__arrow:hover:not(:disabled) {
   background: var(--accent-wash);
   border-color: var(--brass);
   color: var(--ink);
 }
-.termsbook__arrow:focus-visible {
+.legalbook__arrow:focus-visible {
   outline: none;
   border-color: var(--brass-deep);
   box-shadow: 0 0 0 3px rgba(154, 123, 79, 0.22);
 }
-.termsbook__arrow:disabled {
+.legalbook__arrow:disabled {
   opacity: 0.32;
   cursor: default;
 }
-.termsbook__arrow--prev svg {
+.legalbook__arrow--prev svg {
   margin-right: 1px;
 }
-.termsbook__arrow--next svg {
+.legalbook__arrow--next svg {
   margin-left: 1px;
 }
 
@@ -109,11 +109,11 @@
    its own row above the leaf stack, so it adds a constant amount of
    height to the book column (same on every page) rather than floating
    over the paper. ---- */
-.termsbook__toc-wrap {
+.legalbook__toc-wrap {
   position: relative;
   align-self: flex-end;
 }
-.termsbook__toc-toggle {
+.legalbook__toc-toggle {
   display: inline-flex;
   align-items: center;
   gap: var(--space-2);
@@ -132,23 +132,23 @@
     color var(--dur-fast) var(--ease-out),
     border-color var(--dur-fast) var(--ease-out);
 }
-.termsbook__toc-toggle:hover,
-.termsbook__toc-toggle:focus-visible {
+.legalbook__toc-toggle:hover,
+.legalbook__toc-toggle:focus-visible {
   background: var(--accent-wash);
   color: var(--ink);
   border-color: var(--line-strong);
   outline: none;
 }
-.termsbook__toc-chevron {
+.legalbook__toc-chevron {
   width: 11px;
   height: 11px;
   transition: transform var(--dur-base) var(--ease-out);
 }
-.termsbook__toc-chevron.is-open {
+.legalbook__toc-chevron.is-open {
   transform: rotate(180deg);
 }
 
-.termsbook__toc-panel {
+.legalbook__toc-panel {
   position: absolute;
   top: calc(100% + 8px);
   right: 0;
@@ -164,13 +164,13 @@
   border-radius: var(--radius-md);
   box-shadow: var(--shadow-panel);
 }
-.termsbook__toc-panel ol {
+.legalbook__toc-panel ol {
   list-style: none;
   display: flex;
   flex-direction: column;
   gap: 2px;
 }
-.termsbook__toc-panel button {
+.legalbook__toc-panel button {
   display: flex;
   align-items: center;
   gap: var(--space-3);
@@ -183,16 +183,16 @@
   color: var(--ink-soft);
   transition: background var(--dur-fast) var(--ease-out);
 }
-.termsbook__toc-panel button:hover,
-.termsbook__toc-panel button:focus-visible {
+.legalbook__toc-panel button:hover,
+.legalbook__toc-panel button:focus-visible {
   background: var(--accent-wash);
   outline: none;
 }
-.termsbook__toc-panel button.is-active {
+.legalbook__toc-panel button.is-active {
   color: var(--accent-strong);
   font-weight: 600;
 }
-.termsbook__toc-num {
+.legalbook__toc-num {
   flex-shrink: 0;
   width: 1.4em;
   font-size: var(--fs-xs);
@@ -201,7 +201,7 @@
 }
 
 /* ---- Stage + stack ---- */
-.termsbook__leaves {
+.legalbook__leaves {
   position: relative;
   width: 100%;
   max-width: min(980px, 100%);
@@ -209,18 +209,18 @@
   padding: 40px 20px 20px;
 }
 
-.termsbook__leaf {
+.legalbook__leaf {
   border: 1px solid var(--line);
   border-radius: var(--radius-lg);
 }
-.termsbook__leaf--back-1,
-.termsbook__leaf--back-2 {
+.legalbook__leaf--back-1,
+.legalbook__leaf--back-2 {
   position: absolute;
   inset: 0;
   box-shadow: var(--shadow-panel);
   pointer-events: none;
 }
-.termsbook__leaf--back-2 {
+.legalbook__leaf--back-2 {
   top: 36px;
   right: 4px;
   bottom: 4px;
@@ -230,7 +230,7 @@
   opacity: 0.55;
   z-index: 1;
 }
-.termsbook__leaf--back-1 {
+.legalbook__leaf--back-1 {
   top: 24px;
   right: 12px;
   bottom: 4px;
@@ -240,7 +240,7 @@
   opacity: 0.8;
   z-index: 2;
 }
-.termsbook__ruled {
+.legalbook__ruled {
   width: 60%;
   height: auto;
   margin: 20% auto 0;
@@ -254,7 +254,7 @@
    flex column so the head (or cover body) and footer stay pinned at
    the top/bottom while the middle area is the only part that can ever
    scroll. This is what makes "click Next" never move the page. */
-.termsbook__leaf--active {
+.legalbook__leaf--active {
   position: relative;
   z-index: 3;
   display: flex;
@@ -273,7 +273,7 @@
 
 /* Radial paper grain -- extremely fine, restrained; a texture, not a
    demo of one. Invisible unless you're close to the screen. */
-.termsbook__leaf--active::before {
+.legalbook__leaf--active::before {
   content: '';
   position: absolute;
   inset: 0;
@@ -291,10 +291,10 @@
    and transforms do factor into the page's scrollable-overflow region
    mid-animation, so the full desktop distance briefly pushed the leaf
    past the viewport edge for a fraction of the transition. */
-.termsbook__leaf--active {
+.legalbook__leaf--active {
   --enter-x: 28px;
 }
-@keyframes termsbook-enter-next {
+@keyframes legalbook-enter-next {
   from {
     opacity: 0;
     transform: translateX(var(--enter-x)) rotate(1.4deg) scale(0.98);
@@ -304,7 +304,7 @@
     transform: translateX(0) rotate(0deg) scale(1);
   }
 }
-@keyframes termsbook-enter-prev {
+@keyframes legalbook-enter-prev {
   from {
     opacity: 0;
     transform: translateX(calc(-1 * var(--enter-x))) rotate(-1.4deg) scale(0.98);
@@ -314,15 +314,15 @@
     transform: translateX(0) rotate(0deg) scale(1);
   }
 }
-.termsbook__leaf--active.is-entering-next {
-  animation: termsbook-enter-next 560ms var(--ease-out);
+.legalbook__leaf--active.is-entering-next {
+  animation: legalbook-enter-next 560ms var(--ease-out);
 }
-.termsbook__leaf--active.is-entering-prev {
-  animation: termsbook-enter-prev 560ms var(--ease-out);
+.legalbook__leaf--active.is-entering-prev {
+  animation: legalbook-enter-prev 560ms var(--ease-out);
 }
 /* prefers-reduced-motion: a plain, brief fade -- not the page-turn
    transform, but still a real transition, not a silent jump-cut. */
-@keyframes termsbook-enter-reduced {
+@keyframes legalbook-enter-reduced {
   from {
     opacity: 0;
   }
@@ -330,13 +330,13 @@
     opacity: 1;
   }
 }
-.termsbook__leaf--active.is-reduced {
-  animation: termsbook-enter-reduced 150ms linear;
+.legalbook__leaf--active.is-reduced {
+  animation: legalbook-enter-reduced 150ms linear;
 }
 
 /* ---- Cover -- same fixed leaf height as every other page; its content
    simply centers within that height instead of flowing from the top. ---- */
-.termsbook__cover {
+.legalbook__cover {
   flex: 1 1 auto;
   min-height: 0;
   display: flex;
@@ -346,13 +346,13 @@
   text-align: center;
   overflow-y: auto;
 }
-.termsbook__cover-logo {
+.legalbook__cover-logo {
   height: 34px;
   width: auto;
   margin-inline: auto;
   flex-shrink: 0;
 }
-.termsbook__cover-kicker {
+.legalbook__cover-kicker {
   margin-top: var(--space-4);
   font-family: var(--font-ui);
   font-size: var(--fs-eyebrow);
@@ -361,14 +361,14 @@
   text-transform: uppercase;
   color: var(--fg-muted);
 }
-.termsbook__cover-rule {
+.legalbook__cover-rule {
   width: 56px;
   height: 1px;
   margin: var(--space-5) auto;
   background: var(--brass);
   flex-shrink: 0;
 }
-.termsbook__cover-title {
+.legalbook__cover-title {
   font-family: 'Source Serif 4', var(--font-display);
   font-weight: 600;
   font-size: clamp(1.9rem, 1.5rem + 2.2vw, 3.4rem);
@@ -376,10 +376,10 @@
   letter-spacing: -0.005em;
   color: var(--ink);
 }
-.termsbook__cover-title:focus-visible {
+.legalbook__cover-title:focus-visible {
   outline: none;
 }
-.termsbook__cover-effective {
+.legalbook__cover-effective {
   margin-top: var(--space-5);
   font-family: var(--font-ui);
   font-size: var(--fs-sm);
@@ -387,7 +387,7 @@
   letter-spacing: 0.03em;
   color: var(--brass-deep);
 }
-.termsbook__cover-hint {
+.legalbook__cover-hint {
   margin: var(--space-6) auto 0;
   max-width: 46ch;
   font-size: var(--fs-sm);
@@ -398,13 +398,13 @@
 /* ---- Content pages -- head is a fixed-height row, body is the only
    part of the leaf that scrolls (and only if it must), foot is pinned
    at the bottom. Same three-part structure on every page. ---- */
-.termsbook__page {
+.legalbook__page {
   flex: 1 1 auto;
   min-height: 0;
   display: flex;
   flex-direction: column;
 }
-.termsbook__page-head {
+.legalbook__page-head {
   flex: 0 0 auto;
   display: flex;
   align-items: baseline;
@@ -412,7 +412,7 @@
   padding-bottom: var(--space-3);
   border-bottom: 1px solid var(--line);
 }
-.termsbook__folio {
+.legalbook__folio {
   font-family: var(--font-ui);
   font-size: var(--fs-eyebrow);
   font-weight: 700;
@@ -420,18 +420,18 @@
   color: var(--brass-deep);
   font-variant-numeric: tabular-nums;
 }
-.termsbook__page-title {
+.legalbook__page-title {
   font-family: 'Source Serif 4', var(--font-display);
   font-weight: 600;
   font-size: clamp(1.35rem, 1.15rem + 0.85vw, 1.75rem);
   letter-spacing: -0.005em;
   color: var(--ink);
 }
-.termsbook__page-title:focus-visible {
+.legalbook__page-title:focus-visible {
   outline: none;
 }
 
-.termsbook__page-body {
+.legalbook__page-body {
   flex: 1 1 auto;
   min-height: 0;
   margin-top: var(--space-4);
@@ -442,19 +442,20 @@
   gap: var(--space-5);
   /* A last-resort scrollbar, styled to stay quiet against the paper --
      it should almost never actually appear, given the page-balancing in
-     termsBookPages.ts, but it must never look like a bug if it does. */
+     termsBookPages.ts / privacyBookPages.ts, but it must never look like
+     a bug if it does. */
   scrollbar-width: thin;
   scrollbar-color: var(--line-strong) transparent;
 }
-.termsbook__page-body::-webkit-scrollbar {
+.legalbook__page-body::-webkit-scrollbar {
   width: 6px;
 }
-.termsbook__page-body::-webkit-scrollbar-thumb {
+.legalbook__page-body::-webkit-scrollbar-thumb {
   background: var(--line-strong);
   border-radius: var(--radius-pill);
 }
 
-.termsbook__section-title {
+.legalbook__section-title {
   font-family: var(--font-ui);
   font-size: var(--fs-sm);
   font-weight: 700;
@@ -463,22 +464,51 @@
   color: var(--fg-muted);
   margin-bottom: var(--space-3);
 }
-.termsbook__page-body p {
+.legalbook__page-body p {
   font-size: 1.0625rem;
   line-height: 1.7;
   color: var(--ink-soft);
 }
-.termsbook__page-body p + p {
+.legalbook__page-body p + p {
   margin-top: var(--space-3);
 }
-.termsbook__lead {
+.legalbook__lead {
   font-weight: 600;
   color: var(--ink);
 }
-.termsbook__group {
-  margin-top: var(--space-3);
+/* A section's groups (e.g. Privacy's "information-we-collect", the one
+   section in either document with more than one) stack on narrow
+   screens and become a two-column grid from 640px up -- independent of
+   the page-level .legalbook__page-body--two-col mechanism, since this
+   splits ONE section's own sub-groups rather than pairing two sections. */
+.legalbook__groups {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
 }
-.termsbook__group-label {
+@media (min-width: 640px) {
+  .legalbook__groups {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    column-gap: clamp(1.5rem, 1rem + 2vw, 2.5rem);
+    row-gap: var(--space-3);
+    align-items: start;
+  }
+  /* The only current user of .legalbook__groups (Privacy's
+     "information-we-collect") has one longer group followed by two
+     shorter ones -- giving the first its own full-height column and
+     stacking the other two beside it balances the two columns' height
+     far better than plain row-major placement (measured: ~60px
+     shorter overall), which is what actually keeps this page inside
+     the fixed leaf height without internal scrolling. */
+  .legalbook__groups > :first-child {
+    grid-row: 1 / 3;
+  }
+}
+.legalbook__group {
+  margin-top: 0;
+}
+.legalbook__group-label {
   font-size: var(--fs-xs);
   font-weight: 700;
   letter-spacing: 0.04em;
@@ -486,20 +516,20 @@
   color: var(--fg-faint);
   margin-bottom: var(--space-2);
 }
-.termsbook__list {
+.legalbook__list {
   display: flex;
   flex-direction: column;
   gap: var(--space-2);
   margin-top: var(--space-2);
   padding-left: 1.2em;
 }
-.termsbook__list li {
+.legalbook__list li {
   font-size: 1.0625rem;
   line-height: 1.6;
   color: var(--ink-soft);
   list-style: disc;
 }
-.termsbook__clause {
+.legalbook__clause {
   margin-top: var(--space-4);
   padding: var(--space-4) var(--space-5);
   background: var(--accent-wash);
@@ -509,7 +539,7 @@
   line-height: 1.6;
   color: var(--ink-soft);
 }
-.termsbook__clause-label {
+.legalbook__clause-label {
   display: block;
   margin-bottom: var(--space-2);
   font-family: var(--font-ui);
@@ -519,32 +549,33 @@
   text-transform: uppercase;
   color: var(--brass-deep);
 }
-.termsbook__closing {
+.legalbook__closing {
   font-size: var(--fs-sm);
   color: var(--fg-muted);
 }
-.termsbook__closing + .termsbook__closing {
+.legalbook__closing + .legalbook__closing {
   margin-top: var(--space-2);
 }
 
 /* Two related sections, side by side -- used only for pages whose data
-   (termsBookPages.ts) marks them layout: 'two-col'; every other page
-   (three sections, or a page with a long item list) stays single-column
-   so the layout follows what the content actually needs. */
+   (termsBookPages.ts / privacyBookPages.ts) marks them layout: 'two-col';
+   every other page (three-plus sections, or a page with a long item
+   list) stays single-column so the layout follows what the content
+   actually needs. */
 @media (min-width: 640px) {
-  .termsbook__page-body--two-col {
+  .legalbook__page-body--two-col {
     display: grid;
     grid-template-columns: 1fr 1fr;
     column-gap: clamp(2rem, 1.5rem + 2vw, 3rem);
     row-gap: var(--space-5);
     align-items: start;
   }
-  .termsbook__page-body--two-col .termsbook__closing {
+  .legalbook__page-body--two-col .legalbook__closing {
     grid-column: 1 / -1;
   }
 }
 
-.termsbook__page-foot {
+.legalbook__page-foot {
   flex: 0 0 auto;
   margin-top: var(--space-4);
   padding-top: var(--space-3);
@@ -559,22 +590,22 @@
 
 /* ---- Responsive ---- */
 @media (max-width: 900px) {
-  .termsbook__leaves {
+  .legalbook__leaves {
     padding: 32px 14px 14px;
   }
-  .termsbook__leaf--back-2 {
+  .legalbook__leaf--back-2 {
     top: 24px;
     right: 2px;
     bottom: 2px;
     left: 18px;
   }
-  .termsbook__leaf--back-1 {
+  .legalbook__leaf--back-1 {
     top: 15px;
     right: 6px;
     bottom: 2px;
     left: 9px;
   }
-  .termsbook__leaf--active {
+  .legalbook__leaf--active {
     height: clamp(28rem, 70vh, 40rem);
     height: clamp(28rem, 70dvh, 40rem);
     --enter-x: 14px;
@@ -582,33 +613,33 @@
 }
 
 @media (max-width: 560px) {
-  .termsbook__stage {
+  .legalbook__stage {
     gap: 2px;
   }
-  .termsbook__leaves {
+  .legalbook__leaves {
     padding: 30px 8px 8px;
   }
-  .termsbook__leaf--active {
+  .legalbook__leaf--active {
     height: clamp(24rem, 72vh, 34rem);
     height: clamp(24rem, 72dvh, 34rem);
     padding: 1.5rem 1.15rem 1rem;
     --enter-x: 8px;
   }
-  .termsbook__arrow {
+  .legalbook__arrow {
     width: 38px;
     height: 38px;
   }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .termsbook__leaf--active.is-entering-next,
-  .termsbook__leaf--active.is-entering-prev {
+  .legalbook__leaf--active.is-entering-next,
+  .legalbook__leaf--active.is-entering-prev {
     animation: none;
   }
-  .termsbook__arrow,
-  .termsbook__toc-toggle,
-  .termsbook__toc-chevron,
-  .termsbook__toc-panel button {
+  .legalbook__arrow,
+  .legalbook__toc-toggle,
+  .legalbook__toc-chevron,
+  .legalbook__toc-panel button {
     transition: none;
   }
 }

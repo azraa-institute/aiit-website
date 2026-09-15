@@ -24,3 +24,17 @@ export interface LegalDoc {
   sections: LegalSection[];
   closing: string[];
 }
+
+/**
+ * One page of the interactive LegalBook viewer (see
+ * components/legal/LegalBook.tsx) -- presentation only, references a
+ * LegalDoc's own sections by id. Never splits a section across two
+ * pages. `layout: 'two-col'` is for exactly two sections that read well
+ * side by side; omit (or 'single') for everything else, including a
+ * long item list or three-plus sections.
+ */
+export interface LegalBookPage {
+  label: string;
+  sectionIds: string[];
+  layout?: 'single' | 'two-col';
+}

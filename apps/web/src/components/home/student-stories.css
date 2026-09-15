@@ -79,8 +79,8 @@
 /* ============================================================
    LEFT / RIGHT EDITORIAL PHOTOGRAPHS — organic asymmetric crops,
    embedded into the page rather than placed in a card. Hidden below
-   1440px (no room at all beside the carousel); shown at a smaller
-   size from 1440–1859px (deck cards are narrowed too, to free up
+   1368px (no room at all beside the carousel); shown at a smaller
+   size from 1368–1859px (deck cards are narrowed too, to free up
    room); shown at full size from 1860px up, where the section's
    container itself is widened (see the responsive block below).
    ============================================================ */
@@ -368,9 +368,10 @@
      full, unclamped text at this rule's narrowest rendered width
      (~347px at exactly 1024px, where flex-shrink pulls it in from the
      347px width clamp) -- confirmed live across all 10 testimonials at
-     1024/1200/1439px, zero clipping. The two wider tiers below (1440px+)
-     override this with their own, shorter flat heights since their
-     wider cards need fewer lines. */
+     1024/1200/1367px, zero clipping. This rule applies up to 1367px;
+     the 1368px+ tier below needs the same 600px at ITS OWN narrow end
+     (its card is shrunk by the same flex-shrink effect there) and only
+     gets shorter nearer 1859px, where its card reaches its full 420px. */
   height: 600px;
   box-shadow:
     0 10px 35px rgba(50, 40, 25, 0.06),
@@ -653,11 +654,23 @@
    RESPONSIVE
    ============================================================ */
 
-/* Below 1440px there is no genuine room beside the carousel for the
+/* Below 1368px there is no genuine room beside the carousel for the
    editorial photographs at all, even at a reduced size — the photos,
    handwritten scripts, marginalia and map motif step aside, leaving
-   the carousel/heading/CTA as the clean, art-directed core. Verified
-   live at 1440/1600/1859/1920px via a real rendered viewport (not
+   the carousel/heading/CTA as the clean, art-directed core.
+
+   1368px, not 1440px: a real MacBook Air's own default "looks like"
+   CSS viewport width -- 1440px on the Intel/M1 13" model, ~1470px on
+   the M2/M3 13" model, ~1497-1512px on the 15" models -- was landing
+   RIGHT AT or barely above the old 1440px threshold, so anything that
+   shaved even a little off that (a non-maximized browser window,
+   >100% page zoom, a bookmarks bar) pushed the actual rendered width
+   below it and hid the images entirely on a stock MacBook Air. 1368px
+   gives real margin below the tightest real case (the 13" Air's
+   1440px default) without a container-query rearchitecture -- this is
+   still the same fixed-breakpoint system, just recalibrated to what a
+   real device reports rather than a round number. Verified live at
+   1368/1440/1600/1859/1920px via a real rendered viewport (not
    arithmetic alone) — see the two tiers below. */
 .stories-photo,
 .stories-marginalia,
@@ -666,7 +679,7 @@
   display: none;
 }
 
-@media (min-width: 1440px) {
+@media (min-width: 1368px) {
   .stories-photo,
   .stories-marginalia,
   .stories-script,
@@ -675,14 +688,14 @@
   }
 }
 
-/* 1440–1859px: a smaller photo pair fits beside the carousel once the
+/* 1368–1859px: a smaller photo pair fits beside the carousel once the
    section's own container is allowed past the site's normal 1480px
    cap (to 1600px) and the deck's side cards are narrowed to 230/340px
    (down from their normal fluid clamp, which would otherwise still
    want ~310/450px here and collide with the photos). Superseded by
    the full-size tier at 1860px, which reverts every value below back
    up via its own more-specific (wider) override. */
-@media (min-width: 1440px) and (max-width: 1859px) {
+@media (min-width: 1368px) and (max-width: 1859px) {
   .stories-photo {
     width: 170px;
     height: 325px;
@@ -716,22 +729,28 @@
   .stories-card--prev,
   .stories-card--next {
     width: 230px;
-    /* 440px -- raised from the base tier's 390px now that the complete
-       title wraps below the avatar row (see .stories-card__role);
-       confirmed live at this 230px width across all 10 testimonials. */
-    height: 440px;
+    /* 445px -- raised from the base tier's 390px now that the complete
+       title wraps below the avatar row (see .stories-card__role). This
+       tier's flex row shrinks these cards below their own 230px width
+       toward its lower (1368px) end -- confirmed live at 208px (the
+       width at exactly 1368px) across all 10 testimonials, needing up
+       to 437px; 445px keeps a small safety margin. */
+    height: 445px;
   }
   .stories-card--center {
     /* Widened from 340px -- at this tier's own narrowest viewport
-       (1440px) there was still ~100px+ of unused space in the deck
-       (confirmed live), room the featured card can use to show its now-
-       unclamped full quote in fewer lines. 540px is sized to the
-       longest real testimonial at this 420px width -- confirmed live
-       across all 10 testimonials, zero clipping, and the deck's own
+       there was still unused space in the deck (confirmed live), room
+       the featured card can use to show its unclamped full quote in
+       fewer lines. 600px (not 540px) -- this tier's own flex row
+       shrinks the card below its 420px width toward the 1368px lower
+       end (confirmed live at 371px there, needing up to 597px for the
+       longest real testimonial across all 10) -- 540px, sized only for
+       the full 420px width nearer 1859px, clipped by as much as 57px
+       at the tier's own low end. 600px covers both ends; the deck's own
        padding/arrow offsets above are untouched since only the card's
        own width changed, not the column it sits in. */
     width: 420px;
-    height: 540px;
+    height: 600px;
   }
 }
 

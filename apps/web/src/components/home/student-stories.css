@@ -457,6 +457,16 @@
   letter-spacing: 0.1em;
   text-transform: uppercase;
   color: var(--ink-muted);
+  /* Without this, "NAIROBI, KENYA" is free to wrap onto a second line at
+     the narrower card widths a ~1024px-wide viewport (iPad Pro portrait,
+     several Android tablets) produces -- pushing .stories-card__person
+     taller than the card's own fixed height clamp expects, so the card's
+     hard overflow:hidden clip (see .stories-card above) silently cuts
+     the wrapped second line off mid-word instead of showing it. Ellipsis
+     instead of a wrap keeps the card's fixed height honest. */
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 .stories-card__role {
   font-size: 13.5px;
@@ -695,6 +705,20 @@
     width: 100%;
     max-width: 560px;
     margin-inline: auto;
+    /* The fixed height clamp above exists so several cards stay visually
+       matched in the 3-card desktop layout (and so the deck's own height
+       doesn't shift and move the >=1860px bottom-anchored photo between
+       reviews -- see student-stories.css's top-of-file comments). Neither
+       reason applies here: only one card is ever shown at this width, and
+       the framing photos are already hidden well below 1860px. Content
+       (especially a near-6-line quote at this width, which is wider but
+       not necessarily taller than the 3-card layout's own cards) was
+       overflowing that fixed height and getting hard-clipped by the
+       card's own overflow:hidden -- letting height follow content here
+       removes the clipping risk entirely instead of just tuning the
+       number closer. */
+    height: auto;
+    min-height: 380px;
   }
 }
 

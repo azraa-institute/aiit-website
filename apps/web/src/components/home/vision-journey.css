@@ -221,6 +221,22 @@
   color: var(--ivory);
 }
 
+/* The CTA (kicker + title + two buttons + replay) is sized down a step
+   for tablet-ish widths -- .vision-journey__cta-title otherwise uses
+   --fs-heading, the same size a full section heading gets, which reads
+   oversized for a card this compact once the figure itself has shrunk
+   to tablet width. Purely a font/spacing trim; the layout is unchanged
+   here since the figure's 16:9 box still has enough height at these
+   widths for the content to fit. */
+@media (max-width: 900px) {
+  .vision-journey__cta {
+    gap: var(--space-2);
+  }
+  .vision-journey__cta-title {
+    font-size: clamp(1.25rem, 1.05rem + 1.2vw, 1.7rem);
+  }
+}
+
 @media (max-width: 560px) {
   .vision-journey__cta-actions {
     flex-direction: column;
@@ -229,6 +245,32 @@
   }
   .vision-journey__cta-actions .btn {
     width: 100%;
+  }
+
+  /* Below this width the figure's own 16:9 box (locked to its width, so
+     e.g. ~193px tall at a 344px-wide foldable) is too short for the CTA
+     content no matter how far the font shrinks -- kicker + title +
+     two stacked buttons + replay was being hard-clipped by the figure's
+     overflow:hidden (see .vision-journey__figure). Once the video has
+     actually ended, let the figure size to the CTA's real content
+     height instead of staying locked to the video's aspect ratio: drop
+     the ratio and take the CTA out of absolute positioning (a child
+     positioned absolute cannot influence its parent's height at all,
+     aspect-ratio or not) so it participates in that height normally.
+     The (hidden) video iframe stays exactly where it was via its own
+     absolute inset:0, unaffected. */
+  .vision-journey__figure[data-ended] {
+    aspect-ratio: auto;
+  }
+  .vision-journey__figure[data-ended] .vision-journey__cta {
+    position: static;
+    min-height: 0;
+  }
+  .vision-journey__cta-title {
+    font-size: clamp(1.15rem, 1rem + 2vw, 1.4rem);
+  }
+  .vision-journey__cta-kicker {
+    font-size: 10px;
   }
 }
 

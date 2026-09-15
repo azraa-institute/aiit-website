@@ -105,7 +105,7 @@ export function EnrollmentPopup() {
 
         <div className="enroll-pop__figure">
           <img
-            src="/assets/popups/aiit-enrollement.webp"
+            src="/assets/popups/aiit-enrollment.webp"
             width={887}
             height={1774}
             alt="Smiling AIIT students. Admissions for the 2026 intake are open."

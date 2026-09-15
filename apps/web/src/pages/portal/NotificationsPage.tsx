@@ -8,7 +8,7 @@ import { apiFetch } from '@/lib/api';
 import { useLearner } from './learnerData';
 import { PortalEmpty } from './PortalEmpty';
 import { PortalLoader } from './PortalLoader';
-import { BookIcon, ClipboardCheckIcon, AwardIcon, CalendarIcon, InfoIcon, BellIcon, ChevronRightIcon } from './content-icons';
+import { BookIcon, ClipboardCheckIcon, AwardIcon, CalendarIcon, InfoIcon, BellIcon, ChevronRightIcon } from './ContentIcons';
 
 const KIND_LABEL: Record<Notification['kind'], string> = {
   course: 'Course',

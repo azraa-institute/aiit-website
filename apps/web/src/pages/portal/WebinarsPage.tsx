@@ -4,7 +4,7 @@ import { Button } from '@/components/primitives/Button';
 import { useLearner } from './learnerData';
 import { PortalEmpty } from './PortalEmpty';
 import { PortalLoader } from './PortalLoader';
-import { CalendarIcon, VideoIcon, CheckIcon, ClockIcon } from './content-icons';
+import { CalendarIcon, VideoIcon, CheckIcon, ClockIcon } from './ContentIcons';
 
 export default function WebinarsPage() {
   const state = useLearner();

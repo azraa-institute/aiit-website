@@ -16,7 +16,7 @@ import {
   GlobeIcon,
   ShieldCheckIcon,
   ArrowRightIcon,
-} from './footer-icons';
+} from './FooterIcons';
 import './footer.css';
 
 const HIGHLIGHTS = [

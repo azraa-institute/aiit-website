@@ -3,7 +3,7 @@ import type { FormEvent } from 'react';
 import { cn } from '@/lib/cn';
 import { apiFetch, ApiError } from '@/lib/api';
 import { Turnstile } from './Turnstile';
-import { ArrowRightIcon } from '@/components/layout/footer-icons';
+import { ArrowRightIcon } from '@/components/layout/FooterIcons';
 import './newsletter-form.css';
 
 interface NewsletterFormProps {

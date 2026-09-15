@@ -4,7 +4,7 @@ import { supabase } from '@/lib/supabaseClient';
 import { TextField } from '@/components/common/Field';
 import { Button } from '@/components/primitives/Button';
 import { cn } from '@/lib/cn';
-import { ShieldIcon, CopyIcon, CheckIcon } from './settings-icons';
+import { ShieldIcon, CopyIcon, CheckIcon } from './SettingsIcons';
 
 /**
  * Two-factor authentication (TOTP) via Supabase Auth's MFA API -- a core

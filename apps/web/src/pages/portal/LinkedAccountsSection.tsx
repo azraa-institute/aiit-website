@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import type { UserIdentity } from '@supabase/supabase-js';
 import { supabase } from '@/lib/supabaseClient';
 import { Button } from '@/components/primitives/Button';
-import { LinkIcon } from './settings-icons';
+import { LinkIcon } from './SettingsIcons';
 
 const PROVIDER_LABELS: Record<string, string> = {
   email: 'Email & password',

@@ -11,7 +11,7 @@ import { PASSWORD_HINT, passwordMeetsRequirements, PasswordRequirementsList } fr
 import { Button } from '@/components/primitives/Button';
 import { COUNTRIES } from '@/data/countries';
 import { LANGUAGES } from '@/data/languages';
-import { MailIcon, LockIcon, MonitorIcon, GlobeIcon, TrashIcon } from './settings-icons';
+import { MailIcon, LockIcon, MonitorIcon, GlobeIcon, TrashIcon } from './SettingsIcons';
 import { useLearner } from './learnerData';
 import { PortalLoader } from './PortalLoader';
 import { SecurityFactorsSection } from './SecurityFactorsSection';

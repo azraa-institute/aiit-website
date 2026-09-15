@@ -6,7 +6,7 @@ import { formatDate, pluralize, slugify } from '@/lib/format';
 import { Plate } from '@/components/primitives/Plate';
 import { markPortalExit } from '@/lib/portalReturn';
 import { PortalEmpty } from './PortalEmpty';
-import { ArrowRightIcon, BookIcon } from './content-icons';
+import { ArrowRightIcon, BookIcon } from './ContentIcons';
 
 /** Every link here leaves the portal shell for the public resources site --
  * mark it so the header can offer "Return to Resources" once there. */

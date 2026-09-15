@@ -1,6 +1,6 @@
 /**
  * Outline-icon set for Notifications + Webinar Registrations, matching the
- * same hand-authored convention as settings-icons.tsx (~1.4 stroke, no fill,
+ * same hand-authored convention as SettingsIcons.tsx (~1.4 stroke, no fill,
  * currentColor) so both redesigned pages share one consistent icon family.
  */
 type IconProps = { className?: string };

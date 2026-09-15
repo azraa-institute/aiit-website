@@ -11,7 +11,7 @@ import { TextField, SelectField } from '@/components/common/Field';
 import { Button } from '@/components/primitives/Button';
 import { COUNTRIES } from '@/data/countries';
 import { QUALIFICATIONS } from '@/data/qualifications';
-import { CameraIcon, LockIcon } from './settings-icons';
+import { CameraIcon, LockIcon } from './SettingsIcons';
 import { useLearner } from './learnerData';
 import { PortalLoader } from './PortalLoader';
 

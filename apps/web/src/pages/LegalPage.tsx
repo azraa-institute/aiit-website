@@ -1,6 +1,6 @@
 import { Layout } from '@/components/layout/Layout';
 import { Seo } from '@/lib/Seo';
-import { LegalBook } from '@/components/legal/LegalBook';
+import { LegalBook } from './LegalBook';
 import { PRIVACY_POLICY } from '@/data/legal/privacy';
 import { TERMS_AND_CONDITIONS } from '@/data/legal/terms';
 import { PRIVACY_BOOK_PAGES } from '@/data/legal/privacyBookPages';

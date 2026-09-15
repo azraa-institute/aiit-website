@@ -10,8 +10,10 @@ import { TextField, SelectField } from '@/components/common/Field';
 import { Button } from '@/components/primitives/Button';
 import { COUNTRIES } from '@/data/countries';
 import { QUALIFICATIONS } from '@/data/qualifications';
+import { splitPhone, combinePhone } from '@/lib/phone';
 import { CameraIcon, LockIcon } from './SettingsIcons';
 import { useLearner } from './learnerData';
+import { PhoneCountrySelect } from './PhoneCountrySelect';
 import { PortalLoader } from './PortalLoader';
 
 const AVATARS_BUCKET = 'avatars';
@@ -27,7 +29,8 @@ export default function ProfilePage() {
 
   const [name, setName] = useState('');
   const [headline, setHeadline] = useState('');
-  const [phone, setPhone] = useState('');
+  const [phoneCountry, setPhoneCountry] = useState('');
+  const [phoneNational, setPhoneNational] = useState('');
   const [qualification, setQualification] = useState('');
   const [university, setUniversity] = useState('');
   const [country, setCountry] = useState('');
@@ -43,7 +46,9 @@ export default function ProfilePage() {
     if (state.status === 'ready' && !initialized) {
       setName(state.learner.profile.name ?? '');
       setHeadline(state.learner.profile.headline ?? '');
-      setPhone(state.learner.profile.phone ?? '');
+      const { country: dialCountry, national } = splitPhone(state.learner.profile.phone);
+      setPhoneCountry(dialCountry);
+      setPhoneNational(national);
       setQualification(state.learner.profile.qualification ?? '');
       setUniversity(state.learner.profile.university ?? '');
       setCountry(state.learner.profile.country ?? '');
@@ -75,7 +80,7 @@ export default function ProfilePage() {
         body: JSON.stringify({
           name: name.trim(),
           headline: headline.trim(),
-          phone: phone.trim(),
+          phone: combinePhone(phoneCountry, phoneNational),
           qualification: qualification.trim(),
           university: university.trim(),
           country: country || undefined,
@@ -210,15 +215,18 @@ export default function ProfilePage() {
             maxLength={200}
             hint="A short line about you, shown alongside your name."
           />
-          <TextField
-            label="Phone number"
-            type="tel"
-            value={phone}
-            onChange={(e) => setPhone(e.target.value)}
-            maxLength={16}
-            hint="Include your country code, e.g. +2348012345678."
-            required
-          />
+          <div className="profile-details__grid">
+            <PhoneCountrySelect label="Country code" value={phoneCountry} onChange={setPhoneCountry} required />
+            <TextField
+              label="Mobile number"
+              type="tel"
+              value={phoneNational}
+              onChange={(e) => setPhoneNational(e.target.value)}
+              maxLength={14}
+              hint="Without the leading 0, e.g. 8012345678."
+              required
+            />
+          </div>
 
           <h3 className="profile-details__subtitle">Location</h3>
           <div className="profile-details__grid">

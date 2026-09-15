@@ -5,6 +5,8 @@ import { TextField, SelectField } from '@/components/common/Field';
 import { Button } from '@/components/primitives/Button';
 import { COUNTRIES } from '@/data/countries';
 import { QUALIFICATIONS } from '@/data/qualifications';
+import { splitPhone, combinePhone } from '@/lib/phone';
+import { PhoneCountrySelect } from '@/pages/portal/PhoneCountrySelect';
 import type { LearnerProfile } from '@/pages/portal/learnerData';
 import './profile-completion-wizard.css';
 
@@ -46,7 +48,9 @@ export function ProfileCompletionWizard({ open, profile, onClose, onComplete }: 
   const [address, setAddress] = useState(profile.address ?? '');
   const [postalCode, setPostalCode] = useState(profile.postalCode ?? '');
 
-  const [phoneInput, setPhoneInput] = useState(profile.phone ?? '');
+  const initialPhone = splitPhone(profile.phone);
+  const [phoneCountry, setPhoneCountry] = useState(initialPhone.country);
+  const [phoneNational, setPhoneNational] = useState(initialPhone.national);
 
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string>();
@@ -104,7 +108,7 @@ export function ProfileCompletionWizard({ open, profile, onClose, onComplete }: 
         method: 'PATCH',
         body: JSON.stringify({
           name: name.trim(),
-          phone: phoneInput.trim(),
+          phone: combinePhone(phoneCountry, phoneNational),
           qualification: qualification.trim(),
           university: university.trim(),
           country: country || undefined,
@@ -176,17 +180,18 @@ export function ProfileCompletionWizard({ open, profile, onClose, onComplete }: 
               About you
             </h2>
             <TextField label="Full name" value={name} onChange={(e) => setName(e.target.value)} maxLength={200} required />
+            <PhoneCountrySelect label="Country code" value={phoneCountry} onChange={setPhoneCountry} required />
             <TextField
-              label="Phone number"
+              label="Mobile number"
               type="tel"
-              value={phoneInput}
-              onChange={(e) => setPhoneInput(e.target.value)}
-              maxLength={16}
-              hint="Include your country code, e.g. +2348012345678."
+              value={phoneNational}
+              onChange={(e) => setPhoneNational(e.target.value)}
+              maxLength={14}
+              hint="Without the leading 0, e.g. 8012345678."
               required
             />
             <div className="pcw-step__actions">
-              <Button as="button" onClick={next} disabled={!name.trim() || !phoneInput.trim()}>
+              <Button as="button" onClick={next} disabled={!name.trim() || !phoneCountry || !phoneNational.trim()}>
                 Continue
               </Button>
               <Button as="button" variant="ghost" onClick={back}>
@@ -302,7 +307,7 @@ export function ProfileCompletionWizard({ open, profile, onClose, onComplete }: 
               </div>
               <div>
                 <dt>Phone</dt>
-                <dd>{phoneInput || '—'}</dd>
+                <dd>{phoneCountry && phoneNational ? combinePhone(phoneCountry, phoneNational) : '—'}</dd>
               </div>
               <div>
                 <dt>Qualification</dt>

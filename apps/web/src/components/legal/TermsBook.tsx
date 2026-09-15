@@ -27,6 +27,15 @@ function RuledMark() {
   );
 }
 
+function ArrowIcon({ direction }: { direction: 'prev' | 'next' }) {
+  const d = direction === 'prev' ? 'M8.5 2 3 7.5 8.5 13M3.5 7.5H16' : 'M7.5 2 13 7.5 7.5 13M12.5 7.5H0';
+  return (
+    <svg width="16" height="15" viewBox="0 0 16 15" aria-hidden="true">
+      <path d={d} fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
 function SectionBody({ section }: { section: LegalSection }) {
   return (
     <div className="termsbook__section" key={section.id}>
@@ -68,9 +77,16 @@ function SectionBody({ section }: { section: LegalSection }) {
  * 2 decorative leaves stacked behind the active one for depth. Terms-only
  * (see LegalPage.tsx) -- Privacy Policy keeps the conventional scrolling
  * LegalDocument reading experience.
+ *
+ * The book viewer is a fixed-size stage: every leaf (cover included)
+ * renders at the same width/height regardless of how much content it
+ * holds, so paging never moves the viewport or the surrounding page --
+ * only the leaf's own body area ever scrolls, and only if a page's
+ * content genuinely can't fit (see terms-book.css for the height and
+ * the .termsbook__page-body overflow rule).
  */
 export function TermsBook({ doc }: { doc: LegalDoc }) {
-  // page 0 = cover, 1..N = TERMS_BOOK_PAGES (1-indexed to match the visible "01/12").
+  // page 0 = cover, 1..N = TERMS_BOOK_PAGES (1-indexed to match the visible "01/10").
   const total = TERMS_BOOK_PAGES.length;
   const [page, setPage] = useState(0);
   const [direction, setDirection] = useState<'next' | 'prev' | null>(null);
@@ -107,9 +123,11 @@ export function TermsBook({ doc }: { doc: LegalDoc }) {
 
   // Focus the new page's heading and announce it -- page changes are real
   // navigation, not just a visual flourish, so screen readers and keyboard
-  // users need the same signal sighted users get from the animation.
+  // users need the same signal sighted users get from the animation. The
+  // leaf itself never scrolls the viewport when this runs (no scrollIntoView
+  // anywhere in this component) -- that's the whole point of a fixed stage.
   useEffect(() => {
-    headingRef.current?.focus();
+    headingRef.current?.focus({ preventScroll: true });
     const label = page === 0 ? `Cover, ${doc.title}` : `Page ${page} of ${total}, ${TERMS_BOOK_PAGES[page - 1].label}`;
     if (liveRef.current) liveRef.current.textContent = label;
   }, [page, total, doc.title]);
@@ -162,162 +180,145 @@ export function TermsBook({ doc }: { doc: LegalDoc }) {
         </header>
 
         <div className="termsbook__stage" data-reveal>
-          <div className="termsbook__leaves">
-            <div className="termsbook__leaf termsbook__leaf--back-2" aria-hidden="true">
-              <RuledMark />
-            </div>
-            <div className="termsbook__leaf termsbook__leaf--back-1" aria-hidden="true">
-              <RuledMark />
-            </div>
-
-            <div
-              className={cn('termsbook__leaf', 'termsbook__leaf--active', enterClass)}
-              key={animKey}
-              onTouchStart={onTouchStart}
-              onTouchEnd={onTouchEnd}
-            >
-              {page === 0 ? (
-                <div className="termsbook__cover">
-                  <Logo variant="dark" className="termsbook__cover-logo" />
-                  <p className="termsbook__cover-kicker">Azraa Institute of Information Technology</p>
-                  <div className="termsbook__cover-rule" aria-hidden="true" />
-                  <h1 className="termsbook__cover-title" ref={headingRef} tabIndex={-1}>
-                    Website Terms
-                    <br />
-                    &amp; Conditions
-                  </h1>
-                  <p className="termsbook__cover-effective">
-                    {doc.effectiveLabel}: {doc.effectiveDate}
-                  </p>
-                  <p className="termsbook__cover-hint">{doc.intro}</p>
-                </div>
-              ) : (
-                <article className="termsbook__page" aria-labelledby={`${tocId}-heading`}>
-                  <div className="termsbook__page-head">
-                    <span className="termsbook__folio">{folio(page - 1)}</span>
-                    <h2 className="termsbook__page-title" id={`${tocId}-heading`} ref={headingRef} tabIndex={-1}>
-                      {bookPage!.label}
-                    </h2>
-                  </div>
-                  <div className="termsbook__page-body">
-                    {bookPage!.sectionIds.map((id) => {
-                      const section = sectionsById.get(id);
-                      return section ? <SectionBody section={section} key={id} /> : null;
-                    })}
-                    {page === total &&
-                      doc.closing.map((line) => (
-                        <p className="termsbook__closing" key={line}>
-                          {line}
-                        </p>
-                      ))}
-                  </div>
-                  <p className="termsbook__page-foot">
-                    AIIT.NETWORK <span aria-hidden="true">·</span> {folio(page - 1)} / {folio(total - 1)}
-                  </p>
-                </article>
-              )}
-            </div>
-          </div>
-        </div>
-
-        <nav className="termsbook__controls" aria-label="Document pages">
           <button
             type="button"
-            className="termsbook__nav-btn"
+            className="termsbook__arrow termsbook__arrow--prev"
             onClick={goPrev}
             disabled={page === 0}
             aria-label="Previous page"
           >
-            <svg width="15" height="10" viewBox="0 0 15 10" aria-hidden="true">
-              <path
-                d="M5.5 1 1 5l4.5 4M1.5 5H14"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="1.4"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
-            </svg>
-            <span>Previous</span>
+            <ArrowIcon direction="prev" />
           </button>
 
-          <span className="termsbook__counter" aria-hidden="true">
-            {page === 0 ? 'Cover' : `${folio(page - 1)} / ${folio(total - 1)}`}
-          </span>
-
-          <div className="termsbook__toc-wrap">
-            <button
-              type="button"
-              className="termsbook__toc-toggle"
-              aria-expanded={tocOpen}
-              aria-controls={`${tocId}-panel`}
-              onClick={() => setTocOpen((o) => !o)}
-            >
-              Contents
-              <svg
-                className={cn('termsbook__toc-chevron', tocOpen && 'is-open')}
-                viewBox="0 0 16 16"
-                aria-hidden="true"
+          <div className="termsbook__book">
+            <div className="termsbook__toc-wrap">
+              <button
+                type="button"
+                className="termsbook__toc-toggle"
+                aria-expanded={tocOpen}
+                aria-controls={`${tocId}-panel`}
+                onClick={() => setTocOpen((o) => !o)}
               >
-                <path
-                  d="M4 6l4 4 4-4"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="1.5"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                />
-              </svg>
-            </button>
-            {tocOpen && (
-              <div className="termsbook__toc-panel" id={`${tocId}-panel`}>
-                <ol>
-                  <li>
-                    <button type="button" className={page === 0 ? 'is-active' : undefined} onClick={() => { goTo(0); setTocOpen(false); }}>
-                      <span className="termsbook__toc-num">·</span>
-                      Cover
-                    </button>
-                  </li>
-                  {TERMS_BOOK_PAGES.map((p, i) => (
-                    <li key={p.label}>
-                      <button
-                        type="button"
-                        className={page === i + 1 ? 'is-active' : undefined}
-                        onClick={() => {
-                          goTo(i + 1);
-                          setTocOpen(false);
-                        }}
-                      >
-                        <span className="termsbook__toc-num">{folio(i)}</span>
-                        {p.label}
+                Contents
+                <svg
+                  className={cn('termsbook__toc-chevron', tocOpen && 'is-open')}
+                  viewBox="0 0 16 16"
+                  aria-hidden="true"
+                >
+                  <path
+                    d="M4 6l4 4 4-4"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="1.5"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                </svg>
+              </button>
+              {tocOpen && (
+                <div className="termsbook__toc-panel" id={`${tocId}-panel`}>
+                  <ol>
+                    <li>
+                      <button type="button" className={page === 0 ? 'is-active' : undefined} onClick={() => { goTo(0); setTocOpen(false); }}>
+                        <span className="termsbook__toc-num">·</span>
+                        Cover
                       </button>
                     </li>
-                  ))}
-                </ol>
+                    {TERMS_BOOK_PAGES.map((p, i) => (
+                      <li key={p.label}>
+                        <button
+                          type="button"
+                          className={page === i + 1 ? 'is-active' : undefined}
+                          onClick={() => {
+                            goTo(i + 1);
+                            setTocOpen(false);
+                          }}
+                        >
+                          <span className="termsbook__toc-num">{folio(i)}</span>
+                          {p.label}
+                        </button>
+                      </li>
+                    ))}
+                  </ol>
+                </div>
+              )}
+            </div>
+
+            <div className="termsbook__leaves">
+              <div className="termsbook__leaf termsbook__leaf--back-2" aria-hidden="true">
+                <RuledMark />
               </div>
-            )}
+              <div className="termsbook__leaf termsbook__leaf--back-1" aria-hidden="true">
+                <RuledMark />
+              </div>
+
+              <div
+                className={cn('termsbook__leaf', 'termsbook__leaf--active', enterClass, page === 0 && 'is-cover')}
+                key={animKey}
+                onTouchStart={onTouchStart}
+                onTouchEnd={onTouchEnd}
+              >
+                {page === 0 ? (
+                  <div className="termsbook__cover">
+                    <Logo variant="dark" className="termsbook__cover-logo" />
+                    <p className="termsbook__cover-kicker">Azraa Institute of Information Technology</p>
+                    <div className="termsbook__cover-rule" aria-hidden="true" />
+                    <h1 className="termsbook__cover-title" ref={headingRef} tabIndex={-1}>
+                      Website Terms
+                      <br />
+                      &amp; Conditions
+                    </h1>
+                    <p className="termsbook__cover-effective">
+                      {doc.effectiveLabel}: {doc.effectiveDate}
+                    </p>
+                    <p className="termsbook__cover-hint">{doc.intro}</p>
+                  </div>
+                ) : (
+                  <article className="termsbook__page" aria-labelledby={`${tocId}-heading`}>
+                    <div className="termsbook__page-head">
+                      <span className="termsbook__folio">{folio(page - 1)}</span>
+                      <h2 className="termsbook__page-title" id={`${tocId}-heading`} ref={headingRef} tabIndex={-1}>
+                        {bookPage!.label}
+                      </h2>
+                    </div>
+                    <div
+                      className={cn(
+                        'termsbook__page-body',
+                        bookPage!.layout === 'two-col' && 'termsbook__page-body--two-col',
+                      )}
+                    >
+                      {bookPage!.sectionIds.map((id) => {
+                        const section = sectionsById.get(id);
+                        return section ? <SectionBody section={section} key={id} /> : null;
+                      })}
+                      {page === total &&
+                        doc.closing.map((line) => (
+                          <p className="termsbook__closing" key={line}>
+                            {line}
+                          </p>
+                        ))}
+                    </div>
+                  </article>
+                )}
+
+                <p className="termsbook__page-foot">
+                  AIIT.NETWORK <span aria-hidden="true">·</span>{' '}
+                  {page === 0 ? 'TERMS & CONDITIONS' : `${folio(page - 1)} / ${folio(total - 1)}`}
+                </p>
+              </div>
+            </div>
           </div>
 
           <button
             type="button"
-            className="termsbook__nav-btn"
+            className="termsbook__arrow termsbook__arrow--next"
             onClick={goNext}
             disabled={page === total}
             aria-label="Next page"
           >
-            <span>Next</span>
-            <svg width="15" height="10" viewBox="0 0 15 10" aria-hidden="true">
-              <path
-                d="M9.5 1 14 5l-4.5 4M13.5 5H1"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="1.4"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
-            </svg>
+            <ArrowIcon direction="next" />
           </button>
-        </nav>
+        </div>
 
         <div className="visually-hidden" role="status" aria-live="polite" ref={liveRef} />
       </div>

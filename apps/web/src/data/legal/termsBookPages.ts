@@ -1,33 +1,91 @@
 /**
  * Groups TERMS_AND_CONDITIONS' sections (terms.ts) into the interactive
  * book's pages — presentation only, references existing sections by id.
- * Never splits a section across two pages; groups whole, thematically
- * related sections so the book reads as ~12 pages instead of 24 single-
- * section leaves. `label` is a page running-head, not part of the legal
- * text itself.
+ * Never splits a section across two pages.
+ *
+ * The book viewer holds every page to the same fixed physical height
+ * (see terms-book.css), so pagination here is what keeps that height
+ * from being cramped (forcing internal scroll) on some pages and empty
+ * on others: every page uses a two-column layout, which keeps each
+ * page's vertical need to roughly the taller of its columns rather
+ * than the sum of all its sections stacked. Most pages pair exactly two
+ * sections this way. The closing acknowledgment (doc.closing) renders
+ * on the final page only, adding height there that a plain section
+ * count wouldn't predict -- that's why the final page ("Contact") gets
+ * only one section instead of two, and why "Governing Law & Force
+ * Majeure" (the pairing that would otherwise have absorbed contact-
+ * information as a third section) stays a clean pair instead. `label`
+ * is a page running-head, not part of the legal text itself.
  */
 export interface TermsBookPage {
   label: string;
   sectionIds: string[];
+  layout?: 'single' | 'two-col';
 }
 
 export const TERMS_BOOK_PAGES: TermsBookPage[] = [
-  { label: 'About & Eligibility', sectionIds: ['about-aiit', 'eligibility'] },
-  { label: 'Account Registration', sectionIds: ['account-registration'] },
-  { label: 'Enrollment & Payments', sectionIds: ['course-enrollment', 'payments'] },
-  { label: 'Refund Policy', sectionIds: ['refund-policy'] },
-  { label: 'Membership & Certification', sectionIds: ['membership', 'certification'] },
-  { label: 'Conduct & Integrity', sectionIds: ['academic-integrity', 'student-conduct'] },
   {
-    label: 'Intellectual Property',
-    sectionIds: ['intellectual-property', 'user-content', 'ai-generated-content'],
+    label: 'About & Eligibility',
+    sectionIds: ['about-aiit', 'eligibility'],
+    layout: 'two-col',
   },
   {
-    label: 'Career & Pathways',
+    label: 'Account & Enrollment',
+    sectionIds: ['account-registration', 'course-enrollment'],
+    layout: 'two-col',
+  },
+  {
+    label: 'Payments & Refunds',
+    sectionIds: ['payments', 'refund-policy'],
+    layout: 'two-col',
+  },
+  {
+    label: 'Membership & Certification',
+    sectionIds: ['membership', 'certification'],
+    layout: 'two-col',
+  },
+  {
+    label: 'Conduct & Integrity',
+    sectionIds: ['academic-integrity', 'student-conduct'],
+    layout: 'two-col',
+  },
+  {
+    label: 'Intellectual Property & User Content',
+    sectionIds: ['intellectual-property', 'user-content'],
+    layout: 'two-col',
+  },
+  {
+    label: 'AI Content & Third-Party Services',
+    sectionIds: ['ai-generated-content', 'third-party-services'],
+    layout: 'two-col',
+  },
+  {
+    label: 'Career & Global Pathways',
     sectionIds: ['career-and-employment', 'international-higher-education-pathways'],
+    layout: 'two-col',
   },
-  { label: 'Platform & Privacy', sectionIds: ['third-party-services', 'privacy', 'website-availability'] },
-  { label: 'Liability', sectionIds: ['limitation-of-liability', 'indemnification'] },
-  { label: 'Termination & Changes', sectionIds: ['termination', 'changes-to-services'] },
-  { label: 'Governing Law & Contact', sectionIds: ['governing-law', 'force-majeure', 'contact-information'] },
+  {
+    label: 'Privacy & Availability',
+    sectionIds: ['privacy', 'website-availability'],
+    layout: 'two-col',
+  },
+  {
+    label: 'Liability & Indemnification',
+    sectionIds: ['limitation-of-liability', 'indemnification'],
+    layout: 'two-col',
+  },
+  {
+    label: 'Termination & Changes',
+    sectionIds: ['termination', 'changes-to-services'],
+    layout: 'two-col',
+  },
+  {
+    label: 'Governing Law & Force Majeure',
+    sectionIds: ['governing-law', 'force-majeure'],
+    layout: 'two-col',
+  },
+  {
+    label: 'Contact',
+    sectionIds: ['contact-information'],
+  },
 ];

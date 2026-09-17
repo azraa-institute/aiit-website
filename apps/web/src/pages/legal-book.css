@@ -98,11 +98,23 @@
    Font-size dropped from --fs-lead (up to 1.34rem, sized for a page-level
    hero lead) to --fs-body: at one line's length this is a one-sentence
    institutional statement, not a hero intro, and --fs-lead read oversized
-   for it. */
+   for it.
+
+   Font-family/style is the site's one existing "handwritten" treatment
+   (see student-stories.css's .stories-script -- the same Source Serif 4
+   italic 500 combination, not a separate script typeface), reused here
+   rather than loading a whole new cursive font family for one line: it
+   keeps this in the site's one deliberate accent-serif identity instead
+   of adding a second, unrelated decorative face. Sized up slightly from
+   --fs-body since an italic script reads smaller/lighter at the same
+   nominal size than the upright sans it replaced. */
 .legalbook__intro .legalbook__intro-text {
   margin-top: var(--space-4);
-  font-size: var(--fs-body);
-  line-height: 1.6;
+  font-family: 'Source Serif 4', var(--font-display);
+  font-style: italic;
+  font-weight: 500;
+  font-size: clamp(1.15rem, 1.05rem + 0.4vw, 1.3rem);
+  line-height: 1.55;
   color: var(--fg-soft);
   text-align: center;
 }

@@ -429,15 +429,6 @@
   margin-inline: auto;
   flex-shrink: 0;
 }
-.legalbook__cover-kicker {
-  margin-top: var(--space-4);
-  font-family: var(--font-ui);
-  font-size: var(--fs-eyebrow);
-  font-weight: 700;
-  letter-spacing: var(--tracking-eyebrow);
-  text-transform: uppercase;
-  color: var(--fg-muted);
-}
 .legalbook__cover-rule {
   width: 56px;
   height: 1px;
@@ -480,13 +471,13 @@
 /* Teaches the swipe gesture on a phone, where the Previous/Next arrow
    buttons are hidden below 560px (see .legalbook__arrow's own comment --
    they were trading away real reading width for redundant affordance on
-   a touchscreen). Page 1 only (rendered in LegalBook.tsx, next to
-   .legalbook__page-foot) -- not the cover, which already carries the logo
-   and institution name and read as cluttered with this added; not every
-   page either, since it only needs to teach the gesture once. Hidden
-   entirely above 560px, where the arrow buttons already make page-turning
-   obvious. Same pill treatment as .legalbook__toc-toggle, not a new
-   visual language. */
+   a touchscreen). Cover-only: it only needs to teach the gesture once,
+   not repeat on every page. Sits comfortably now that the cover no longer
+   also carries a separate "Azraa Institute of Information Technology"
+   line under the logo (removed as redundant -- the logo already says
+   that). Hidden entirely above 560px, where the arrow buttons already
+   make page-turning obvious. Same pill treatment as .legalbook__toc-toggle,
+   not a new visual language. */
 .legalbook__swipe-hint {
   display: none;
 }
@@ -494,13 +485,13 @@
   .legalbook__swipe-hint {
     display: inline-flex;
     align-items: center;
-    /* .legalbook__leaf--active (the flex column this sits in) doesn't
-       center its children by default (align-items: stretch) the way
-       .legalbook__cover used to -- align-self here keeps this a compact,
-       centered pill instead of stretching full width. */
+    /* Belt-and-braces, not load-bearing here -- .legalbook__cover already
+       centers its children (align-items: center), but keeping this means
+       the pill stays compact instead of stretching if it's ever moved to
+       a context that doesn't. */
     align-self: center;
     gap: var(--space-2);
-    margin: 0 0 var(--space-3);
+    margin: var(--space-5) auto 0;
     padding: 7px 16px;
     border: 1px solid var(--line-strong);
     border-radius: var(--radius-pill);

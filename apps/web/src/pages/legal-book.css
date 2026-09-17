@@ -90,11 +90,21 @@
 .legalbook__eyebrow {
   justify-content: center;
 }
-.legalbook__intro-text {
+/* Selector repeats .legalbook__intro (not just relying on inheriting its
+   text-align) because global.css's `.layout__main p` rule sets text-align
+   explicitly on every <p> on the site, at a specificity (0,1,1) this
+   class alone (0,1,0) can't beat -- it was silently winning here,
+   rendering this left-aligned despite the ancestor's text-align: center.
+   Font-size dropped from --fs-lead (up to 1.34rem, sized for a page-level
+   hero lead) to --fs-body: at one line's length this is a one-sentence
+   institutional statement, not a hero intro, and --fs-lead read oversized
+   for it. */
+.legalbook__intro .legalbook__intro-text {
   margin-top: var(--space-4);
-  font-size: var(--fs-lead);
+  font-size: var(--fs-body);
   line-height: 1.6;
   color: var(--fg-soft);
+  text-align: center;
 }
 
 /* ============================================================
@@ -442,12 +452,16 @@
   letter-spacing: 0.03em;
   color: var(--brass-deep);
 }
-.legalbook__cover-hint {
+/* Same specificity fix as .legalbook__intro-text above -- global.css's
+   `.layout__main p` rule otherwise beats this class alone and the cover's
+   own text-align: center (on .legalbook__cover) never reaches it. */
+.legalbook__cover .legalbook__cover-hint {
   margin: var(--space-6) auto 0;
   max-width: 46ch;
   font-size: var(--fs-sm);
   line-height: 1.65;
   color: var(--fg-soft);
+  text-align: center;
 }
 
 /* ---- Content pages -- head is a fixed-height row, body is the only
@@ -518,6 +532,29 @@
   text-transform: uppercase;
   color: var(--fg-muted);
   margin-bottom: var(--space-3);
+}
+/* .legalbook (not just .legalbook__page-body) so this beats global.css's
+   `.layout__main p { text-align: left }` on specificity rather than
+   depend on stylesheet load order -- see .legalbook__intro-text above for
+   the same issue. Justify only actually stretches a paragraph's wrapped
+   lines (a one-line paragraph -- most leads, clauses, closing lines --
+   renders identically either way), and only applies at this fixed leaf's
+   wide single-column measure: re-tested at this exact width using the
+   same real-gap-measurement approach global.css's own justify decision
+   documents, word gaps stayed close to natural. Not extended to hyphens:
+   auto -- that file's own prior testing found no measurable benefit, and
+   it was visibly splitting short, ordinary words ("pass-word") here,
+   which reads wrong for a legal document. */
+.legalbook .legalbook__page-body p {
+  text-align: justify;
+  text-justify: inter-word;
+}
+/* ...but NOT at the two-column layout's ~half-width columns -- measured
+   the same way, gaps there were visibly uneven (the identical problem
+   global.css's own comment documents for its ~720-840px columns, just
+   worse: this measures under 400px). Left stays cleaner. */
+.legalbook .legalbook__page-body--two-col p {
+  text-align: left;
 }
 .legalbook__page-body p {
   font-size: 1.0625rem;
@@ -664,6 +701,16 @@
     height: clamp(28rem, 70vh, 40rem);
     height: clamp(28rem, 70dvh, 40rem);
     --enter-x: 14px;
+  }
+}
+
+@media (max-width: 640px) {
+  /* Same column-width condition global.css's own justify rules guard
+     against (see .legalbook__page-body p above) -- the single-column
+     leaf's text measure narrows enough on a phone to make the same
+     word-gap problem the two-column layout already has. */
+  .legalbook .legalbook__page-body p {
+    text-align: left;
   }
 }
 

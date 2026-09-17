@@ -46,6 +46,12 @@
 .courses-body {
   display: grid;
   gap: var(--space-6);
+  /* CoursesPage.tsx scrollIntoView()s this element when a filter changes
+     (Explore AIIT, the filter pills) so the reader lands at the top of the
+     new results instead of wherever they were on the page. .site-header is
+     position:fixed, so without this the filter bar would land underneath
+     it -- same convention as resource-detail.css's heading anchors. */
+  scroll-margin-top: calc(var(--header-h) + var(--ab-h) + 1.5rem);
 }
 
 .courses-result-summary {

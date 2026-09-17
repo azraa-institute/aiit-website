@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { Layout } from '@/components/layout/Layout';
 import { Seo } from '@/lib/Seo';
@@ -56,6 +56,7 @@ export default function CoursesPage() {
   const [view, setView] = useState<'grid' | 'list'>('grid');
   const [page, setPage] = useState(1);
   const pageSize = usePageSize();
+  const resultsTopRef = useRef<HTMLDivElement>(null);
 
   const query: CourseQuery = useMemo(
     () => ({
@@ -93,9 +94,24 @@ export default function CoursesPage() {
 
   // Reset to page 1 whenever the query changes (a new filter/sort/search
   // should always land on the top of the results, not wherever the reader
-  // happened to be paging).
+  // happened to be paging) -- and actually scroll there. Picking a filter
+  // from "Explore AIIT" (near the footer) against a domain with very few
+  // courses previously left the reader stranded past the end of the new,
+  // much shorter results at their old scroll position -- ScrollToTop.tsx
+  // only resets scroll on pathname/hash changes, and this page's filters
+  // are query-string-only, so it never fired. Skipped on the very first
+  // render (e.g. a direct link to /courses?domain=x) since the page is
+  // already at the top then; only real, in-page filter changes should
+  // trigger this.
+  const didMountRef = useRef(false);
   useEffect(() => {
     setPage(1);
+    if (!didMountRef.current) {
+      didMountRef.current = true;
+      return;
+    }
+    const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    resultsTopRef.current?.scrollIntoView({ behavior: reduceMotion ? 'auto' : 'smooth', block: 'start' });
   }, [query]);
 
   const totalPages = Math.max(1, Math.ceil(results.length / pageSize));
@@ -133,7 +149,7 @@ export default function CoursesPage() {
         </div>
       </header>
 
-      <div className="section container container--wide courses-body">
+      <div className="section container container--wide courses-body" ref={resultsTopRef}>
         <CourseFilters query={query} onChange={patch} onReset={() => setParams({}, { replace: true })} />
 
         {courseList.status === 'loading' ? (

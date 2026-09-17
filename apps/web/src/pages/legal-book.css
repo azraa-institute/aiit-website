@@ -589,6 +589,29 @@
   line-height: 1.7;
   color: var(--ink-soft);
 }
+/* The contact email (linkified in LegalBook.tsx's linkifyEmail) as a real,
+   working mailto: link -- same treatment as .prose a elsewhere on the
+   site (global.css), reused rather than invented fresh, so an inline link
+   looks the same whether it's here or in an FAQ answer: a quiet brass
+   underline at rest that deepens on hover/focus, not a plain color swap
+   with no underline (which reads as a broken/fake link on the web) or a
+   loud default blue link. */
+.legalbook__link {
+  color: var(--accent-strong);
+  font-weight: var(--fw-medium);
+  text-decoration: underline;
+  text-decoration-color: var(--brass-tint);
+  text-underline-offset: 3px;
+  text-decoration-thickness: 1px;
+  transition:
+    text-decoration-color var(--dur-fast) var(--ease-out),
+    text-decoration-thickness var(--dur-fast) var(--ease-out);
+}
+.legalbook__link:hover,
+.legalbook__link:focus-visible {
+  text-decoration-color: var(--brass);
+  text-decoration-thickness: 2px;
+}
 .legalbook__page-body p + p {
   margin-top: var(--space-3);
 }

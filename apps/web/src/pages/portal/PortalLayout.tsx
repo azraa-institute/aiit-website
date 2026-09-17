@@ -77,6 +77,36 @@ export default function PortalLayout() {
   useLockBodyScroll(menuOpen);
   useLockBodyScroll(wizardOpen);
 
+  // Closing the wizard (Skip, or Finish) is the one moment
+  // ProfileCompletionBanner actually animates from collapsed to its real
+  // height -- see that component's own doc comment for the Chromium bug
+  // this whole always-mounted/grid-column setup exists to dodge (a new
+  // grid item appearing next to .portal-topbar's position: sticky leaves
+  // that whole top strip un-repainted until a hard navigation). Confirmed
+  // live this session: that fix covers the *mount* case, but the bug can
+  // still recur on the banner's own max-height transition, which is also
+  // a layout-affecting change right next to the same sticky element --
+  // reported as the topbar's row rendering blank until a refresh, exactly
+  // matching the original bug's "until a hard navigation" symptom.
+  // Nudging the scroll position by 1px and back, timed just past the
+  // banner's transition (--dur-base, 320ms in tokens.css), forces Chromium
+  // to re-run the scroll-driven repaint it's failing to trigger on its
+  // own -- the same mechanism a real scroll already fixes, per the user
+  // report this was diagnosed from. window.scrollY === 0 guards against
+  // nudging a genuine scroll position elsewhere on the page (the wizard
+  // was open with body scroll locked, so this is normally already true).
+  const prevWizardOpen = useRef(wizardOpen);
+  useEffect(() => {
+    const wasOpen = prevWizardOpen.current;
+    prevWizardOpen.current = wizardOpen;
+    if (!wasOpen || wizardOpen || window.scrollY !== 0) return;
+    const id = window.setTimeout(() => {
+      window.scrollBy(0, 1);
+      requestAnimationFrame(() => window.scrollBy(0, -1));
+    }, 360);
+    return () => window.clearTimeout(id);
+  }, [wizardOpen]);
+
   // Real signal, not a heuristic: `isNewSignup` only comes back true on the
   // exact GET /auth/me call that just fired the API's one-time welcome
   // email, i.e. an actual first-ever signup -- true alike for Google and

@@ -331,21 +331,6 @@ export function LegalBook({ doc, pages }: { doc: LegalDoc; pages: LegalBookPage[
                       {doc.effectiveLabel}: {doc.effectiveDate}
                     </p>
                     <p className="legalbook__cover-hint">{doc.intro}</p>
-                    {/* Mobile-only (see the CSS) -- the Previous/Next arrow
-                        buttons are hidden below 560px to give the reading
-                        column more width (legal-book.css), leaving swipe as
-                        the only gesture-based way to turn pages there (the
-                        keyboard handler above still works too, but doesn't
-                        apply on a touchscreen). Cover-only, not repeated on
-                        every page, since it only needs to teach the gesture
-                        once. */}
-                    <p className="legalbook__swipe-hint" aria-hidden="true">
-                      <span className="legalbook__swipe-hint-arrows">
-                        <ArrowIcon direction="next" />
-                        <ArrowIcon direction="next" />
-                      </span>
-                      Swipe to begin reading
-                    </p>
                   </div>
                 ) : (
                   <article className="legalbook__page" aria-labelledby={`${tocId}-heading`}>
@@ -373,6 +358,26 @@ export function LegalBook({ doc, pages }: { doc: LegalDoc; pages: LegalBookPage[
                         ))}
                     </div>
                   </article>
+                )}
+
+                {/* Mobile-only (see the CSS) -- the Previous/Next arrow
+                    buttons are hidden below 560px to give the reading
+                    column more width (legal-book.css), leaving swipe as
+                    the only gesture-based way to turn pages there (the
+                    keyboard handler above still works too, but doesn't
+                    apply on a touchscreen). Page 1 only, not the cover --
+                    the cover already carries the logo and institution
+                    name, and adding this there read as cluttered next to
+                    that; page 1 still catches it before most of the
+                    reading begins, without repeating on every page. */}
+                {page === 1 && (
+                  <p className="legalbook__swipe-hint" aria-hidden="true">
+                    <span className="legalbook__swipe-hint-arrows">
+                      <ArrowIcon direction="next" />
+                      <ArrowIcon direction="next" />
+                    </span>
+                    Swipe to continue reading
+                  </p>
                 )}
 
                 <p className="legalbook__page-foot">

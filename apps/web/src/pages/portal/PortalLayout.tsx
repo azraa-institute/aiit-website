@@ -83,26 +83,33 @@ export default function PortalLayout() {
   // this whole always-mounted/grid-column setup exists to dodge (a new
   // grid item appearing next to .portal-topbar's position: sticky leaves
   // that whole top strip un-repainted until a hard navigation). Confirmed
-  // live this session: that fix covers the *mount* case, but the bug can
-  // still recur on the banner's own max-height transition, which is also
-  // a layout-affecting change right next to the same sticky element --
-  // reported as the topbar's row rendering blank until a refresh, exactly
-  // matching the original bug's "until a hard navigation" symptom.
-  // Nudging the scroll position by 1px and back, timed just past the
-  // banner's transition (--dur-base, 320ms in tokens.css), forces Chromium
-  // to re-run the scroll-driven repaint it's failing to trigger on its
-  // own -- the same mechanism a real scroll already fixes, per the user
-  // report this was diagnosed from. window.scrollY === 0 guards against
-  // nudging a genuine scroll position elsewhere on the page (the wizard
-  // was open with body scroll locked, so this is normally already true).
+  // live this session: that fix covers the *mount* case, but the bug still
+  // recurs on the banner's own max-height transition -- confirmed via
+  // DevTools that this is a pure paint bug, not layout: the banner's box
+  // is correctly sized/positioned (grid row present, 73px tall, dark
+  // background) but never actually paints, leaving the plain page
+  // background showing through where it should be. A 1px scroll-and-back
+  // nudge (tried first) reached this code path but didn't force a
+  // repaint. Toggling the topbar's own display off and back on does --
+  // reading offsetHeight in between forces a synchronous layout pass,
+  // and because all three lines run before the browser's next paint, the
+  // display: none state itself is never actually shown (nothing to
+  // flicker), only the forced recalculation happens. Targets the topbar
+  // itself (not the banner) since that's the element documented to stop
+  // repainting.
+  const topbarRef = useRef<HTMLElement>(null);
   const prevWizardOpen = useRef(wizardOpen);
   useEffect(() => {
     const wasOpen = prevWizardOpen.current;
     prevWizardOpen.current = wizardOpen;
-    if (!wasOpen || wizardOpen || window.scrollY !== 0) return;
+    if (!wasOpen || wizardOpen) return;
     const id = window.setTimeout(() => {
-      window.scrollBy(0, 1);
-      requestAnimationFrame(() => window.scrollBy(0, -1));
+      const el = topbarRef.current;
+      if (!el) return;
+      const prevDisplay = el.style.display;
+      el.style.display = 'none';
+      void el.offsetHeight;
+      el.style.display = prevDisplay;
     }, 360);
     return () => window.clearTimeout(id);
   }, [wizardOpen]);
@@ -289,7 +296,7 @@ export default function PortalLayout() {
       />
 
       <div className="portal__main">
-        <header className="portal-topbar">
+        <header className="portal-topbar" ref={topbarRef}>
           <button
             type="button"
             className="portal-topbar__menu"

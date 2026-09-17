@@ -570,6 +570,16 @@
 .legalbook__page-body p + p {
   margin-top: var(--space-3);
 }
+/* A closing paragraph (e.g. "your-rights"'s "To exercise any of these
+   rights...", "academic-integrity"'s "Violations may result in...") runs
+   immediately after a section's <ul>, not another <p> -- the p + p rule
+   above doesn't match that pairing, and .legalbook__page-body's own gap
+   (see its comment) only spaces out direct children (whole sections), not
+   two elements inside the same one. Without this it read as glued to the
+   last bullet instead of a separate closing sentence. */
+.legalbook__list + p {
+  margin-top: var(--space-4);
+}
 .legalbook__lead {
   font-weight: 600;
   color: var(--ink);
@@ -579,6 +589,15 @@
    screens and become a two-column grid from 640px up -- independent of
    the page-level .legalbook__page-body--two-col mechanism, since this
    splits ONE section's own sub-groups rather than pairing two sections. */
+/* Same missing-spacing issue as .legalbook__list + p above, one element
+   earlier: "information-we-collect"'s lead ("...we collect the following
+   categories of information.") ran straight into "Personal information
+   you provide" with no gap, for the identical reason -- both are inside
+   one .legalbook__section, not direct children of the page-body flex
+   container whose gap only separates whole sections. */
+.legalbook__lead + .legalbook__groups {
+  margin-top: var(--space-4);
+}
 .legalbook__groups {
   display: flex;
   flex-direction: column;

@@ -77,43 +77,6 @@ export default function PortalLayout() {
   useLockBodyScroll(menuOpen);
   useLockBodyScroll(wizardOpen);
 
-  // Closing the wizard (Skip, or Finish) is the one moment
-  // ProfileCompletionBanner actually animates from collapsed to its real
-  // height -- see that component's own doc comment for the Chromium bug
-  // this whole always-mounted/grid-column setup exists to dodge (a new
-  // grid item appearing next to .portal-topbar's position: sticky leaves
-  // that whole top strip un-repainted until a hard navigation). Confirmed
-  // live this session: that fix covers the *mount* case, but the bug still
-  // recurs on the banner's own max-height transition -- confirmed via
-  // DevTools that this is a pure paint bug, not layout: .pcb's own box is
-  // correctly sized/positioned (73px tall, dark background, opacity 1,
-  // .pcb--collapsed not present) but the region never actually paints,
-  // leaving the plain page background showing through where the dark
-  // banner should be. Two things already tried and confirmed NOT to fix
-  // it (both deployed and re-tested live): a 1px scroll-and-back nudge,
-  // and forcing a reflow on .portal-topbar specifically -- the topbar
-  // itself was never the broken element (its own content renders fine);
-  // .pcb is. Targeting .pcb directly instead: toggling its own display
-  // off and back on, reading offsetHeight in between to force a
-  // synchronous layout+paint pass on the actual stale element. All three
-  // lines run before the browser's next paint, so the display: none
-  // state itself is never actually shown.
-  const prevWizardOpen = useRef(wizardOpen);
-  useEffect(() => {
-    const wasOpen = prevWizardOpen.current;
-    prevWizardOpen.current = wizardOpen;
-    if (!wasOpen || wizardOpen) return;
-    const id = window.setTimeout(() => {
-      const el = document.querySelector<HTMLElement>('.pcb');
-      if (!el) return;
-      const prevDisplay = el.style.display;
-      el.style.display = 'none';
-      void el.offsetHeight;
-      el.style.display = prevDisplay;
-    }, 360);
-    return () => window.clearTimeout(id);
-  }, [wizardOpen]);
-
   // Real signal, not a heuristic: `isNewSignup` only comes back true on the
   // exact GET /auth/me call that just fired the API's one-time welcome
   // email, i.e. an actual first-ever signup -- true alike for Google and

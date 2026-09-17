@@ -17,6 +17,7 @@ const DOCS = [
   ['production-readiness.html', 'production-readiness.pdf'],
   ['backend-implementation-plan.html', 'backend-implementation-plan.pdf'],
   ['infrastructure-setup-and-workflow.html', 'infrastructure-setup-and-workflow.pdf'],
+  ['platforms-and-services.html', 'platforms-and-services.pdf'],
 ];
 
 const CHROME_CANDIDATES = [

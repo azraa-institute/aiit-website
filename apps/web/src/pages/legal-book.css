@@ -791,18 +791,36 @@
   .legalbook__stage {
     gap: 2px;
   }
+  /* The Previous/Next arrow buttons ate 2 x 38px plus gaps from the
+     stage's own width budget -- on a real phone that came straight out of
+     the actual reading column (measured: ~202px left for text on a
+     375px-wide screen, out of which the arrows alone accounted for 80px).
+     Hidden here rather than shrunk further, since they're genuinely
+     redundant on a touchscreen: swipe (onTouchStart/onTouchEnd, above)
+     and the keyboard Left/Right/Home/End handler both already work,
+     and the Contents panel covers jumping to a specific page. display:
+     none (not visibility/opacity) so they also leave the tab order --
+     nothing to focus that isn't visibly there. .legalbook__book (flex: 1)
+     fills the freed width on its own, no extra rule needed. */
+  .legalbook__arrow {
+    display: none;
+  }
+  /* Trimmed from 8px now that the arrows are gone -- every extra pixel
+     here comes straight out of the reading column on the narrowest
+     screens this is tuned for. Vertical padding (the back-leaves' stacked
+     -paper illusion) is untouched. */
   .legalbook__leaves {
-    padding: 30px 8px 8px;
+    padding: 30px 4px 8px;
   }
   .legalbook__leaf--active {
     height: clamp(24rem, 72vh, 34rem);
     height: clamp(24rem, 72dvh, 34rem);
-    padding: 1.5rem 1.15rem 1rem;
+    /* Horizontal cut from 1.15rem -- same reasoning as .legalbook__leaves
+       above. Vertical kept: this is the leaf's own readable-margin, not
+       decoration, and cutting it too far starts crowding the text against
+       the paper's rounded corners. */
+    padding: 1.5rem 0.85rem 1rem;
     --enter-x: 8px;
-  }
-  .legalbook__arrow {
-    width: 38px;
-    height: 38px;
   }
 }
 

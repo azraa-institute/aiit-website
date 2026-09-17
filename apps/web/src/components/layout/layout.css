@@ -33,6 +33,22 @@
   max-width: 18ch;
   text-wrap: balance;
 }
+/* --fs-display-2's own clamp floors at 2.25rem (36px) below a ~312px
+   viewport and stays flat from there down -- so on an actual phone
+   (360-430px) it's sitting at ~38-40px regardless, just above that floor.
+   Fine for a short title (About, FAQs), but the Webinar page's title runs
+   ~80 characters: at that size and this page-width's real column (roughly
+   335px after the page gutter), only ~17 characters fit per line, so a
+   long title breaks into a wall of 1-2-word lines instead of reading as a
+   heading. This isn't --fs-display-2 itself (other pages/components still
+   use its normal scale) -- just this component, and only below its own
+   floor's effective width, where a shorter, purpose-tuned clamp leaves
+   room for ~20+ characters per line instead. */
+@media (max-width: 640px) {
+  .page-banner__title {
+    font-size: clamp(1.7rem, 1.35rem + 2.8vw, 2.1rem);
+  }
+}
 
 .page-banner__intro {
   margin-top: var(--space-5);

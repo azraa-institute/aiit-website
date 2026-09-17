@@ -85,26 +85,26 @@ export default function PortalLayout() {
   // that whole top strip un-repainted until a hard navigation). Confirmed
   // live this session: that fix covers the *mount* case, but the bug still
   // recurs on the banner's own max-height transition -- confirmed via
-  // DevTools that this is a pure paint bug, not layout: the banner's box
-  // is correctly sized/positioned (grid row present, 73px tall, dark
-  // background) but never actually paints, leaving the plain page
-  // background showing through where it should be. A 1px scroll-and-back
-  // nudge (tried first) reached this code path but didn't force a
-  // repaint. Toggling the topbar's own display off and back on does --
-  // reading offsetHeight in between forces a synchronous layout pass,
-  // and because all three lines run before the browser's next paint, the
-  // display: none state itself is never actually shown (nothing to
-  // flicker), only the forced recalculation happens. Targets the topbar
-  // itself (not the banner) since that's the element documented to stop
-  // repainting.
-  const topbarRef = useRef<HTMLElement>(null);
+  // DevTools that this is a pure paint bug, not layout: .pcb's own box is
+  // correctly sized/positioned (73px tall, dark background, opacity 1,
+  // .pcb--collapsed not present) but the region never actually paints,
+  // leaving the plain page background showing through where the dark
+  // banner should be. Two things already tried and confirmed NOT to fix
+  // it (both deployed and re-tested live): a 1px scroll-and-back nudge,
+  // and forcing a reflow on .portal-topbar specifically -- the topbar
+  // itself was never the broken element (its own content renders fine);
+  // .pcb is. Targeting .pcb directly instead: toggling its own display
+  // off and back on, reading offsetHeight in between to force a
+  // synchronous layout+paint pass on the actual stale element. All three
+  // lines run before the browser's next paint, so the display: none
+  // state itself is never actually shown.
   const prevWizardOpen = useRef(wizardOpen);
   useEffect(() => {
     const wasOpen = prevWizardOpen.current;
     prevWizardOpen.current = wizardOpen;
     if (!wasOpen || wizardOpen) return;
     const id = window.setTimeout(() => {
-      const el = topbarRef.current;
+      const el = document.querySelector<HTMLElement>('.pcb');
       if (!el) return;
       const prevDisplay = el.style.display;
       el.style.display = 'none';
@@ -296,7 +296,7 @@ export default function PortalLayout() {
       />
 
       <div className="portal__main">
-        <header className="portal-topbar" ref={topbarRef}>
+        <header className="portal-topbar">
           <button
             type="button"
             className="portal-topbar__menu"

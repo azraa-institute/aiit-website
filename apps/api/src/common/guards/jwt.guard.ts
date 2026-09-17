@@ -69,16 +69,17 @@ export class JwtGuard implements CanActivate {
       where: { id: sub },
       select: { role: true, status: true },
     });
-    if (!profile) {
-      throw new UnauthorizedException('No profile found for this account.');
-    }
-    // A profile row is never actually erased on deletion (see
-    // ProfileService.requestDeletion) -- it's a soft flag, kept as an
-    // internal record. This is the enforcement half of that: a real
-    // Supabase session for this account can still be issued (nothing
-    // revokes it there), but every API call now correctly refuses it
-    // instead of quietly continuing to work as if nothing happened.
-    if (profile.status !== 'active') {
+    // A profile row is never actually erased by the app's own deletion flow
+    // (see ProfileService.requestDeletion) -- it's a soft flag, kept as an
+    // internal record. A missing row here means something removed it
+    // out-of-band (e.g. a direct DELETE against the database) -- from the
+    // caller's perspective that's indistinguishable from "deleted", so it
+    // gets the same ForbiddenException + message as the soft-delete case
+    // below. The frontend's handleErrorResponse() matches on that exact
+    // message to sign the caller out; a distinct exception here would
+    // silently skip that and leave a hard-deleted user's tab stuck signed
+    // in against a 401 it doesn't know how to handle.
+    if (!profile || profile.status !== 'active') {
       throw new ForbiddenException('This account has been deleted.');
     }
 

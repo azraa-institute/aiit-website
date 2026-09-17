@@ -107,11 +107,17 @@ describe('JwtGuard', () => {
     );
   });
 
-  it('rejects a valid token with no matching profile', async () => {
+  it('rejects a valid token with no matching profile as ForbiddenException, same as a deleted account', async () => {
+    // A missing profile means something removed the row out-of-band (e.g. a
+    // direct DELETE against the database) rather than through the app's own
+    // soft-delete flow -- it must be indistinguishable from that flow's
+    // ForbiddenException so the frontend's handleErrorResponse() signs the
+    // caller out here too, instead of leaving them stuck on an
+    // unhandled 401.
     prisma.profile.findUnique.mockResolvedValueOnce(null);
     const token = signToken(privateKey, 'user-1', 3600);
     await expect(guard.canActivate(contextWithHeader(`Bearer ${token}`))).rejects.toBeInstanceOf(
-      UnauthorizedException,
+      ForbiddenException,
     );
   });
 

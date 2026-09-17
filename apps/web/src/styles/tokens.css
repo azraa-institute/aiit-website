@@ -70,27 +70,37 @@
      consistency with the display type; reach for a heavier Inter weight
      directly (500/600) only where a component genuinely needs a third step. */
   --fw-body: 400;
-  --fw-medium: 400; /* headings / titles — Georgia regular reads as editorial display */
+  /* headings / titles. Was tuned for Georgia, whose regular weight already
+     reads as sturdy/display-like at large sizes -- Source Serif 4 (now
+     --font-display, see below) is a lighter-cut text face at the same
+     nominal weight, so large headings may want bumping to 500/600 once
+     this is actually seen rendered; left at 400 for now rather than
+     guess. */
+  --fw-medium: 400;
   --fw-strong: 700;
   --fw-display: 400;
 
   /* ---- Typography ----
-     Georgia, the site's signature serif, stays for display type (headings,
-     the editorial voice). Body copy, buttons, nav, forms and every other UI
-     surface use Google Sans instead — a cleaner, more legible sans at small
-     sizes than Georgia, while headings keep the site's editorial identity.
-     Free/OFL-licensed geometric sans from Google Fonts, in the same visual
-     family as Grok's Universal Sans (a commercial PangramPangram typeface
-     with no free source). */
-  --font-display: Georgia, 'Times New Roman', 'Times', serif;
+     Source Serif 4, the site's signature serif, stays for display type
+     (headings, the editorial voice) -- Georgia demoted to a same-shape
+     system fallback for the rare case the webfont hasn't loaded yet,
+     rather than deleted outright. Body copy, buttons, nav, forms and
+     every other UI surface use Google Sans instead -- a cleaner, more
+     legible sans at small sizes than a serif, while headings keep the
+     site's editorial identity. Google Sans is free/OFL-licensed, from
+     Google Fonts, in the same visual family as Grok's Universal Sans (a
+     commercial PangramPangram typeface with no free source).
+     Until 2026-09, --font-display was Georgia itself, and Source Serif 4
+     was reserved as a second, separate "accent" serif (--font-accent,
+     below) used only in specific deliberate spots -- the header nav, the
+     site search overlay, a few homepage sections, some editorial pages,
+     and (most recently) the legal document pages. Swept the whole site
+     over to one serif identity instead of two: --font-accent is kept
+     as an alias (identical value) so files already written against it
+     don't need touching, not because the two faces still differ. */
+  --font-display: 'Source Serif 4', Georgia, 'Times New Roman', 'Times', serif;
   --font-ui:
     'Google Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif;
-  /* The site's one accent/editorial serif beyond Georgia -- Source Serif 4,
-     also the header-nav identity font (header.css, mobile-menu.css,
-     site-search.css). Used wherever a page wants a deliberate serif accent
-     (italic emphasis, big display numerals/headings) instead of --font-ui
-     or the plainer --font-display. Was Cormorant Garamond until the whole
-     site was swept over to Source Serif 4 for consistency. */
   --font-accent: 'Source Serif 4', Georgia, 'Times New Roman', serif;
 
   /* Fluid display scale (clamp: min, vw, max).

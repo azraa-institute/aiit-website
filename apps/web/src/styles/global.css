@@ -10,9 +10,10 @@ body {
   line-height: var(--lh-body);
   text-rendering: optimizeLegibility;
   font-kerning: normal;
-  /* Georgia ships old-style (text) figures by default; use lining figures
-     site-wide for consistent, modern number rendering in prices, data,
-     dates and running copy alike. */
+  /* Georgia and Source Serif 4 (the site's display faces, past and
+     present) both ship old-style (text) figures by default; use lining
+     figures site-wide for consistent, modern number rendering in prices,
+     data, dates and running copy alike. */
   font-variant-numeric: lining-nums;
   overflow-x: clip;
   /* Belt-and-braces with the html rule: no top/bottom rubber-band that

@@ -549,12 +549,18 @@
   text-align: justify;
   text-justify: inter-word;
 }
-/* ...but NOT at the two-column layout's ~half-width columns -- measured
-   the same way, gaps there were visibly uneven (the identical problem
-   global.css's own comment documents for its ~720-840px columns, just
-   worse: this measures under 400px). Left stays cleaner. */
+/* The two-column layout's ~half-width columns (measures under 400px) are
+   exactly the narrow case global.css's own comment warns justify off for
+   -- plain justify here left visibly uneven gaps in testing. Unlike the
+   wide single-column rule above, hyphens: auto earns its keep at this
+   width: enabling it (re-tested the same way) closed those gaps back down
+   to near-natural, at the cost of occasionally splitting a word
+   ("pass-word", "trans-mission") -- an acceptable trade for a flush edge
+   at this measure, unlike the wide column where it had no upside. */
 .legalbook .legalbook__page-body--two-col p {
-  text-align: left;
+  text-align: justify;
+  text-justify: inter-word;
+  hyphens: auto;
 }
 .legalbook__page-body p {
   font-size: 1.0625rem;
@@ -705,12 +711,14 @@
 }
 
 @media (max-width: 640px) {
-  /* Same column-width condition global.css's own justify rules guard
-     against (see .legalbook__page-body p above) -- the single-column
-     leaf's text measure narrows enough on a phone to make the same
-     word-gap problem the two-column layout already has. */
+  /* Same column-width condition the two-column rule above handles (see
+     .legalbook__page-body--two-col p) -- the single-column leaf's text
+     measure narrows into the same range on a phone, so it gets the same
+     justify + hyphens: auto treatment rather than falling back to left. */
   .legalbook .legalbook__page-body p {
-    text-align: left;
+    text-align: justify;
+    text-justify: inter-word;
+    hyphens: auto;
   }
 }
 

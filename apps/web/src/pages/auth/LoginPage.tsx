@@ -5,6 +5,7 @@ import { Seo } from '@/lib/Seo';
 import { Button } from '@/components/primitives/Button';
 import { TextField, PasswordField } from '@/components/common/Field';
 import { supabase } from '@/lib/supabaseClient';
+import { canEnterPortal } from '@/lib/api';
 import { needsMfaChallenge } from '@/lib/mfa';
 import { AuthLayout, GoogleAuthButton } from './AuthLayout';
 import { MfaChallenge } from './MfaChallenge';
@@ -87,9 +88,9 @@ export default function LoginPage() {
     setError(undefined);
     setSubmitting(true);
     const { error: signInError } = await supabase.auth.signInWithPassword({ email, password });
-    setSubmitting(false);
 
     if (signInError) {
+      setSubmitting(false);
       setError(
         signInError.message.toLowerCase().includes('confirm')
           ? 'Confirm your email address before signing in -- check your inbox for the link we sent.'
@@ -99,15 +100,29 @@ export default function LoginPage() {
     }
 
     if (await needsMfaChallenge()) {
+      setSubmitting(false);
       setMfaPending(true);
       return;
     }
 
-    navigate(state?.from?.pathname ?? '/portal', { replace: true });
+    await enterPortal();
   }
 
-  function onMfaVerified() {
-    navigate(state?.from?.pathname ?? '/portal', { replace: true });
+  // Shared by the password and MFA sign-in paths, both of which land here
+  // once Supabase considers the caller signed in. Checks the account is
+  // still real before navigating -- see canEnterPortal()'s own comment for
+  // why that matters. Deliberately does nothing in the false branch: a
+  // hard redirect to /login?reason=deleted is already under way by then.
+  async function enterPortal() {
+    if (await canEnterPortal()) {
+      navigate(state?.from?.pathname ?? '/portal', { replace: true });
+    } else {
+      setSubmitting(false);
+    }
+  }
+
+  async function onMfaVerified() {
+    await enterPortal();
   }
 
   async function onOAuthSignIn(provider: 'google') {

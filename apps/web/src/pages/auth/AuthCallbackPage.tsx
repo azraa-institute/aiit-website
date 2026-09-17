@@ -4,6 +4,7 @@ import { Seo } from '@/lib/Seo';
 import { RouteFallback } from '@/components/layout/RouteFallback';
 import { useAuth } from '@/lib/AuthContext';
 import { supabase } from '@/lib/supabaseClient';
+import { canEnterPortal } from '@/lib/api';
 import { needsMfaChallenge } from '@/lib/mfa';
 import { AuthLayout } from './AuthLayout';
 import { MfaChallenge } from './MfaChallenge';
@@ -44,7 +45,14 @@ export default function AuthCallbackPage() {
         setMfaPending(true);
         return;
       }
-      navigate('/portal', { replace: true });
+      // Supabase considers this session valid regardless of whether the
+      // profile row it points to still exists -- see canEnterPortal()'s
+      // own comment. Nothing to do in the false branch: a hard redirect to
+      // /login?reason=deleted is already under way by then, so this just
+      // stays on RouteFallback until that takes over.
+      if (await canEnterPortal()) {
+        navigate('/portal', { replace: true });
+      }
     }
 
     const code = new URL(window.location.href).searchParams.get('code');
@@ -81,7 +89,11 @@ export default function AuthCallbackPage() {
           intro="Enter the code from your authenticator app to finish signing in."
           footer={null}
         >
-          <MfaChallenge onVerified={() => navigate('/portal', { replace: true })} />
+          <MfaChallenge
+            onVerified={async () => {
+              if (await canEnterPortal()) navigate('/portal', { replace: true });
+            }}
+          />
         </AuthLayout>
       </>
     );

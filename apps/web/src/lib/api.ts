@@ -24,7 +24,7 @@ export class ApiError extends Error {
  * generic 403 status, since RolesGuard also throws 403 for an ordinary
  * permission error that should just show inline, not sign the user out.
  */
-const ACCOUNT_DELETED_MESSAGE = 'This account has been deleted.';
+export const ACCOUNT_DELETED_MESSAGE = 'This account has been deleted.';
 
 async function handleErrorResponse(res: Response): Promise<never> {
   const body: ApiErrorEnvelope | null = await res.json().catch(() => null);
@@ -59,6 +59,31 @@ export async function apiFetch<T>(path: string, init: RequestInit = {}): Promise
 
   if (res.status === 204) return undefined as T;
   return res.json() as Promise<T>;
+}
+
+/**
+ * Confirms the just-authenticated account's profile is still real and
+ * active before a sign-in flow navigates into /portal. Supabase's own
+ * session is silent on this -- a profile row deleted directly in the
+ * database (bypassing the app's own soft-delete flow) still issues a
+ * perfectly valid session, so without this check every sign-in path would
+ * land the caller in /portal, have its first data fetch rejected there,
+ * and immediately bounce back out: a jarring flash of portal chrome
+ * before landing back on /login. Resolves false only for that exact
+ * case -- handleErrorResponse above has already signed the caller out and
+ * kicked off the redirect to /login?reason=deleted by the time this
+ * returns, so callers just need to not also navigate into /portal on top
+ * of it. Any other failure (network blip, etc.) isn't this check's job to
+ * handle -- resolves true and lets /portal's own error state cover it, same
+ * as before this existed.
+ */
+export async function canEnterPortal(): Promise<boolean> {
+  try {
+    await apiFetch('/auth/me');
+    return true;
+  } catch (err) {
+    return !(err instanceof ApiError && err.status === 403 && err.message === ACCOUNT_DELETED_MESSAGE);
+  }
 }
 
 /** Same auth handling as apiFetch, but for binary responses (a certificate PDF) rather than JSON -- apiFetch always calls res.json(), which would fail on a PDF body. */

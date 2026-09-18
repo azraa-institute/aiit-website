@@ -6,6 +6,7 @@ import { getInstructor } from '@/data/instructors';
 import { formatPrice, discountPercent, formatEnrollment } from '@/lib/format';
 import { Plate } from '@/components/primitives/Plate';
 import { Stars } from '@/components/common/Stars';
+import { PopularLogoBadges } from './PopularLogos';
 import { cn } from '@/lib/cn';
 import './course-card.css';
 
@@ -128,6 +129,7 @@ export function CourseCard({ course, layout = 'grid', index }: CourseCardProps) 
         {typeof index === 'number' && (
           <span className="course-card__num index-num">{String(index + 1).padStart(2, '0')}</span>
         )}
+        <PopularLogoBadges technologies={course.technologies} />
       </Link>
 
       <div className="course-card__body">

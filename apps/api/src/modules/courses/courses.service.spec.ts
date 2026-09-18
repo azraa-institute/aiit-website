@@ -41,6 +41,7 @@ const COURSE_ROW = {
   badges: ['featured', 'new_badge'],
   instructorId: 'ins-aiit',
   image: '/course.jpg',
+  technologies: [{ name: 'Claude', type: 'platform', icon: 'spark', tier: 'core' }],
   publishedAt: new Date('2026-06-19T00:00:00.000Z'),
 };
 
@@ -125,6 +126,7 @@ describe('CoursesService', () => {
           instructorId: 'ins-aiit',
           image: '/course.jpg',
           publishedAt: '2026-06-19T00:00:00.000Z',
+          technologies: [{ name: 'Claude', type: 'platform', icon: 'spark', tier: 'core' }],
         },
       ]);
     });

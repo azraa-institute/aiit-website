@@ -115,6 +115,8 @@ export interface CourseListItem {
   image: string;
   /** Sort key for "newest"/"oldest" listings; null for a course that hasn't been published. */
   publishedAt: string | null;
+  /** "What you'll explore" -- structured, per-course technology/tool list. Included in the list shape too (not just detail) so a course card's small logo badges have something to pick from without a second fetch. */
+  technologies: CourseTechnology[];
 }
 
 export interface CourseDetail extends CourseListItem {
@@ -122,10 +124,8 @@ export interface CourseDetail extends CourseListItem {
   outcomes: string[];
   requirements: string[];
   audience: string[];
-  /** Superseded by `technologies` below for display -- kept for backward compatibility, no longer rendered. */
+  /** Superseded by `technologies` above for display -- kept for backward compatibility, no longer rendered. */
   toolsCovered: string[];
-  /** "What you'll explore" -- structured, per-course technology/tool list. */
-  technologies: CourseTechnology[];
   certification: string;
 }
 

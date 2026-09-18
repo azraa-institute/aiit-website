@@ -33,6 +33,7 @@ function baseFields(item: CourseListItem) {
     statuses: item.badges,
     instructorId: item.instructorId,
     image: item.image,
+    technologies: item.technologies,
     curriculum: [],
     publishedAt: item.publishedAt ?? '',
     updatedAt: item.publishedAt ?? '',
@@ -48,7 +49,6 @@ function toCourseListEntry(item: CourseListItem): Course {
     requirements: [],
     audience: [],
     toolsCovered: [],
-    technologies: [],
     certification: '',
   };
 }
@@ -61,7 +61,6 @@ function toCourseDetailEntry(item: CourseDetail): Course {
     requirements: item.requirements,
     audience: item.audience,
     toolsCovered: item.toolsCovered,
-    technologies: item.technologies,
     certification: item.certification,
   };
 }

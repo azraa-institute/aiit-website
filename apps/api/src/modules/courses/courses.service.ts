@@ -32,6 +32,11 @@ const COURSE_LIST_SELECT = {
   instructorId: true,
   image: true,
   publishedAt: true,
+  // Included in the list select (not just detail) so the course card's
+  // small "popular technology" badge overlay -- see apps/web's
+  // PopularLogos.tsx -- has something to pick from on /courses too, not
+  // only on a course's own detail page.
+  technologies: true,
 } satisfies Prisma.CourseSelect;
 
 const COURSE_DETAIL_SELECT = {
@@ -41,7 +46,6 @@ const COURSE_DETAIL_SELECT = {
   requirements: true,
   audience: true,
   toolsCovered: true,
-  technologies: true,
   certification: true,
 } satisfies Prisma.CourseSelect;
 
@@ -83,7 +87,6 @@ export class CoursesService {
       requirements: course.requirements,
       audience: course.audience,
       toolsCovered: course.toolsCovered,
-      technologies: mapTechnologies(course.technologies),
       certification: course.certification,
     };
   }
@@ -138,6 +141,7 @@ export class CoursesService {
       instructorId: course.instructorId,
       image: course.image,
       publishedAt: course.publishedAt ? course.publishedAt.toISOString() : null,
+      technologies: mapTechnologies(course.technologies),
     };
   }
 

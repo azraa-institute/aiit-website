@@ -39,5 +39,5 @@ export const SITE = {
     { label: 'YouTube', platform: 'youtube', url: 'https://www.youtube.com/@AIIT.Network' },
     { label: 'X', platform: 'x', url: 'https://x.com/aiitnetwork' },
   ],
-  copyright: 'Created by AIIT.NETWORK 2026.',
+  copyright: '© Copyright 2026 – AZRAA INSTITUTE OF INFORMATION TECHNOLOGY. All Rights Reserved',
 } as const;

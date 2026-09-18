@@ -52,10 +52,14 @@ function RuledMark() {
   );
 }
 
-/** A quiet institutional seal watermark on the page background -- see
- * the architecture note in legal-book.css for why it's positioned
- * behind the book (negative z-index) rather than z-index: 0. Purely
- * decorative: one per document, unaffected by which page is active. */
+/** An institutional seal watermark, rendered fresh on every leaf (cover
+ * and every content page) rather than once for the whole book -- makes
+ * each page read as an official document in its own right, the way a
+ * real certified/notarised document is stamped per page, not once on the
+ * folder it's kept in. Centered behind the page's own text (see the
+ * architecture note in legal-book.css for the stacking-order reasoning),
+ * low-opacity enough that it never competes with reading the actual
+ * content. Purely decorative either way -- aria-hidden. */
 function Stamp() {
   return (
     <svg className="legalbook__stamp" viewBox="0 0 200 200" aria-hidden="true" focusable="false">
@@ -233,7 +237,6 @@ export function LegalBook({ doc, pages }: { doc: LegalDoc; pages: LegalBookPage[
 
   return (
     <div className="legalbook" ref={rootRef}>
-      <Stamp />
       <div className="container container--wide">
         <header className="legalbook__intro" data-reveal>
           <p className="eyebrow legalbook__eyebrow">{doc.eyebrow}</p>
@@ -319,6 +322,7 @@ export function LegalBook({ doc, pages }: { doc: LegalDoc; pages: LegalBookPage[
                 onTouchStart={onTouchStart}
                 onTouchEnd={onTouchEnd}
               >
+                <Stamp />
                 {page === 0 ? (
                   <div className="legalbook__cover">
                     <Logo variant="dark" className="legalbook__cover-logo" />
@@ -340,7 +344,6 @@ export function LegalBook({ doc, pages }: { doc: LegalDoc; pages: LegalBookPage[
                         once. */}
                     <p className="legalbook__swipe-hint" aria-hidden="true">
                       <span className="legalbook__swipe-hint-arrows">
-                        <ArrowIcon direction="next" />
                         <ArrowIcon direction="next" />
                       </span>
                       Swipe to begin reading

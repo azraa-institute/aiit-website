@@ -200,9 +200,24 @@
   border-radius: var(--radius-pill);
 }
 
-/* "What you'll explore" -- same restrained pill as .course-detail__tools
-   above, an icon added without growing the chip's visual weight. */
-.course-detail__tech-list {
+/* Hero "What you'll explore" row -- sits directly under the summary, same
+   restrained pill as .course-detail__tools, an icon added without growing
+   the chip's visual weight. Real brand marks (BrandIcons.tsx) and the
+   generic icon set (TechIcons.tsx) share these rules so the row reads as
+   one system regardless of which a given chip uses. */
+.course-hero-tech {
+  margin-top: var(--space-5);
+  max-width: 52ch;
+}
+.course-hero-tech__label {
+  margin: 0 0 var(--space-2);
+  font-size: var(--fs-xs);
+  font-weight: 700;
+  letter-spacing: var(--tracking-wide);
+  text-transform: uppercase;
+  color: var(--fg-faint);
+}
+.course-hero-tech__list {
   display: flex;
   flex-wrap: wrap;
   gap: var(--space-3);
@@ -210,7 +225,7 @@
   margin: 0;
   padding: 0;
 }
-.course-detail__tech-chip {
+.course-hero-tech__chip {
   display: inline-flex;
   align-items: center;
   gap: var(--space-2);
@@ -220,20 +235,16 @@
   border-radius: var(--radius-pill);
   color: var(--ink-soft);
 }
-.course-detail__tech-icon {
-  display: inline-flex;
-  color: var(--fg-faint);
-}
-.course-detail__tech-note {
-  margin: var(--space-4) 0 var(--space-2);
-  font-size: var(--fs-xs);
-  font-weight: 700;
-  letter-spacing: var(--tracking-wide);
-  text-transform: uppercase;
-  color: var(--fg-faint);
-}
-.course-detail__tech-list--optional .course-detail__tech-chip {
+.course-hero-tech__chip.is-optional {
   opacity: 0.72;
+}
+.course-hero-tech__icon {
+  display: inline-flex;
+  align-items: center;
+  color: var(--fg-faint);
+}
+.course-hero-tech__icon svg {
+  display: block;
 }
 
 .course-detail__modules {

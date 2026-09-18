@@ -112,6 +112,7 @@ export default function CourseDetailPage() {
                 </div>
                 <h1 className="course-detail__title">{course.title}</h1>
                 <p className="course-detail__summary">{course.summary}</p>
+                <TechnologyList technologies={course.technologies} />
 
                 <dl className="course-detail__stats">
                   <div>
@@ -176,8 +177,6 @@ export default function CourseDetailPage() {
                 ))}
               </ul>
             </section>
-
-            <TechnologyList technologies={course.technologies} />
 
             {course.requirements.length > 0 && (
               <section data-reveal>

@@ -133,6 +133,15 @@ describe('EnrollmentsService', () => {
       );
     });
 
+    it('turns a unique-index race (P2002) into a ConflictException', async () => {
+      prisma.course.findFirst.mockResolvedValueOnce({ id: 'crs-1', pricing: 'free' });
+      prisma.enrollment.findUnique.mockResolvedValueOnce(null);
+      prisma.enrollment.create.mockRejectedValueOnce({ code: 'P2002' });
+      await expect(service.enroll('user-1', 'digital-and-tech-literacy-absolute-beginner')).rejects.toBeInstanceOf(
+        ConflictException,
+      );
+    });
+
     it('throws ConflictException when already actively enrolled', async () => {
       prisma.course.findFirst.mockResolvedValueOnce({ id: 'crs-1', pricing: 'free' });
       prisma.enrollment.findUnique.mockResolvedValueOnce({ id: 'enr-1', status: 'active' });

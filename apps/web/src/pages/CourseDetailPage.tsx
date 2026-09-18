@@ -277,6 +277,24 @@ function EnrollAction({ course, comingSoon }: { course: Course; comingSoon: bool
     );
   }
 
+  // Already enrolled (a cancelled enrollment doesn't count -- the API lets
+  // those re-enroll): no second "Enroll now", send them to the course instead.
+  if (
+    learnerState.status === 'ready' &&
+    learnerState.learner.enrolled.some((e) => e.course.slug === course.slug && e.status !== 'cancelled')
+  ) {
+    return (
+      <>
+        <Button as="button" type="button" fullWidth size="lg" disabled>
+          You&apos;re enrolled
+        </Button>
+        <Button as="link" to="/portal/courses" variant="secondary" fullWidth>
+          Go to my courses
+        </Button>
+      </>
+    );
+  }
+
   if (learnerState.status === 'ready' && !learnerState.learner.profileComplete) {
     return (
       <>

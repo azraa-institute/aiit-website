@@ -67,10 +67,20 @@ export class EnrollmentsService {
           data: { status: 'active', completedAt: null },
           select: ENROLLMENT_SELECT,
         })
-      : await this.prisma.enrollment.create({
-          data: { userId, courseId: course.id },
-          select: ENROLLMENT_SELECT,
-        });
+      : await this.prisma.enrollment
+          .create({
+            data: { userId, courseId: course.id },
+            select: ENROLLMENT_SELECT,
+          })
+          .catch((err: unknown) => {
+            // Two simultaneous requests (double click, two tabs) can both pass
+            // the check above; the unique (user, course) index rejects the
+            // second -- report it as "already enrolled", not a 500.
+            if ((err as { code?: string }).code === 'P2002') {
+              throw new ConflictException('You are already enrolled in this course.');
+            }
+            throw err;
+          });
 
     await this.notifications.create(
       userId,

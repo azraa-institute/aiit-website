@@ -16,3 +16,6 @@ coverage
 *.tsbuildinfo
 docs/
 /image.png
+
+# Large original design sources (covers, brand art) -- not app assets
+design-sources/

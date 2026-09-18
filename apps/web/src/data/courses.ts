@@ -105,7 +105,7 @@ export const COURSES: Course[] = [
     enrolled: 76,
     statuses: ['special', 'featured'],
     instructorId: 'ins-aiit',
-    image: 'lattice',
+    image: '/assets/courses/agentic-ai-and-autonomous-ai-systems.jpg',
     outcomes: [
       'Design and build autonomous AI agents that plan, act and adapt toward a goal',
       'Apply tool calling and function calling to connect AI models to real APIs and data',
@@ -555,7 +555,7 @@ export const COURSES: Course[] = [
     enrolled: 0,
     statuses: [],
     instructorId: 'ins-aiit',
-    image: 'flow',
+    image: '/assets/courses/digital-marketing-fundamentals.jpg',
     outcomes: [
       'Understand the core channels of digital marketing and how they work together',
       'Apply on-page and off-page SEO fundamentals',
@@ -619,7 +619,7 @@ export const COURSES: Course[] = [
     enrolled: 0,
     statuses: [],
     instructorId: 'ins-aiit',
-    image: 'mesh',
+    image: '/assets/courses/it-business-management-fundamentals.jpg',
     outcomes: [
       'Understand core IT governance and IT service management frameworks',
       'Apply project management fundamentals to technology initiatives',

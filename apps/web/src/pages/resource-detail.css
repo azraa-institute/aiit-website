@@ -118,10 +118,20 @@
 /* ---------- Reading column + rail ---------- */
 .article-layout {
   display: grid;
+  /* minmax(0, 1fr), not the implicit `auto` track: an auto track grows to
+     its content's min-content width, so a wide table (nowrap headers) made
+     the whole page -- announcement bar, footer, everything -- wider than a
+     phone screen even though the table has its own overflow-x scroller. */
+  grid-template-columns: minmax(0, 1fr);
   gap: clamp(2rem, 1rem + 4vw, 4rem);
 }
 .article-body.prose {
   position: relative;
+  min-width: 0;
+  /* Explicit width: with `margin-inline: auto` a grid item is sized
+     fit-content (>= its min-content), so a wide table inside would push it
+     past the column even with minmax(0, 1fr) above. */
+  width: 100%;
   max-width: 84ch;
   margin-inline: auto;
 }

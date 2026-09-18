@@ -434,3 +434,17 @@
     margin-top: 4px;
   }
 }
+
+/* Popular-technology badges inline in a "Selected programmes" row (the
+   card version is absolutely positioned over a thumbnail; here there's no
+   thumbnail until hover, so they sit in the row itself). */
+.courses-index__row .course-card__logos {
+  position: static;
+  flex: none;
+  align-self: center;
+}
+.courses-index__row .course-card__logo-badge {
+  width: 26px;
+  height: 26px;
+  box-shadow: 0 0 0 1px var(--hairline);
+}

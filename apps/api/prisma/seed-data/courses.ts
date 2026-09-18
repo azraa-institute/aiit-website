@@ -40,7 +40,6 @@ export interface CourseSeed {
   durationLabel: string;
   rating: number;
   ratingCount: number;
-  enrolledCount: number;
   badges: ('featured' | 'new_badge' | 'hot' | 'special' | 'coming_soon')[];
   instructorId: string | null;
   image: string;
@@ -83,7 +82,6 @@ export const COURSES: CourseSeed[] = [
     durationLabel: '1 Month (40 Hours)',
     rating: 0,
     ratingCount: 0,
-    enrolledCount: 66,
     badges: ['hot'],
     instructorId: 'ins-aiit',
     image: '/assets/courses/generative-ai-and-large-language-models-llms.jpg',
@@ -153,7 +151,6 @@ export const COURSES: CourseSeed[] = [
     durationLabel: '1 Month (60 Hours)',
     rating: 0,
     ratingCount: 0,
-    enrolledCount: 76,
     badges: ['special', 'featured'],
     instructorId: 'ins-aiit',
     image: '/assets/courses/agentic-ai-and-autonomous-ai-systems.jpg',
@@ -214,7 +211,6 @@ export const COURSES: CourseSeed[] = [
     durationLabel: '1 Month (60 Hours)',
     rating: 0,
     ratingCount: 0,
-    enrolledCount: 60,
     badges: ['special'],
     instructorId: 'ins-aiit',
     image: '/assets/courses/data-sci-and-analytics.jpg',
@@ -279,7 +275,6 @@ export const COURSES: CourseSeed[] = [
     durationLabel: '1 Month (40 Hours)',
     rating: 4,
     ratingCount: 6,
-    enrolledCount: 295,
     badges: ['featured'],
     instructorId: 'ins-aiit',
     image: '/assets/courses/cloud-computing-fundamentals.jpg',
@@ -325,7 +320,6 @@ export const COURSES: CourseSeed[] = [
     durationLabel: '1 Month (60 Hours)',
     rating: 0,
     ratingCount: 0,
-    enrolledCount: 76,
     badges: ['featured', 'special'],
     instructorId: 'ins-aiit',
     image: '/assets/courses/cisco-ccna-cisco-certified-network-associate.jpg',
@@ -374,7 +368,6 @@ export const COURSES: CourseSeed[] = [
     durationLabel: '1 Month (40 Hours)',
     rating: 0,
     ratingCount: 0,
-    enrolledCount: 49,
     badges: ['hot'],
     instructorId: 'ins-aiit',
     image: '/assets/courses/ethical-hacking-cyber-security-by-aiit-network.jpg',
@@ -421,7 +414,6 @@ export const COURSES: CourseSeed[] = [
     durationLabel: '1 Month (40 Hours)',
     rating: 0,
     ratingCount: 0,
-    enrolledCount: 65,
     badges: ['featured'],
     instructorId: 'ins-aiit',
     image: '/assets/courses/edge-server-computing.jpg',
@@ -467,7 +459,6 @@ export const COURSES: CourseSeed[] = [
     durationLabel: '1 Month (40 Hours)',
     rating: 0,
     ratingCount: 0,
-    enrolledCount: 57,
     badges: ['hot'],
     instructorId: 'ins-aiit',
     image: '/assets/courses/quantum-computing-fundamentals.jpg',
@@ -513,7 +504,6 @@ export const COURSES: CourseSeed[] = [
     durationLabel: '1 Month (40 Hours)',
     rating: 0,
     ratingCount: 0,
-    enrolledCount: 70,
     badges: ['featured'],
     instructorId: 'ins-aiit',
     image: '/assets/courses/blockchain-technology.jpg',
@@ -574,7 +564,6 @@ export const COURSES: CourseSeed[] = [
     durationLabel: '1 Month (40 Hours)',
     rating: 0,
     ratingCount: 0,
-    enrolledCount: 0,
     badges: [],
     instructorId: 'ins-aiit',
     image: '/assets/courses/digital-marketing-fundamentals.jpg',
@@ -636,7 +625,6 @@ export const COURSES: CourseSeed[] = [
     durationLabel: '1 Month (40 Hours)',
     rating: 0,
     ratingCount: 0,
-    enrolledCount: 0,
     badges: [],
     instructorId: 'ins-aiit',
     image: '/assets/courses/it-business-management-fundamentals.jpg',
@@ -694,7 +682,6 @@ export const COURSES: CourseSeed[] = [
     durationLabel: '1 Month (3 Lectures)',
     rating: 0,
     ratingCount: 0,
-    enrolledCount: 50,
     badges: ['special'],
     instructorId: 'ins-aiit',
     image: '/assets/courses/digital-and-tech-literacy.jpg',

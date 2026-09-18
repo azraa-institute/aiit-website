@@ -27,7 +27,8 @@ const COURSE_LIST_SELECT = {
   durationLabel: true,
   rating: true,
   ratingCount: true,
-  enrolledCount: true,
+  // Real signups: non-cancelled enrollments, not a stored marketing number.
+  _count: { select: { enrollments: { where: { status: { not: 'cancelled' } } } } },
   badges: true,
   instructorId: true,
   image: true,
@@ -136,7 +137,7 @@ export class CoursesService {
       durationLabel: course.durationLabel,
       rating: course.rating.toNumber(),
       ratingCount: course.ratingCount,
-      enrolledCount: course.enrolledCount,
+      enrolledCount: course._count.enrollments,
       badges: course.badges.map(mapBadge),
       instructorId: course.instructorId,
       image: course.image,

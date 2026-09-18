@@ -16,6 +16,7 @@ export function discountPercent(price: number | null, was: number | null): numbe
 }
 
 export function formatEnrollment(n: number): string {
+  if (n <= 0) return 'New';
   if (n >= 1000) return `${(n / 1000).toFixed(n % 1000 === 0 ? 0 : 1)}k`;
   return String(n);
 }

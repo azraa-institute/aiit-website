@@ -94,7 +94,6 @@ function toCourseData(course: CourseSeed, categoryId: string, domainId: string |
     durationLabel: course.durationLabel,
     rating: course.rating,
     ratingCount: course.ratingCount,
-    enrolledCount: course.enrolledCount,
     badges: course.badges,
     instructorId: course.instructorId,
     image: course.image,

@@ -131,6 +131,7 @@ export function FeaturedCourses() {
                       {course.level} · {course.durationLabel || 'TBA'}
                     </span>
                   </span>
+                  <PopularLogoBadges technologies={course.technologies} />
                   <span className="courses-index__row-arrow" aria-hidden="true">
                     <Arrow />
                   </span>

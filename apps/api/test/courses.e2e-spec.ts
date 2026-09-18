@@ -57,7 +57,6 @@ describe('Courses (e2e)', () => {
         durationLabel: '10 Hours',
         rating: 4.5,
         ratingCount: 3,
-        enrolledCount: 1,
         badges: ['featured'],
         image: '/e2e-course.jpg',
         outcomes: [],
@@ -71,6 +70,17 @@ describe('Courses (e2e)', () => {
     });
     courseId = course.id;
 
+    // Two live enrollments and one cancelled: the public "enrolled" figure
+    // must count only the first two (user ids are arbitrary uuids -- there's
+    // no FK to auth.users on this table).
+    await prisma.enrollment.createMany({
+      data: [
+        { userId: '00000000-0000-4000-8000-0000000000a1', courseId, status: 'active' },
+        { userId: '00000000-0000-4000-8000-0000000000a2', courseId, status: 'completed' },
+        { userId: '00000000-0000-4000-8000-0000000000a3', courseId, status: 'cancelled' },
+      ],
+    });
+
     await prisma.courseModule.create({
       data: {
         courseId,
@@ -82,6 +92,7 @@ describe('Courses (e2e)', () => {
   });
 
   afterAll(async () => {
+    await prisma.enrollment.deleteMany({ where: { courseId } }).catch(() => undefined);
     await prisma.course.delete({ where: { id: courseId } }).catch(() => undefined);
     await prisma.courseCategory.delete({ where: { id: categoryId } }).catch(() => undefined);
     await prisma.courseDomain.delete({ where: { id: domainId } }).catch(() => undefined);
@@ -102,12 +113,13 @@ describe('Courses (e2e)', () => {
       categoryName: 'E2E Category',
       price: { usdCents: 10000, amountCents: 10000, currency: 'USD' },
       badges: ['featured'],
+      enrolledCount: 2,
     });
   });
 
   it('GET /courses/:slug returns the full detail payload', async () => {
     const res = await request(app.getHttpServer()).get('/courses/e2e-course').expect(200);
-    expect(res.body).toMatchObject({ slug: 'e2e-course', description: 'description' });
+    expect(res.body).toMatchObject({ slug: 'e2e-course', description: 'description', enrolledCount: 2 });
   });
 
   it('GET /courses/:slug returns 404 for an unknown slug', () => {

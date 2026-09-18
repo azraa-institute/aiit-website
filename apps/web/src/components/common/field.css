@@ -29,6 +29,22 @@
   background: rgba(244, 239, 231, 0.06);
   border-color: var(--line-invert);
 }
+/* The <select> popup's own option list (WebinarPage's "Where are you
+   joining from?", etc.) is a separate, often OS-native-rendered surface
+   -- .on-ink's color-scheme: dark (tokens.css) is meant to theme it
+   automatically, but that's inconsistently honoured across browsers once
+   the select itself also carries a custom translucent background, per a
+   live report: the popup rendered with its default light background,
+   while the text stayed the light --fg this rule sets for the closed
+   box -- light text on a light popup, unreadable. Setting real colors
+   directly on <option> is the one thing every browser actually respects
+   for a native popup's non-hovered rows (the currently-hovered/selected
+   row's own highlight color is OS-native and not something CSS can
+   override, independent of this). */
+.on-ink .field__control option {
+  background-color: var(--ink);
+  color: var(--ivory);
+}
 
 .field__control::placeholder {
   color: var(--fg-faint);

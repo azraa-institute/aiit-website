@@ -1,4 +1,4 @@
-import { Fragment, useCallback, useEffect, useId, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useId, useMemo, useRef, useState } from 'react';
 import type { ReactNode } from 'react';
 import type { LegalBookPage, LegalDoc, LegalSection } from '@/data/legal/types';
 import { useReducedMotion } from '@/lib/useReducedMotion';
@@ -8,29 +8,49 @@ import { Logo } from '@/components/layout/Logo';
 import { SITE } from '@/data/site';
 import './legal-book.css';
 
-/** Turns a real occurrence of the org's contact email in plain paragraph/
- * closing text into a working mailto: link -- privacy.ts/terms.ts
- * interpolate SITE.contact.email into a handful of sentences ("contact us
- * at info@aiit.network") as plain strings, so this is where it actually
- * becomes clickable rather than looking like a link and doing nothing.
- * Matches the exact known address rather than a general email regex,
- * since guessing at "anything email-shaped" in legal text is exactly the
- * kind of thing that can misfire on an example address quoted for some
- * other reason. */
-function linkifyEmail(text: string): ReactNode {
-  const email = SITE.contact.email;
-  if (!text.includes(email)) return text;
-  const parts = text.split(email);
-  return parts.map((part, i) => (
-    <Fragment key={i}>
-      {part}
-      {i < parts.length - 1 && (
-        <a className="legalbook__link" href={`mailto:${email}`}>
-          {email}
-        </a>
-      )}
-    </Fragment>
-  ));
+/** Turns real occurrences of the org's contact email and site URL in
+ * plain paragraph/closing text into working links -- privacy.ts/terms.ts
+ * interpolate SITE.contact.email and SITE.url into a handful of
+ * sentences ("contact us at info@aiit.network", "operating
+ * https://aiit.network", and privacy.ts's closing line, which has both
+ * in the same string) as plain strings, so this is where they actually
+ * become clickable rather than looking like links and doing nothing.
+ * Matches the exact known strings rather than general email/URL regexes,
+ * since guessing at "anything address- or link-shaped" in legal text is
+ * exactly the kind of thing that can misfire on an example quoted for
+ * some other reason. The site URL opens in a new tab -- it's a citation
+ * to the site's own homepage inside a sentence, not an invitation to
+ * leave; a same-tab link would otherwise navigate the reader away from
+ * the document they're in the middle of reading. */
+function linkifyContacts(text: string): ReactNode {
+  const targets: { match: string; href: string; external: boolean }[] = [
+    { match: SITE.contact.email, href: `mailto:${SITE.contact.email}`, external: false },
+    { match: SITE.url, href: SITE.url, external: true },
+  ];
+  let pieces: ReactNode[] = [text];
+  targets.forEach(({ match, href, external }) => {
+    pieces = pieces.flatMap((piece, i) => {
+      if (typeof piece !== 'string' || !piece.includes(match)) return [piece];
+      const segments = piece.split(match);
+      return segments.flatMap((seg, segIndex) => {
+        const out: ReactNode[] = seg ? [seg] : [];
+        if (segIndex < segments.length - 1) {
+          out.push(
+            <a
+              className="legalbook__link"
+              href={href}
+              key={`${match}-${i}-${segIndex}`}
+              {...(external ? { target: '_blank', rel: 'noopener noreferrer' } : {})}
+            >
+              {match}
+            </a>,
+          );
+        }
+        return out;
+      });
+    });
+  });
+  return pieces;
 }
 
 function folio(i: number): string {
@@ -87,7 +107,7 @@ function SectionBody({ section }: { section: LegalSection }) {
   return (
     <div className="legalbook__section" key={section.id}>
       <h3 className="legalbook__section-title">{section.title}</h3>
-      {section.lead && <p className="legalbook__lead">{section.lead}</p>}
+      {section.lead && <p className="legalbook__lead">{linkifyContacts(section.lead)}</p>}
       {section.groups && (
         <div className="legalbook__groups">
           {section.groups.map((g) => (
@@ -110,7 +130,7 @@ function SectionBody({ section }: { section: LegalSection }) {
         </ul>
       )}
       {section.paragraphs?.map((p) => (
-        <p key={p}>{linkifyEmail(p)}</p>
+        <p key={p}>{linkifyContacts(p)}</p>
       ))}
       {section.clause && (
         <p className="legalbook__clause">
@@ -359,7 +379,7 @@ export function LegalBook({ doc, pages }: { doc: LegalDoc; pages: LegalBookPage[
                       {page === total &&
                         doc.closing.map((line) => (
                           <p className="legalbook__closing" key={line}>
-                            {linkifyEmail(line)}
+                            {linkifyContacts(line)}
                           </p>
                         ))}
                     </div>

@@ -12,7 +12,6 @@ import {
 } from '@/data/ecosystem';
 import { SITE } from '@/data/site';
 import { COURSES } from '@/data/courses';
-import { COURSE_CATEGORIES } from '@/data/technologies';
 import { Section } from '@/components/primitives/Section';
 import { Button } from '@/components/primitives/Button';
 import { REASON_ICONS } from './WhyJoinIcons';
@@ -25,14 +24,14 @@ import './why-join-page.css';
 const DISCIPLINES = ['AI Engineering', 'Data Science', 'Cyber Security', 'Cloud Computing', 'Blockchain', 'Cisco CCNA'];
 
 const TRACK_SLUGS = [
-  'ai-engineering-associate-ai-engineer',
+  'agentic-ai-and-autonomous-ai-systems',
   'data-science-and-analytics',
   'generative-ai-and-large-language-models-llms',
   'ethical-hacking-and-cyber-security',
   'cisco-ccna-cisco-certified-network-associate',
   'cloud-computing-fundamentals',
-  'edge-computing',
-  'blockchain-technology',
+  'edge-computing-and-iot-systems',
+  'blockchain-technology-and-web3-fundamentals',
 ];
 
 /** Icon per WHY_JOIN_REASONS entry, in the same 01–07 order. */
@@ -158,7 +157,7 @@ export default function WhyJoinPage() {
 
           <ol className="wj-tracks" role="list">
             {tracks.map((c, i) => {
-              const category = COURSE_CATEGORIES.find((cat) => cat.id === c!.categoryId)?.name;
+              const category = c!.categoryId;
               return (
                 <li key={c!.id} data-reveal style={{ '--reveal-delay': `${i * 45}ms` } as React.CSSProperties}>
                   <Link to={`/courses/${c!.slug}`} className="wj-tracks__row">

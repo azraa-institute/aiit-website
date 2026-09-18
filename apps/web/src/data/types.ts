@@ -5,7 +5,14 @@
    CMS / WordPress REST / LMS API without touching the UI.
    ============================================================ */
 
-export type CourseLevel = 'Beginner' | 'Intermediate' | 'Advanced' | 'All levels';
+export type CourseLevel =
+  | 'Beginner'
+  | 'Intermediate'
+  | 'Advanced'
+  | 'All levels'
+  | 'Absolute Beginner'
+  | 'Beginner–Intermediate'
+  | 'Intermediate–Advanced';
 
 export type CourseStatus = 'featured' | 'new' | 'hot' | 'special' | 'coming-soon';
 
@@ -49,11 +56,23 @@ export interface CurriculumModule {
   topics: string[];
 }
 
+/** "What you'll explore" -- a structured technology/tool/concept entry on a course's detail page. Mirrors @aiit/shared's CourseTechnology. */
+export interface CourseTechnology {
+  name: string;
+  type: 'platform' | 'framework' | 'tool' | 'library' | 'language' | 'protocol' | 'concept';
+  /** Key into components/course/TechIcons.tsx's icon set. */
+  icon: string;
+  tier?: 'core' | 'optional';
+}
+
 export interface Course {
   id: string;
   slug: string;
   title: string;
   categoryId: string;
+  /** The catalogue's top-level Category slug/name -- see data/catalogueCategories.ts. What CourseCard shows above the title. */
+  catalogueCategorySlug: string;
+  catalogueCategoryName: string;
   domainId: string | null;
   summary: string;
   description: string;
@@ -80,8 +99,10 @@ export interface Course {
   requirements: string[];
   /** "Intended audience" list from aiit.network. */
   audience: string[];
-  /** "Tools Covered" list from aiit.network. */
+  /** Superseded by `technologies` below for display -- kept for backward compatibility, no longer rendered. */
   toolsCovered: string[];
+  /** "What you'll explore" -- structured technology/tool list, course-detail only. */
+  technologies: CourseTechnology[];
   curriculum: CurriculumModule[];
   certification: string;
   publishedAt: string;

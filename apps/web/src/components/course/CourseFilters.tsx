@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { TECHNOLOGY_DOMAINS } from '@/data/technologies';
+import { CATALOGUE_CATEGORIES } from '@/data/catalogueCategories';
 import { COURSES } from '@/data/courses';
 import { cn } from '@/lib/cn';
 import { useLockBodyScroll } from '@/lib/useLockBodyScroll';
@@ -8,8 +8,8 @@ import './course-filters.css';
 
 export interface CourseQuery {
   q: string;
-  /** Comma-joined values for multi-select categories; '' = no filter. */
-  domain: string;
+  /** Comma-joined catalogue-category slugs; '' = no filter. */
+  category: string;
   level: string;
   status: string;
   pricing: string;
@@ -18,7 +18,7 @@ export interface CourseQuery {
 
 export const DEFAULT_QUERY: CourseQuery = {
   q: '',
-  domain: '',
+  category: '',
   level: '',
   status: '',
   pricing: '',
@@ -64,17 +64,15 @@ interface CourseFiltersProps {
   onReset: () => void;
 }
 
-/** Domains that actually have at least one course in the catalogue. */
-const DOMAIN_IDS_WITH_COURSES = new Set(COURSES.map((c) => c.domainId));
-const DOMAINS_WITH_COURSES = TECHNOLOGY_DOMAINS.filter((d) =>
-  DOMAIN_IDS_WITH_COURSES.has(d.id),
-).sort((a, b) => a.order - b.order);
+/** Catalogue categories that actually have at least one course. */
+const CATEGORY_SLUGS_WITH_COURSES = new Set(COURSES.map((c) => c.catalogueCategorySlug));
+const CATEGORIES_WITH_COURSES = CATALOGUE_CATEGORIES.filter((c) => CATEGORY_SLUGS_WITH_COURSES.has(c.slug));
 
 const activeCount = (q: CourseQuery) =>
-  toList(q.domain).length + toList(q.level).length + toList(q.status).length + toList(q.pricing).length;
+  toList(q.category).length + toList(q.level).length + toList(q.status).length + toList(q.pricing).length;
 
 const LABELS = {
-  domain: (v: string) => DOMAINS_WITH_COURSES.find((d) => d.slug === v)?.name ?? v,
+  category: (v: string) => CATEGORIES_WITH_COURSES.find((c) => c.slug === v)?.name ?? v,
   level: (v: string) => v,
   status: (v: string) => STATUSES.find((s) => s.value === v)?.label ?? v,
   pricing: (v: string) => PRICING.find((p) => p.value === v)?.label ?? v,
@@ -122,7 +120,7 @@ export function CourseFilters({ query, onChange, onReset }: CourseFiltersProps) 
   useLockBodyScroll(sheetOpen);
 
   const selectedChips = (
-    ['domain', 'level', 'status', 'pricing'] as const
+    ['category', 'level', 'status', 'pricing'] as const
   ).flatMap((key) => toList(query[key]).map((value) => ({ key, value })));
 
   return (
@@ -158,16 +156,16 @@ export function CourseFilters({ query, onChange, onReset }: CourseFiltersProps) 
 
       <div className="course-toolbar__row">
         <div className="course-quickchips">
-          <Chip active={!query.domain} onClick={() => onChange({ domain: '' })}>
+          <Chip active={!query.category} onClick={() => onChange({ category: '' })}>
             All
           </Chip>
-          {DOMAINS_WITH_COURSES.map((d) => (
+          {CATEGORIES_WITH_COURSES.map((c) => (
             <Chip
-              key={d.id}
-              active={toList(query.domain).includes(d.slug)}
-              onClick={() => onChange({ domain: toggled(query.domain, d.slug) })}
+              key={c.slug}
+              active={toList(query.category).includes(c.slug)}
+              onClick={() => onChange({ category: toggled(query.category, c.slug) })}
             >
-              {d.name}
+              {c.name}
             </Chip>
           ))}
         </div>
@@ -287,14 +285,14 @@ function FilterGroups({
 }) {
   return (
     <>
-      <CheckGroup label="Domain">
-        {DOMAINS_WITH_COURSES.map((d) => (
+      <CheckGroup label="Category">
+        {CATEGORIES_WITH_COURSES.map((c) => (
           <Check
-            key={d.id}
-            checked={toList(query.domain).includes(d.slug)}
-            onChange={() => onChange({ domain: toggled(query.domain, d.slug) })}
+            key={c.slug}
+            checked={toList(query.category).includes(c.slug)}
+            onChange={() => onChange({ category: toggled(query.category, c.slug) })}
           >
-            {d.name}
+            {c.name}
           </Check>
         ))}
       </CheckGroup>

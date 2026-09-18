@@ -122,6 +122,15 @@ enum CourseLevel {
   intermediate
   advanced
   all_levels // API response DTO maps this to the frontend's "All levels"
+  // Added for the 2026-09 catalogue taxonomy update -- several programmes
+  // deliberately span two levels (e.g. Cisco CCNA reads "Beginner–Intermediate").
+  // Postgres can't use a value added by ALTER TYPE ... ADD VALUE in the same
+  // transaction that adds it, so these are introduced in their own migration
+  // (20260919000000_course_level_extra_values) ahead of the migration that
+  // actually assigns them to any course.
+  absolute_beginner
+  beginner_intermediate
+  intermediate_advanced
 
   @@schema("public")
 }
@@ -204,6 +213,32 @@ model Course {
   category         CourseCategory        @relation(fields: [categoryId], references: [id])
   domainId         String?               @map("domain_id") @db.Uuid
   domain           CourseDomain?         @relation(fields: [domainId], references: [id])
+  // The catalogue's top-level "Category" (Artificial Intelligence & Intelligent
+  // Systems, Cybersecurity & Networking, etc.) -- deliberately separate from
+  // CourseDomain/CourseCategory above rather than folded into either: CourseDomain
+  // is the older, decorative "technology domain" concept (homepage focus rail,
+  // Plate motif art, its own icon per domain) and several of its rows don't map
+  // 1:1 onto the new taxonomy (Edge Computing and Quantum Computing become one
+  // catalogue category, "Emerging & Advanced Computing", but stay two separate,
+  // untouched CourseDomain rows so the homepage rail keeps its five distinct
+  // domains). CourseCategory.name became the new "Subcategory" instead (e.g.
+  // "Networking" / "Cybersecurity", split out of the old shared "Networking &
+  // Cybersecurity" category). A plain slug string, not a CatalogueCategory enum
+  // or its own table -- the fixed set of 9 category slugs/names lives in
+  // @aiit/shared's CATALOGUE_CATEGORIES so backend and frontend share one
+  // definition without a schema migration every time copy changes.
+  // Nullable: a course row this migration doesn't know about (there
+  // shouldn't be one, but nothing guarantees it) simply falls back to a
+  // generic label via catalogue.mappers.ts's mapCatalogueCategory rather
+  // than being unable to load at all.
+  catalogueCategory String?              @map("catalogue_category")
+  // Structured "What you'll explore" data for the course-detail page --
+  // CourseTechnology[] (see @aiit/shared): { name, type, icon, tier? }. Kept as
+  // a single JSON column rather than a join table since it's small, per-course,
+  // and has no independent identity of its own (nothing else references a
+  // single technology row) -- the existing toolsCovered TEXT[] below stays for
+  // backward compatibility but is no longer what the detail page renders.
+  technologies     Json                  @default("[]")
   summary          String
   description      String
   priceUsdCents    Int?                  @map("price_usd_cents") // null = members/subscription only; USD is the sole canonical price, no per-currency columns

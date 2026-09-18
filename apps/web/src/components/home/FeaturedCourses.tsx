@@ -93,7 +93,7 @@ export function FeaturedCourses() {
                   <span aria-hidden="true" />
                 </p>
               )}
-              <p className="courses-index__category">{featuredDomain?.name ?? 'Programme'}</p>
+              <p className="courses-index__category">{featured.catalogueCategoryName}</p>
               <h3 className="courses-index__feature-title">
                 <Link to={`/courses/${featured.slug}`}>{featured.title}</Link>
               </h3>
@@ -123,7 +123,7 @@ export function FeaturedCourses() {
                     {String(i + 2).padStart(2, '0')}
                   </span>
                   <span className="courses-index__row-body">
-                    <span className="courses-index__row-category">{domain?.name ?? 'Programme'}</span>
+                    <span className="courses-index__row-category">{course.catalogueCategoryName}</span>
                     <span className="courses-index__row-title">{course.title}</span>
                     <span className="courses-index__row-facts">
                       {course.level} · {course.durationLabel || 'TBA'}

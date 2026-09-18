@@ -9,13 +9,14 @@ import type {
 } from '@aiit/shared';
 import { PrismaService } from '../../common/prisma/prisma.service';
 import { CurrencyService, type CurrencyRequestLike } from '../../common/currency/currency.service';
-import { mapBadge, mapDomain, mapLevel } from './catalogue.mappers';
+import { mapBadge, mapCatalogueCategory, mapDomain, mapLevel, mapTechnologies } from './catalogue.mappers';
 
 const COURSE_LIST_SELECT = {
   id: true,
   slug: true,
   title: true,
   category: { select: { name: true } },
+  catalogueCategory: true,
   domain: true,
   summary: true,
   priceUsdCents: true,
@@ -40,6 +41,7 @@ const COURSE_DETAIL_SELECT = {
   requirements: true,
   audience: true,
   toolsCovered: true,
+  technologies: true,
   certification: true,
 } satisfies Prisma.CourseSelect;
 
@@ -81,6 +83,7 @@ export class CoursesService {
       requirements: course.requirements,
       audience: course.audience,
       toolsCovered: course.toolsCovered,
+      technologies: mapTechnologies(course.technologies),
       certification: course.certification,
     };
   }
@@ -120,6 +123,7 @@ export class CoursesService {
       slug: course.slug,
       title: course.title,
       categoryName: course.category.name,
+      catalogueCategory: mapCatalogueCategory(course.catalogueCategory),
       domain: course.domain ? mapDomain(course.domain) : null,
       summary: course.summary,
       price,

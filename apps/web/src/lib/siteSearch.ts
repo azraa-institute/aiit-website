@@ -1,7 +1,6 @@
 import { COURSES } from '@/data/courses';
 import { RESOURCES } from '@/data/resources';
 import { FAQS } from '@/data/faqs';
-import { getDomain } from '@/data/technologies';
 
 export type SearchType = 'Course' | 'Article' | 'Page' | 'FAQ';
 
@@ -34,9 +33,9 @@ const INDEX: SearchResult[] = [
     id: c.id,
     type: 'Course' as const,
     title: c.title,
-    subtitle: getDomain(c.domainId)?.name,
+    subtitle: c.catalogueCategoryName,
     to: `/courses/${c.slug}`,
-    hay: `${c.title} ${c.summary} ${c.description} ${getDomain(c.domainId)?.name ?? ''}`.toLowerCase(),
+    hay: `${c.title} ${c.summary} ${c.description} ${c.catalogueCategoryName} ${c.categoryId}`.toLowerCase(),
   })),
   ...RESOURCES.map((r) => ({
     id: r.id,

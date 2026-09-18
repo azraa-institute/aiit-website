@@ -15,7 +15,9 @@ function baseFields(item: CourseListItem) {
     id: item.id,
     slug: item.slug,
     title: item.title,
-    categoryId: '',
+    categoryId: item.categoryName,
+    catalogueCategorySlug: item.catalogueCategory.slug,
+    catalogueCategoryName: item.catalogueCategory.name,
     domainId: item.domain?.slug ?? null,
     summary: item.summary,
     price: item.price.amountCents,
@@ -46,6 +48,7 @@ function toCourseListEntry(item: CourseListItem): Course {
     requirements: [],
     audience: [],
     toolsCovered: [],
+    technologies: [],
     certification: '',
   };
 }
@@ -58,6 +61,7 @@ function toCourseDetailEntry(item: CourseDetail): Course {
     requirements: item.requirements,
     audience: item.audience,
     toolsCovered: item.toolsCovered,
+    technologies: item.technologies,
     certification: item.certification,
   };
 }

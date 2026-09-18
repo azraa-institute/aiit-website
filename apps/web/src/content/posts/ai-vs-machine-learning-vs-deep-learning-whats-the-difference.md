@@ -314,7 +314,7 @@ tags: ["AI", "AI Careers", "AI Engineering", "AI for Beginners"]
 
 <p>Understanding the difference between AI, machine learning and deep learning is only the beginning.</p>
 
-<p>If you want to move from theory into practical AI engineering, explore the <strong><a href="/courses/ai-engineering-associate-ai-engineer/">AI Engineering programme</a> from AIIT Network</strong>.</p>
+<p>If you want to move from theory into practical AI engineering, explore the <strong><a href="/courses/agentic-ai-and-autonomous-ai-systems/">Agentic AI & Autonomous AI Systems programme</a> from AIIT Network</strong>.</p>
 
 <p>AIIT Network, the preferred technology education platform, provides practical learning opportunities for people who want to develop relevant technology skills for the evolving digital economy.</p>
 

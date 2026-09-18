@@ -12,7 +12,7 @@ import {
 } from '@/components/course/CourseFilters';
 import { filterAndSortCourses } from '@/lib/filterCourses';
 import { Button } from '@/components/primitives/Button';
-import { getDomain, TECHNOLOGY_DOMAINS } from '@/data/technologies';
+import { CATALOGUE_CATEGORIES } from '@/data/catalogueCategories';
 import type { Course } from '@/data/types';
 import './courses-page.css';
 
@@ -61,7 +61,7 @@ export default function CoursesPage() {
   const query: CourseQuery = useMemo(
     () => ({
       q: params.get('q') ?? DEFAULT_QUERY.q,
-      domain: params.get('domain') ?? DEFAULT_QUERY.domain,
+      category: params.get('category') ?? DEFAULT_QUERY.category,
       level: params.get('level') ?? DEFAULT_QUERY.level,
       status: params.get('status') ?? DEFAULT_QUERY.status,
       pricing: params.get('pricing') ?? DEFAULT_QUERY.pricing,
@@ -90,17 +90,17 @@ export default function CoursesPage() {
   const courseList = useCourseList();
   const allCourses = courseList.status === 'ready' ? courseList.courses : NO_COURSES;
   const results = useMemo(() => filterAndSortCourses(allCourses, query), [allCourses, query]);
-  useScrollReveal([results.length, query.domain, query.sort, page, view]);
+  useScrollReveal([results.length, query.category, query.sort, page, view]);
 
   // Reset to page 1 whenever the query changes (a new filter/sort/search
   // should always land on the top of the results, not wherever the reader
   // happened to be paging) -- and actually scroll there. Picking a filter
-  // from "Explore AIIT" (near the footer) against a domain with very few
+  // from "Explore AIIT" (near the footer) against a category with very few
   // courses previously left the reader stranded past the end of the new,
   // much shorter results at their old scroll position -- ScrollToTop.tsx
   // only resets scroll on pathname/hash changes, and this page's filters
   // are query-string-only, so it never fired. Skipped on the very first
-  // render (e.g. a direct link to /courses?domain=x) since the page is
+  // render (e.g. a direct link to /courses?category=x) since the page is
   // already at the top then; only real, in-page filter changes should
   // trigger this.
   const didMountRef = useRef(false);
@@ -119,15 +119,15 @@ export default function CoursesPage() {
   const start = (currentPage - 1) * pageSize;
   const pageItems = results.slice(start, start + pageSize);
 
-  const domainCounts = useMemo(() => {
+  const categoryCounts = useMemo(() => {
     const counts = new Map<string, number>();
     allCourses.forEach((c) => {
-      const d = getDomain(c.domainId);
-      if (d) counts.set(d.slug, (counts.get(d.slug) ?? 0) + 1);
+      counts.set(c.catalogueCategorySlug, (counts.get(c.catalogueCategorySlug) ?? 0) + 1);
     });
-    return TECHNOLOGY_DOMAINS.filter((d) => (counts.get(d.slug) ?? 0) > 0)
-      .sort((a, b) => a.order - b.order)
-      .map((d) => ({ domain: d, count: counts.get(d.slug) ?? 0 }));
+    return CATALOGUE_CATEGORIES.filter((c) => (counts.get(c.slug) ?? 0) > 0).map((c) => ({
+      category: c,
+      count: counts.get(c.slug) ?? 0,
+    }));
   }, [allCourses]);
 
   return (
@@ -262,18 +262,18 @@ export default function CoursesPage() {
           </>
         )}
 
-        {domainCounts.length > 1 && (
+        {categoryCounts.length > 1 && (
           <section className="courses-explore" data-reveal>
             <p className="courses-explore__label">Explore AIIT</p>
             <ul className="courses-explore__list" role="list">
-              {domainCounts.map(({ domain, count }) => (
-                <li key={domain.id}>
+              {categoryCounts.map(({ category, count }) => (
+                <li key={category.slug}>
                   <button
                     type="button"
                     className="courses-explore__item"
-                    onClick={() => patch({ domain: domain.slug })}
+                    onClick={() => patch({ category: category.slug })}
                   >
-                    <span className="courses-explore__name">{domain.name}</span>
+                    <span className="courses-explore__name">{category.name}</span>
                     <span className="courses-explore__count">
                       {count} {count === 1 ? 'course' : 'courses'}
                     </span>

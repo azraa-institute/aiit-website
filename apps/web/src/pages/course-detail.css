@@ -200,6 +200,42 @@
   border-radius: var(--radius-pill);
 }
 
+/* "What you'll explore" -- same restrained pill as .course-detail__tools
+   above, an icon added without growing the chip's visual weight. */
+.course-detail__tech-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.course-detail__tech-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: var(--fs-sm);
+  padding: var(--space-2) var(--space-4);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-pill);
+  color: var(--ink-soft);
+}
+.course-detail__tech-icon {
+  display: inline-flex;
+  color: var(--fg-faint);
+}
+.course-detail__tech-note {
+  margin: var(--space-4) 0 var(--space-2);
+  font-size: var(--fs-xs);
+  font-weight: 700;
+  letter-spacing: var(--tracking-wide);
+  text-transform: uppercase;
+  color: var(--fg-faint);
+}
+.course-detail__tech-list--optional .course-detail__tech-chip {
+  opacity: 0.72;
+}
+
 .course-detail__modules {
   border-top: 1px solid var(--hairline);
 }

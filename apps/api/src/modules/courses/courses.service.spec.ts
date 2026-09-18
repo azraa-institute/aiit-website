@@ -25,7 +25,8 @@ const COURSE_ROW = {
   id: 'crs-1',
   slug: 'ai-engineering',
   title: 'AI Engineering',
-  category: { name: 'Artificial Intelligence' },
+  category: { name: 'Generative & Agentic AI' },
+  catalogueCategory: 'artificial-intelligence-intelligent-systems',
   domain: DOMAIN,
   summary: 'A comprehensive foundation in AI Engineering.',
   priceUsdCents: 18000,
@@ -89,7 +90,11 @@ describe('CoursesService', () => {
           id: 'crs-1',
           slug: 'ai-engineering',
           title: 'AI Engineering',
-          categoryName: 'Artificial Intelligence',
+          categoryName: 'Generative & Agentic AI',
+          catalogueCategory: {
+            slug: 'artificial-intelligence-intelligent-systems',
+            name: 'Artificial Intelligence & Intelligent Systems',
+          },
           domain: {
             id: 'dom-1',
             slug: 'artificial-intelligence',
@@ -166,6 +171,7 @@ describe('CoursesService', () => {
         requirements: ['Requirement one'],
         audience: ['Audience one'],
         toolsCovered: ['Tool one'],
+        technologies: [{ name: 'Claude', type: 'platform', icon: 'spark', tier: 'core' }],
         certification: 'Certificate included.',
         publishedAt: new Date('2026-06-19T00:00:00.000Z'),
       });
@@ -177,6 +183,7 @@ describe('CoursesService', () => {
       );
       expect(result.description).toBe('Full description.');
       expect(result.outcomes).toEqual(['Outcome one']);
+      expect(result.technologies).toEqual([{ name: 'Claude', type: 'platform', icon: 'spark', tier: 'core' }]);
       expect(result.publishedAt).toBe('2026-06-19T00:00:00.000Z');
     });
 

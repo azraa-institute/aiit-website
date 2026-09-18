@@ -1,42 +1,48 @@
 import type { Course } from '@/data/types';
-import { getDomain } from '@/data/technologies';
 import type { CourseQuery } from '@/components/course/CourseFilters';
 
 const FEATURED_ORDER = [
-  'crs-ai-engineering',
+  'crs-agentic-ai',
   'crs-genai-llm',
   'crs-data-science',
   'crs-cloud-fundamentals',
-  'crs-edge-computing',
+  'crs-edge-iot',
   'crs-quantum-fundamentals',
   'crs-ethical-hacking',
   'crs-ccna',
-  'crs-blockchain',
+  'crs-blockchain-web3',
 ];
 
 /** Query fields for multi-select categories are comma-joined slugs/values
- * (e.g. domain: "ai,cloud-computing") -- empty string means "no filter". */
+ * (e.g. category: "cybersecurity-networking,cloud-computing-devops") --
+ * empty string means "no filter". */
 function toList(v: string): string[] {
   return v ? v.split(',').filter(Boolean) : [];
 }
 
+/** A composite level ("Intermediate–Advanced") matches a filter for either
+ * half it's built from, not just an exact string match -- so picking
+ * "Intermediate" in the Level filter still surfaces a course whose level
+ * genuinely spans Intermediate and Advanced. */
+function levelMatches(courseLevel: string, selected: string[]): boolean {
+  return selected.some((l) => courseLevel === l || courseLevel.includes(l));
+}
+
 export function filterAndSortCourses(courses: Course[], q: CourseQuery): Course[] {
   const term = q.q.trim().toLowerCase();
-  const domains = toList(q.domain);
+  const categories = toList(q.category);
   const levels = toList(q.level);
   const statuses = toList(q.status);
   const pricings = toList(q.pricing);
 
   let out = courses.filter((c) => {
-    if (domains.length) {
-      const d = getDomain(c.domainId);
-      if (!d || !domains.includes(d.slug)) return false;
-    }
-    if (levels.length && !levels.includes(c.level)) return false;
+    if (categories.length && !categories.includes(c.catalogueCategorySlug)) return false;
+    if (levels.length && !levelMatches(c.level, levels)) return false;
     if (statuses.length && !statuses.some((s) => c.statuses.includes(s as Course['statuses'][number]))) return false;
     if (pricings.length && !pricings.includes(c.pricing)) return false;
     if (term) {
-      const hay = `${c.title} ${c.summary} ${c.description} ${getDomain(c.domainId)?.name ?? ''}`.toLowerCase();
+      const hay =
+        `${c.title} ${c.summary} ${c.description} ${c.catalogueCategoryName} ${c.categoryId}`.toLowerCase();
       if (!hay.includes(term)) return false;
     }
     return true;

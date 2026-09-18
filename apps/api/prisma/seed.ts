@@ -1,4 +1,4 @@
-import { PrismaClient } from '@prisma/client';
+import { PrismaClient, type Prisma } from '@prisma/client';
 import { DOMAINS } from './seed-data/domains';
 import { CATEGORIES } from './seed-data/categories';
 import { COURSES, type CourseSeed } from './seed-data/courses';
@@ -82,6 +82,8 @@ function toCourseData(course: CourseSeed, categoryId: string, domainId: string |
     title: course.title,
     categoryId,
     domainId,
+    catalogueCategory: course.catalogueCategory,
+    technologies: course.technologies as unknown as Prisma.InputJsonValue,
     summary: course.summary,
     description: course.description,
     priceUsdCents: course.priceUsdCents,

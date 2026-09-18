@@ -22,17 +22,27 @@ const STATUS_LABEL: Record<string, string> = {
  * small highlights and the focus outline. All values are deep and desaturated
  * so the page stays black / cream / charcoal; nothing reads as a colour block.
  */
+// Keyed by both forms a course's `domainId` can arrive in: the API path
+// (CoursesPage.data.ts) sets it to the DB's own CourseDomain.slug, while the
+// static-data path (FeaturedCourses/WhyJoinPage, sourced straight from
+// data/courses.ts) uses that same file's shorter `id` values -- getDomain()
+// in data/technologies.ts already resolves either form for the same reason.
 const DOMAIN_ACCENT: Record<string, string> = {
   'artificial-intelligence': '#42566d', // muted cobalt
-  'data-science': '#584a6a', // muted violet
+  'data-analytics-data-science': '#584a6a', // muted violet
+  'data-science': '#584a6a',
   'cloud-computing': '#4a6a68', // muted teal
   'quantum-computing': '#4a4d76', // restrained indigo
   'edge-computing': '#466070', // slate blue
-  cybersecurity: '#6e3b40', // deep burgundy
-  blockchain: '#8a6a45', // bronze
+  'networking-cybersecurity': '#6e3b40', // deep burgundy
+  cybersecurity: '#6e3b40',
+  'blockchain-technology': '#8a6a45', // bronze
+  blockchain: '#8a6a45',
   'software-development': '#4a6a56', // muted green
-  'digital-literacy': '#9a7b4f', // brass
-  design: '#95693f', // warm amber
+  'digital-tech-literacy': '#9a7b4f', // brass
+  'digital-literacy': '#9a7b4f',
+  'graphic-web-design': '#95693f', // warm amber
+  design: '#95693f',
 };
 const accentFor = (domainId: string | null) =>
   (domainId && DOMAIN_ACCENT[domainId]) || 'var(--brass)';
@@ -122,7 +132,7 @@ export function CourseCard({ course, layout = 'grid', index }: CourseCardProps) 
 
       <div className="course-card__body">
         <div className="course-card__meta">
-          <span className="course-card__category">{domain?.name ?? 'Technology'}</span>
+          <span className="course-card__category">{course.catalogueCategoryName}</span>
           {primaryStatus && (
             <span className={cn('tag', comingSoon ? '' : 'tag--accent')}>{STATUS_LABEL[primaryStatus]}</span>
           )}

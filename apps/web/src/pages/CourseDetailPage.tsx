@@ -9,6 +9,7 @@ import { apiFetch, ApiError } from '@/lib/api';
 import { useCourseDetail, useCourseList } from './CoursesPage.data';
 import { getDomain } from '@/data/technologies';
 import { getInstructor } from '@/data/instructors';
+import { TechnologyList } from '@/components/course/TechnologyList';
 import { formatPrice, discountPercent, formatEnrollment } from '@/lib/format';
 import { Plate } from '@/components/primitives/Plate';
 import { Button } from '@/components/primitives/Button';
@@ -58,7 +59,7 @@ export default function CourseDetailPage() {
   const comingSoon = course.statuses.includes('coming-soon');
   const otherCourses = courseListState.status === 'ready' ? courseListState.courses : [];
   const related = otherCourses
-    .filter((c) => c.id !== course.id && c.domainId === course.domainId)
+    .filter((c) => c.id !== course.id && c.catalogueCategorySlug === course.catalogueCategorySlug)
     .slice(0, 3);
   const relatedFallback =
     related.length < 3
@@ -97,7 +98,7 @@ export default function CourseDetailPage() {
             <nav className="course-detail__crumbs" aria-label="Breadcrumb">
               <Link to="/courses">Courses</Link>
               <span aria-hidden="true">/</span>
-              <Link to={`/courses?domain=${domain?.slug ?? ''}`}>{domain?.name ?? 'Technology'}</Link>
+              <Link to={`/courses?category=${course.catalogueCategorySlug}`}>{course.catalogueCategoryName}</Link>
             </nav>
 
             <div className="course-detail__hero-grid">
@@ -176,16 +177,7 @@ export default function CourseDetailPage() {
               </ul>
             </section>
 
-            {course.toolsCovered.length > 0 && (
-              <section data-reveal>
-                <h2 className="course-detail__h2">Tools covered</h2>
-                <ul className="course-detail__tools">
-                  {course.toolsCovered.map((t) => (
-                    <li key={t}>{t}</li>
-                  ))}
-                </ul>
-              </section>
-            )}
+            <TechnologyList technologies={course.technologies} />
 
             {course.requirements.length > 0 && (
               <section data-reveal>
@@ -229,11 +221,11 @@ export default function CourseDetailPage() {
           <aside className="course-detail__aside">
             <h2 className="course-detail__h2">In this pathway</h2>
             <p className="course-detail__aside-text">
-              This course sits in the {domain?.name} domain and counts toward the AIIT progression:
+              This course sits in {course.catalogueCategoryName} and counts toward the AIIT progression:
               learn, build, certify, then use the AIIT Blueprint for global pathways.
             </p>
-            <Button as="link" to={`/courses?domain=${domain?.slug ?? ''}`} variant="link">
-              All {domain?.name} courses
+            <Button as="link" to={`/courses?category=${course.catalogueCategorySlug}`} variant="link">
+              All {course.catalogueCategoryName} courses
             </Button>
           </aside>
         </div>

@@ -151,7 +151,7 @@ export const COURSES: CourseSeed[] = [
     durationLabel: '1 Month (60 Hours)',
     rating: 0,
     ratingCount: 0,
-    badges: ['featured'],
+    badges: [],
     instructorId: 'ins-aiit',
     image: '/assets/courses/agentic-ai-and-autonomous-ai-systems.jpg',
     outcomes: [
@@ -275,7 +275,7 @@ export const COURSES: CourseSeed[] = [
     durationLabel: '1 Month (40 Hours)',
     rating: 4,
     ratingCount: 6,
-    badges: ['featured'],
+    badges: [],
     instructorId: 'ins-aiit',
     image: '/assets/courses/cloud-computing-fundamentals.jpg',
     outcomes: [
@@ -320,7 +320,7 @@ export const COURSES: CourseSeed[] = [
     durationLabel: '1 Month (60 Hours)',
     rating: 0,
     ratingCount: 0,
-    badges: ['featured'],
+    badges: [],
     instructorId: 'ins-aiit',
     image: '/assets/courses/cisco-ccna-cisco-certified-network-associate.jpg',
     outcomes: [
@@ -414,7 +414,7 @@ export const COURSES: CourseSeed[] = [
     durationLabel: '1 Month (40 Hours)',
     rating: 0,
     ratingCount: 0,
-    badges: ['featured'],
+    badges: [],
     instructorId: 'ins-aiit',
     image: '/assets/courses/edge-server-computing.jpg',
     outcomes: [
@@ -504,7 +504,7 @@ export const COURSES: CourseSeed[] = [
     durationLabel: '1 Month (40 Hours)',
     rating: 0,
     ratingCount: 0,
-    badges: ['featured'],
+    badges: [],
     instructorId: 'ins-aiit',
     image: '/assets/courses/blockchain-technology.jpg',
     outcomes: [

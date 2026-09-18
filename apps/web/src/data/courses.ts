@@ -103,7 +103,7 @@ export const COURSES: Course[] = [
     rating: 0,
     ratingCount: 0,
     enrolled: 0,
-    statuses: ['featured'],
+    statuses: [],
     instructorId: 'ins-aiit',
     image: '/assets/courses/agentic-ai-and-autonomous-ai-systems.jpg',
     outcomes: [
@@ -240,7 +240,7 @@ export const COURSES: Course[] = [
     rating: 4,
     ratingCount: 6,
     enrolled: 0,
-    statuses: ['featured'],
+    statuses: [],
     instructorId: 'ins-aiit',
     image: '/assets/courses/cloud-computing-fundamentals.jpg',
     outcomes: [
@@ -290,7 +290,7 @@ export const COURSES: Course[] = [
     rating: 0,
     ratingCount: 0,
     enrolled: 0,
-    statuses: ['featured'],
+    statuses: [],
     instructorId: 'ins-aiit',
     image: '/assets/courses/cisco-ccna-cisco-certified-network-associate.jpg',
     outcomes: [
@@ -391,7 +391,7 @@ export const COURSES: Course[] = [
     rating: 0,
     ratingCount: 0,
     enrolled: 0,
-    statuses: ['featured'],
+    statuses: [],
     instructorId: 'ins-aiit',
     image: '/assets/courses/edge-server-computing.jpg',
     outcomes: [
@@ -491,7 +491,7 @@ export const COURSES: Course[] = [
     rating: 0,
     ratingCount: 0,
     enrolled: 0,
-    statuses: ['featured'],
+    statuses: [],
     instructorId: 'ins-aiit',
     image: '/assets/courses/blockchain-technology.jpg',
     outcomes: [

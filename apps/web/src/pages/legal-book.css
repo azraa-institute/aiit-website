@@ -603,10 +603,18 @@
    width: enabling it (re-tested the same way) closed those gaps back down
    to near-natural, at the cost of occasionally splitting a word
    ("pass-word", "trans-mission") -- an acceptable trade for a flush edge
-   at this measure, unlike the wide column where it had no upside. */
+   at this measure, unlike the wide column where it had no upside.
+   -webkit-hyphens is not a legacy leftover -- global.css's `body` rule
+   sets -webkit-hyphens: manual site-wide, and Safari/WebKit (iPhone,
+   iPad) resolves its OWN prefixed property over the unprefixed one, so
+   without repeating auto here explicitly, Safari silently keeps using
+   manual and never hyphenates at all -- matches what a user screenshot
+   actually showed: plain justify with zero hyphen breaks anywhere, not
+   partial mitigation. */
 .legalbook .legalbook__page-body--two-col p {
   text-align: justify;
   text-justify: inter-word;
+  -webkit-hyphens: auto;
   hyphens: auto;
 }
 /* Source Serif 4 (already this document's heading face -- see
@@ -809,14 +817,24 @@
   }
 }
 
-@media (max-width: 640px) {
+@media (max-width: 1024px) {
   /* Same column-width condition the two-column rule above handles (see
      .legalbook__page-body--two-col p) -- the single-column leaf's text
-     measure narrows into the same range on a phone, so it gets the same
-     justify + hyphens: auto treatment rather than falling back to left. */
+     measure narrows into the same range well before phone widths. 1024px
+     (not 640px, the original threshold) because the gap between them was
+     never actually tested: worked through the real padding math at a
+     768px iPad-portrait width (gutter + the Previous/Next arrows, still
+     visible above 560px + leaves/leaf padding) and it lands the reading
+     column around ~500px -- same narrow-column bad-gap range as the
+     two-column layout, but with no hyphenation safety net active there
+     under the old 640px cutoff. 1024px covers iPad Pro 12.9" portrait,
+     the widest common tablet portrait width. See .legalbook__page-body
+     --two-col p above for why -webkit-hyphens is repeated explicitly,
+     not just hyphens. */
   .legalbook .legalbook__page-body p {
     text-align: justify;
     text-justify: inter-word;
+    -webkit-hyphens: auto;
     hyphens: auto;
   }
 }

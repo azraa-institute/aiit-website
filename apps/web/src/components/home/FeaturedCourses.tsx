@@ -11,10 +11,8 @@ import './featured-courses.css';
 const STATUS_LABEL: Partial<Record<CourseStatus, string>> = {
   new: 'New',
   featured: 'Featured',
-  hot: 'Popular',
-  special: 'Special',
 };
-const STATUS_PRIORITY: CourseStatus[] = ['new', 'featured', 'hot', 'special'];
+const STATUS_PRIORITY: CourseStatus[] = ['new', 'featured'];
 
 function statusLabel(course: Course): string | null {
   const found = STATUS_PRIORITY.find((s) => course.statuses.includes(s));

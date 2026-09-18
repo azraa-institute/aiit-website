@@ -27,9 +27,7 @@ export const DEFAULT_QUERY: CourseQuery = {
 
 const LEVELS = ['Beginner', 'Intermediate', 'Advanced'];
 const STATUSES: { value: string; label: string }[] = [
-  { value: 'hot', label: 'Popular' },
   { value: 'new', label: 'New' },
-  { value: 'special', label: 'Special' },
   { value: 'coming-soon', label: 'Coming soon' },
 ];
 const PRICING = [

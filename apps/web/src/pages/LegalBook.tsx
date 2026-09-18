@@ -367,7 +367,6 @@ export function LegalBook({ doc, pages }: { doc: LegalDoc; pages: LegalBookPage[
                 )}
 
                 <p className="legalbook__page-foot">
-                  AIIT.NETWORK <span aria-hidden="true">·</span>{' '}
                   {page === 0 ? doc.title.toUpperCase() : `${folio(page - 1)} / ${folio(total - 1)}`}
                 </p>
               </div>

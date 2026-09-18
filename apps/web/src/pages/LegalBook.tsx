@@ -59,30 +59,19 @@ function RuledMark() {
  * folder it's kept in. Centered behind the page's own text (see the
  * architecture note in legal-book.css for the stacking-order reasoning),
  * low-opacity enough that it never competes with reading the actual
- * content. Purely decorative either way -- aria-hidden. */
+ * content. Purely decorative either way -- aria-hidden.
+ *
+ * The seal image itself (az-seal-brass.webp) started as a supplied
+ * full-color stamp graphic on an opaque paper background -- reprocessed
+ * (not used as-is) to strip that background to transparency and recolor
+ * its ink to --brass-deep, so it blends as a watermark instead of sitting
+ * on the leaf as a visible rectangle, and reads as this site's own brass/
+ * ink palette rather than introducing the source's blue. Replaced the
+ * previous hand-drawn rings/text/marks entirely, since the supplied seal
+ * already draws its own ring, lettering and stars -- keeping both would
+ * have doubled up on the same elements. */
 function Stamp() {
-  return (
-    <svg className="legalbook__stamp" viewBox="0 0 200 200" aria-hidden="true" focusable="false">
-      <circle className="legalbook__stamp-ring" cx="100" cy="100" r="92" strokeWidth="1" />
-      <circle className="legalbook__stamp-ring" cx="100" cy="100" r="78" strokeWidth="0.75" />
-      {[0, 90, 180, 270].map((deg) => {
-        const rad = (deg * Math.PI) / 180;
-        const x1 = 100 + Math.sin(rad) * 92;
-        const y1 = 100 - Math.cos(rad) * 92;
-        const x2 = 100 + Math.sin(rad) * 100;
-        const y2 = 100 - Math.cos(rad) * 100;
-        return <line key={deg} className="legalbook__stamp-mark" x1={x1} y1={y1} x2={x2} y2={y2} />;
-      })}
-      <image href="/assets/legal/az-mark-brass.png" x="69" y="44" width="62" height="62" preserveAspectRatio="xMidYMid meet" />
-      <line className="legalbook__stamp-mark" x1="72" y1="108" x2="128" y2="108" strokeWidth="0.75" />
-      <text className="legalbook__stamp-text" x="100" y="124" textAnchor="middle">
-        OFFICIAL DOCUMENT
-      </text>
-      <text className="legalbook__stamp-text" x="100" y="136" textAnchor="middle">
-        AIIT.NETWORK
-      </text>
-    </svg>
-  );
+  return <img className="legalbook__stamp" src="/assets/legal/az-seal-brass.webp" alt="" aria-hidden="true" />;
 }
 
 function ArrowIcon({ direction }: { direction: 'prev' | 'next' }) {

@@ -16,7 +16,7 @@ import { Button } from '@/components/primitives/Button';
 import { Stars } from '@/components/common/Stars';
 import { CourseCard } from '@/components/course/CourseCard';
 import { RouteFallback } from '@/components/layout/RouteFallback';
-import { useLearner } from './portal/learnerData';
+import { invalidateLearner, useLearner } from './portal/learnerData';
 import './course-detail.css';
 
 export default function CourseDetailPage() {
@@ -327,9 +327,14 @@ function EnrollAction({ course, comingSoon }: { course: Course; comingSoon: bool
     setEnrolling(true);
     try {
       await apiFetch(`/courses/${encodeURIComponent(course.slug)}/enroll`, { method: 'POST' });
+      // The portal's learner record is cached for the session; without this
+      // the dashboard/My Courses render the stale (pre-enrollment) copy
+      // until a hard refresh.
+      invalidateLearner();
       navigate('/portal/courses');
     } catch (err) {
       if (err instanceof ApiError && err.status === 409) {
+        invalidateLearner();
         navigate('/portal/courses');
         return;
       }

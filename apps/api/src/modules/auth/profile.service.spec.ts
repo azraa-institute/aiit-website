@@ -20,6 +20,7 @@ const PROFILE = {
   areasOfInterest: [],
   timeZone: null,
   country: null,
+  state: null,
   city: null,
   address: null,
   postalCode: null,
@@ -91,6 +92,7 @@ describe('ProfileService', () => {
       areasOfInterest: [],
       timeZone: null,
       country: null,
+      state: null,
       city: null,
       address: null,
       postalCode: null,
@@ -207,6 +209,7 @@ describe('ProfileService', () => {
     await service.updateProfile('user-1', {
       qualification: "Bachelor's",
       university: 'Example University',
+      state: 'Lagos',
       city: 'Lagos',
       address: '1 Example Street',
       postalCode: '100001',
@@ -216,6 +219,7 @@ describe('ProfileService', () => {
       data: {
         qualification: "Bachelor's",
         university: 'Example University',
+        state: 'Lagos',
         city: 'Lagos',
         address: '1 Example Street',
         postalCode: '100001',

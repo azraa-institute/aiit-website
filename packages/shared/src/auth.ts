@@ -27,6 +27,8 @@ export interface Me {
   /** IANA time zone, e.g. "Africa/Lagos" -- client-detected default, editable. */
   timeZone: string | null;
   country: string | null;
+  /** State/province name -- free text, picked from a Country -> State -> City cascade on the frontend (GET /geo/states, GET /geo/cities) but stored as plain text like city/university below. */
+  state: string | null;
   city: string | null;
   address: string | null;
   postalCode: string | null;

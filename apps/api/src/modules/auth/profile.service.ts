@@ -6,8 +6,8 @@ import type { Me } from '@aiit/shared';
  * The fields that must be non-empty before `profileComplete` is true --
  * deliberately the minimal set (name, a phone number, country, highest
  * qualification), not everything the onboarding wizard collects. University,
- * field of study, current status, learning goals, areas of interest, city,
- * address, postal code and time zone are all real wizard steps but stay
+ * field of study, current status, learning goals, areas of interest, state,
+ * city, address, postal code and time zone are all real wizard steps but stay
  * non-gating, per the learner-onboarding redesign's data-minimization
  * tiers -- collecting them helps personalize the experience, but withholding
  * them shouldn't lock someone out of the portal.
@@ -120,6 +120,7 @@ export class ProfileService {
         ...(dto.areasOfInterest !== undefined && { areasOfInterest: dto.areasOfInterest }),
         ...(dto.timeZone !== undefined && { timeZone: dto.timeZone }),
         ...(dto.country !== undefined && { country: dto.country }),
+        ...(dto.state !== undefined && { state: dto.state }),
         ...(dto.city !== undefined && { city: dto.city }),
         ...(dto.address !== undefined && { address: dto.address }),
         ...(dto.postalCode !== undefined && { postalCode: dto.postalCode }),
@@ -305,6 +306,7 @@ function toMe(profile: Profile, isNewSignup: boolean): Me {
     areasOfInterest: profile.areasOfInterest,
     timeZone: profile.timeZone,
     country: profile.country,
+    state: profile.state,
     city: profile.city,
     address: profile.address,
     postalCode: profile.postalCode,

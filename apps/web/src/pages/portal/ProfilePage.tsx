@@ -1,12 +1,15 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import type { ChangeEvent, FormEvent } from 'react';
+import type { GeoCity, GeoState } from '@aiit/shared';
 import { useScrollReveal } from '@/lib/useScrollReveal';
 import { formatDate } from '@/lib/format';
 import { useAuth } from '@/lib/AuthContext';
 import { apiFetch } from '@/lib/api';
+import { fetchStates, fetchCities } from '@/lib/geo';
 import { uploadFile, publicFileUrl, removeFile } from '@/lib/storage';
 import { Avatar } from '@/components/common/Avatar';
 import { TextField, SelectField } from '@/components/common/Field';
+import { SearchableSelect } from '@/components/common/SearchableSelect';
 import { Button } from '@/components/primitives/Button';
 import { COUNTRIES } from '@/data/countries';
 import { QUALIFICATIONS } from '@/data/qualifications';
@@ -14,6 +17,7 @@ import { CURRENT_STATUSES } from '@/data/currentStatus';
 import { LEARNING_GOALS } from '@/data/learningGoals';
 import { LEARNING_AREAS } from '@/data/learningAreas';
 import { detectTimeZone, timeZoneOptions } from '@/data/timeZones';
+import { useUniversityOptions } from '@/data/universities';
 import { splitPhone, combinePhone } from '@/lib/phone';
 import { CameraIcon, LockIcon } from './SettingsIcons';
 import { useLearner } from './learnerData';
@@ -44,6 +48,7 @@ export default function ProfilePage() {
   const [learningGoal, setLearningGoal] = useState('');
   const [areasOfInterest, setAreasOfInterest] = useState<string[]>([]);
   const [country, setCountry] = useState('');
+  const [region, setRegion] = useState('');
   const [city, setCity] = useState('');
   const [timeZone, setTimeZone] = useState('');
   const [address, setAddress] = useState('');
@@ -52,6 +57,73 @@ export default function ProfilePage() {
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
   const [error, setError] = useState<string>();
   const [saved, setSaved] = useState(false);
+
+  const { options: universityOptions, loading: universitiesLoading } = useUniversityOptions();
+  const [universityOther, setUniversityOther] = useState(false);
+  const universityOtherChecked = useRef(false);
+  useEffect(() => {
+    if (universitiesLoading || universityOtherChecked.current) return;
+    universityOtherChecked.current = true;
+    if (university.trim() && !universityOptions.some((o) => o.value === university)) {
+      setUniversityOther(true);
+    }
+  }, [universitiesLoading, universityOptions, university]);
+
+  // Country -> State -> City cascade -- see ProfileCompletionWizard.tsx for
+  // the same pattern and its rationale (state/city stay plain text, the
+  // selected state's id is looked up by name rather than tracked
+  // separately, and a genuine user-driven change clears what depends on it
+  // without clobbering the value loaded from the saved profile).
+  const [states, setStates] = useState<GeoState[]>([]);
+  const [statesLoading, setStatesLoading] = useState(false);
+  const [cities, setCities] = useState<GeoCity[]>([]);
+  const [citiesLoading, setCitiesLoading] = useState(false);
+
+  // `initialized` and `country`'s loaded-from-profile value land in the same
+  // render (both set together in the profile-hydration effect below), so a
+  // plain "did country change since last run" ref would see its stale ''
+  // default and wrongly treat that first post-load run as a real change.
+  // These extra `*GeoReady` refs mark that first run instead, so only a
+  // genuine later edit by the user clears the fields that depend on it.
+  const prevCountry = useRef(country);
+  const countryGeoReady = useRef(false);
+  useEffect(() => {
+    if (!initialized) return;
+    if (countryGeoReady.current && prevCountry.current !== country) {
+      setRegion('');
+      setCity('');
+    }
+    countryGeoReady.current = true;
+    prevCountry.current = country;
+    if (!country) {
+      setStates([]);
+      return;
+    }
+    setStatesLoading(true);
+    fetchStates(country)
+      .then(setStates)
+      .catch(() => setStates([]))
+      .finally(() => setStatesLoading(false));
+  }, [country, initialized]);
+
+  const prevRegion = useRef(region);
+  const regionGeoReady = useRef(false);
+  useEffect(() => {
+    if (!initialized) return;
+    if (regionGeoReady.current && prevRegion.current !== region) setCity('');
+    regionGeoReady.current = true;
+    prevRegion.current = region;
+    const selected = states.find((s) => s.name === region);
+    if (!selected) {
+      setCities([]);
+      return;
+    }
+    setCitiesLoading(true);
+    fetchCities(selected.id)
+      .then(setCities)
+      .catch(() => setCities([]))
+      .finally(() => setCitiesLoading(false));
+  }, [region, states, initialized]);
 
   useEffect(() => {
     if (state.status === 'ready' && !initialized) {
@@ -67,6 +139,7 @@ export default function ProfilePage() {
       setLearningGoal(state.learner.profile.learningGoal ?? '');
       setAreasOfInterest(state.learner.profile.areasOfInterest ?? []);
       setCountry(state.learner.profile.country ?? '');
+      setRegion(state.learner.profile.state ?? '');
       setCity(state.learner.profile.city ?? '');
       setTimeZone(state.learner.profile.timeZone || detectTimeZone());
       setAddress(state.learner.profile.address ?? '');
@@ -108,6 +181,7 @@ export default function ProfilePage() {
           learningGoal: learningGoal.trim(),
           areasOfInterest,
           country: country || undefined,
+          state: region.trim(),
           city: city.trim(),
           timeZone: timeZone.trim(),
           address: address.trim(),
@@ -225,13 +299,36 @@ export default function ProfilePage() {
               required
             />
           </div>
-          <TextField
-            label="University / institution"
-            value={university}
-            onChange={(e) => setUniversity(e.target.value)}
-            maxLength={200}
-            hint="The institution you're attending or have attended -- not AIIT itself."
-          />
+          {universityOther ? (
+            <TextField
+              label="University / institution"
+              value={university}
+              onChange={(e) => setUniversity(e.target.value)}
+              maxLength={200}
+              hint="Not in our list -- type it in full."
+            />
+          ) : (
+            <SearchableSelect
+              label="University / institution"
+              value={university}
+              onChange={setUniversity}
+              options={universityOptions}
+              loading={universitiesLoading}
+              placeholder="Select or search…"
+              searchPlaceholder="Search universities…"
+              hint="The institution you're attending or have attended -- not AIIT itself."
+            />
+          )}
+          <button
+            type="button"
+            className="profile-details__inline-link"
+            onClick={() => {
+              setUniversityOther((v) => !v);
+              setUniversity('');
+            }}
+          >
+            {universityOther ? 'Choose from the list instead' : "Can't find it? Enter it manually."}
+          </button>
           <div className="profile-details__grid">
             <TextField
               label="Field of study / discipline"
@@ -306,7 +403,38 @@ export default function ProfilePage() {
               options={COUNTRY_OPTIONS}
               required
             />
-            <TextField label="City" value={city} onChange={(e) => setCity(e.target.value)} maxLength={120} />
+            <SearchableSelect
+              label="State / province"
+              value={region}
+              onChange={setRegion}
+              options={states.map((s) => ({ value: s.name, label: s.name }))}
+              loading={statesLoading}
+              disabled={!country}
+              disabledHint="Select a country first."
+              placeholder="Select or search…"
+              searchPlaceholder="Search states…"
+              emptyMessage={statesLoading ? undefined : 'No states listed for this country.'}
+            />
+          </div>
+          <div className="profile-details__grid">
+            <SearchableSelect
+              label="City"
+              value={city}
+              onChange={setCity}
+              options={cities.map((c) => ({ value: c.name, label: c.name }))}
+              loading={citiesLoading}
+              disabled={!region}
+              disabledHint="Select a state or province first."
+              placeholder="Select or search…"
+              searchPlaceholder="Search cities…"
+              emptyMessage={citiesLoading ? undefined : 'No cities listed for this state.'}
+            />
+            <TextField
+              label="Postal / pin code"
+              value={postalCode}
+              onChange={(e) => setPostalCode(e.target.value)}
+              maxLength={20}
+            />
           </div>
           <SelectField
             label="Time zone"
@@ -316,15 +444,7 @@ export default function ProfilePage() {
           />
           <details className="profile-details__more">
             <summary>Address (optional)</summary>
-            <div className="profile-details__grid">
-              <TextField label="Address" value={address} onChange={(e) => setAddress(e.target.value)} maxLength={300} />
-              <TextField
-                label="Zip / postal code"
-                value={postalCode}
-                onChange={(e) => setPostalCode(e.target.value)}
-                maxLength={20}
-              />
-            </div>
+            <TextField label="Address" value={address} onChange={(e) => setAddress(e.target.value)} maxLength={300} />
           </details>
 
           <div className="profile-details__readonly">

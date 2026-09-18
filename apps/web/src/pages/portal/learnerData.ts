@@ -31,6 +31,7 @@ export interface LearnerProfile {
   areasOfInterest: string[];
   timeZone: string | null;
   country: string | null;
+  state: string | null;
   city: string | null;
   address: string | null;
   postalCode: string | null;
@@ -89,6 +90,7 @@ async function fetchLearner(): Promise<LearnerRecord> {
       areasOfInterest: me.areasOfInterest,
       timeZone: me.timeZone,
       country: me.country,
+      state: me.state,
       city: me.city,
       address: me.address,
       postalCode: me.postalCode,

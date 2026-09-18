@@ -53,6 +53,36 @@ export function detectTimeZone(): string {
 }
 
 /**
+ * The zone's current UTC offset as "GMT+1" / "GMT-11:30" / "GMT+0", read
+ * straight from the platform's own IANA tz database via Intl (never
+ * hardcoded) so it's correct for whatever moment it's called at, DST
+ * included -- e.g. Europe/London reads "GMT+0" in January and "GMT+1" in
+ * July. This is a label computed once per render, not a ticking clock (the
+ * live-updating time display was explicitly asked to stay out of the UI).
+ */
+export function gmtOffsetLabel(zone: string, at: Date = new Date()): string {
+  try {
+    const parts = new Intl.DateTimeFormat('en-US', { timeZone: zone, timeZoneName: 'shortOffset' }).formatToParts(
+      at,
+    );
+    const offset = parts.find((p) => p.type === 'timeZoneName')?.value;
+    if (!offset) return '';
+    // formatToParts gives bare "GMT" for zones exactly at UTC -- normalize
+    // to "GMT+0" so every entry reads consistently.
+    return offset === 'GMT' ? 'GMT+0' : offset;
+  } catch {
+    return '';
+  }
+}
+
+/** A curated zone's display label with its live GMT offset appended, e.g. "Lagos, West Africa Time (GMT+1)". Falls back to the bare IANA id for a zone outside the curated list (still with its offset, if computable). */
+export function formatTimeZoneLabel(zone: string): string {
+  const base = TIME_ZONES.find((t) => t.value === zone)?.label ?? zone;
+  const offset = gmtOffsetLabel(zone);
+  return offset ? `${base} (${offset})` : base;
+}
+
+/**
  * Options for the "Time zone" <select>, always including `current` even
  * when it isn't one of the curated TIME_ZONES -- e.g. a browser can report
  * a legacy IANA alias (confirmed live: "Asia/Calcutta" instead of the
@@ -60,9 +90,12 @@ export function detectTimeZone(): string {
  * any <option> and render the field as blank despite a real value being set.
  */
 export function timeZoneOptions(current: string): { value: string; label: string }[] {
-  const base = [{ value: '', label: 'Select your time zone' }, ...TIME_ZONES];
+  const base = [
+    { value: '', label: 'Select your time zone' },
+    ...TIME_ZONES.map((t) => ({ value: t.value, label: formatTimeZoneLabel(t.value) })),
+  ];
   if (current && !TIME_ZONES.some((t) => t.value === current)) {
-    base.push({ value: current, label: current });
+    base.push({ value: current, label: formatTimeZoneLabel(current) });
   }
   return base;
 }

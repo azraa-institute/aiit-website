@@ -18,3 +18,4 @@ export * from './enrollment';
 export * from './assignment';
 export * from './certificate';
 export * from './notification';
+export * from './geo';

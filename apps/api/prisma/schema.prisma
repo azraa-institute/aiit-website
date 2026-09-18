@@ -57,6 +57,14 @@ model Profile {
   areasOfInterest     String[]      @default([]) @map("areas_of_interest") // AI, Data Science, Cybersecurity, etc. -- see data/learningAreas.ts
   timeZone            String?       @map("time_zone") // IANA zone, e.g. "Africa/Lagos" -- client-detected default, editable
   country             String?       @db.Char(2) // ISO 3166-1 alpha-2
+  // State/province and city are both free text here, same convention as
+  // university/qualification below -- the UI picks them from the
+  // GeoState/GeoCity cascading lookup (see those models), but what's
+  // stored is just the chosen NAME, not a foreign key. That keeps a
+  // profile readable/exportable on its own and immune to the lookup
+  // tables ever being re-seeded or renumbered later; the tradeoff is a
+  // profile doesn't get an automatic update if a place is ever renamed.
+  state               String?
   city                String?
   address             String?
   postalCode          String?       @map("postal_code")
@@ -68,6 +76,38 @@ model Profile {
   updatedAt           DateTime      @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
 
   @@map("profiles")
+  @@schema("public")
+}
+
+// ---- Geography lookup ----
+// Static reference data (states/provinces + cities), seeded once from the
+// dr5hn/countries-states-cities-database open dataset directly in this
+// migration's own SQL -- not fetched at runtime, not re-synced. Powers the
+// Profile wizard/page's Country -> State -> City cascade: GET /geo/states
+// and GET /geo/cities read these, but nothing in the app ever writes to
+// them (no admin UI, no user input flows back here), so there's no write
+// RLS policy, only public_read. Ids are the SOURCE dataset's own numeric
+// ids, kept as-is (not re-generated) so GeoCity.stateId stays a stable,
+// meaningful join without an extra remapping step during the import.
+model GeoState {
+  id          Int       @id
+  name        String
+  countryCode String    @map("country_code") @db.Char(2) // ISO 3166-1 alpha-2, matches Profile.country / data/countries.ts
+  cities      GeoCity[]
+
+  @@index([countryCode])
+  @@map("geo_states")
+  @@schema("public")
+}
+
+model GeoCity {
+  id      Int      @id
+  name    String
+  stateId Int      @map("state_id")
+  state   GeoState @relation(fields: [stateId], references: [id])
+
+  @@index([stateId])
+  @@map("geo_cities")
   @@schema("public")
 }
 

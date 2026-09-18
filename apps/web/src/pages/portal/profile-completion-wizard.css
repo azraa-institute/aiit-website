@@ -248,6 +248,23 @@
   margin-top: var(--space-2);
 }
 
+.pcw-inline-link {
+  margin: calc(-1 * var(--space-2)) 0 0;
+  padding: 0;
+  font-family: var(--font-ui);
+  font-size: var(--fs-xs);
+  background: none;
+  border: none;
+  color: var(--brass-deep);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  cursor: pointer;
+  text-align: left;
+}
+.pcw-inline-link:hover {
+  color: var(--ink);
+}
+
 .pcw-field-label {
   margin: 0 0 var(--space-2);
   font-size: var(--fs-xs);

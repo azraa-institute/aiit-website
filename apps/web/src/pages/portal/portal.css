@@ -1975,6 +1975,23 @@
   grid-template-columns: 1fr 1fr;
   gap: var(--space-4);
 }
+.profile-details__inline-link {
+  margin: calc(-1 * var(--space-2)) 0 0;
+  padding: 0;
+  font-family: var(--font-ui);
+  font-size: var(--fs-xs);
+  background: none;
+  border: none;
+  color: var(--brass-deep);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  cursor: pointer;
+  text-align: left;
+}
+.profile-details__inline-link:hover {
+  color: var(--ink);
+}
+
 .profile-details__label {
   margin: 0 0 var(--space-2);
   font-size: var(--fs-xs);

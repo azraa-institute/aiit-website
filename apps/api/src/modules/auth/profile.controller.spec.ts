@@ -20,6 +20,7 @@ const ME: Me = {
   areasOfInterest: [],
   timeZone: null,
   country: null,
+  state: null,
   city: null,
   address: null,
   postalCode: null,

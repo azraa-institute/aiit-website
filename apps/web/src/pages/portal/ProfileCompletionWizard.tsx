@@ -1,9 +1,12 @@
 import { useEffect, useRef, useState } from 'react';
 import type { ReactNode } from 'react';
 import { createPortal } from 'react-dom';
+import type { GeoCity, GeoState } from '@aiit/shared';
 import { apiFetch } from '@/lib/api';
+import { fetchStates, fetchCities } from '@/lib/geo';
 import { splitPhone, combinePhone } from '@/lib/phone';
 import { TextField, SelectField } from '@/components/common/Field';
+import { SearchableSelect } from '@/components/common/SearchableSelect';
 import { Button } from '@/components/primitives/Button';
 import { Logo } from '@/components/layout/Logo';
 import { COUNTRIES } from '@/data/countries';
@@ -11,7 +14,8 @@ import { QUALIFICATIONS } from '@/data/qualifications';
 import { CURRENT_STATUSES } from '@/data/currentStatus';
 import { LEARNING_GOALS } from '@/data/learningGoals';
 import { LEARNING_AREAS } from '@/data/learningAreas';
-import { TIME_ZONES, detectTimeZone, timeZoneOptions } from '@/data/timeZones';
+import { detectTimeZone, timeZoneOptions, formatTimeZoneLabel } from '@/data/timeZones';
+import { useUniversityOptions } from '@/data/universities';
 import { PhoneCountrySelect } from './PhoneCountrySelect';
 import type { LearnerProfile } from '@/pages/portal/learnerData';
 import './profile-completion-wizard.css';
@@ -73,8 +77,70 @@ export function ProfileCompletionWizard({ open, profile, onClose, onComplete }: 
   const [areasOfInterest, setAreasOfInterest] = useState<string[]>(profile.areasOfInterest ?? []);
 
   const [country, setCountry] = useState(profile.country ?? '');
+  const [state, setState] = useState(profile.state ?? '');
   const [city, setCity] = useState(profile.city ?? '');
+  const [postalCode, setPostalCode] = useState(profile.postalCode ?? '');
   const [timeZone, setTimeZone] = useState(profile.timeZone || detectTimeZone());
+
+  const { options: universityOptions, loading: universitiesLoading } = useUniversityOptions();
+  // Defaults to manual-entry mode once loaded if the saved university isn't
+  // in the bundled list -- a previously-typed value shouldn't silently
+  // vanish behind a picker that can't represent it. Only checked once per
+  // load finishing, not on every keystroke, so it doesn't fight a user
+  // who deliberately switches modes afterwards.
+  const [universityOther, setUniversityOther] = useState(false);
+  const universityOtherChecked = useRef(false);
+  useEffect(() => {
+    if (universitiesLoading || universityOtherChecked.current) return;
+    universityOtherChecked.current = true;
+    if (university.trim() && !universityOptions.some((o) => o.value === university)) {
+      setUniversityOther(true);
+    }
+  }, [universitiesLoading, universityOptions, university]);
+
+  // Country -> State -> City cascade. `state`/`city` stay plain text (the
+  // chosen name, same convention as the rest of the profile) -- these
+  // GeoState/GeoCity lists are only how the pickers *offer* choices, not
+  // what gets submitted, so the selected state's id is looked up by name
+  // rather than tracked separately.
+  const [states, setStates] = useState<GeoState[]>([]);
+  const [statesLoading, setStatesLoading] = useState(false);
+  const [cities, setCities] = useState<GeoCity[]>([]);
+  const [citiesLoading, setCitiesLoading] = useState(false);
+
+  const prevCountry = useRef(country);
+  useEffect(() => {
+    if (prevCountry.current !== country) {
+      setState('');
+      setCity('');
+    }
+    prevCountry.current = country;
+    if (!country) {
+      setStates([]);
+      return;
+    }
+    setStatesLoading(true);
+    fetchStates(country)
+      .then(setStates)
+      .catch(() => setStates([]))
+      .finally(() => setStatesLoading(false));
+  }, [country]);
+
+  const prevState = useRef(state);
+  useEffect(() => {
+    if (prevState.current !== state) setCity('');
+    prevState.current = state;
+    const selected = states.find((s) => s.name === state);
+    if (!selected) {
+      setCities([]);
+      return;
+    }
+    setCitiesLoading(true);
+    fetchCities(selected.id)
+      .then(setCities)
+      .catch(() => setCities([]))
+      .finally(() => setCitiesLoading(false));
+  }, [state, states]);
 
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string>();
@@ -145,7 +211,9 @@ export function ProfileCompletionWizard({ open, profile, onClose, onComplete }: 
           areasOfInterest,
           timeZone: timeZone.trim(),
           country: country || undefined,
+          state: state.trim(),
           city: city.trim(),
+          postalCode: postalCode.trim(),
         }),
       });
       setPhase('completion');
@@ -268,13 +336,36 @@ export function ProfileCompletionWizard({ open, profile, onClose, onComplete }: 
                 options={QUALIFICATION_OPTIONS}
                 required
               />
-              <TextField
-                label="University / institution"
-                value={university}
-                onChange={(e) => setUniversity(e.target.value)}
-                maxLength={200}
-                hint="The institution you're attending or have attended."
-              />
+              {universityOther ? (
+                <TextField
+                  label="University / institution"
+                  value={university}
+                  onChange={(e) => setUniversity(e.target.value)}
+                  maxLength={200}
+                  hint="Not in our list -- type it in full."
+                />
+              ) : (
+                <SearchableSelect
+                  label="University / institution"
+                  value={university}
+                  onChange={setUniversity}
+                  options={universityOptions}
+                  loading={universitiesLoading}
+                  placeholder="Select or search…"
+                  searchPlaceholder="Search universities…"
+                  hint="The institution you're attending or have attended."
+                />
+              )}
+              <button
+                type="button"
+                className="pcw-inline-link"
+                onClick={() => {
+                  setUniversityOther((v) => !v);
+                  setUniversity('');
+                }}
+              >
+                {universityOther ? 'Choose from the list instead' : "Can't find it? Enter it manually."}
+              </button>
               <TextField
                 label="Field of study / discipline"
                 value={fieldOfStudy}
@@ -355,7 +446,36 @@ export function ProfileCompletionWizard({ open, profile, onClose, onComplete }: 
                 options={COUNTRY_OPTIONS}
                 required
               />
-              <TextField label="City" value={city} onChange={(e) => setCity(e.target.value)} maxLength={120} />
+              <SearchableSelect
+                label="State / province"
+                value={state}
+                onChange={setState}
+                options={states.map((s) => ({ value: s.name, label: s.name }))}
+                loading={statesLoading}
+                disabled={!country}
+                disabledHint="Select a country first."
+                placeholder="Select or search…"
+                searchPlaceholder="Search states…"
+                emptyMessage={statesLoading ? undefined : 'No states listed for this country.'}
+              />
+              <SearchableSelect
+                label="City"
+                value={city}
+                onChange={setCity}
+                options={cities.map((c) => ({ value: c.name, label: c.name }))}
+                loading={citiesLoading}
+                disabled={!state}
+                disabledHint="Select a state or province first."
+                placeholder="Select or search…"
+                searchPlaceholder="Search cities…"
+                emptyMessage={citiesLoading ? undefined : 'No cities listed for this state.'}
+              />
+              <TextField
+                label="Postal / pin code"
+                value={postalCode}
+                onChange={(e) => setPostalCode(e.target.value)}
+                maxLength={20}
+              />
               <SelectField
                 label="Time zone"
                 value={timeZone}
@@ -408,8 +528,10 @@ export function ProfileCompletionWizard({ open, profile, onClose, onComplete }: 
 
                 <ReviewSection title="Location" onEdit={() => setPhase(4)}>
                   <ReviewRow label="Country" value={COUNTRIES.find((c) => c.code === country)?.name} />
+                  <ReviewRow label="State / province" value={state} />
                   <ReviewRow label="City" value={city} />
-                  <ReviewRow label="Time zone" value={TIME_ZONES.find((t) => t.value === timeZone)?.label ?? timeZone} />
+                  <ReviewRow label="Postal / pin code" value={postalCode} />
+                  <ReviewRow label="Time zone" value={timeZone ? formatTimeZoneLabel(timeZone) : timeZone} />
                 </ReviewSection>
               </div>
               <div className="pcw-step__actions">

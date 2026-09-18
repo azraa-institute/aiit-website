@@ -18,6 +18,7 @@ import { LEARNING_GOALS } from '@/data/learningGoals';
 import { LEARNING_AREAS } from '@/data/learningAreas';
 import { detectTimeZone, timeZoneOptions } from '@/data/timeZones';
 import { useUniversityOptions } from '@/data/universities';
+import { isValidPostalCode, postalCodeExample } from '@/data/postalCodePatterns';
 import { splitPhone, combinePhone } from '@/lib/phone';
 import { CameraIcon, LockIcon } from './SettingsIcons';
 import { useLearner } from './learnerData';
@@ -154,6 +155,14 @@ export default function ProfilePage() {
   const { profile } = state.learner;
   const photoUrl = publicFileUrl(AVATARS_BUCKET, profile.avatarKey);
 
+  const postalExample = country ? postalCodeExample(country) : undefined;
+  const postalCodeError =
+    postalCode.trim() && country && !isValidPostalCode(country, postalCode)
+      ? `Doesn't look like a valid ${COUNTRIES.find((c) => c.code === country)?.name ?? ''} postal code${
+          postalExample ? ` (e.g. ${postalExample})` : ''
+        }.`
+      : undefined;
+
   function toggleArea(value: string) {
     setAreasOfInterest((prev) => (prev.includes(value) ? prev.filter((v) => v !== value) : [...prev, value]));
   }
@@ -162,6 +171,10 @@ export default function ProfilePage() {
     e.preventDefault();
     setError(undefined);
     setSaved(false);
+    if (postalCodeError) {
+      setError(postalCodeError);
+      return;
+    }
     setSaving(true);
     try {
       // Send the real trimmed value, even when empty -- `|| undefined` here
@@ -434,6 +447,8 @@ export default function ProfilePage() {
               value={postalCode}
               onChange={(e) => setPostalCode(e.target.value)}
               maxLength={20}
+              error={postalCodeError}
+              hint={!postalCodeError && postalExample ? `e.g. ${postalExample}` : undefined}
             />
           </div>
           <SelectField
@@ -458,7 +473,7 @@ export default function ProfilePage() {
 
           <div className="profile-details__foot">
             <p className="profile-edit__meta">Member since {formatDate(profile.joinedAt)}</p>
-            <Button as="button" type="submit" loading={saving}>
+            <Button as="button" type="submit" loading={saving} disabled={!!postalCodeError}>
               Save changes
             </Button>
           </div>

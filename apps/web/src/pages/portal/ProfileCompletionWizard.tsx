@@ -16,6 +16,7 @@ import { LEARNING_GOALS } from '@/data/learningGoals';
 import { LEARNING_AREAS } from '@/data/learningAreas';
 import { detectTimeZone, timeZoneOptions, formatTimeZoneLabel } from '@/data/timeZones';
 import { useUniversityOptions } from '@/data/universities';
+import { isValidPostalCode, postalCodeExample } from '@/data/postalCodePatterns';
 import { PhoneCountrySelect } from './PhoneCountrySelect';
 import type { LearnerProfile } from '@/pages/portal/learnerData';
 import './profile-completion-wizard.css';
@@ -196,6 +197,11 @@ export function ProfileCompletionWizard({ open, profile, onClose, onComplete }: 
 
   async function handleFinish() {
     setError(undefined);
+    if (country && postalCode.trim() && !isValidPostalCode(country, postalCode)) {
+      setError("That postal/pin code doesn't look right for the selected country.");
+      setPhase(4);
+      return;
+    }
     setSaving(true);
     try {
       await apiFetch('/me', {
@@ -223,6 +229,14 @@ export function ProfileCompletionWizard({ open, profile, onClose, onComplete }: 
       setSaving(false);
     }
   }
+
+  const postalExample = country ? postalCodeExample(country) : undefined;
+  const postalCodeError =
+    postalCode.trim() && country && !isValidPostalCode(country, postalCode)
+      ? `Doesn't look like a valid ${COUNTRIES.find((c) => c.code === country)?.name ?? ''} postal code${
+          postalExample ? ` (e.g. ${postalExample})` : ''
+        }.`
+      : undefined;
 
   const stepNumber = typeof phase === 'number' ? phase : phase === 'welcome' ? 0 : STEP_COUNT;
 
@@ -475,6 +489,8 @@ export function ProfileCompletionWizard({ open, profile, onClose, onComplete }: 
                 value={postalCode}
                 onChange={(e) => setPostalCode(e.target.value)}
                 maxLength={20}
+                error={postalCodeError}
+                hint={!postalCodeError && postalExample ? `e.g. ${postalExample}` : undefined}
               />
               <SelectField
                 label="Time zone"
@@ -483,7 +499,7 @@ export function ProfileCompletionWizard({ open, profile, onClose, onComplete }: 
                 options={timeZoneOptions(timeZone)}
               />
               <div className="pcw-step__actions">
-                <Button as="button" onClick={next} disabled={!country}>
+                <Button as="button" onClick={next} disabled={!country || !!postalCodeError}>
                   Continue
                 </Button>
                 <Button as="button" variant="ghost" onClick={back}>

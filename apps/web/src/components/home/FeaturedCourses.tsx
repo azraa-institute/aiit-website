@@ -5,6 +5,7 @@ import { getDomain } from '@/data/technologies';
 import type { Course, CourseStatus } from '@/data/types';
 import { Section } from '@/components/primitives/Section';
 import { Plate } from '@/components/primitives/Plate';
+import { PopularLogoBadges } from '@/components/course/PopularLogos';
 import './featured-courses.css';
 
 const STATUS_LABEL: Partial<Record<CourseStatus, string>> = {
@@ -85,6 +86,7 @@ export function FeaturedCourses() {
                 fit="contain"
                 alt=""
               />
+              <PopularLogoBadges technologies={featured.technologies} />
             </Link>
             <div className="courses-index__feature-body">
               {featuredStatus && (

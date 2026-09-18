@@ -124,6 +124,7 @@
 }
 
 .courses-index__feature-media {
+  position: relative;
   display: block;
   border-radius: 6px;
   overflow: hidden;

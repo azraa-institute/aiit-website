@@ -683,7 +683,7 @@ export const COURSES: Course[] = [
     enrolled: 50,
     statuses: ['special'],
     instructorId: 'ins-aiit',
-    image: '/assets/courses/digital-tech-literacy.jpg',
+    image: '/assets/courses/digital-and-tech-literacy.jpg',
     outcomes: [
       'Identify and explain the core parts of a computer and how they work together',
       'Navigate the internet safely and confidently, including basic browser and email use',

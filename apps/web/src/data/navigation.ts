@@ -31,6 +31,7 @@ export const PRIMARY_NAV: NavItem[] = [
     children: [
       { label: 'AIIT.network Blog', to: '/resources', description: 'Guides, explainers and career resources.' },
       { label: 'Free Webinar', to: '/webinar', description: 'Reserve your free seat.' },
+      { label: 'Affiliate Programme', to: '/affiliate', description: 'Refer learners, earn on every enrolment.' },
     ],
   },
   { label: 'FAQs', to: '/faqs' },

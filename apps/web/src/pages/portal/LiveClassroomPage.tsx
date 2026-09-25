@@ -8,7 +8,7 @@ import { cn } from '@/lib/cn';
 import { Logo } from '@/components/layout/Logo';
 import { Classroom } from '@/components/classroom/Classroom';
 import { useMe, roleHome } from '@/lib/me';
-import { formatClassDay, formatClassRange, useLiveClasses } from './liveClassData';
+import { formatClassDay, formatClassRange, useDisplayZone, useLiveClasses } from './liveClassData';
 import '@/components/classroom/classroom.css';
 
 type Phase = 'lobby' | 'joining' | 'live' | 'left' | 'ended' | 'removed' | 'dropped';
@@ -45,6 +45,7 @@ function ClassroomHeader({ liveClass, live }: { liveClass?: LiveClassSummary; li
 export default function LiveClassroomPage() {
   const { id } = useParams();
   const back = useBackTarget();
+  const { zone } = useDisplayZone();
   const [phase, setPhase] = useState<Phase>('lobby');
   const [joined, setJoined] = useState<LiveClassJoin>();
   const [error, setError] = useState<string>();
@@ -140,7 +141,7 @@ export default function LiveClassroomPage() {
           ) : (
             <>
               <p className="lobby__when">
-                {formatClassDay(liveClass.startsAt)} · {formatClassRange(liveClass.startsAt, liveClass.endsAt)}
+                {formatClassDay(liveClass.startsAt, zone)} · {formatClassRange(liveClass.startsAt, liveClass.endsAt, zone)}
               </p>
               <h2 className="lobby__title">{liveClass.title}</h2>
               <p className="lobby__note">

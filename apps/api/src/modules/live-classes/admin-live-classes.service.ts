@@ -1,12 +1,23 @@
 import { randomUUID } from 'crypto';
-import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, ConflictException, Injectable, NotFoundException } from '@nestjs/common';
 import type { Prisma } from '@prisma/client';
-import type { AdminLiveClass, Timetable } from '@aiit/shared';
+import type { AdminLiveClass, GenerateTimetableResponse, Timetable, TimetableConflict } from '@aiit/shared';
 import { PrismaService } from '../../common/prisma/prisma.service';
+import { AuditService } from '../../common/audit/audit.service';
 import { joinOpensAt } from './live-class-state';
-import { isValidTimeZone, zonedTimeToUtc } from './tz.util';
+import { isValidTimeZone } from './tz.util';
+import {
+  DEFAULT_DAYS,
+  DEFAULT_DURATION_MINUTES,
+  DEFAULT_START_TIME,
+  DEFAULT_WEEKS,
+  endDateForWeeks,
+  overlaps,
+  planSessions,
+} from './timetable-plan';
 import type {
   CreateLiveClassDto,
+  GenerateTimetableDto,
   CreateTimetableDto,
   TimetableSlotDto,
   UpdateLiveClassDto,
@@ -43,7 +54,10 @@ type AdminClassRow = Prisma.LiveClassGetPayload<{ select: typeof ADMIN_CLASS_SEL
 /** Admin-only scheduling: timetables (weekly patterns) -> generated live classes, plus one-off classes. */
 @Injectable()
 export class AdminLiveClassesService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly audit: AuditService,
+  ) {}
 
   // ---- Timetables ----
 
@@ -140,38 +154,122 @@ export class AdminLiveClassesService {
     if (!timetable) throw new NotFoundException('Timetable not found.');
 
     const now = Date.now();
-    const rows: Prisma.LiveClassCreateManyInput[] = [];
-    const end = timetable.endsOn.getTime();
-    for (let t = timetable.startsOn.getTime(); t <= end; t += 24 * 60 * 60 * 1000) {
-      const day = new Date(t);
-      const weekday = day.getUTCDay();
-      for (const slot of timetable.slots.filter((s) => s.weekday === weekday)) {
-        const [hh, mm] = slot.startTime.split(':').map(Number);
-        const startsAt = zonedTimeToUtc(
-          day.getUTCFullYear(),
-          day.getUTCMonth() + 1,
-          day.getUTCDate(),
-          hh,
-          mm,
-          timetable.timeZone,
-        );
-        if (startsAt.getTime() <= now) continue;
+    const planned = planSessions(isoDate(timetable.startsOn), isoDate(timetable.endsOn), timetable.slots, timetable.timeZone);
+    const rows: Prisma.LiveClassCreateManyInput[] = planned
+      .filter((p) => p.startsAt.getTime() > now)
+      .map((p) => {
         const classId = randomUUID();
-        rows.push({
+        return {
           id: classId,
           courseId: timetable.courseId,
           timetableId: timetable.id,
           title: timetable.title,
-          startsAt,
-          endsAt: new Date(startsAt.getTime() + slot.durationMinutes * 60_000),
+          startsAt: p.startsAt,
+          endsAt: p.endsAt,
           hostUserId: timetable.hostUserId,
           roomName: `class-${classId}`,
-        });
-      }
-    }
+        };
+      });
     if (rows.length === 0) return { created: 0, skipped: 0 };
     const result = await this.prisma.liveClass.createMany({ data: rows, skipDuplicates: true });
     return { created: result.count, skipped: rows.length - result.count };
+  }
+
+  /**
+   * The one-click path: an admin picks a course, a time zone and a start date;
+   * everything else defaults (Mon/Wed/Fri, 18:00, 2 hours, 4 weeks -- the
+   * standard one-month course) and the course's assigned instructor hosts.
+   * Sessions that would double-book that instructor are reported back instead
+   * of being created, unless the admin explicitly allows them.
+   */
+  async autoGenerate(adminId: string, dto: GenerateTimetableDto): Promise<GenerateTimetableResponse> {
+    const course = await this.prisma.course.findFirst({
+      where: { id: dto.courseId, deletedAt: null },
+      select: { id: true, title: true },
+    });
+    if (!course) throw new NotFoundException('Course not found.');
+
+    const weeks = dto.weeks ?? DEFAULT_WEEKS;
+    const startsOn = dto.startDate;
+    const endsOn = endDateForWeeks(startsOn, weeks);
+    this.validateRange(dto.timeZone, startsOn, endsOn);
+    const days = [...new Set(dto.days ?? DEFAULT_DAYS)].sort();
+    const startTime = dto.startTime ?? DEFAULT_START_TIME;
+    const durationMinutes = dto.durationMinutes ?? DEFAULT_DURATION_MINUTES;
+    const slots = days.map((weekday) => ({ weekday, startTime, durationMinutes }));
+
+    const host = await this.pickInstructor(course.id, dto.hostUserId);
+    const upcoming = planSessions(startsOn, endsOn, slots, dto.timeZone).filter((p) => p.startsAt.getTime() > Date.now());
+    if (upcoming.length === 0) {
+      throw new BadRequestException('Those dates are all in the past -- choose a start date in the future.');
+    }
+    const first = upcoming[0].startsAt;
+    const last = upcoming[upcoming.length - 1].endsAt;
+
+    const clash = await this.prisma.liveClass.count({
+      where: { courseId: course.id, status: { in: ['scheduled', 'live'] }, startsAt: { lt: last }, endsAt: { gt: first } },
+    });
+    if (clash > 0) {
+      throw new ConflictException(
+        'This course already has classes scheduled in that period. Cancel or delete them first, or choose later dates.',
+      );
+    }
+
+    if (host && !dto.allowConflicts) {
+      const others = await this.prisma.liveClass.findMany({
+        where: { hostUserId: host.id, status: { in: ['scheduled', 'live'] }, startsAt: { lt: last }, endsAt: { gt: first } },
+        select: { title: true, startsAt: true, endsAt: true },
+      });
+      const conflicts: TimetableConflict[] = [];
+      for (const p of upcoming) {
+        const hit = others.find((o) => overlaps(p.startsAt, p.endsAt, o.startsAt, o.endsAt));
+        if (hit) conflicts.push({ startsAt: p.startsAt.toISOString(), endsAt: p.endsAt.toISOString(), otherClass: hit.title });
+      }
+      if (conflicts.length > 0) return { status: 'conflicts', instructorName: host.name, conflicts };
+    }
+
+    const timetable = await this.createTimetable(adminId, {
+      courseId: course.id,
+      title: `${course.title} — live classes`,
+      timeZone: dto.timeZone,
+      startsOn,
+      endsOn,
+      hostUserId: host?.id ?? null,
+      slots,
+    });
+    const { created } = await this.generateClasses(timetable.id);
+    await this.audit.record(adminId, 'timetable.generate', 'timetable', timetable.id, {
+      course: course.title,
+      timeZone: dto.timeZone,
+      created,
+    });
+    return { status: 'created', timetable, created, unassigned: !host, instructorName: host?.name ?? null };
+  }
+
+  /** An explicit choice wins; otherwise the assigned instructor with the lightest upcoming load. */
+  private async pickInstructor(
+    courseId: string,
+    explicit?: string | null,
+  ): Promise<{ id: string; name: string | null } | null> {
+    if (explicit) {
+      await this.assertInstructor(explicit);
+      return this.prisma.profile.findUnique({ where: { id: explicit }, select: { id: true, name: true } });
+    }
+    const assigned = await this.prisma.courseInstructor.findMany({ where: { courseId }, select: { instructorId: true } });
+    if (assigned.length === 0) return null;
+    const profiles = await this.prisma.profile.findMany({
+      where: { id: { in: assigned.map((a) => a.instructorId) }, role: 'instructor', status: 'active' },
+      select: { id: true, name: true },
+    });
+    if (profiles.length === 0) return null;
+    if (profiles.length === 1) return profiles[0];
+    const load = await this.prisma.liveClass.groupBy({
+      by: ['hostUserId'],
+      where: { hostUserId: { in: profiles.map((p) => p.id) }, status: 'scheduled', startsAt: { gt: new Date() } },
+      _count: { _all: true },
+    });
+    const counts = new Map(load.map((l) => [l.hostUserId, l._count._all]));
+    return [...profiles].sort((a, b) => (counts.get(a.id) ?? 0) - (counts.get(b.id) ?? 0))[0];
   }
 
   // ---- Classes ----

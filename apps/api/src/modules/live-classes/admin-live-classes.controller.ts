@@ -12,7 +12,7 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { Throttle } from '@nestjs/throttler';
-import type { AdminLiveClass, Timetable } from '@aiit/shared';
+import type { AdminLiveClass, GenerateTimetableResponse, Timetable } from '@aiit/shared';
 import { JwtGuard, type AuthenticatedUser } from '../../common/guards/jwt.guard';
 import { RolesGuard } from '../../common/guards/roles.guard';
 import { Roles } from '../../common/decorators/roles.decorator';
@@ -21,6 +21,7 @@ import { AdminLiveClassesService } from './admin-live-classes.service';
 import {
   CreateLiveClassDto,
   CreateTimetableDto,
+  GenerateTimetableDto,
   UpdateLiveClassDto,
   UpdateTimetableDto,
 } from './dto/live-class.dto';
@@ -36,6 +37,16 @@ export class AdminLiveClassesController {
   @Get('timetables')
   timetables(@Query('courseId') courseId?: string): Promise<Timetable[]> {
     return this.admin.listTimetables(courseId);
+  }
+
+  /** One click: course + time zone + start date. See AdminLiveClassesService.autoGenerate. */
+  @Post('timetables/auto-generate')
+  @HttpCode(200)
+  autoGenerate(
+    @CurrentUser() user: AuthenticatedUser,
+    @Body() dto: GenerateTimetableDto,
+  ): Promise<GenerateTimetableResponse> {
+    return this.admin.autoGenerate(user.userId, dto);
   }
 
   @Post('timetables')

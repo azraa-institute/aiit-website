@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import type { AdminLiveClass, CourseListItem, InstructorSummary, Timetable } from '@aiit/shared';
+import type { AdminCourse, AdminLiveClass, CourseListItem, InstructorSummary, Timetable } from '@aiit/shared';
 import { apiFetch } from '@/lib/api';
 
 /** Minimal fetch-with-reload hook for the admin screens. `path === null` skips the request. */
@@ -30,6 +30,8 @@ export function useAdminFetch<T>(path: string | null): FetchState<T> & { reload:
 }
 
 export const useAdminCourses = () => useAdminFetch<CourseListItem[]>('/courses');
+/** Published courses with enrolment counts and assigned instructors (admin-only, richer than the public list). */
+export const useAdminCourseList = () => useAdminFetch<AdminCourse[]>('/admin/courses');
 export const useAdminInstructors = () => useAdminFetch<InstructorSummary[]>('/admin/instructors');
 export const useAdminTimetables = () => useAdminFetch<Timetable[]>('/admin/timetables');
 export const useAdminClasses = (courseId?: string) =>

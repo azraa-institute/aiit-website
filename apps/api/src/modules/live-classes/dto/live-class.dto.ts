@@ -3,6 +3,7 @@ import {
   ArrayMaxSize,
   ArrayMinSize,
   IsArray,
+  IsBoolean,
   IsDateString,
   IsIn,
   IsInt,
@@ -165,4 +166,51 @@ export class UpdateLiveClassDto {
   @IsOptional()
   @IsIn(['cancelled'])
   status?: 'cancelled';
+}
+
+/** The one-click generator: everything but course, time zone and start date is optional. */
+export class GenerateTimetableDto {
+  @IsUUID()
+  courseId!: string;
+
+  @IsString()
+  @MaxLength(60)
+  timeZone!: string;
+
+  @Matches(DATE_ONLY, { message: 'startDate must be YYYY-MM-DD.' })
+  startDate!: string;
+
+  @IsOptional()
+  @IsArray()
+  @ArrayMinSize(1)
+  @ArrayMaxSize(7)
+  @IsInt({ each: true })
+  @Min(0, { each: true })
+  @Max(6, { each: true })
+  days?: number[];
+
+  @IsOptional()
+  @Matches(HH_MM, { message: 'startTime must be HH:MM (24-hour).' })
+  startTime?: string;
+
+  @IsOptional()
+  @IsInt()
+  @Min(30)
+  @Max(480)
+  durationMinutes?: number;
+
+  @IsOptional()
+  @IsInt()
+  @Min(1)
+  @Max(12)
+  weeks?: number;
+
+  @IsOptional()
+  @IsUUID()
+  hostUserId?: string | null;
+
+  /** Create the timetable even though it double-books the instructor. */
+  @IsOptional()
+  @IsBoolean()
+  allowConflicts?: boolean;
 }

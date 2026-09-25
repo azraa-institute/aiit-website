@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react';
 import type { FormEvent } from 'react';
 import type { Timetable } from '@aiit/shared';
 import { apiFetch } from '@/lib/api';
+import { AdminGeneratePanel } from './AdminGeneratePanel';
 import {
   WEEKDAYS,
   allTimeZones,
@@ -165,16 +166,18 @@ export default function AdminTimetablesPage() {
           <p className="adm-eyebrow">Scheduling</p>
           <h1 className="adm-title">Timetables</h1>
           <p className="adm-intro">
-            A timetable is a weekly pattern for one course. Generating it creates the dated live classes that learners
-            see, each of which you can still edit or cancel on the Classes page.
+            Generate a month of live classes for a course in one click. Each class can still be edited or cancelled on the
+            Classes page. Use a custom timetable only when a course needs an unusual pattern.
           </p>
         </div>
         {!form ? (
           <button type="button" className="adm-btn adm-btn--primary" onClick={() => { setForm(emptyForm()); setNotice(undefined); setError(undefined); }}>
-            New timetable
+            Custom timetable
           </button>
         ) : null}
       </div>
+
+      <AdminGeneratePanel onDone={timetables.reload} />
 
       {notice ? <p className="adm-notice" role="status">{notice}</p> : null}
       {error && !form ? <p className="adm-error" role="alert">{error}</p> : null}

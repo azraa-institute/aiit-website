@@ -1,3 +1,5 @@
+import type { Timetable } from './live-class';
+
 /** Admin portal shapes -- see apps/api/src/modules/admin. */
 
 export interface Paginated<T> {
@@ -77,3 +79,31 @@ export interface AuditLogEntry {
   metadata: Record<string, unknown>;
   createdAt: string;
 }
+
+// ---- Course <-> instructor assignment + automatic timetables ----
+
+export interface AdminCourse {
+  id: string;
+  slug: string;
+  title: string;
+  enrolled: number;
+  instructors: { id: string; name: string | null }[];
+}
+
+export interface TimetableConflict {
+  startsAt: string;
+  endsAt: string;
+  /** Title of the class the instructor is already teaching at that time. */
+  otherClass: string;
+}
+
+export type GenerateTimetableResponse =
+  | {
+      status: 'created';
+      timetable: Timetable;
+      created: number;
+      /** True when the course has no instructor assigned yet -- the classes exist but nobody is set to host them. */
+      unassigned: boolean;
+      instructorName: string | null;
+    }
+  | { status: 'conflicts'; instructorName: string | null; conflicts: TimetableConflict[] };

@@ -274,6 +274,7 @@ model Course {
   certificates     Certificate[]
   timetables       Timetable[]
   liveClasses      LiveClass[]
+  instructors      CourseInstructor[]
   createdAt        DateTime              @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt        DateTime              @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
   deletedAt        DateTime?             @map("deleted_at") @db.Timestamptz(6)
@@ -685,5 +686,23 @@ model AuditLog {
   @@index([createdAt])
   @@index([targetType, targetId])
   @@map("audit_logs")
+  @@schema("public")
+}
+
+// Which instructors teach which course. Set by an admin; drives who a generated
+// timetable's classes are assigned to and (in the instructor portal) which
+// courses, rosters and assignments an instructor can see. instructor_id is a
+// plain uuid to a Profile with role 'instructor' (same no-relation convention
+// as Enrollment.userId).
+model CourseInstructor {
+  courseId     String   @map("course_id") @db.Uuid
+  course       Course   @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  instructorId String   @map("instructor_id") @db.Uuid
+  assignedBy   String?  @map("assigned_by") @db.Uuid
+  assignedAt   DateTime @default(now()) @map("assigned_at") @db.Timestamptz(6)
+
+  @@id([courseId, instructorId])
+  @@index([instructorId])
+  @@map("course_instructors")
   @@schema("public")
 }

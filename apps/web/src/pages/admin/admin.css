@@ -735,3 +735,73 @@
   color: var(--ink);
   border-bottom-color: var(--brass);
 }
+
+/* ---- Complaints inbox, announcements, reports ---- */
+.adm-drawer--wide {
+  width: min(34rem, 100%);
+}
+.adm-thread {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  margin: var(--space-4) 0;
+}
+.adm-msg {
+  padding: var(--space-3) var(--space-4);
+  border: 1px solid var(--line);
+  background: var(--paper);
+}
+.adm-msg--admin {
+  border-left: 3px solid var(--brass);
+  background: var(--accent-wash);
+}
+.adm-msg--internal {
+  border-style: dashed;
+  border-left: 3px solid var(--red);
+  background: rgba(192, 43, 35, 0.05);
+}
+.adm-msg__meta {
+  margin-bottom: 4px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--ink-faint);
+}
+.adm-reply {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  margin-top: var(--space-4);
+}
+.adm-statusrow {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+  margin: var(--space-4) 0 var(--space-2);
+}
+.adm-status--c-open {
+  color: var(--red);
+  border-color: var(--red);
+}
+.adm-status--c-in_review {
+  color: var(--brass-deep);
+  border-color: var(--brass);
+}
+.adm-status--c-resolved {
+  color: var(--slate-deep);
+  border-color: var(--slate);
+}
+.adm-status--c-dismissed {
+  color: var(--ink-faint);
+}
+.adm-h2 {
+  margin: var(--space-6) 0 var(--space-3);
+  font-size: 1.05rem;
+}
+.adm-toolbar--gap {
+  margin-top: var(--space-5);
+}
+.adm-panel--notices {
+  margin-bottom: var(--space-5);
+  border-left: 3px solid var(--brass);
+}

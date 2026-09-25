@@ -22,3 +22,4 @@ export * from './geo';
 export * from './live-class';
 export * from './admin';
 export * from './instructor';
+export * from './support';

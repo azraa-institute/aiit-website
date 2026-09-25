@@ -17,6 +17,7 @@ import { GeoModule } from './modules/geo/geo.module';
 import { LiveClassesModule } from './modules/live-classes/live-classes.module';
 import { AdminModule } from './modules/admin/admin.module';
 import { InstructorModule } from './modules/instructor/instructor.module';
+import { SupportModule } from './modules/support/support.module';
 import { AuditModule } from './common/audit/audit.service';
 import { SupabaseAdminModule } from './common/supabase-admin/supabase-admin.service';
 
@@ -52,6 +53,7 @@ import { SupabaseAdminModule } from './common/supabase-admin/supabase-admin.serv
     LiveClassesModule,
     AdminModule,
     InstructorModule,
+    SupportModule,
   ],
   providers: [{ provide: APP_GUARD, useClass: ThrottlerGuard }],
 })

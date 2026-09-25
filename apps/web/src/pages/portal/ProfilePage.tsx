@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import type { ChangeEvent, FormEvent } from 'react';
 import type { GeoCity, GeoState } from '@aiit/shared';
+import { Link } from 'react-router-dom';
 import { useScrollReveal } from '@/lib/useScrollReveal';
 import { formatDate } from '@/lib/format';
 import { useAuth } from '@/lib/AuthContext';
@@ -24,6 +25,7 @@ import { CameraIcon, LockIcon } from './SettingsIcons';
 import { useLearner } from './learnerData';
 import { PhoneCountrySelect } from './PhoneCountrySelect';
 import { PortalLoader } from './PortalLoader';
+import './support.css';
 
 const AVATARS_BUCKET = 'avatars';
 const COUNTRY_OPTIONS = [{ value: '', label: 'Select a country' }, ...COUNTRIES.map((c) => ({ value: c.code, label: c.name }))];
@@ -480,6 +482,16 @@ export default function ProfilePage() {
         </form>
       </div>
 
+      <section className="profile-support" aria-labelledby="profile-support-title">
+        <h2 id="profile-support-title">Support &amp; complaints</h2>
+        <p>
+          Having trouble with your learning, or an issue with a course or an instructor? Report it to the AIIT team —
+          your report is private and we reply here in your portal.
+        </p>
+        <Link to="/portal/support" className="btn btn--secondary">
+          Report a problem or see your reports
+        </Link>
+      </section>
     </div>
   );
 }

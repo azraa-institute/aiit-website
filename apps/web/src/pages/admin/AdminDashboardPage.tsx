@@ -46,6 +46,7 @@ export default function AdminDashboardPage() {
         <Kpi label="Suspended" value={d.students.suspended} to="/admin/students?status=suspended" />
         <Kpi label="New this week" value={d.students.newThisWeek} hint="signed up in the last 7 days" />
         <Kpi label="Instructors" value={d.instructors.active} hint={`${d.instructors.total} in total`} to="/admin/instructors" />
+        <Kpi label="Open complaints" value={d.complaints.open} to="/admin/complaints?status=open" hint="waiting for a reply" />
         <Kpi label="Live now" value={d.classes.liveNow} hint={`${d.classes.upcomingWeek} classes this week`} to="/admin/classes" />
       </div>
 

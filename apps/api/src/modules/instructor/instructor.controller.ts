@@ -91,6 +91,11 @@ export class InstructorController {
     return this.instructor.gradingQueue(user.userId);
   }
 
+  @Get('notices')
+  notices(): Promise<InstructorAnnouncement[]> {
+    return this.instructor.notices();
+  }
+
   @Get('courses/:courseId/announcements')
   announcements(
     @CurrentUser() user: AuthenticatedUser,

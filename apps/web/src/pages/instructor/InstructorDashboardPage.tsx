@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import type { InstructorDashboard } from '@aiit/shared';
+import type { InstructorAnnouncement, InstructorDashboard } from '@aiit/shared';
 import { useApiFetch } from '@/lib/useApiFetch';
 import { formatWhen } from '@/pages/admin/adminData';
 import { formatClassRange, useDisplayZone, useLiveClasses } from '@/pages/portal/liveClassData';
@@ -23,6 +23,7 @@ function Kpi({ label, value, hint, to }: { label: string; value: number; hint?: 
 
 export default function InstructorDashboardPage() {
   const state = useApiFetch<InstructorDashboard>('/instructor/dashboard');
+  const notices = useApiFetch<InstructorAnnouncement[]>('/instructor/notices');
   const classes = useLiveClasses(30_000);
   const { zone } = useDisplayZone();
 
@@ -57,6 +58,22 @@ export default function InstructorDashboardPage() {
         <Kpi label="Needs grading" value={d.needsGrading} to="/instructor/grading" hint="handed in, not yet graded" />
         <Kpi label="Classes this week" value={d.classesThisWeek} to="/instructor/classes" />
       </div>
+
+      {notices.status === 'ready' && notices.data.length > 0 ? (
+        <section className="adm-panel adm-panel--notices" aria-labelledby="aiit-notices">
+          <div className="adm-panel__head">
+            <h2 id="aiit-notices">Messages from the AIIT team</h2>
+          </div>
+          <ul className="adm-plain">
+            {notices.data.slice(0, 3).map((n) => (
+              <li key={n.id}>
+                <strong>{n.title}</strong> <span className="adm-muted">· {formatWhen(n.createdAt)}</span>
+                <p className="adm-prewrap">{n.body}</p>
+              </li>
+            ))}
+          </ul>
+        </section>
+      ) : null}
 
       <section className="adm-panel" aria-labelledby="next-classes">
         <div className="adm-panel__head">

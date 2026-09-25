@@ -49,7 +49,7 @@ export class AdminUsersService {
     const weekAgo = new Date(now.getTime() - 7 * DAY);
     const weekAhead = new Date(now.getTime() + 7 * DAY);
 
-    const [byRole, newThisWeek, courses, liveNow, upcomingWeek] = await Promise.all([
+    const [byRole, newThisWeek, courses, liveNow, upcomingWeek, openComplaints] = await Promise.all([
       this.prisma.profile.groupBy({ by: ['role', 'status'], _count: { _all: true } }),
       this.prisma.profile.count({ where: { role: 'learner', createdAt: { gte: weekAgo } } }),
       this.prisma.course.findMany({
@@ -64,6 +64,7 @@ export class AdminUsersService {
       }),
       this.prisma.liveClass.count({ where: { status: 'live' } }),
       this.prisma.liveClass.count({ where: { status: 'scheduled', startsAt: { gte: now, lte: weekAhead } } }),
+      this.prisma.complaint.count({ where: { status: { in: ['open', 'in_review'] } } }),
     ]);
 
     const count = (role: string, status?: string) =>
@@ -81,6 +82,7 @@ export class AdminUsersService {
       instructors: { total: count('instructor'), active: count('instructor', 'active'), suspended: count('instructor', 'suspended') },
       courses: courses.map((c) => ({ id: c.id, slug: c.slug, title: c.title, enrolled: c._count.enrollments })),
       classes: { liveNow, upcomingWeek },
+      complaints: { open: openComplaints },
     };
   }
 

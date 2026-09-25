@@ -38,6 +38,7 @@ const NAV: NavItem[] = [
   { to: '/portal/webinars', label: 'Webinar registrations', group: 'study' },
   { to: '/portal/notifications', label: 'Notifications', group: 'study' },
   { to: '/portal/profile', label: 'Profile', group: 'account' },
+  { to: '/portal/support', label: 'Support', group: 'account' },
   { to: '/portal/settings', label: 'Account settings', group: 'account' },
 ];
 

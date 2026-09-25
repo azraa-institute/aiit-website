@@ -1,0 +1,149 @@
+/* Student support & reports, plus the small entry card on the Profile page. */
+
+.support-actions {
+  margin-bottom: var(--space-6);
+}
+.support-muted {
+  color: var(--ink-muted);
+  font-size: 0.9rem;
+}
+.support-sent {
+  margin-bottom: var(--space-5);
+  padding: var(--space-3) var(--space-4);
+  border-left: 3px solid var(--brass);
+  background: var(--accent-wash);
+}
+
+.support-form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  max-width: 40rem;
+  margin-bottom: var(--space-7);
+  padding: var(--space-5);
+  border: 1px solid var(--line);
+  border-top: 3px solid var(--brass);
+  background: var(--surface);
+}
+.support-form__title {
+  font-family: var(--font-accent);
+  font-size: 1.5rem;
+}
+.support-form__note {
+  color: var(--ink-muted);
+  font-size: 0.9rem;
+}
+.support-form__actions {
+  display: flex;
+  gap: var(--space-3);
+}
+
+.support-list ul {
+  list-style: none;
+  margin: var(--space-3) 0 0;
+  padding: 0;
+  border-top: 1px solid var(--line);
+}
+.support-item {
+  border-bottom: 1px solid var(--line);
+}
+.support-item__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4);
+  width: 100%;
+  padding: var(--space-4) 0;
+  text-align: left;
+  cursor: pointer;
+}
+.support-item__main {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+}
+.support-item__subject {
+  font-weight: 700;
+}
+.support-item__meta {
+  font-size: 0.85rem;
+  color: var(--ink-muted);
+}
+.support-status {
+  flex: none;
+  padding: 3px 10px;
+  border: 1px solid var(--line-strong);
+  border-radius: 999px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ink-muted);
+}
+.support-status--open {
+  color: var(--red);
+  border-color: var(--red);
+}
+.support-status--in_review {
+  color: var(--brass-deep);
+  border-color: var(--brass);
+}
+.support-status--resolved {
+  color: var(--slate-deep);
+  border-color: var(--slate);
+}
+
+.support-thread {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  padding: 0 0 var(--space-5);
+}
+.support-msg {
+  max-width: 38rem;
+  padding: var(--space-3) var(--space-4);
+  border: 1px solid var(--line);
+  background: var(--surface);
+}
+.support-msg--admin {
+  border-left: 3px solid var(--brass);
+  background: var(--accent-wash);
+}
+.support-msg__meta {
+  margin-bottom: 4px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+}
+.support-msg__body {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.support-reply {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  max-width: 38rem;
+  align-items: flex-start;
+}
+
+/* Profile page entry card */
+.profile-support {
+  margin-top: var(--space-6);
+  padding: var(--space-5);
+  border: 1px solid var(--line);
+  border-left: 3px solid var(--brass);
+  background: var(--surface);
+}
+.profile-support h2 {
+  font-family: var(--font-accent);
+  font-size: 1.3rem;
+}
+.profile-support p {
+  margin: var(--space-2) 0 var(--space-4);
+  color: var(--ink-muted);
+  max-width: 40rem;
+}

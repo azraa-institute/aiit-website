@@ -276,6 +276,7 @@ model Course {
   liveClasses      LiveClass[]
   instructors      CourseInstructor[]
   announcements    Announcement[]
+  complaints       Complaint[]
   createdAt        DateTime              @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt        DateTime              @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
   deletedAt        DateTime?             @map("deleted_at") @db.Timestamptz(6)
@@ -725,5 +726,69 @@ model Announcement {
 
   @@index([courseId, createdAt])
   @@map("announcements")
+  @@schema("public")
+}
+
+// ---- Support & complaints ----
+// Students report a problem with their learning, a course, a technical issue or
+// an instructor. ONLY admins ever read these: nothing in the instructor portal
+// or API exposes them, so a complaint about an instructor never reaches that
+// instructor. Admin replies (internal = false) are visible to the student;
+// internal notes never are.
+
+enum ComplaintCategory {
+  learning_issue
+  instructor
+  course_content
+  technical
+  payment
+  other
+
+  @@schema("public")
+}
+
+enum ComplaintStatus {
+  open
+  in_review
+  resolved
+  dismissed
+
+  @@schema("public")
+}
+
+model Complaint {
+  id           String            @id @default(uuid()) @db.Uuid
+  userId       String            @map("user_id") @db.Uuid // the student who filed it
+  category     ComplaintCategory
+  courseId     String?           @map("course_id") @db.Uuid
+  course       Course?           @relation(fields: [courseId], references: [id], onDelete: SetNull)
+  instructorId String?           @map("instructor_id") @db.Uuid // set when the complaint is about a teacher
+  subject      String
+  body         String
+  status       ComplaintStatus   @default(open)
+  resolvedAt   DateTime?         @map("resolved_at") @db.Timestamptz(6)
+  resolvedBy   String?           @map("resolved_by") @db.Uuid
+  messages     ComplaintMessage[]
+  createdAt    DateTime          @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt    DateTime          @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  @@index([status, createdAt])
+  @@index([userId])
+  @@map("complaints")
+  @@schema("public")
+}
+
+model ComplaintMessage {
+  id          String    @id @default(uuid()) @db.Uuid
+  complaintId String    @map("complaint_id") @db.Uuid
+  complaint   Complaint @relation(fields: [complaintId], references: [id], onDelete: Cascade)
+  authorId    String    @map("author_id") @db.Uuid
+  authorRole  String    @map("author_role") // 'student' | 'admin'
+  body        String
+  internal    Boolean   @default(false) // admin-only note, never shown to the student
+  createdAt   DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  @@index([complaintId, createdAt])
+  @@map("complaint_messages")
   @@schema("public")
 }

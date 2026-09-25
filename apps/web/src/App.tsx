@@ -79,6 +79,7 @@ const NotificationsPage = lazy(() => import('@/pages/portal/NotificationsPage'))
 const ProfilePage = lazy(() => import('@/pages/portal/ProfilePage'));
 const SettingsPage = lazy(() => import('@/pages/portal/SettingsPage'));
 const SchedulePage = lazy(() => import('@/pages/portal/SchedulePage'));
+const SupportPage = lazy(() => import('@/pages/portal/SupportPage'));
 const AdminLayout = lazy(() => import('@/pages/admin/AdminLayout'));
 const AdminTimetablesPage = lazy(() => import('@/pages/admin/AdminTimetablesPage'));
 const AdminClassesPage = lazy(() => import('@/pages/admin/AdminClassesPage'));
@@ -87,6 +88,9 @@ const AdminStudentsPage = lazy(() => import('@/pages/admin/AdminStudentsPage'));
 const AdminInstructorsPage = lazy(() => import('@/pages/admin/AdminInstructorsPage'));
 const AdminAuditPage = lazy(() => import('@/pages/admin/AdminAuditPage'));
 const AdminCoursesPage = lazy(() => import('@/pages/admin/AdminCoursesPage'));
+const AdminComplaintsPage = lazy(() => import('@/pages/admin/AdminComplaintsPage'));
+const AdminAnnouncementsPage = lazy(() => import('@/pages/admin/AdminAnnouncementsPage'));
+const AdminReportsPage = lazy(() => import('@/pages/admin/AdminReportsPage'));
 const InstructorLayout = lazy(() => import('@/pages/instructor/InstructorLayout'));
 const InstructorDashboardPage = lazy(() => import('@/pages/instructor/InstructorDashboardPage'));
 const InstructorCoursesPage = lazy(() => import('@/pages/instructor/InstructorCoursesPage'));
@@ -203,6 +207,7 @@ export function App() {
                     </RequireCompleteProfile>
                   }
                 />
+                <Route path="support" element={<SupportPage />} />
                 <Route path="profile" element={<ProfilePage />} />
                 <Route path="notifications" element={<NotificationsPage />} />
                 <Route path="settings" element={<SettingsPage />} />
@@ -250,6 +255,9 @@ export function App() {
                 <Route path="courses" element={<AdminCoursesPage />} />
                 <Route path="timetables" element={<AdminTimetablesPage />} />
                 <Route path="classes" element={<AdminClassesPage />} />
+                <Route path="complaints" element={<AdminComplaintsPage />} />
+                <Route path="announcements" element={<AdminAnnouncementsPage />} />
+                <Route path="reports" element={<AdminReportsPage />} />
                 <Route path="audit" element={<AdminAuditPage />} />
               </Route>
 

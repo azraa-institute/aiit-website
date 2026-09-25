@@ -21,6 +21,8 @@ export interface AdminDashboard {
   /** Students enrolled per published course (cancelled enrollments excluded). */
   courses: { id: string; slug: string; title: string; enrolled: number }[];
   classes: { liveNow: number; upcomingWeek: number };
+  /** Complaints still open or in review. */
+  complaints: { open: number };
 }
 
 export type AccountStatus = 'active' | 'suspended' | 'pending_deletion';

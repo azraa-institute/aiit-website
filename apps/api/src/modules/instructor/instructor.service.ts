@@ -373,6 +373,12 @@ export class InstructorService {
     return toAnnouncement(row);
   }
 
+  /** Messages the admin team sent to all instructors -- shown on the instructor dashboard. */
+  async notices(): Promise<InstructorAnnouncement[]> {
+    const rows = await this.prisma.announcement.findMany({ where: { audience: 'instructors' }, orderBy: { createdAt: 'desc' }, take: 10 });
+    return rows.map(toAnnouncement);
+  }
+
   // ---- helpers ----
 
   private parseDue(value: string | null | undefined): Date | null {

@@ -10,7 +10,8 @@ BEGIN
      SET role = 'instructor'
    WHERE role = 'learner'
      AND id IN (SELECT id FROM auth.users WHERE lower(email) = 'ndubuisigodcares1011@gmail.com');
-EXCEPTION WHEN insufficient_privilege THEN
-  RAISE NOTICE 'Could not read auth.users -- promote the test instructor manually.';
+EXCEPTION WHEN insufficient_privilege OR undefined_column THEN
+  -- undefined_column: CI's stub auth.users has no email column (real Supabase does).
+  RAISE NOTICE 'Could not read auth.users.email -- promote the test instructor manually.';
 END
 $$;

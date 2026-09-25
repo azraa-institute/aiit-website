@@ -14,6 +14,7 @@ import { CertificatesModule } from './modules/certificates/certificates.module';
 import { NotificationsModule } from './modules/notifications/notifications.module';
 import { FormsModule } from './modules/forms/forms.module';
 import { GeoModule } from './modules/geo/geo.module';
+import { LiveClassesModule } from './modules/live-classes/live-classes.module';
 
 @Module({
   imports: [
@@ -42,6 +43,7 @@ import { GeoModule } from './modules/geo/geo.module';
     NotificationsModule,
     FormsModule,
     GeoModule,
+    LiveClassesModule,
   ],
   providers: [{ provide: APP_GUARD, useClass: ThrottlerGuard }],
 })

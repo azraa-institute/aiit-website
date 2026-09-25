@@ -1,6 +1,7 @@
 import 'reflect-metadata';
 import * as Sentry from '@sentry/node';
 import helmet from 'helmet';
+import { raw } from 'express';
 import { NestFactory } from '@nestjs/core';
 import { RequestMethod, ValidationPipe } from '@nestjs/common';
 import { Logger } from 'nestjs-pino';
@@ -18,6 +19,12 @@ async function bootstrap() {
 
   app.useLogger(app.get(Logger));
   app.use(helmet());
+
+  // LiveKit signs its webhooks over the exact raw body (content type
+  // application/webhook+json, which the default JSON parser ignores), so this
+  // one path gets a raw Buffer instead. Must be registered before Nest's own
+  // body parsers, which are attached later at init.
+  app.use('/v1/livekit/webhook', raw({ type: '*/*', limit: '256kb' }));
 
   const corsOrigins = (process.env.CORS_ORIGINS ?? '')
     .split(',')

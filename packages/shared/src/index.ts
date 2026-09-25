@@ -19,3 +19,4 @@ export * from './assignment';
 export * from './certificate';
 export * from './notification';
 export * from './geo';
+export * from './live-class';

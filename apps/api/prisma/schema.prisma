@@ -263,6 +263,8 @@ model Course {
   enrollments      Enrollment[]
   assignments      Assignment[]
   certificates     Certificate[]
+  timetables       Timetable[]
+  liveClasses      LiveClass[]
   createdAt        DateTime              @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt        DateTime              @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
   deletedAt        DateTime?             @map("deleted_at") @db.Timestamptz(6)
@@ -562,5 +564,98 @@ model CookieConsentLog {
   @@index([visitorId])
   @@index([userId])
   @@map("cookie_consent_logs")
+  @@schema("public")
+}
+
+// ---- Live classes (LiveKit) ----
+// Admins build a Timetable (a weekly pattern for one course, in one time
+// zone, between two dates) and generate concrete LiveClass rows from it;
+// single ad-hoc classes can also be created with no timetable. The
+// instructor (a Profile with role 'instructor', referenced by plain uuid --
+// same no-relation convention as Enrollment.userId) only starts and runs a
+// class; learners join once it is live. Video runs on LiveKit Cloud, this
+// database only holds schedule + attendance. No recording columns yet (v2).
+
+enum LiveClassStatus {
+  scheduled
+  live
+  ended
+  cancelled
+
+  @@schema("public")
+}
+
+model Timetable {
+  id         String          @id @default(uuid()) @db.Uuid
+  courseId   String          @map("course_id") @db.Uuid
+  course     Course          @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  title      String
+  timeZone   String          @map("time_zone") // IANA zone the slot times are written in, e.g. "Africa/Lagos"
+  startsOn   DateTime        @map("starts_on") @db.Date
+  endsOn     DateTime        @map("ends_on") @db.Date
+  hostUserId String?         @map("host_user_id") @db.Uuid // default instructor for generated classes
+  createdBy  String          @map("created_by") @db.Uuid
+  slots      TimetableSlot[]
+  classes    LiveClass[]
+  createdAt  DateTime        @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt  DateTime        @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  @@index([courseId])
+  @@map("timetables")
+  @@schema("public")
+}
+
+model TimetableSlot {
+  id              String    @id @default(uuid()) @db.Uuid
+  timetableId     String    @map("timetable_id") @db.Uuid
+  timetable       Timetable @relation(fields: [timetableId], references: [id], onDelete: Cascade)
+  weekday         Int // 0 = Sunday ... 6 = Saturday
+  startTime       String    @map("start_time") // "HH:MM", 24h, in the timetable's time zone
+  durationMinutes Int       @map("duration_minutes")
+
+  @@unique([timetableId, weekday, startTime])
+  @@map("timetable_slots")
+  @@schema("public")
+}
+
+model LiveClass {
+  id               String                @id @default(uuid()) @db.Uuid
+  courseId         String                @map("course_id") @db.Uuid
+  course           Course                @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  timetableId      String?               @map("timetable_id") @db.Uuid
+  timetable        Timetable?            @relation(fields: [timetableId], references: [id], onDelete: SetNull)
+  title            String
+  description      String?
+  startsAt         DateTime              @map("starts_at") @db.Timestamptz(6)
+  endsAt           DateTime              @map("ends_at") @db.Timestamptz(6)
+  status           LiveClassStatus       @default(scheduled)
+  hostUserId       String?               @map("host_user_id") @db.Uuid
+  roomName         String                @unique @map("room_name") // LiveKit room, "class-<id>"
+  joinOpensMinutes Int                   @default(15) @map("join_opens_minutes")
+  startedAt        DateTime?             @map("started_at") @db.Timestamptz(6)
+  endedAt          DateTime?             @map("ended_at") @db.Timestamptz(6)
+  attendance       LiveClassAttendance[]
+  createdAt        DateTime              @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt        DateTime              @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  @@unique([timetableId, startsAt])
+  @@index([courseId, startsAt])
+  @@index([hostUserId])
+  @@map("live_classes")
+  @@schema("public")
+}
+
+model LiveClassAttendance {
+  id            String    @id @default(uuid()) @db.Uuid
+  liveClassId   String    @map("live_class_id") @db.Uuid
+  liveClass     LiveClass @relation(fields: [liveClassId], references: [id], onDelete: Cascade)
+  userId        String    @map("user_id") @db.Uuid
+  firstJoinedAt DateTime  @map("first_joined_at") @db.Timestamptz(6)
+  lastJoinedAt  DateTime? @map("last_joined_at") @db.Timestamptz(6) // set while connected, cleared on leave
+  lastLeftAt    DateTime? @map("last_left_at") @db.Timestamptz(6)
+  totalSeconds  Int       @default(0) @map("total_seconds")
+
+  @@unique([liveClassId, userId])
+  @@map("live_class_attendance")
   @@schema("public")
 }

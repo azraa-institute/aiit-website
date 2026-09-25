@@ -1,0 +1,135 @@
+/* Portal timetable (live classes). Uses the portal's editorial list language:
+   hairline rows, brass for the one live/primary signal, no boxed cards. */
+
+.schedule-section {
+  margin-bottom: var(--space-8);
+}
+.schedule-section > .portal-eyebrow {
+  margin-bottom: var(--space-3);
+}
+
+.lessons {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  border-top: 1px solid var(--line);
+}
+
+.lesson {
+  display: grid;
+  grid-template-columns: 11.5rem minmax(0, 1fr) auto;
+  align-items: center;
+  gap: var(--space-4) var(--space-6);
+  padding: var(--space-5) 0;
+  border-bottom: 1px solid var(--line);
+}
+.lesson--live {
+  background: linear-gradient(90deg, var(--accent-wash), transparent 70%);
+  margin-inline: calc(var(--space-4) * -1);
+  padding-inline: var(--space-4);
+  border-left: 2px solid var(--brass);
+}
+
+.lesson__when {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.lesson__day {
+  font-weight: 700;
+  color: var(--ink);
+}
+.lesson__time {
+  font-size: 0.875rem;
+  color: var(--ink-muted);
+}
+
+.lesson__title {
+  font-size: 1.05rem;
+  font-weight: 700;
+  line-height: 1.3;
+  color: var(--ink);
+}
+.lesson__meta {
+  margin-top: 4px;
+  font-size: 0.875rem;
+  color: var(--ink-muted);
+}
+.lesson__meta a {
+  color: var(--brass-deep);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.lesson__side {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+}
+.lesson__status {
+  font-size: var(--fs-eyebrow);
+  font-weight: 700;
+  letter-spacing: var(--tracking-eyebrow);
+  text-transform: uppercase;
+  white-space: nowrap;
+  color: var(--ink-faint);
+}
+.lesson__status--live {
+  color: var(--red);
+}
+.lesson__status--live::before {
+  content: '';
+  display: inline-block;
+  width: 7px;
+  height: 7px;
+  margin-right: 7px;
+  border-radius: 50%;
+  background: currentColor;
+  animation: lesson-pulse 1.6s ease-in-out infinite;
+}
+.lesson__status--soon {
+  color: var(--brass-deep);
+}
+
+.lesson__cta {
+  display: inline-flex;
+  align-items: center;
+  min-height: 42px;
+  padding: 0 var(--space-5);
+  border-radius: var(--radius-sm);
+  background: var(--ink);
+  color: var(--ivory);
+  font-weight: 700;
+  font-size: 0.9rem;
+  white-space: nowrap;
+  transition: background var(--dur-fast) var(--ease-out);
+}
+.lesson__cta:hover {
+  background: var(--brass-deep);
+}
+
+@keyframes lesson-pulse {
+  50% {
+    opacity: 0.35;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .lesson__status--live::before {
+    animation: none;
+  }
+}
+
+@media (max-width: 760px) {
+  .lesson {
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--space-3);
+  }
+  .lesson--live {
+    margin-inline: 0;
+    padding-inline: var(--space-3);
+  }
+  .lesson__side {
+    justify-content: space-between;
+    flex-wrap: wrap;
+  }
+}

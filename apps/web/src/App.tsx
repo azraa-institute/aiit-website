@@ -77,6 +77,8 @@ const WebinarsPage = lazy(() => import('@/pages/portal/WebinarsPage'));
 const NotificationsPage = lazy(() => import('@/pages/portal/NotificationsPage'));
 const ProfilePage = lazy(() => import('@/pages/portal/ProfilePage'));
 const SettingsPage = lazy(() => import('@/pages/portal/SettingsPage'));
+const SchedulePage = lazy(() => import('@/pages/portal/SchedulePage'));
+const LiveClassroomPage = lazy(() => import('@/pages/portal/LiveClassroomPage'));
 const LegalPage = lazy(() => import('@/pages/LegalPage'));
 const NotFoundPage = lazy(() => import('@/pages/NotFoundPage'));
 
@@ -168,10 +170,30 @@ export function App() {
                     </RequireCompleteProfile>
                   }
                 />
+                <Route
+                  path="schedule"
+                  element={
+                    <RequireCompleteProfile>
+                      <SchedulePage />
+                    </RequireCompleteProfile>
+                  }
+                />
                 <Route path="profile" element={<ProfilePage />} />
                 <Route path="notifications" element={<NotificationsPage />} />
                 <Route path="settings" element={<SettingsPage />} />
               </Route>
+
+              {/* The live classroom is full-screen (its own AIIT-branded header, no portal rail) but still auth-gated. */}
+              <Route
+                path="/portal/classes/:id"
+                element={
+                  <RequireAuth>
+                    <RequireCompleteProfile>
+                      <LiveClassroomPage />
+                    </RequireCompleteProfile>
+                  </RequireAuth>
+                }
+              />
 
               <Route path="/privacy-policy" element={<LegalPage kind="privacy" />} />
               <Route path="/terms" element={<LegalPage kind="terms" />} />

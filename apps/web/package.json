@@ -13,8 +13,10 @@
   },
   "dependencies": {
     "@aiit/shared": "*",
+    "@livekit/components-react": "^2.9.24",
     "@sentry/react": "^10.74.0",
     "@supabase/supabase-js": "^2.116.0",
+    "livekit-client": "^2.22.3",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "react-helmet-async": "^2.0.5",

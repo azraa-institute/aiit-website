@@ -31,6 +31,7 @@ interface NavItem {
 const NAV: NavItem[] = [
   { to: '/portal', label: 'Dashboard', end: true, group: 'primary', tourId: 'tour-dashboard' },
   { to: '/portal/courses', label: 'My courses', group: 'primary', tourId: 'tour-courses' },
+  { to: '/portal/schedule', label: 'Timetable', group: 'primary' },
   { to: '/portal/certificates', label: 'Certificates', group: 'primary', tourId: 'tour-certificates' },
   { to: '/portal/assignments', label: 'Assignments', group: 'primary', tourId: 'tour-assignments' },
   { to: '/portal/resources', label: 'Learning resources', group: 'study' },

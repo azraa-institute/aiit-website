@@ -1,7 +1,7 @@
 import { randomUUID } from 'crypto';
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import type { Prisma } from '@prisma/client';
-import type { AdminLiveClass, InstructorOption, Timetable } from '@aiit/shared';
+import type { AdminLiveClass, Timetable } from '@aiit/shared';
 import { PrismaService } from '../../common/prisma/prisma.service';
 import { joinOpensAt } from './live-class-state';
 import { isValidTimeZone, zonedTimeToUtc } from './tz.util';
@@ -257,26 +257,6 @@ export class AdminLiveClassesService {
       lastLeftAt: r.lastLeftAt?.toISOString() ?? null,
       totalSeconds: r.totalSeconds,
     }));
-  }
-
-  async listInstructors(): Promise<InstructorOption[]> {
-    try {
-      const rows = await this.prisma.$queryRaw<{ id: string; name: string | null; email: string | null }[]>`
-        SELECT p.id, p.name, u.email
-        FROM public.profiles p
-        LEFT JOIN auth.users u ON u.id = p.id
-        WHERE p.role = 'instructor' AND p.status = 'active'
-        ORDER BY p.name NULLS LAST
-      `;
-      return rows;
-    } catch {
-      // auth.users unreadable -> still list them, just without emails.
-      const rows = await this.prisma.profile.findMany({
-        where: { role: 'instructor', status: 'active' },
-        select: { id: true, name: true },
-      });
-      return rows.map((r) => ({ ...r, email: null }));
-    }
   }
 
   // ---- validation helpers ----

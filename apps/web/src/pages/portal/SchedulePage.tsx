@@ -5,6 +5,7 @@ import { cn } from '@/lib/cn';
 import { PortalEmpty } from './PortalEmpty';
 import { PortalLoader } from './PortalLoader';
 import { formatClassDay, formatClassRange, useLiveClasses } from './liveClassData';
+import './portal.css';
 import './schedule.css';
 
 /** Polls so "waiting for instructor" turns into "Join class" on its own. */
@@ -53,7 +54,7 @@ function ClassRow({ item }: { item: LiveClassSummary }) {
       <div className="lesson__side">
         <span className={cn('lesson__status', `lesson__status--${status.tone}`)}>{status.text}</span>
         {action ? (
-          <Link to={`/portal/classes/${item.id}`} className="lesson__cta">
+          <Link to={`/classroom/${item.id}`} className="lesson__cta">
             {action}
           </Link>
         ) : null}

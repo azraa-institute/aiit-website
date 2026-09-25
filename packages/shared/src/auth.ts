@@ -40,4 +40,6 @@ export interface Me {
   isNewSignup: boolean;
   /** True once name/phone/country/qualification are all set -- the minimal required tier, computed server-side on every read (see ProfileService.toMe), never stored, so it can't go stale. Every other profile field (university, field of study, current status, learning goals, areas of interest, city, address, postal code, time zone) is collectible but non-gating. */
   profileComplete: boolean;
+  /** True for a staff account still on the temporary password an admin issued -- the staff portal forces a change first. */
+  mustChangePassword: boolean;
 }

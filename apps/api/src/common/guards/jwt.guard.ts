@@ -12,6 +12,9 @@ import type { Request } from 'express';
 import type { Role } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 
+/** Matched verbatim by apps/web/src/lib/api.ts -- keep the two in sync. */
+export const SUSPENDED_MESSAGE = 'This account has been suspended.';
+
 export interface AuthenticatedUser {
   userId: string;
   role: Role;
@@ -79,6 +82,11 @@ export class JwtGuard implements CanActivate {
     // message to sign the caller out; a distinct exception here would
     // silently skip that and leave a hard-deleted user's tab stuck signed
     // in against a 401 it doesn't know how to handle.
+    // An admin-suspended account gets its own message so the app can tell the person
+    // what happened (the frontend matches on SUSPENDED_MESSAGE) instead of "deleted".
+    if (profile?.status === 'suspended') {
+      throw new ForbiddenException(SUSPENDED_MESSAGE);
+    }
     if (!profile || profile.status !== 'active') {
       throw new ForbiddenException('This account has been deleted.');
     }

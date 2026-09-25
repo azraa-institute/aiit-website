@@ -1,12 +1,12 @@
 import { lazy, Suspense, useEffect } from 'react';
-import { Routes, Route, Navigate } from 'react-router-dom';
+import { Routes, Route, Navigate, useParams } from 'react-router-dom';
 import { ScrollToTop } from '@/components/layout/ScrollToTop';
 import { RouteFallback } from '@/components/layout/RouteFallback';
 import { ChunkErrorBoundary, CHUNK_RELOAD_FLAG } from '@/components/layout/ChunkErrorBoundary';
 import { AuthProvider } from '@/lib/AuthContext';
 import { RequireAuth } from '@/components/auth/RequireAuth';
 import { RequireCompleteProfile } from '@/components/auth/RequireCompleteProfile';
-import { RequireAdmin } from '@/components/auth/RequireAdmin';
+import { RequireRole } from '@/components/auth/RequireRole';
 import { CookieConsentProvider } from '@/lib/CookieConsentContext';
 import { CookieConsent } from '@/components/common/CookieConsent';
 
@@ -82,9 +82,22 @@ const SchedulePage = lazy(() => import('@/pages/portal/SchedulePage'));
 const AdminLayout = lazy(() => import('@/pages/admin/AdminLayout'));
 const AdminTimetablesPage = lazy(() => import('@/pages/admin/AdminTimetablesPage'));
 const AdminClassesPage = lazy(() => import('@/pages/admin/AdminClassesPage'));
+const AdminDashboardPage = lazy(() => import('@/pages/admin/AdminDashboardPage'));
+const AdminStudentsPage = lazy(() => import('@/pages/admin/AdminStudentsPage'));
+const AdminInstructorsPage = lazy(() => import('@/pages/admin/AdminInstructorsPage'));
+const AdminAuditPage = lazy(() => import('@/pages/admin/AdminAuditPage'));
+const InstructorLayout = lazy(() => import('@/pages/instructor/InstructorLayout'));
+const StaffLoginPage = lazy(() => import('@/pages/auth/StaffLoginPage'));
+const StaffChangePasswordPage = lazy(() => import('@/pages/auth/StaffChangePasswordPage'));
 const LiveClassroomPage = lazy(() => import('@/pages/portal/LiveClassroomPage'));
 const LegalPage = lazy(() => import('@/pages/LegalPage'));
 const NotFoundPage = lazy(() => import('@/pages/NotFoundPage'));
+
+/** Old links (before the classroom left /portal) keep working. */
+function LegacyClassroomRedirect() {
+  const { id } = useParams();
+  return <Navigate to={`/classroom/${id ?? ''}`} replace />;
+}
 
 export function App() {
   return (
@@ -129,7 +142,9 @@ export function App() {
                 path="/portal"
                 element={
                   <RequireAuth>
-                    <PortalLayout />
+                    <RequireRole allow={['learner']}>
+                      <PortalLayout />
+                    </RequireRole>
                   </RequireAuth>
                 }
               >
@@ -187,31 +202,62 @@ export function App() {
                 <Route path="settings" element={<SettingsPage />} />
               </Route>
 
-              {/* The live classroom is full-screen (its own AIIT-branded header, no portal rail) but still auth-gated. */}
+              {/* The live classroom is full-screen (its own AIIT-branded header, no portal chrome) and open to
+                  every signed-in role: students join, instructors run it, admins can moderate. */}
               <Route
-                path="/portal/classes/:id"
+                path="/classroom/:id"
                 element={
                   <RequireAuth>
-                    <RequireCompleteProfile>
-                      <LiveClassroomPage />
-                    </RequireCompleteProfile>
+                    <LiveClassroomPage />
+                  </RequireAuth>
+                }
+              />
+              <Route path="/portal/classes/:id" element={<LegacyClassroomRedirect />} />
+
+              {/* Staff sign-in (no sign-up: accounts are created by an admin) */}
+              <Route path="/staff/login" element={<StaffLoginPage />} />
+              <Route
+                path="/staff/change-password"
+                element={
+                  <RequireAuth>
+                    <RequireRole allow={['admin', 'instructor']} allowMustChangePassword>
+                      <StaffChangePasswordPage />
+                    </RequireRole>
                   </RequireAuth>
                 }
               />
 
-              {/* Staff area. RequireAdmin is UX only -- every /admin API endpoint enforces the admin role itself. */}
+              {/* Admin portal. RequireRole is UX only -- every /admin API endpoint enforces the admin role itself. */}
               <Route
                 path="/admin"
                 element={
                   <RequireAuth>
-                    <RequireAdmin>
+                    <RequireRole allow={['admin']}>
                       <AdminLayout />
-                    </RequireAdmin>
+                    </RequireRole>
                   </RequireAuth>
                 }
               >
-                <Route index element={<AdminTimetablesPage />} />
+                <Route index element={<AdminDashboardPage />} />
+                <Route path="students" element={<AdminStudentsPage />} />
+                <Route path="instructors" element={<AdminInstructorsPage />} />
+                <Route path="timetables" element={<AdminTimetablesPage />} />
                 <Route path="classes" element={<AdminClassesPage />} />
+                <Route path="audit" element={<AdminAuditPage />} />
+              </Route>
+
+              {/* Instructor portal */}
+              <Route
+                path="/instructor"
+                element={
+                  <RequireAuth>
+                    <RequireRole allow={['instructor']}>
+                      <InstructorLayout />
+                    </RequireRole>
+                  </RequireAuth>
+                }
+              >
+                <Route index element={<SchedulePage />} />
               </Route>
 
               <Route path="/privacy-policy" element={<LegalPage kind="privacy" />} />

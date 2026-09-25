@@ -12,7 +12,7 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { Throttle } from '@nestjs/throttler';
-import type { AdminLiveClass, InstructorOption, Timetable } from '@aiit/shared';
+import type { AdminLiveClass, Timetable } from '@aiit/shared';
 import { JwtGuard, type AuthenticatedUser } from '../../common/guards/jwt.guard';
 import { RolesGuard } from '../../common/guards/roles.guard';
 import { Roles } from '../../common/decorators/roles.decorator';
@@ -32,11 +32,6 @@ import {
 @Throttle({ default: { limit: 60, ttl: 60_000 } })
 export class AdminLiveClassesController {
   constructor(private readonly admin: AdminLiveClassesService) {}
-
-  @Get('instructors')
-  instructors(): Promise<InstructorOption[]> {
-    return this.admin.listInstructors();
-  }
 
   @Get('timetables')
   timetables(@Query('courseId') courseId?: string): Promise<Timetable[]> {

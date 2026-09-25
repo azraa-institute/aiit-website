@@ -30,6 +30,7 @@ const ME: Me = {
   updatedAt: '2026-01-02T00:00:00.000Z',
   isNewSignup: false,
   profileComplete: false,
+  mustChangePassword: false,
 };
 
 const USER = { userId: 'user-1', role: 'learner' as const, email: 'ada@example.com' };

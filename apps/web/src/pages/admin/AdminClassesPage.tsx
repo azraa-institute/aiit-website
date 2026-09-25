@@ -196,7 +196,9 @@ export default function AdminClassesPage() {
               <span>Instructor</span>
               <select value={form.hostUserId} onChange={(e) => patch({ hostUserId: e.target.value })}>
                 <option value="">Not assigned yet</option>
-                {instructorList.map((i) => (
+                {instructorList
+                  .filter((i) => i.status === 'active')
+                  .map((i) => (
                   <option key={i.id} value={i.id}>
                     {i.name || i.email || i.id.slice(0, 8)}
                     {i.name && i.email ? ` (${i.email})` : ''}

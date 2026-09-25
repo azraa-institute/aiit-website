@@ -268,6 +268,18 @@ export class ProfileService {
   // there's no native event to hook for it.
 
   /**
+   * Called by the staff portal right after the user set their own password
+   * (Supabase Auth's updateUser, client-side). The API can't observe that
+   * change itself, so this only clears the "must change" flag -- it's a
+   * first-login courtesy gate, not a security boundary (the temporary
+   * password is already single-use in practice: the admin hands it over once).
+   */
+  async clearMustChangePassword(userId: string): Promise<Me> {
+    const updated = await this.prisma.profile.update({ where: { id: userId }, data: { mustChangePassword: false } });
+    return toMe(updated, false);
+  }
+
+  /**
    * Backs ForgotPasswordPage's "no account found" message. auth.users isn't
    * a Prisma model (Supabase-managed, see schema.prisma), hence the raw
    * query -- Prisma parameterizes the interpolated value in a tagged
@@ -316,5 +328,6 @@ function toMe(profile: Profile, isNewSignup: boolean): Me {
     updatedAt: profile.updatedAt.toISOString(),
     isNewSignup,
     profileComplete: PROFILE_COMPLETION_FIELDS.every((field) => Boolean(profile[field])),
+    mustChangePassword: profile.mustChangePassword,
   };
 }

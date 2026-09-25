@@ -15,6 +15,9 @@ import { NotificationsModule } from './modules/notifications/notifications.modul
 import { FormsModule } from './modules/forms/forms.module';
 import { GeoModule } from './modules/geo/geo.module';
 import { LiveClassesModule } from './modules/live-classes/live-classes.module';
+import { AdminModule } from './modules/admin/admin.module';
+import { AuditModule } from './common/audit/audit.service';
+import { SupabaseAdminModule } from './common/supabase-admin/supabase-admin.service';
 
 @Module({
   imports: [
@@ -34,6 +37,8 @@ import { LiveClassesModule } from './modules/live-classes/live-classes.module';
       },
     ]),
     PrismaModule,
+    AuditModule,
+    SupabaseAdminModule,
     HealthModule,
     AuthModule,
     CoursesModule,
@@ -44,6 +49,7 @@ import { LiveClassesModule } from './modules/live-classes/live-classes.module';
     FormsModule,
     GeoModule,
     LiveClassesModule,
+    AdminModule,
   ],
   providers: [{ provide: APP_GUARD, useClass: ThrottlerGuard }],
 })

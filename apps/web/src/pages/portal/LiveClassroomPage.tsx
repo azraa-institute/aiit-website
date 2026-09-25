@@ -7,6 +7,7 @@ import { apiFetch } from '@/lib/api';
 import { cn } from '@/lib/cn';
 import { Logo } from '@/components/layout/Logo';
 import { Classroom } from '@/components/classroom/Classroom';
+import { useMe, roleHome } from '@/lib/me';
 import { formatClassDay, formatClassRange, useLiveClasses } from './liveClassData';
 import '@/components/classroom/classroom.css';
 
@@ -15,10 +16,20 @@ type Phase = 'lobby' | 'joining' | 'live' | 'left' | 'ended' | 'removed' | 'drop
 /** How often the lobby re-checks whether the instructor has started the class. */
 const LOBBY_POLL_MS = 5_000;
 
+/** Where 'back' goes: a student's timetable, or the instructor / admin's own portal. */
+function useBackTarget(): { to: string; label: string } {
+  const me = useMe();
+  if (me.status === 'ready' && me.me.role !== 'learner') {
+    return { to: roleHome(me.me.role), label: 'Back to your portal' };
+  }
+  return { to: '/portal/schedule', label: 'Back to your timetable' };
+}
+
 function ClassroomHeader({ liveClass, live }: { liveClass?: LiveClassSummary; live?: boolean }) {
+  const back = useBackTarget();
   return (
     <header className="classroom-head">
-      <Link to="/portal/schedule" className="classroom-head__brand" aria-label="Back to your timetable">
+      <Link to={back.to} className="classroom-head__brand" aria-label={back.label}>
         <Logo variant="light" className="classroom-head__logo" />
       </Link>
       <div className="classroom-head__title">
@@ -33,6 +44,7 @@ function ClassroomHeader({ liveClass, live }: { liveClass?: LiveClassSummary; li
 
 export default function LiveClassroomPage() {
   const { id } = useParams();
+  const back = useBackTarget();
   const [phase, setPhase] = useState<Phase>('lobby');
   const [joined, setJoined] = useState<LiveClassJoin>();
   const [error, setError] = useState<string>();
@@ -72,7 +84,7 @@ export default function LiveClassroomPage() {
   if (phase === 'live' && joined) {
     return (
       <div className="classroom-page">
-        <Seo title={joined.liveClass.title} path={`/portal/classes/${joined.liveClass.id}`} noindex />
+        <Seo title={joined.liveClass.title} path={`/classroom/${joined.liveClass.id}`} noindex />
         <ClassroomHeader liveClass={joined.liveClass} live />
         <Classroom join={joined} startWithCamera={camera} startWithMic={wantMic} onDisconnected={handleDisconnected} />
       </div>
@@ -84,7 +96,7 @@ export default function LiveClassroomPage() {
 
   return (
     <div className="classroom-page">
-      <Seo title={liveClass?.title ?? 'Live class'} path={`/portal/classes/${id ?? ''}`} noindex />
+      <Seo title={liveClass?.title ?? 'Live class'} path={`/classroom/${id ?? ''}`} noindex />
       <ClassroomHeader liveClass={liveClass} />
       <main className="lobby">
         <div className="lobby__card">
@@ -96,8 +108,8 @@ export default function LiveClassroomPage() {
               <p className="lobby__note">
                 It may have been removed, or it belongs to a course you are not enrolled in.
               </p>
-              <Link to="/portal/schedule" className="lobby__btn">
-                Back to timetable
+              <Link to={back.to} className="lobby__btn">
+                {back.label}
               </Link>
             </>
           ) : closed ? (
@@ -120,8 +132,8 @@ export default function LiveClassroomPage() {
                     Rejoin
                   </button>
                 ) : null}
-                <Link to="/portal/schedule" className="lobby__btn lobby__btn--ghost">
-                  Back to timetable
+                <Link to={back.to} className="lobby__btn lobby__btn--ghost">
+                  {back.label}
                 </Link>
               </div>
             </>
@@ -187,8 +199,8 @@ export default function LiveClassroomPage() {
                   <p className="lobby__note">
                     {joinState === 'cancelled' ? 'This class has been cancelled.' : 'This class has ended.'}
                   </p>
-                  <Link to="/portal/schedule" className="lobby__btn lobby__btn--ghost">
-                    Back to timetable
+                  <Link to={back.to} className="lobby__btn lobby__btn--ghost">
+                    {back.label}
                   </Link>
                 </>
               ) : null}

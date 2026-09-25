@@ -1,6 +1,6 @@
 import { ExecutionContext, ForbiddenException, UnauthorizedException } from '@nestjs/common';
 import { generateKeyPairSync, sign as cryptoSign, type KeyObject } from 'crypto';
-import { JwtGuard } from './jwt.guard';
+import { JwtGuard, SUSPENDED_MESSAGE } from './jwt.guard';
 import { PrismaService } from '../prisma/prisma.service';
 
 const SUPABASE_URL = 'https://test-project.supabase.co';
@@ -119,6 +119,12 @@ describe('JwtGuard', () => {
     await expect(guard.canActivate(contextWithHeader(`Bearer ${token}`))).rejects.toBeInstanceOf(
       ForbiddenException,
     );
+  });
+
+  it('tells a suspended account it is suspended (not deleted), so the app can say so', async () => {
+    prisma.profile.findUnique.mockResolvedValueOnce({ role: 'learner', status: 'suspended' });
+    const token = signToken(privateKey, 'user-1', 3600);
+    await expect(guard.canActivate(contextWithHeader(`Bearer ${token}`))).rejects.toThrow(SUSPENDED_MESSAGE);
   });
 
   it('attaches { userId, role, email } to the request for a valid token + profile', async () => {

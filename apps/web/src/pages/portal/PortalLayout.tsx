@@ -331,17 +331,7 @@ export default function PortalLayout() {
                     onClick={() => setProfileMenuOpen(false)}
                   >
                     View profile
-                  </Link>
-                  {learner?.role === 'admin' ? (
-                    <Link
-                      to="/admin"
-                      role="menuitem"
-                      className="portal-topbar__id-menu-item"
-                      onClick={() => setProfileMenuOpen(false)}
-                    >
-                      Admin
-                    </Link>
-                  ) : null}
+                  </Link>
                   <button
                     type="button"
                     role="menuitem"

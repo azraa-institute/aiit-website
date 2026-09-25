@@ -33,6 +33,13 @@ export class ProfileController {
     return this.profiles.confirmPhoneVerification(user.userId);
   }
 
+  /** Staff first-login: clears the temporary-password flag once the new password is set. */
+  @Post('password-changed')
+  @HttpCode(HttpStatus.OK)
+  passwordChanged(@CurrentUser() user: AuthenticatedUser): Promise<Me> {
+    return this.profiles.clearMustChangePassword(user.userId);
+  }
+
   @Patch('preferences')
   updatePreferences(
     @CurrentUser() user: AuthenticatedUser,

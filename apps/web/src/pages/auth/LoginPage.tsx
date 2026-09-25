@@ -5,7 +5,9 @@ import { Seo } from '@/lib/Seo';
 import { Button } from '@/components/primitives/Button';
 import { TextField, PasswordField } from '@/components/common/Field';
 import { supabase } from '@/lib/supabaseClient';
-import { canEnterPortal } from '@/lib/api';
+import type { Me } from '@aiit/shared';
+import { apiFetch, canEnterPortal } from '@/lib/api';
+import { invalidateMe } from '@/lib/me';
 import { needsMfaChallenge } from '@/lib/mfa';
 import { AuthLayout, GoogleAuthButton } from './AuthLayout';
 import { MfaChallenge } from './MfaChallenge';
@@ -28,6 +30,8 @@ export default function LoginPage() {
   // only carry this via the URL, not location.state like authError below.
   const [searchParams] = useSearchParams();
   const deleted = searchParams.get('reason') === 'deleted';
+  const suspended = searchParams.get('reason') === 'suspended';
+  const [staffAccount, setStaffAccount] = useState(false);
   const [mode, setMode] = useState<Mode>('password');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -114,11 +118,28 @@ export default function LoginPage() {
   // why that matters. Deliberately does nothing in the false branch: a
   // hard redirect to /login?reason=deleted is already under way by then.
   async function enterPortal() {
-    if (await canEnterPortal()) {
-      navigate(state?.from?.pathname ?? '/portal', { replace: true });
-    } else {
+    if (!(await canEnterPortal())) {
       setSubmitting(false);
+      return;
     }
+    // Staff (admin/instructor) have their own sign-in page and portals -- a
+    // staff account that signs in here is turned away rather than let into
+    // the student portal.
+    invalidateMe();
+    try {
+      const me = await apiFetch<Me>('/auth/me');
+      if (me.role !== 'learner') {
+        await supabase?.auth.signOut().catch(() => {});
+        setSubmitting(false);
+        setMfaPending(false);
+        setStaffAccount(true);
+        setError('This is an AIIT staff account, so it cannot sign in here.');
+        return;
+      }
+    } catch {
+      // Fall through -- the portal's own error state covers a transient failure.
+    }
+    navigate(state?.from?.pathname ?? '/portal', { replace: true });
   }
 
   async function onMfaVerified() {
@@ -147,13 +168,15 @@ export default function LoginPage() {
     <>
       <Seo title="Sign In" path="/login" noindex />
       <AuthLayout
-        title={mfaPending ? 'Two-factor authentication' : deleted ? 'Account deleted' : 'Welcome back'}
+        title={mfaPending ? 'Two-factor authentication' : deleted ? 'Account deleted' : suspended ? 'Account suspended' : 'Welcome back'}
         intro={
           mfaPending
             ? 'Enter the code from your authenticator app to finish signing in.'
             : deleted
               ? "Your AIIT account has been deleted. You're welcome to create a new one any time."
-              : 'Sign in to continue your courses, track progress and access your certificates.'
+              : suspended
+                ? 'Your account has been suspended. If you think this is a mistake, please contact the AIIT team.'
+                : 'Sign in to continue your courses, track progress and access your certificates.'
         }
         social={
           magicLinkSent || mfaPending ? undefined : (
@@ -189,6 +212,11 @@ export default function LoginPage() {
                   />
                 </svg>
                 {error}
+              </p>
+            )}
+            {staffAccount && (
+              <p className="auth__aux">
+                <Link to="/staff/login">Go to the staff sign-in</Link>
               </p>
             )}
             <TextField

@@ -72,6 +72,15 @@ model Profile {
   preferences         Json          @default("{}")
   deletionRequestedAt DateTime?     @map("deletion_requested_at") @db.Timestamptz(6)
   welcomedAt          DateTime?     @map("welcomed_at") @db.Timestamptz(6) // set the first time GET /auth/me sees this profile -- guards the one-time welcome email
+  // Set when an admin suspends the account (students and instructors). JwtGuard
+  // answers a suspended account with its own "suspended" message rather than the
+  // "deleted" one, and the Supabase session is banned so it cannot refresh.
+  suspendedAt         DateTime?     @map("suspended_at") @db.Timestamptz(6)
+  suspendedReason     String?       @map("suspended_reason")
+  // True for a staff account created by an admin with a temporary password --
+  // the staff portal forces a password change before anything else.
+  mustChangePassword  Boolean       @default(false) @map("must_change_password")
+  createdBy           String?       @map("created_by") @db.Uuid // the admin who created this (staff) account
   createdAt           DateTime      @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt           DateTime      @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
 
@@ -657,5 +666,24 @@ model LiveClassAttendance {
 
   @@unique([liveClassId, userId])
   @@map("live_class_attendance")
+  @@schema("public")
+}
+
+// ---- Audit log ----
+// Append-only record of admin actions on other people's accounts (create,
+// suspend, reactivate, password reset ...). Nothing in the app updates or
+// deletes rows here.
+model AuditLog {
+  id         String   @id @default(uuid()) @db.Uuid
+  actorId    String   @map("actor_id") @db.Uuid
+  action     String // e.g. "instructor.create", "user.suspend"
+  targetType String   @map("target_type") // "user" | "timetable" | ...
+  targetId   String?  @map("target_id")
+  metadata   Json     @default("{}")
+  createdAt  DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  @@index([createdAt])
+  @@index([targetType, targetId])
+  @@map("audit_logs")
   @@schema("public")
 }

@@ -26,6 +26,9 @@ export class ApiError extends Error {
  */
 export const ACCOUNT_DELETED_MESSAGE = 'This account has been deleted.';
 
+/** Sent by the API's JwtGuard for an admin-suspended account -- keep in sync with apps/api/src/common/guards/jwt.guard.ts. */
+export const ACCOUNT_SUSPENDED_MESSAGE = 'This account has been suspended.';
+
 async function handleErrorResponse(res: Response): Promise<never> {
   const body: ApiErrorEnvelope | null = await res.json().catch(() => null);
   const message = body?.error.message ?? `Request failed with status ${res.status}.`;
@@ -35,6 +38,13 @@ async function handleErrorResponse(res: Response): Promise<never> {
     window.location.href = '/login?reason=deleted';
     // Navigation above is async and won't interrupt this function -- throw
     // anyway so any caller still awaiting this call doesn't hang.
+  }
+
+  if (res.status === 403 && message === ACCOUNT_SUSPENDED_MESSAGE) {
+    if (supabase) await supabase.auth.signOut().catch(() => {});
+    // Staff and students sign in on different pages -- send them back to their own.
+    const staff = /^\/(admin|instructor|staff)(\/|$)/.test(window.location.pathname);
+    window.location.href = `${staff ? '/staff/login' : '/login'}?reason=suspended`;
   }
 
   throw new ApiError(message, body?.error.code ?? 'UNKNOWN', res.status);
@@ -82,7 +92,11 @@ export async function canEnterPortal(): Promise<boolean> {
     await apiFetch('/auth/me');
     return true;
   } catch (err) {
-    return !(err instanceof ApiError && err.status === 403 && err.message === ACCOUNT_DELETED_MESSAGE);
+    return !(
+      err instanceof ApiError &&
+      err.status === 403 &&
+      (err.message === ACCOUNT_DELETED_MESSAGE || err.message === ACCOUNT_SUSPENDED_MESSAGE)
+    );
   }
 }
 

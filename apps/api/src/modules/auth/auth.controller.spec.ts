@@ -30,6 +30,7 @@ const ME: Me = {
   updatedAt: '2026-01-02T00:00:00.000Z',
   isNewSignup: false,
   profileComplete: false,
+  mustChangePassword: false,
 };
 
 describe('AuthController', () => {

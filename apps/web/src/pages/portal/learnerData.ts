@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import type { Assignment, Certificate, Enrollment, Me, Notification } from '@aiit/shared';
+import type { Assignment, Certificate, Enrollment, Me, Notification, UserRole } from '@aiit/shared';
 import { apiFetch } from '@/lib/api';
 import { supabase } from '@/lib/supabaseClient';
 
@@ -55,6 +55,8 @@ export interface NextAction {
 }
 
 export interface LearnerRecord {
+  /** App-level role from the API (never from the JWT) -- gates the admin area and lets the portal show staff-only links. */
+  role: UserRole;
   profile: LearnerProfile;
   enrolled: Enrollment[];
   certificates: Certificate[];
@@ -77,6 +79,7 @@ async function fetchLearner(): Promise<LearnerRecord> {
   ]);
 
   return {
+    role: me.role,
     profile: {
       name: me.name,
       headline: me.headline,

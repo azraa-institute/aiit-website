@@ -6,6 +6,7 @@ import { ChunkErrorBoundary, CHUNK_RELOAD_FLAG } from '@/components/layout/Chunk
 import { AuthProvider } from '@/lib/AuthContext';
 import { RequireAuth } from '@/components/auth/RequireAuth';
 import { RequireCompleteProfile } from '@/components/auth/RequireCompleteProfile';
+import { RequireAdmin } from '@/components/auth/RequireAdmin';
 import { CookieConsentProvider } from '@/lib/CookieConsentContext';
 import { CookieConsent } from '@/components/common/CookieConsent';
 
@@ -78,6 +79,9 @@ const NotificationsPage = lazy(() => import('@/pages/portal/NotificationsPage'))
 const ProfilePage = lazy(() => import('@/pages/portal/ProfilePage'));
 const SettingsPage = lazy(() => import('@/pages/portal/SettingsPage'));
 const SchedulePage = lazy(() => import('@/pages/portal/SchedulePage'));
+const AdminLayout = lazy(() => import('@/pages/admin/AdminLayout'));
+const AdminTimetablesPage = lazy(() => import('@/pages/admin/AdminTimetablesPage'));
+const AdminClassesPage = lazy(() => import('@/pages/admin/AdminClassesPage'));
 const LiveClassroomPage = lazy(() => import('@/pages/portal/LiveClassroomPage'));
 const LegalPage = lazy(() => import('@/pages/LegalPage'));
 const NotFoundPage = lazy(() => import('@/pages/NotFoundPage'));
@@ -194,6 +198,21 @@ export function App() {
                   </RequireAuth>
                 }
               />
+
+              {/* Staff area. RequireAdmin is UX only -- every /admin API endpoint enforces the admin role itself. */}
+              <Route
+                path="/admin"
+                element={
+                  <RequireAuth>
+                    <RequireAdmin>
+                      <AdminLayout />
+                    </RequireAdmin>
+                  </RequireAuth>
+                }
+              >
+                <Route index element={<AdminTimetablesPage />} />
+                <Route path="classes" element={<AdminClassesPage />} />
+              </Route>
 
               <Route path="/privacy-policy" element={<LegalPage kind="privacy" />} />
               <Route path="/terms" element={<LegalPage kind="terms" />} />

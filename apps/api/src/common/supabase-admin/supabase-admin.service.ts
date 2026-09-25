@@ -67,6 +67,32 @@ export class SupabaseAdminService {
     await this.update(userId, { password });
   }
 
+  /**
+   * A time-limited download URL for a private Storage object. Signed with the
+   * service-role key on the server, so the caller never needs Storage access
+   * of their own -- the API decides who may ask (see InstructorService.fileLink).
+   */
+  async signStorageUrl(bucket: string, key: string, expiresInSeconds: number): Promise<string> {
+    const base = process.env.SUPABASE_URL;
+    const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+    if (!base || !serviceKey) {
+      throw new ServiceUnavailableException('File access is not configured on this server.');
+    }
+    const path = key.split('/').map(encodeURIComponent).join('/');
+    const res = await fetch(new URL(`/storage/v1/object/sign/${bucket}/${path}`, base), {
+      method: 'POST',
+      headers: { apikey: serviceKey, Authorization: `Bearer ${serviceKey}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ expiresIn: expiresInSeconds }),
+    });
+    if (!res.ok) {
+      this.logger.error(`Could not sign ${bucket}/${key} (${res.status})`);
+      throw new ServiceUnavailableException('Could not open that file right now -- try again shortly.');
+    }
+    const { signedURL } = (await res.json()) as { signedURL: string };
+    // signedURL is relative to /storage/v1 (e.g. "/object/sign/bucket/key?token=...").
+    return new URL(`/storage/v1${signedURL}`, base).toString();
+  }
+
   /** Blocks all sign-ins and token refreshes for the account until unbanned. */
   async ban(userId: string): Promise<void> {
     await this.update(userId, { ban_duration: '876000h' });

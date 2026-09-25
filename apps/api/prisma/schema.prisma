@@ -275,6 +275,7 @@ model Course {
   timetables       Timetable[]
   liveClasses      LiveClass[]
   instructors      CourseInstructor[]
+  announcements    Announcement[]
   createdAt        DateTime              @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt        DateTime              @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
   deletedAt        DateTime?             @map("deleted_at") @db.Timestamptz(6)
@@ -327,6 +328,7 @@ model Assignment {
   title       String
   description String
   dueAt       DateTime?              @map("due_at") @db.Timestamptz(6)
+  createdBy   String?                @map("created_by") @db.Uuid // the instructor who set it (null for seeded ones)
   submissions AssignmentSubmission[]
   createdAt   DateTime               @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt   DateTime               @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
@@ -704,5 +706,24 @@ model CourseInstructor {
   @@id([courseId, instructorId])
   @@index([instructorId])
   @@map("course_instructors")
+  @@schema("public")
+}
+
+// A message an instructor (later also an admin) sends to everyone enrolled in a
+// course. The row is the history; each recipient also gets an in-portal
+// Notification so it shows up in their bell + Notifications page.
+model Announcement {
+  id             String   @id @default(uuid()) @db.Uuid
+  courseId       String?  @map("course_id") @db.Uuid
+  course         Course?  @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  authorId       String   @map("author_id") @db.Uuid
+  audience       String   @default("course") // 'course' now; 'all_students' / 'instructors' reserved for admin announcements
+  title          String
+  body           String
+  recipientCount Int      @default(0) @map("recipient_count")
+  createdAt      DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  @@index([courseId, createdAt])
+  @@map("announcements")
   @@schema("public")
 }

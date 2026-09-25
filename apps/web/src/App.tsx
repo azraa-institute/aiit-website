@@ -88,6 +88,11 @@ const AdminInstructorsPage = lazy(() => import('@/pages/admin/AdminInstructorsPa
 const AdminAuditPage = lazy(() => import('@/pages/admin/AdminAuditPage'));
 const AdminCoursesPage = lazy(() => import('@/pages/admin/AdminCoursesPage'));
 const InstructorLayout = lazy(() => import('@/pages/instructor/InstructorLayout'));
+const InstructorDashboardPage = lazy(() => import('@/pages/instructor/InstructorDashboardPage'));
+const InstructorCoursesPage = lazy(() => import('@/pages/instructor/InstructorCoursesPage'));
+const InstructorCoursePage = lazy(() => import('@/pages/instructor/InstructorCoursePage'));
+const InstructorAssignmentPage = lazy(() => import('@/pages/instructor/InstructorAssignmentPage'));
+const InstructorGradingPage = lazy(() => import('@/pages/instructor/InstructorGradingPage'));
 const StaffLoginPage = lazy(() => import('@/pages/auth/StaffLoginPage'));
 const StaffChangePasswordPage = lazy(() => import('@/pages/auth/StaffChangePasswordPage'));
 const LiveClassroomPage = lazy(() => import('@/pages/portal/LiveClassroomPage'));
@@ -259,7 +264,12 @@ export function App() {
                   </RequireAuth>
                 }
               >
-                <Route index element={<SchedulePage />} />
+                <Route index element={<InstructorDashboardPage />} />
+                <Route path="classes" element={<SchedulePage />} />
+                <Route path="courses" element={<InstructorCoursesPage />} />
+                <Route path="courses/:courseId" element={<InstructorCoursePage />} />
+                <Route path="assignments/:id" element={<InstructorAssignmentPage />} />
+                <Route path="grading" element={<InstructorGradingPage />} />
               </Route>
 
               <Route path="/privacy-policy" element={<LegalPage kind="privacy" />} />

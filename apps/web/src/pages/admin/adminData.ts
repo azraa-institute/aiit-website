@@ -1,33 +1,10 @@
-import { useCallback, useEffect, useState } from 'react';
 import type { AdminCourse, AdminLiveClass, CourseListItem, InstructorSummary, Timetable } from '@aiit/shared';
-import { apiFetch } from '@/lib/api';
 
-/** Minimal fetch-with-reload hook for the admin screens. `path === null` skips the request. */
-export type FetchState<T> =
-  | { status: 'loading' }
-  | { status: 'ready'; data: T }
-  | { status: 'error'; message: string };
+import { useApiFetch } from '@/lib/useApiFetch';
+export type { FetchState } from '@/lib/useApiFetch';
 
-export function useAdminFetch<T>(path: string | null): FetchState<T> & { reload: () => void } {
-  const [state, setState] = useState<FetchState<T>>({ status: 'loading' });
-  const [tick, setTick] = useState(0);
-
-  useEffect(() => {
-    if (path === null) return;
-    let alive = true;
-    apiFetch<T>(path)
-      .then((data) => alive && setState({ status: 'ready', data }))
-      .catch((err: unknown) =>
-        alive && setState({ status: 'error', message: err instanceof Error ? err.message : 'Could not load this.' }),
-      );
-    return () => {
-      alive = false;
-    };
-  }, [path, tick]);
-
-  const reload = useCallback(() => setTick((n) => n + 1), []);
-  return { ...state, reload };
-}
+/** The admin screens' fetch hook is the shared staff one. */
+export const useAdminFetch = useApiFetch;
 
 export const useAdminCourses = () => useAdminFetch<CourseListItem[]>('/courses');
 /** Published courses with enrolment counts and assigned instructors (admin-only, richer than the public list). */

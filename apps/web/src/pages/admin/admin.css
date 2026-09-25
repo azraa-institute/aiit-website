@@ -665,3 +665,73 @@
   padding: 0;
   border: 0;
 }
+
+/* ---- Shared by the instructor portal ---- */
+.adm-panel--gap {
+  margin-top: var(--space-5);
+}
+.adm-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+.adm-flag {
+  color: var(--red);
+  font-weight: 700;
+}
+.adm-actions--top {
+  margin: 0 0 var(--space-4);
+}
+.adm-prewrap {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.adm-card a {
+  color: inherit;
+}
+.adm-card__main h3 a:hover {
+  color: var(--brass-deep);
+  text-decoration: underline;
+}
+.adm-card--stack {
+  flex-direction: column;
+  align-items: stretch;
+}
+.adm-card__row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-3) var(--space-5);
+}
+.adm-grade {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  padding: var(--space-4);
+  border: 1px solid var(--line);
+  border-left: 3px solid var(--brass);
+  background: var(--surface);
+}
+.adm-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  margin-bottom: var(--space-5);
+  border-bottom: 1px solid var(--line);
+}
+.adm-tabs button {
+  padding: 0.6rem var(--space-4);
+  font-weight: 700;
+  font-size: 0.9rem;
+  color: var(--ink-muted);
+  border-bottom: 3px solid transparent;
+  margin-bottom: -1px;
+  cursor: pointer;
+}
+.adm-tabs button.is-active {
+  color: var(--ink);
+  border-bottom-color: var(--brass);
+}

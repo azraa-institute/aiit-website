@@ -24,7 +24,7 @@ function nextClass(classes: LiveClassSummary[]): LiveClassSummary | null {
 function actionLabel(c: LiveClassSummary): string {
   if (c.joinState === 'open') return 'Join class';
   if (c.joinState === 'waiting_for_host') return 'Open classroom';
-  return 'View in timetable';
+  return 'View class details';
 }
 
 export default function CourseWorkspacePage() {

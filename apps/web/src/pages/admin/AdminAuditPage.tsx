@@ -143,10 +143,10 @@ export default function AdminAuditPage() {
             <table className="adm-table adm-table--rows">
               <thead>
                 <tr>
-                  <th>When</th>
-                  <th>Who</th>
-                  <th>What</th>
-                  <th>Details</th>
+                  <th>Timestamp</th>
+                  <th>Performed By</th>
+                  <th>Action</th>
+                  <th>Activity Details</th>
                 </tr>
               </thead>
               <tbody>

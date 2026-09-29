@@ -7,6 +7,7 @@ import { useMe } from '@/lib/me';
 import { useSessionHeartbeat } from '@/lib/useSessionHeartbeat';
 import { usePersistedBoolean } from '@/lib/usePersistedBoolean';
 import { Logo } from '@/components/layout/Logo';
+import { SidebarToggleIcon } from '@/components/common/SidebarToggleIcon';
 import './staff-shell.css';
 
 export interface StaffNavEntry {
@@ -72,9 +73,7 @@ export function StaffShell({
           </Link>
           <button type="button" className="shell__collapse" title="Minimise navigation" onClick={() => setCollapsed(true)}>
             <span className="visually-hidden">Minimise navigation</span>
-            <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true">
-              <path d="M10 3 5 8l5 5" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-            </svg>
+            <SidebarToggleIcon open />
           </button>
         </div>
         <p className="shell__portal">{portal}</p>
@@ -105,9 +104,7 @@ export function StaffShell({
       {/* Desktop only (see staff-shell.css) -- brings the collapsed sidebar back. */}
       <button type="button" className="shell__expand" title="Show navigation" onClick={() => setCollapsed(false)}>
         <span className="visually-hidden">Show navigation</span>
-        <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true">
-          <path d="M6 3 11 8l-5 5" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-        </svg>
+        <SidebarToggleIcon open={false} />
       </button>
 
       <main className="shell__main" id="staff-main">

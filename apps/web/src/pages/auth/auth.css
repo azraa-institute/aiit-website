@@ -131,34 +131,52 @@
   --staff-purple-soft: #efeaf9;
 }
 
+/* Mobile/tablet (<1024px): unchanged from the default auth layout -- the
+   photo becomes a banner, the card sits below it. The full-bleed overlay
+   below is a desktop-only composition; it doesn't translate to a narrow
+   screen, so this breakpoint keeps the layout that already works there. */
 .auth--staff .auth__main {
   position: relative;
   overflow: hidden;
   background: #fbfaff;
 }
-/* Two soft glows, positioned like the reference: a broad one upper-right, a
-   deeper, smaller one lower-right nearer the card. */
-.auth--staff .auth__main::before,
-.auth--staff .auth__main::after {
-  content: '';
-  position: absolute;
-  z-index: 0;
-  border-radius: 50%;
-  pointer-events: none;
-}
-.auth--staff .auth__main::before {
-  top: -18%;
-  right: -22%;
-  width: 62%;
-  height: 62%;
-  background: radial-gradient(circle, rgba(154, 123, 214, 0.32) 0%, rgba(154, 123, 214, 0) 70%);
-}
-.auth--staff .auth__main::after {
-  bottom: -22%;
-  right: -16%;
-  width: 55%;
-  height: 55%;
-  background: radial-gradient(circle, rgba(64, 38, 147, 0.28) 0%, rgba(64, 38, 147, 0) 70%);
+
+/* Desktop (>=1024px): the photo becomes a single full-bleed backdrop and the
+   card floats directly on top of it on the left -- the exact composition
+   supplied as the reference, not a side-by-side split. */
+@media (min-width: 1024px) {
+  .auth--staff {
+    position: relative;
+    display: block;
+    min-height: 100svh;
+  }
+  .auth--staff .auth__aside {
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+  }
+  /* The reference has no headline copy over the photo -- just the card. */
+  .auth--staff .auth__aside-copy {
+    display: none;
+  }
+  .auth--staff .auth__aside::after {
+    background:
+      linear-gradient(100deg, rgba(8, 6, 16, 0.7) 0%, rgba(30, 16, 56, 0.4) 30%, rgba(30, 16, 56, 0) 56%),
+      radial-gradient(48% 70% at 16% 52%, rgba(45, 22, 82, 0.55), transparent 72%);
+  }
+  .auth--staff .auth__main {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    min-height: 100svh;
+    padding-left: clamp(2.5rem, 6vw, 6rem);
+    background: transparent;
+  }
+  .auth--staff .auth__card {
+    max-width: 496px;
+  }
 }
 
 .auth--staff .auth__card {

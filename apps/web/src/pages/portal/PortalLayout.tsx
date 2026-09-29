@@ -19,6 +19,7 @@ import { clearPortalReturn } from '@/lib/portalReturn';
 import { useLearner, greetingName } from './learnerData';
 import { PortalAtmosphere } from './PortalAtmosphere';
 import { PortalLoader } from './PortalLoader';
+import { SidebarToggleIcon } from '@/components/common/SidebarToggleIcon';
 import './portal.css';
 
 interface NavItem {
@@ -238,9 +239,7 @@ export default function PortalLayout() {
             onClick={() => setRailCollapsed(true)}
           >
             <span className="visually-hidden">Minimise navigation</span>
-            <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true">
-              <path d="M10 3 5 8l5 5" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-            </svg>
+            <SidebarToggleIcon open />
           </button>
         </div>
 
@@ -288,9 +287,7 @@ export default function PortalLayout() {
       {/* Desktop only (see portal.css) -- brings the collapsed rail back. */}
       <button type="button" className="portal-rail-expand" title="Show navigation" onClick={() => setRailCollapsed(false)}>
         <span className="visually-hidden">Show navigation</span>
-        <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true">
-          <path d="M6 3 11 8l-5 5" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-        </svg>
+        <SidebarToggleIcon open={false} />
       </button>
 
       <div className="portal__main">

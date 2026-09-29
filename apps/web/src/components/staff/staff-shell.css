@@ -105,6 +105,72 @@
   margin-left: var(--shell-side-w);
   min-height: 100vh;
 }
+
+.shell__brand-row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+.shell__collapse {
+  display: none;
+}
+.shell__expand {
+  display: none;
+}
+
+/* Minimised state (desktop only -- mobile has its own off-canvas drawer via
+   .is-open above). --shell-side-w drives both the sidebar's own width and
+   .shell__main's margin-left, so overriding it here collapses both at once. */
+@media (min-width: 901px) {
+  .shell__collapse {
+    display: grid;
+    place-items: center;
+    flex: none;
+    width: 32px;
+    height: 32px;
+    margin: -4px -4px 0 0;
+    border: 0;
+    background: none;
+    color: rgba(244, 239, 231, 0.6);
+    cursor: pointer;
+    border-radius: var(--radius-sm);
+  }
+  .shell__collapse:hover {
+    color: var(--ivory);
+  }
+  .shell.is-collapsed {
+    --shell-side-w: 0px;
+  }
+  .shell.is-collapsed .shell__side {
+    padding: 0;
+    border-right: 0;
+    overflow: hidden;
+  }
+  .shell.is-collapsed .shell__side > * {
+    opacity: 0;
+    pointer-events: none;
+  }
+  .shell.is-collapsed .shell__expand {
+    display: grid;
+    position: fixed;
+    z-index: 40;
+    top: var(--space-5);
+    left: var(--space-3);
+    place-items: center;
+    width: 34px;
+    height: 34px;
+    border: 1px solid var(--line-strong);
+    border-radius: var(--radius-sm);
+    background: var(--surface);
+    color: var(--ink-muted);
+    box-shadow: var(--shadow-soft);
+    cursor: pointer;
+  }
+  .shell.is-collapsed .shell__expand:hover {
+    color: var(--ink);
+  }
+}
 .shell__view {
   max-width: 1120px;
   margin: 0 auto;

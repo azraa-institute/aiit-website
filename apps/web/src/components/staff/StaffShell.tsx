@@ -5,6 +5,7 @@ import { cn } from '@/lib/cn';
 import { useAuth } from '@/lib/AuthContext';
 import { useMe } from '@/lib/me';
 import { useSessionHeartbeat } from '@/lib/useSessionHeartbeat';
+import { usePersistedBoolean } from '@/lib/usePersistedBoolean';
 import { Logo } from '@/components/layout/Logo';
 import './staff-shell.css';
 
@@ -34,6 +35,10 @@ export function StaffShell({
   const { signOut, session } = useAuth();
   const me = useMe();
   const [open, setOpen] = useState(false);
+  // Desktop-only, same idea and mechanism as the student portal's rail --
+  // see PortalLayout.tsx. Key is per-tone so an admin and an instructor
+  // signed in on the same browser don't share one preference.
+  const [collapsed, setCollapsed] = usePersistedBoolean(`aiit-${tone}-rail-collapsed`);
   useSessionHeartbeat();
 
   // Close the drawer whenever the route changes.
@@ -47,7 +52,7 @@ export function StaffShell({
   }
 
   return (
-    <div className={cn('shell', `shell--${tone}`, open && 'is-open')}>
+    <div className={cn('shell', `shell--${tone}`, open && 'is-open', collapsed && 'is-collapsed')}>
       <Seo title={portal} path={tone === 'admin' ? '/admin' : '/instructor'} noindex />
 
       <header className="shell__topbar">
@@ -61,9 +66,17 @@ export function StaffShell({
       </header>
 
       <aside id="shell-side" className="shell__side" aria-label={portal}>
-        <Link to="/" className="shell__brand" aria-label="AIIT home">
-          <Logo variant="light" className="shell__logo" />
-        </Link>
+        <div className="shell__brand-row">
+          <Link to="/" className="shell__brand" aria-label="AIIT home">
+            <Logo variant="light" className="shell__logo" />
+          </Link>
+          <button type="button" className="shell__collapse" title="Minimise navigation" onClick={() => setCollapsed(true)}>
+            <span className="visually-hidden">Minimise navigation</span>
+            <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true">
+              <path d="M10 3 5 8l5 5" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+          </button>
+        </div>
         <p className="shell__portal">{portal}</p>
 
         <nav className="shell__nav" aria-label={`${portal} sections`}>
@@ -88,6 +101,14 @@ export function StaffShell({
       </aside>
 
       <button type="button" className="shell__scrim" aria-label="Close menu" tabIndex={open ? 0 : -1} onClick={() => setOpen(false)} />
+
+      {/* Desktop only (see staff-shell.css) -- brings the collapsed sidebar back. */}
+      <button type="button" className="shell__expand" title="Show navigation" onClick={() => setCollapsed(false)}>
+        <span className="visually-hidden">Show navigation</span>
+        <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true">
+          <path d="M6 3 11 8l-5 5" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+        </svg>
+      </button>
 
       <main className="shell__main" id="staff-main">
         <div className="shell__view">

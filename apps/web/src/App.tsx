@@ -71,6 +71,7 @@ const ResetPasswordPage = lazy(() => import('@/pages/auth/ResetPasswordPage'));
 const PortalLayout = lazy(() => import('@/pages/portal/PortalLayout'));
 const DashboardPage = lazy(() => import('@/pages/portal/DashboardPage'));
 const MyCoursesPage = lazy(() => import('@/pages/portal/MyCoursesPage'));
+const CourseWorkspacePage = lazy(() => import('@/pages/portal/CourseWorkspacePage'));
 const CertificatesPage = lazy(() => import('@/pages/portal/CertificatesPage'));
 const AssignmentsPage = lazy(() => import('@/pages/portal/AssignmentsPage'));
 const PortalResourcesPage = lazy(() => import('@/pages/portal/PortalResourcesPage'));
@@ -165,6 +166,14 @@ export function App() {
                   element={
                     <RequireCompleteProfile>
                       <MyCoursesPage />
+                    </RequireCompleteProfile>
+                  }
+                />
+                <Route
+                  path="courses/:slug"
+                  element={
+                    <RequireCompleteProfile>
+                      <CourseWorkspacePage />
                     </RequireCompleteProfile>
                   }
                 />

@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react';
 import { Link } from 'react-router-dom';
+import { cn } from '@/lib/cn';
 import { SITE } from '@/data/site';
 import { Plate } from '@/components/primitives/Plate';
 import { Logo } from '@/components/layout/Logo';
@@ -12,11 +13,13 @@ interface AuthLayoutProps {
   footer: ReactNode;
   /** Optional provider button(s), e.g. <GoogleAuthButton />. Renders below a divider. */
   social?: ReactNode;
+  /** 'staff' gives the form side a dark, quiet gradient instead of the student pages' plain paper -- see auth.css. */
+  tone?: 'default' | 'staff';
 }
 
-export function AuthLayout({ title, intro, children, footer, social }: AuthLayoutProps) {
+export function AuthLayout({ title, intro, children, footer, social, tone = 'default' }: AuthLayoutProps) {
   return (
-    <div className="auth">
+    <div className={cn('auth', tone === 'staff' && 'auth--staff')}>
       <aside className="auth__aside on-ink">
         <Plate
           source="/assets/auth/aiit-registration.webp"

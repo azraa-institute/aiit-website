@@ -9,6 +9,7 @@ import { Toast } from '@/components/common/Toast';
 import { Avatar } from '@/components/common/Avatar';
 import { apiFetch } from '@/lib/api';
 import { useSessionHeartbeat } from '@/lib/useSessionHeartbeat';
+import { usePersistedBoolean } from '@/lib/usePersistedBoolean';
 import { ProfileCompletionWizard } from './ProfileCompletionWizard';
 import { ProfileCompletionBanner } from './ProfileCompletionBanner';
 import { GuidedTour } from './GuidedTour';
@@ -64,6 +65,10 @@ export default function PortalLayout() {
   const learnerState = useLearner();
   useSessionHeartbeat();
   const [menuOpen, setMenuOpen] = useState(false);
+  // Desktop-only: lets a learner reclaim the rail's width for wide content
+  // (tables, the classroom, etc). Mobile keeps its own off-canvas menu,
+  // unrelated to this -- see the media-query split in portal.css.
+  const [railCollapsed, setRailCollapsed] = usePersistedBoolean('aiit-portal-rail-collapsed');
   const [showWelcome, setShowWelcome] = useState(false);
   const [profileMenuOpen, setProfileMenuOpen] = useState(false);
   const [wizardOpen, setWizardOpen] = useState(false);
@@ -176,7 +181,14 @@ export default function PortalLayout() {
   }
 
   return (
-    <div className={cn('portal', menuOpen && 'portal--menu-open', wizardOpen && 'portal--blurred')}>
+    <div
+      className={cn(
+        'portal',
+        menuOpen && 'portal--menu-open',
+        wizardOpen && 'portal--blurred',
+        railCollapsed && 'portal--rail-collapsed',
+      )}
+    >
       <Seo title="Learner portal" path="/portal" noindex />
       <PortalAtmosphere />
 
@@ -217,6 +229,17 @@ export default function PortalLayout() {
             <span className="visually-hidden">Close menu</span>
             <svg width="18" height="18" viewBox="0 0 18 18" aria-hidden="true">
               <path d="m4 4 10 10M14 4 4 14" fill="none" stroke="currentColor" strokeWidth="1.5" />
+            </svg>
+          </button>
+          <button
+            type="button"
+            className="portal-rail__collapse"
+            title="Minimise navigation"
+            onClick={() => setRailCollapsed(true)}
+          >
+            <span className="visually-hidden">Minimise navigation</span>
+            <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true">
+              <path d="M10 3 5 8l5 5" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
             </svg>
           </button>
         </div>
@@ -261,6 +284,14 @@ export default function PortalLayout() {
         tabIndex={menuOpen ? 0 : -1}
         onClick={() => setMenuOpen(false)}
       />
+
+      {/* Desktop only (see portal.css) -- brings the collapsed rail back. */}
+      <button type="button" className="portal-rail-expand" title="Show navigation" onClick={() => setRailCollapsed(false)}>
+        <span className="visually-hidden">Show navigation</span>
+        <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true">
+          <path d="M6 3 11 8l-5 5" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+        </svg>
+      </button>
 
       <div className="portal__main">
         <header className="portal-topbar">

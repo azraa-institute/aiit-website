@@ -1,0 +1,106 @@
+/* One enrolled course, inside the portal: next class, assignments, and (until
+   there is real curriculum content) a pointer to the syllabus-to-come. */
+
+.cwork__back {
+  display: inline-block;
+  margin-bottom: var(--space-4);
+  font-size: 0.9rem;
+  color: var(--ink-muted);
+}
+.cwork__back:hover {
+  color: var(--brass-deep);
+}
+
+.cwork__head-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: var(--space-5);
+  margin-top: var(--space-3);
+}
+.cwork__plate {
+  width: 96px;
+  flex: none;
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+}
+.cwork__domain {
+  margin-top: 4px;
+  color: var(--ink-muted);
+}
+
+.cwork__section {
+  margin-top: var(--space-7);
+  padding-top: var(--space-6);
+  border-top: 1px solid var(--line);
+}
+.cwork__section-head {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+.cwork__flag {
+  padding: 2px 10px;
+  border-radius: 999px;
+  background: var(--accent-wash);
+  color: var(--brass-deep);
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+.cwork__section--muted {
+  color: var(--ink-muted);
+}
+.cwork__none {
+  margin-top: var(--space-3);
+  color: var(--ink-muted);
+}
+.cwork__link {
+  color: var(--brass-deep);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.cwork__class {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4);
+  margin-top: var(--space-4);
+  padding: var(--space-5);
+  border-left: 3px solid var(--brass);
+  background: var(--accent-wash);
+}
+.cwork__class-when {
+  font-size: var(--fs-eyebrow);
+  font-weight: 700;
+  letter-spacing: var(--tracking-eyebrow);
+  text-transform: uppercase;
+  color: var(--brass-deep);
+}
+.cwork__class-title {
+  margin-top: var(--space-2);
+  font-family: var(--font-accent);
+  font-size: 1.3rem;
+}
+.cwork__class-host,
+.cwork__class-note {
+  margin-top: 4px;
+  color: var(--ink-muted);
+  font-size: 0.9rem;
+}
+.cwork__class-cta {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  padding: 0 var(--space-6);
+  border-radius: var(--radius-sm);
+  background: var(--ink);
+  color: var(--ivory);
+  font-weight: 700;
+  white-space: nowrap;
+  transition: background var(--dur-fast) var(--ease-out);
+}
+.cwork__class-cta:hover {
+  background: var(--brass-deep);
+}

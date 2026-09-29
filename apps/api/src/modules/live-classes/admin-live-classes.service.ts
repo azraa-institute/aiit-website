@@ -89,10 +89,11 @@ export class AdminLiveClassesService {
       },
       include: TIMETABLE_INCLUDE,
     });
+    await this.audit.record(adminId, 'timetable.create', 'timetable', row.id, { course: row.course.title });
     return toTimetable(row);
   }
 
-  async updateTimetable(id: string, dto: UpdateTimetableDto): Promise<Timetable> {
+  async updateTimetable(adminId: string, id: string, dto: UpdateTimetableDto): Promise<Timetable> {
     const existing = await this.prisma.timetable.findUnique({ where: { id } });
     if (!existing) throw new NotFoundException('Timetable not found.');
 
@@ -128,25 +129,41 @@ export class AdminLiveClassesService {
         include: TIMETABLE_INCLUDE,
       });
     });
+    await this.audit.record(adminId, 'timetable.update', 'timetable', id, {
+      course: row.course.title,
+      changed: Object.keys(dto),
+    });
     return toTimetable(row);
   }
 
   /** Removes the timetable and the classes it generated that haven't started; live/ended/cancelled history is kept (detached). */
-  async deleteTimetable(id: string): Promise<void> {
-    const existing = await this.prisma.timetable.findUnique({ where: { id }, select: { id: true } });
+  async deleteTimetable(adminId: string, id: string): Promise<void> {
+    const existing = await this.prisma.timetable.findUnique({
+      where: { id },
+      select: { id: true, course: { select: { title: true } } },
+    });
     if (!existing) throw new NotFoundException('Timetable not found.');
     await this.prisma.$transaction([
       this.prisma.liveClass.deleteMany({ where: { timetableId: id, status: 'scheduled' } }),
       this.prisma.timetable.delete({ where: { id } }),
     ]);
+    await this.audit.record(adminId, 'timetable.delete', 'timetable', id, { course: existing.course.title });
   }
 
   /**
    * Turns the weekly pattern into dated classes. Idempotent: (timetable,
    * start time) is unique, so running it again only adds what is missing.
-   * Slots already in the past are skipped.
+   * Slots already in the past are skipped. Logs its own audit entry --
+   * `autoGenerate` above calls `runGenerate` directly instead, so a
+   * one-click generation gets a single, richer entry rather than two.
    */
-  async generateClasses(id: string): Promise<{ created: number; skipped: number }> {
+  async generateClasses(adminId: string, id: string): Promise<{ created: number; skipped: number }> {
+    const result = await this.runGenerate(id);
+    await this.audit.record(adminId, 'timetable.generate', 'timetable', id, result);
+    return result;
+  }
+
+  private async runGenerate(id: string): Promise<{ created: number; skipped: number }> {
     const timetable = await this.prisma.timetable.findUnique({
       where: { id },
       include: { slots: true, course: { select: { title: true } } },
@@ -237,7 +254,7 @@ export class AdminLiveClassesService {
       hostUserId: host?.id ?? null,
       slots,
     });
-    const { created } = await this.generateClasses(timetable.id);
+    const { created } = await this.runGenerate(timetable.id);
     await this.audit.record(adminId, 'timetable.generate', 'timetable', timetable.id, {
       course: course.title,
       timeZone: dto.timeZone,
@@ -284,7 +301,7 @@ export class AdminLiveClassesService {
     return this.toAdminClasses(rows);
   }
 
-  async createClass(dto: CreateLiveClassDto): Promise<AdminLiveClass> {
+  async createClass(adminId: string, dto: CreateLiveClassDto): Promise<AdminLiveClass> {
     const startsAt = new Date(dto.startsAt);
     const endsAt = new Date(dto.endsAt);
     this.validateWindow(startsAt, endsAt);
@@ -306,10 +323,14 @@ export class AdminLiveClassesService {
       },
       select: ADMIN_CLASS_SELECT,
     });
+    await this.audit.record(adminId, 'live_class.create', 'live_class', id, {
+      course: row.course.title,
+      startsAt: row.startsAt.toISOString(),
+    });
     return (await this.toAdminClasses([row]))[0];
   }
 
-  async updateClass(id: string, dto: UpdateLiveClassDto): Promise<AdminLiveClass> {
+  async updateClass(adminId: string, id: string, dto: UpdateLiveClassDto): Promise<AdminLiveClass> {
     const existing = await this.prisma.liveClass.findUnique({ where: { id } });
     if (!existing) throw new NotFoundException('Class not found.');
     if (existing.status === 'live' || existing.status === 'ended') {
@@ -332,6 +353,10 @@ export class AdminLiveClassesService {
         status: dto.status,
       },
       select: ADMIN_CLASS_SELECT,
+    });
+    await this.audit.record(adminId, dto.status === 'cancelled' ? 'live_class.cancel' : 'live_class.update', 'live_class', id, {
+      course: row.course.title,
+      changed: Object.keys(dto),
     });
     return (await this.toAdminClasses([row]))[0];
   }

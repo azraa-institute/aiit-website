@@ -42,29 +42,30 @@ export default function AdminReportsPage() {
           <p className="adm-eyebrow">Reports</p>
           <h1 className="adm-title">Attendance &amp; exports</h1>
           <p className="adm-intro">
-            How many enrolled students actually joined each live class, and spreadsheet exports of your data.
+            How many enrolled students actually joined each live class, and spreadsheet exports of your data --
+            real .xlsx files, set in Yu Mincho.
           </p>
         </div>
       </div>
 
       <section className="adm-panel" aria-labelledby="exports">
         <div className="adm-panel__head">
-          <h2 id="exports">Download (CSV)</h2>
+          <h2 id="exports">Download (.xlsx)</h2>
         </div>
         <div className="adm-actions">
-          <button type="button" className="adm-btn adm-btn--ghost" disabled={busy !== null} onClick={() => download('/admin/exports/students', 'aiit-students.csv')}>
-            {busy === 'aiit-students.csv' ? 'Preparing…' : 'All students'}
+          <button type="button" className="adm-btn adm-btn--ghost" disabled={busy !== null} onClick={() => download('/admin/exports/students', 'aiit-students.xlsx')}>
+            {busy === 'aiit-students.xlsx' ? 'Preparing…' : 'All students'}
           </button>
-          <button type="button" className="adm-btn adm-btn--ghost" disabled={busy !== null} onClick={() => download('/admin/exports/enrollments', 'aiit-enrollments.csv')}>
-            {busy === 'aiit-enrollments.csv' ? 'Preparing…' : 'Enrolments by course'}
+          <button type="button" className="adm-btn adm-btn--ghost" disabled={busy !== null} onClick={() => download('/admin/exports/enrollments', 'aiit-enrollments.xlsx')}>
+            {busy === 'aiit-enrollments.xlsx' ? 'Preparing…' : 'Enrolments by course'}
           </button>
           <button
             type="button"
             className="adm-btn adm-btn--ghost"
             disabled={busy !== null}
-            onClick={() => download(courseId ? `/admin/exports/attendance?courseId=${courseId}` : '/admin/exports/attendance', 'aiit-attendance.csv')}
+            onClick={() => download(courseId ? `/admin/exports/attendance?courseId=${courseId}` : '/admin/exports/attendance', 'aiit-attendance.xlsx')}
           >
-            {busy === 'aiit-attendance.csv' ? 'Preparing…' : `Attendance${courseId ? ' (this course)' : ''}`}
+            {busy === 'aiit-attendance.xlsx' ? 'Preparing…' : `Attendance${courseId ? ' (this course)' : ''}`}
           </button>
         </div>
         {error ? <p className="adm-error" role="alert">{error}</p> : null}

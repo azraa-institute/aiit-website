@@ -118,6 +118,20 @@
   padding: clamp(1.5rem, 4vw, 4rem) var(--gutter);
 }
 
+/* Staff sign-in (/staff/login, /staff/change-password) -- a quiet, dark
+   diagonal gradient in the site's own ink/brass palette rather than the
+   student pages' plain paper, so the two sign-ins read as distinct without
+   introducing a new colour language. The card stays a crisp light panel on
+   top of it -- restrained, not a new theme. */
+.auth--staff .auth__main {
+  background: linear-gradient(135deg, #100d0b 0%, #1c1713 45%, #26201a 75%, #2e2620 100%);
+}
+.auth--staff .auth__card {
+  box-shadow:
+    0 0 0 1px rgba(154, 123, 79, 0.14),
+    var(--shadow-lift);
+}
+
 .auth__card {
   width: 100%;
   max-width: 452px;

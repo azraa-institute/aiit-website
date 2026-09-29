@@ -102,6 +102,7 @@ export default function StaffLoginPage() {
     <>
       <Seo title="Staff Sign In" path="/staff/login" noindex />
       <AuthLayout
+        tone="staff"
         title={mfaPending ? 'Two-factor authentication' : 'Staff sign-in'}
         intro={
           mfaPending

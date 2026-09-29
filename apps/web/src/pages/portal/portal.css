@@ -306,6 +306,74 @@
   }
 }
 
+.portal-rail__collapse {
+  display: none;
+}
+@media (min-width: 1024px) {
+  .portal-rail__collapse {
+    display: grid;
+    place-items: center;
+    flex: none;
+    width: 36px;
+    height: 36px;
+    margin: -6px -6px 0 0;
+    border: 0;
+    background: none;
+    color: var(--fg-muted);
+    cursor: pointer;
+    border-radius: var(--radius-sm);
+    transition: color var(--dur-fast) var(--ease-out);
+  }
+  .portal-rail__collapse:hover {
+    color: var(--ivory);
+  }
+}
+
+/* Minimised state: the rail's own width becomes 0 (grid-template-columns
+   reads --portal-rail-w, so overriding it here collapses both the column
+   and the sticky rail together), and its content is clipped rather than
+   reflowed so nothing peeks out during the instant collapse. Mobile is
+   untouched -- it already has its own off-canvas rail via .portal--menu-open. */
+.portal-rail-expand {
+  display: none;
+}
+@media (min-width: 1024px) {
+  .portal--rail-collapsed {
+    --portal-rail-w: 0px;
+  }
+  .portal--rail-collapsed .portal-rail {
+    padding: 0;
+    border-right: 0;
+    overflow: hidden;
+  }
+  .portal--rail-collapsed .portal-rail > * {
+    opacity: 0;
+    pointer-events: none;
+  }
+  .portal-rail-expand {
+    display: grid;
+    position: fixed;
+    z-index: 40;
+    top: var(--space-5);
+    left: var(--space-3);
+    place-items: center;
+    width: 34px;
+    height: 34px;
+    border: 1px solid var(--line-strong);
+    border-radius: var(--radius-sm);
+    background: var(--surface);
+    color: var(--ink-muted);
+    box-shadow: var(--shadow-soft);
+    cursor: pointer;
+  }
+  .portal-rail-expand:hover {
+    color: var(--ink);
+  }
+  .portal:not(.portal--rail-collapsed) .portal-rail-expand {
+    display: none;
+  }
+}
+
 .portal-rail__nav {
   flex: 1;
   display: flex;

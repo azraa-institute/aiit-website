@@ -55,20 +55,27 @@ export class AdminLiveClassesController {
   }
 
   @Patch('timetables/:id')
-  updateTimetable(@Param('id', ParseUUIDPipe) id: string, @Body() dto: UpdateTimetableDto): Promise<Timetable> {
-    return this.admin.updateTimetable(id, dto);
+  updateTimetable(
+    @CurrentUser() user: AuthenticatedUser,
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() dto: UpdateTimetableDto,
+  ): Promise<Timetable> {
+    return this.admin.updateTimetable(user.userId, id, dto);
   }
 
   @Delete('timetables/:id')
   @HttpCode(204)
-  async deleteTimetable(@Param('id', ParseUUIDPipe) id: string): Promise<void> {
-    await this.admin.deleteTimetable(id);
+  async deleteTimetable(@CurrentUser() user: AuthenticatedUser, @Param('id', ParseUUIDPipe) id: string): Promise<void> {
+    await this.admin.deleteTimetable(user.userId, id);
   }
 
   @Post('timetables/:id/generate')
   @HttpCode(200)
-  generate(@Param('id', ParseUUIDPipe) id: string): Promise<{ created: number; skipped: number }> {
-    return this.admin.generateClasses(id);
+  generate(
+    @CurrentUser() user: AuthenticatedUser,
+    @Param('id', ParseUUIDPipe) id: string,
+  ): Promise<{ created: number; skipped: number }> {
+    return this.admin.generateClasses(user.userId, id);
   }
 
   @Get('live-classes')
@@ -77,13 +84,17 @@ export class AdminLiveClassesController {
   }
 
   @Post('live-classes')
-  createClass(@Body() dto: CreateLiveClassDto): Promise<AdminLiveClass> {
-    return this.admin.createClass(dto);
+  createClass(@CurrentUser() user: AuthenticatedUser, @Body() dto: CreateLiveClassDto): Promise<AdminLiveClass> {
+    return this.admin.createClass(user.userId, dto);
   }
 
   @Patch('live-classes/:id')
-  updateClass(@Param('id', ParseUUIDPipe) id: string, @Body() dto: UpdateLiveClassDto): Promise<AdminLiveClass> {
-    return this.admin.updateClass(id, dto);
+  updateClass(
+    @CurrentUser() user: AuthenticatedUser,
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() dto: UpdateLiveClassDto,
+  ): Promise<AdminLiveClass> {
+    return this.admin.updateClass(user.userId, id, dto);
   }
 
   @Get('live-classes/:id/attendance')

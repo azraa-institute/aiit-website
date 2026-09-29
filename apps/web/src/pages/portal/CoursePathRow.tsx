@@ -31,7 +31,7 @@ export function CoursePathRow({ enrolled }: { enrolled: Enrollment }) {
         </div>
 
         <div className="cpath__action">
-          <Button as="link" to={`/courses/${course.slug}`} variant="secondary" size="sm" arrow>
+          <Button as="link" to={`/portal/courses/${course.slug}`} variant="secondary" size="sm" arrow>
             {done ? 'Review course' : 'Continue course'}
           </Button>
         </div>

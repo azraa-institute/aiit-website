@@ -56,6 +56,7 @@ export default function StaffChangePasswordPage() {
     <>
       <Seo title="Set your password" path="/staff/change-password" noindex />
       <AuthLayout
+        tone="staff"
         title="Set your own password"
         intro="You signed in with a temporary password. Choose a new one to continue — only you should know it."
         footer={<>Need help? Contact the AIIT administrator.</>}

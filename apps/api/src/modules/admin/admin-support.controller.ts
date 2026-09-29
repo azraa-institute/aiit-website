@@ -20,6 +20,7 @@ import { AdminReplyDto, COMPLAINT_CATEGORIES, COMPLAINT_STATUSES, SetComplaintSt
 import { AdminComplaintsService } from './admin-complaints.service';
 import { AdminAnnouncementsService } from './admin-announcements.service';
 import { AdminReportsService } from './admin-reports.service';
+import { XLSX_CONTENT_TYPE } from '../../common/xlsx';
 
 class ListComplaintsQuery {
   @IsOptional()
@@ -62,8 +63,8 @@ class CourseFilterQuery {
   courseId?: string;
 }
 
-function csv(res: Response, filename: string, body: string): string {
-  res.set({ 'Content-Type': 'text/csv; charset=utf-8', 'Content-Disposition': `attachment; filename="${filename}"`, 'Cache-Control': 'no-store' });
+function xlsxAttachment(res: Response, filename: string, body: Buffer): Buffer {
+  res.set({ 'Content-Type': XLSX_CONTENT_TYPE, 'Content-Disposition': `attachment; filename="${filename}"`, 'Cache-Control': 'no-store' });
   return body;
 }
 
@@ -131,17 +132,17 @@ export class AdminSupportController {
   }
 
   @Get('exports/students')
-  async studentsCsv(@Res({ passthrough: true }) res: Response): Promise<string> {
-    return csv(res, 'aiit-students.csv', await this.reports.studentsCsv());
+  async studentsXlsx(@Res({ passthrough: true }) res: Response): Promise<Buffer> {
+    return xlsxAttachment(res, 'aiit-students.xlsx', await this.reports.studentsXlsx());
   }
 
   @Get('exports/enrollments')
-  async enrollmentsCsv(@Res({ passthrough: true }) res: Response): Promise<string> {
-    return csv(res, 'aiit-enrollments.csv', await this.reports.enrollmentsCsv());
+  async enrollmentsXlsx(@Res({ passthrough: true }) res: Response): Promise<Buffer> {
+    return xlsxAttachment(res, 'aiit-enrollments.xlsx', await this.reports.enrollmentsXlsx());
   }
 
   @Get('exports/attendance')
-  async attendanceCsv(@Query() query: CourseFilterQuery, @Res({ passthrough: true }) res: Response): Promise<string> {
-    return csv(res, 'aiit-attendance.csv', await this.reports.attendanceCsv(query.courseId));
+  async attendanceXlsx(@Query() query: CourseFilterQuery, @Res({ passthrough: true }) res: Response): Promise<Buffer> {
+    return xlsxAttachment(res, 'aiit-attendance.xlsx', await this.reports.attendanceXlsx(query.courseId));
   }
 }

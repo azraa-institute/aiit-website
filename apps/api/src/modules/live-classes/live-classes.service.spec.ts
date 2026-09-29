@@ -182,6 +182,28 @@ describe('LiveClassesService', () => {
         ForbiddenException,
       );
     });
+
+    it("'mute' both mutes the current track and revokes the mic-publish permission, so it actually sticks", async () => {
+      prisma.liveClass.findUnique.mockResolvedValue(classRow());
+      const mute = jest.spyOn(livekit, 'muteParticipant').mockResolvedValue(undefined);
+      const setAllowed = jest.spyOn(livekit, 'setMicrophonePublishAllowed').mockResolvedValue(undefined);
+
+      await service.moderate(instructor, 'cls-1', LEARNER_ID, 'mute');
+
+      expect(mute).toHaveBeenCalledWith('class-cls-1', LEARNER_ID);
+      expect(setAllowed).toHaveBeenCalledWith('class-cls-1', LEARNER_ID, false);
+    });
+
+    it("'unmute' only restores permission -- it doesn't itself mute/unmute a track", async () => {
+      prisma.liveClass.findUnique.mockResolvedValue(classRow());
+      const mute = jest.spyOn(livekit, 'muteParticipant').mockResolvedValue(undefined);
+      const setAllowed = jest.spyOn(livekit, 'setMicrophonePublishAllowed').mockResolvedValue(undefined);
+
+      await service.moderate(instructor, 'cls-1', LEARNER_ID, 'unmute');
+
+      expect(mute).not.toHaveBeenCalled();
+      expect(setAllowed).toHaveBeenCalledWith('class-cls-1', LEARNER_ID, true);
+    });
   });
 
   describe('timetable listing', () => {

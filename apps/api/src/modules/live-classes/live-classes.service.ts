@@ -143,7 +143,13 @@ export class LiveClassesService {
     return this.toSummary(cls, role, await this.hostNames([cls]));
   }
 
-  async moderate(user: AuthenticatedUser, id: string, identity: string, action: 'mute' | 'remove'): Promise<void> {
+  /**
+   * 'mute' mutes the participant's current audio track AND revokes their
+   * permission to publish a new one, so it actually sticks -- they cannot
+   * unmute themselves until the instructor calls 'unmute', which only
+   * restores that permission (it doesn't itself turn their mic back on).
+   */
+  async moderate(user: AuthenticatedUser, id: string, identity: string, action: 'mute' | 'unmute' | 'remove'): Promise<void> {
     const cls = await this.getClass(id);
     if (this.roleFor(user, cls) !== 'host') throw new ForbiddenException('Only the instructor can do that.');
     if (cls.status !== 'live') throw new ConflictException('This class is not live.');
@@ -153,8 +159,14 @@ export class LiveClassesService {
     if (target?.role === 'admin' && user.role !== 'admin') {
       throw new ForbiddenException('You cannot moderate an administrator.');
     }
-    if (action === 'mute') await this.livekit.muteParticipant(cls.roomName, identity);
-    else await this.livekit.removeParticipant(cls.roomName, identity);
+    if (action === 'mute') {
+      await this.livekit.muteParticipant(cls.roomName, identity);
+      await this.livekit.setMicrophonePublishAllowed(cls.roomName, identity, false);
+    } else if (action === 'unmute') {
+      await this.livekit.setMicrophonePublishAllowed(cls.roomName, identity, true);
+    } else {
+      await this.livekit.removeParticipant(cls.roomName, identity);
+    }
   }
 
   // ---- LiveKit webhook -> attendance ----

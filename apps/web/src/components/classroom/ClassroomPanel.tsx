@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import type { FormEvent } from 'react';
 import { useChat, useIsMuted, useLocalParticipant, useParticipants } from '@livekit/components-react';
 import { Track, type Participant } from 'livekit-client';
+import { TrackSource } from '@livekit/protocol';
 import { apiFetch } from '@/lib/api';
 import { cn } from '@/lib/cn';
 import { MicIcon } from './ClassroomIcons';
@@ -9,6 +10,18 @@ import { displayName, participantRole } from './participant';
 
 function formatTime(ts: number): string {
   return new Date(ts).toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' });
+}
+
+/**
+ * Whether the instructor has revoked this participant's permission to
+ * publish a microphone track (see LiveKitService.setMicrophonePublishAllowed
+ * on the API) -- a real, server-enforced lock, distinct from micMuted's
+ * "is a track currently muted right now" state. Only meaningful for
+ * learners; the host is never restricted this way.
+ */
+export function isMicLocked(participant: Participant): boolean {
+  if (participantRole(participant) === 'host') return false;
+  return !participant.permissions?.canPublishSources?.includes(TrackSource.MICROPHONE);
 }
 
 export function ChatPanel() {
@@ -82,11 +95,12 @@ function PersonRow({
   canModerate: boolean;
 }) {
   const micMuted = useIsMuted({ participant, source: Track.Source.Microphone });
-  const [busy, setBusy] = useState<'mute' | 'remove' | null>(null);
+  const micLocked = isMicLocked(participant);
+  const [busy, setBusy] = useState<'mute' | 'unmute' | 'remove' | null>(null);
   const [error, setError] = useState<string>();
   const role = participantRole(participant);
 
-  async function moderate(action: 'mute' | 'remove') {
+  async function moderate(action: 'mute' | 'unmute' | 'remove') {
     setBusy(action);
     setError(undefined);
     try {
@@ -110,14 +124,24 @@ function PersonRow({
         {participant.isLocal ? ' (you)' : ''}
         {role === 'host' ? <span className="chat__role">Instructor</span> : null}
       </span>
-      <span className={cn('person__mic', micMuted && 'is-off')} title={micMuted ? 'Microphone off' : 'Microphone on'}>
+      <span
+        className={cn('person__mic', micMuted && 'is-off')}
+        title={micLocked ? 'Muted by the instructor' : micMuted ? 'Microphone off' : 'Microphone on'}
+      >
         <MicIcon off={micMuted} />
       </span>
+      {micLocked ? <span className="person__locked">Muted by instructor</span> : null}
       {canModerate && !participant.isLocal && role !== 'host' ? (
         <span className="person__actions">
-          <button type="button" disabled={busy !== null || micMuted} onClick={() => moderate('mute')}>
-            {busy === 'mute' ? '…' : 'Mute'}
-          </button>
+          {micLocked ? (
+            <button type="button" disabled={busy !== null} onClick={() => moderate('unmute')}>
+              {busy === 'unmute' ? '…' : 'Allow mic'}
+            </button>
+          ) : (
+            <button type="button" disabled={busy !== null} onClick={() => moderate('mute')}>
+              {busy === 'mute' ? '…' : 'Mute'}
+            </button>
+          )}
           <button type="button" className="is-danger" disabled={busy !== null} onClick={() => moderate('remove')}>
             {busy === 'remove' ? '…' : 'Remove'}
           </button>

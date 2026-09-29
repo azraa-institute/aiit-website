@@ -587,6 +587,12 @@
 .person__mic.is-off {
   color: #ff8a80;
 }
+.person__locked {
+  flex-basis: 100%;
+  padding-left: 42px;
+  font-size: 0.75rem;
+  color: #ff8a80;
+}
 .person__actions {
   display: flex;
   gap: var(--space-2);

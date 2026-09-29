@@ -8,6 +8,7 @@ import {
   useConnectionState,
   useIsMuted,
   useIsSpeaking,
+  useLocalParticipant,
   useParticipants,
   useRoomContext,
   useTrackToggle,
@@ -19,7 +20,7 @@ import type { LiveClassJoin } from '@aiit/shared';
 import { apiFetch } from '@/lib/api';
 import { cn } from '@/lib/cn';
 import { CameraIcon, ChatIcon, LeaveIcon, MicIcon, PeopleIcon, ShareIcon } from './ClassroomIcons';
-import { ChatPanel, PeoplePanel } from './ClassroomPanel';
+import { ChatPanel, isMicLocked, PeoplePanel } from './ClassroomPanel';
 import { displayName, participantRole } from './participant';
 
 /** Tiles beside the main stage. Everyone is still in the People list; this just keeps a big class from decoding dozens of videos. */
@@ -218,6 +219,7 @@ function Controls({
 }) {
   const room = useRoomContext();
   const participants = useParticipants();
+  const { localParticipant } = useLocalParticipant();
   const mic = useTrackToggle({ source: Track.Source.Microphone });
   const cam = useTrackToggle({ source: Track.Source.Camera });
   const share = useTrackToggle({ source: Track.Source.ScreenShare });
@@ -226,6 +228,7 @@ function Controls({
   const [endError, setEndError] = useState<string>();
   const isHost = join.role === 'host';
   const canShare = isHost && typeof navigator.mediaDevices?.getDisplayMedia === 'function';
+  const micLocked = isMicLocked(localParticipant);
 
   async function endForEveryone() {
     setEnding(true);
@@ -243,13 +246,14 @@ function Controls({
     <div className="controls" role="toolbar" aria-label="Class controls">
       <button
         type="button"
-        className={cn('controls__btn', !mic.enabled && 'is-off')}
+        className={cn('controls__btn', (!mic.enabled || micLocked) && 'is-off')}
         aria-pressed={mic.enabled}
-        disabled={mic.pending}
+        disabled={mic.pending || micLocked}
+        title={micLocked ? 'The instructor has muted your microphone' : undefined}
         onClick={() => mic.toggle()}
       >
-        <MicIcon off={!mic.enabled} />
-        <span>{mic.enabled ? 'Mute' : 'Unmute'}</span>
+        <MicIcon off={!mic.enabled || micLocked} />
+        <span>{micLocked ? 'Muted by instructor' : mic.enabled ? 'Mute' : 'Unmute'}</span>
       </button>
       <button
         type="button"

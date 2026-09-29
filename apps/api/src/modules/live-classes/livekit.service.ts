@@ -24,6 +24,27 @@ interface LiveKitTrack {
   type?: string | number;
 }
 
+interface LiveKitPermission {
+  canSubscribe?: boolean;
+  canPublish?: boolean;
+  canPublishData?: boolean;
+  /** LiveKit's TrackSource enum, JSON-encoded as either its name ('MICROPHONE') or number (2) depending on server version. */
+  canPublishSources?: (string | number)[];
+  hidden?: boolean;
+  recorder?: boolean;
+  canUpdateMetadata?: boolean;
+}
+
+interface LiveKitParticipantInfo {
+  identity: string;
+  tracks?: LiveKitTrack[];
+  permission?: LiveKitPermission;
+}
+
+function isMicrophoneSource(value: string | number): boolean {
+  return value === 'MICROPHONE' || value === 2;
+}
+
 /**
  * Thin server-side LiveKit client. Deliberately built on `jsonwebtoken` (already
  * a dependency, CommonJS-safe) instead of livekit-server-sdk: LiveKit access
@@ -97,19 +118,45 @@ export class LiveKitService {
     await this.twirp('DeleteRoom', room, { room });
   }
 
-  /** Mutes every audio track a participant is currently publishing. */
+  /** Mutes every audio track a participant is currently publishing. On its own this is a one-shot action -- the participant can simply unmute themselves again; pair with setMicrophonePublishAllowed(false) to actually prevent that. */
   async muteParticipant(room: string, identity: string): Promise<void> {
-    const listed = await this.twirp<{ participants?: { identity: string; tracks?: LiveKitTrack[] }[] }>(
-      'ListParticipants',
-      room,
-      { room },
-    );
-    const target = listed.participants?.find((p) => p.identity === identity);
+    const target = await this.findParticipant(room, identity);
     for (const track of target?.tracks ?? []) {
       if (track.type === 'AUDIO' || track.type === 0) {
         await this.twirp('MutePublishedTrack', room, { room, identity, trackSid: track.sid, muted: true });
       }
     }
+  }
+
+  /**
+   * The real "can this person unmute themselves" switch. LiveKit's mute API
+   * only toggles a track's current state -- a muted participant can always
+   * republish/unmute on their own unless their publish *permission* itself
+   * excludes the microphone source, which is what this changes. Fetches the
+   * participant's current permission set first: LiveKit's UpdateParticipant
+   * call replaces the whole permission object, not just canPublishSources,
+   * so every other field must be round-tripped unchanged.
+   */
+  async setMicrophonePublishAllowed(room: string, identity: string, allowed: boolean): Promise<void> {
+    const target = await this.findParticipant(room, identity);
+    const current = target?.permission;
+    const sources = (current?.canPublishSources ?? []).filter((s) => !isMicrophoneSource(s));
+    if (allowed) sources.push('MICROPHONE');
+    const permission: LiveKitPermission = {
+      canSubscribe: current?.canSubscribe ?? true,
+      canPublish: current?.canPublish ?? true,
+      canPublishData: current?.canPublishData ?? true,
+      canPublishSources: sources,
+      hidden: current?.hidden ?? false,
+      recorder: current?.recorder ?? false,
+      canUpdateMetadata: current?.canUpdateMetadata ?? false,
+    };
+    await this.twirp('UpdateParticipant', room, { room, identity, permission });
+  }
+
+  private async findParticipant(room: string, identity: string): Promise<LiveKitParticipantInfo | undefined> {
+    const listed = await this.twirp<{ participants?: LiveKitParticipantInfo[] }>('ListParticipants', room, { room });
+    return listed.participants?.find((p) => p.identity === identity);
   }
 
   private async twirp<T = unknown>(method: string, room: string, body: Record<string, unknown>): Promise<T> {

@@ -41,6 +41,17 @@ export class LiveClassesController {
     await this.liveClasses.moderate(user, id, identity, 'mute');
   }
 
+  /** Restores the participant's permission to publish a microphone track -- they still have to click their own Unmute. */
+  @Post('live-classes/:id/participants/:identity/unmute')
+  @HttpCode(204)
+  async unmute(
+    @CurrentUser() user: AuthenticatedUser,
+    @Param('id', ParseUUIDPipe) id: string,
+    @Param('identity', ParseUUIDPipe) identity: string,
+  ): Promise<void> {
+    await this.liveClasses.moderate(user, id, identity, 'unmute');
+  }
+
   @Post('live-classes/:id/participants/:identity/remove')
   @HttpCode(204)
   async remove(

@@ -177,6 +177,15 @@
   .auth--staff .auth__card {
     max-width: 496px;
   }
+  /* The supplied photo is a wide landscape frame (people + monitors, right of
+     centre) rather than the student page's portrait crop -- bias the crop
+     right so the group stays in frame inside this tall desktop panel. Scoped
+     to desktop only: at mobile's short, wide banner this specific offset was
+     leaking in (via specificity, regardless of the media query it should have
+     lived in) and cropping into the rightmost person at narrow phone widths. */
+  .auth--staff .auth__aside-art img {
+    object-position: 82% 42%;
+  }
 }
 
 .auth--staff .auth__card {
@@ -253,13 +262,6 @@
 .auth--staff .btn--primary:hover {
   background: linear-gradient(135deg, var(--staff-purple-deep) 0%, #3a2482 100%);
   --btn-border: transparent;
-}
-
-/* The supplied photo is a wide landscape frame (people + monitors, right of
-   centre) rather than the student page's portrait crop -- bias the crop right
-   so the group stays in frame inside this tall panel. */
-.auth--staff .auth__aside-art img {
-  object-position: 82% 42%;
 }
 
 .auth__card {

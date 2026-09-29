@@ -145,6 +145,31 @@ function ClassroomInner({
   const [panel, setPanel] = useState<'chat' | 'people' | 'whiteboard' | 'resources' | 'poll' | 'breakouts' | null>(null);
   const [reactions, setReactions] = useState<FloatingReaction[]>([]);
   const [breakouts, setBreakouts] = useState<LiveClassBreakouts | null>(null);
+  const [wbUnseen, setWbUnseen] = useState(false);
+  const panelRef = useRef(panel);
+  panelRef.current = panel;
+
+  // Seeds "there's something to look at" for anyone who joins after the
+  // board already has content; wb-notify (below) covers activity from here on.
+  useEffect(() => {
+    let cancelled = false;
+    apiFetch<{ state: unknown }>(`/live-classes/${join.liveClass.id}/whiteboard`)
+      .then((res) => {
+        if (!cancelled && res.state) setWbUnseen(true);
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, [join.liveClass.id]);
+
+  useEffect(() => {
+    if (panel === 'whiteboard') setWbUnseen(false);
+  }, [panel]);
+
+  useDataChannel('wb-notify', () => {
+    if (panelRef.current !== 'whiteboard') setWbUnseen(true);
+  });
 
   const { send: sendReaction } = useDataChannel('reaction', (msg) => {
     let payload: { emoji?: string };
@@ -391,7 +416,7 @@ function ClassroomInner({
         </aside>
       ) : null}
 
-      <Controls join={join} panel={panel} setPanel={setPanel} onReact={react} inBreakout={inBreakout} />
+      <Controls join={join} panel={panel} setPanel={setPanel} onReact={react} inBreakout={inBreakout} wbUnseen={wbUnseen} />
       <StartAudio label="Click to hear the class" className="classroom__start-audio" />
     </div>
   );
@@ -443,12 +468,14 @@ function Controls({
   setPanel,
   onReact,
   inBreakout,
+  wbUnseen,
 }: {
   join: LiveClassJoin;
   panel: 'chat' | 'people' | 'whiteboard' | 'resources' | 'poll' | 'breakouts' | null;
   setPanel: (p: 'chat' | 'people' | 'whiteboard' | 'resources' | 'poll' | 'breakouts' | null) => void;
   onReact: (emoji: string) => void;
   inBreakout: boolean;
+  wbUnseen: boolean;
 }) {
   const room = useRoomContext();
   const participants = useParticipants();
@@ -644,8 +671,11 @@ function Controls({
             aria-pressed={panel === 'whiteboard'}
             onClick={() => setPanel(panel === 'whiteboard' ? null : 'whiteboard')}
           >
-            <WhiteboardIcon />
-            <span>Whiteboard</span>
+            <span className="controls__icon-wrap">
+              <WhiteboardIcon />
+              {wbUnseen ? <span className="controls__dot" aria-hidden="true" /> : null}
+            </span>
+            <span>Whiteboard{wbUnseen ? ' •' : ''}</span>
           </button>
           <button
             type="button"

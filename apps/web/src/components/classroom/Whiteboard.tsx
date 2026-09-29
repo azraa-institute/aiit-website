@@ -136,10 +136,15 @@ export function WhiteboardPanel({ join }: { join: LiveClassJoin }) {
     }
     setState((prev) => applyRemote(prev, payload));
   });
+  // A separate, always-cheap topic so ClassroomInner can light up the toolbar
+  // button for anyone whose panel is closed, without itself parsing board
+  // messages or keeping a full WhiteboardState around.
+  const { send: notify } = useDataChannel('wb-notify');
 
   async function broadcast(msg: WbMessage) {
     try {
       await send(encode(msg), { reliable: true });
+      void notify(new Uint8Array(0), { reliable: false });
     } catch {
       // Best effort -- the debounced save is the safety net if this drops.
     }

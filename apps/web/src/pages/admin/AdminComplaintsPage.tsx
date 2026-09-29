@@ -69,14 +69,31 @@ function Detail({ id, onChanged, onClose }: { id: string; onChanged: () => void;
           </p>
           <dl className="adm-dl">
             <div>
-              <dt>From</dt>
+              <dt>Filed by</dt>
               <dd>
-                <Link to={`/admin/students?q=${encodeURIComponent(state.data.studentEmail ?? state.data.studentName ?? '')}`}>
-                  {state.data.studentName ?? 'Student'}
+                <Link
+                  to={
+                    state.data.filerRole === 'instructor'
+                      ? `/admin/instructors?q=${encodeURIComponent(state.data.filerName ?? '')}`
+                      : `/admin/students?q=${encodeURIComponent(state.data.studentEmail ?? state.data.filerName ?? '')}`
+                  }
+                >
+                  {state.data.filerName ?? (state.data.filerRole === 'instructor' ? 'Instructor' : 'Student')}
                 </Link>{' '}
-                {state.data.studentEmail ? <span className="adm-muted">({state.data.studentEmail})</span> : null}
+                <span className="adm-muted">({state.data.filerRole === 'instructor' ? 'instructor' : 'student'})</span>
               </dd>
             </div>
+            {state.data.filerRole === 'instructor' && state.data.studentName ? (
+              <div>
+                <dt>About student</dt>
+                <dd>
+                  <Link to={`/admin/students?q=${encodeURIComponent(state.data.studentEmail ?? state.data.studentName)}`}>
+                    {state.data.studentName}
+                  </Link>{' '}
+                  {state.data.studentEmail ? <span className="adm-muted">({state.data.studentEmail})</span> : null}
+                </dd>
+              </div>
+            ) : null}
             {state.data.courseTitle ? (
               <div>
                 <dt>Course</dt>
@@ -101,14 +118,15 @@ function Detail({ id, onChanged, onClose }: { id: string; onChanged: () => void;
 
           <div className="adm-thread">
             <div className="adm-msg adm-msg--student">
-              <p className="adm-msg__meta">{state.data.studentName ?? 'Student'} · original report</p>
+              <p className="adm-msg__meta">{state.data.filerName ?? (state.data.filerRole === 'instructor' ? 'Instructor' : 'Student')} · original report</p>
               <p className="adm-prewrap">{state.data.body}</p>
             </div>
             {state.data.messages.map((m) => (
               <div key={m.id} className={cn('adm-msg', m.authorRole === 'admin' ? 'adm-msg--admin' : 'adm-msg--student', m.internal && 'adm-msg--internal')}>
                 <p className="adm-msg__meta">
-                  {m.authorRole === 'admin' ? (m.authorName ?? 'Admin') : (state.data.studentName ?? 'Student')} · {formatWhen(m.createdAt)}
-                  {m.internal ? ' · internal note (student cannot see)' : ''}
+                  {m.authorRole === 'admin' ? (m.authorName ?? 'Admin') : (state.data.filerName ?? (state.data.filerRole === 'instructor' ? 'Instructor' : 'Student'))} ·{' '}
+                  {formatWhen(m.createdAt)}
+                  {m.internal ? ' · internal note (the filer cannot see this)' : ''}
                 </p>
                 <p className="adm-prewrap">{m.body}</p>
               </div>
@@ -117,12 +135,12 @@ function Detail({ id, onChanged, onClose }: { id: string; onChanged: () => void;
 
           <form className="adm-reply" onSubmit={send}>
             <label className="adm-field">
-              <span>{internal ? 'Internal note (only admins see this)' : 'Reply to the student'}</span>
+              <span>{internal ? 'Internal note (only admins see this)' : `Reply to the ${state.data.filerRole === 'instructor' ? 'instructor' : 'student'}`}</span>
               <textarea required rows={4} maxLength={5000} value={reply} onChange={(e) => setReply(e.target.value)} />
             </label>
             <label className="adm-check">
               <input type="checkbox" checked={internal} onChange={(e) => setInternal(e.target.checked)} />
-              <span>Internal note — do not send to the student</span>
+              <span>Internal note — do not send to the filer</span>
             </label>
             {error ? <p className="adm-error" role="alert">{error}</p> : null}
             <div className="adm-actions">
@@ -146,7 +164,7 @@ function Detail({ id, onChanged, onClose }: { id: string; onChanged: () => void;
               </button>
             ))}
           </div>
-          <p className="adm-muted">Resolving or dismissing notifies the student.</p>
+          <p className="adm-muted">Resolving or dismissing notifies whoever filed it.</p>
         </>
       ) : null}
     </aside>
@@ -182,7 +200,8 @@ export default function AdminComplaintsPage() {
           <p className="adm-eyebrow">Support</p>
           <h1 className="adm-title">Complaints</h1>
           <p className="adm-intro">
-            Reports from students. Only admins can read these — including any report about an instructor.
+            Reports from students, and from instructors about a student. Only admins can read these — including any
+            report about an instructor, or an instructor's report about a student.
           </p>
         </div>
       </div>
@@ -223,7 +242,7 @@ export default function AdminComplaintsPage() {
               <thead>
                 <tr>
                   <th>Subject</th>
-                  <th>From</th>
+                  <th>Filed by</th>
                   <th>Category</th>
                   <th>About</th>
                   <th>Updated</th>
@@ -238,9 +257,17 @@ export default function AdminComplaintsPage() {
                         {c.subject}
                       </button>
                     </td>
-                    <td>{c.studentName ?? '—'}</td>
+                    <td>
+                      {c.filerName ?? '—'} {c.filerRole === 'instructor' ? <span className="adm-muted">(instructor)</span> : null}
+                    </td>
                     <td>{COMPLAINT_CATEGORY_LABEL[c.category]}</td>
-                    <td>{c.instructorName ? `Instructor: ${c.instructorName}` : (c.courseTitle ?? '—')}</td>
+                    <td>
+                      {c.instructorName
+                        ? `Instructor: ${c.instructorName}`
+                        : c.filerRole === 'instructor' && c.studentName
+                          ? `Student: ${c.studentName}`
+                          : (c.courseTitle ?? '—')}
+                    </td>
                     <td>{formatWhen(c.updatedAt)}</td>
                     <td>
                       <span className={cn('adm-status', `adm-status--c-${c.status}`)}>{STATUS_LABEL[c.status]}</span>

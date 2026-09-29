@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
-import { Prisma } from '@prisma/client';
-import type { AdminComplaintDetail, AdminComplaintSummary, ComplaintStatus, Paginated } from '@aiit/shared';
+import { Prisma, type Complaint } from '@prisma/client';
+import type { AdminComplaintDetail, AdminComplaintSummary, ComplaintFilerRole, ComplaintStatus, Paginated } from '@aiit/shared';
 import { PrismaService } from '../../common/prisma/prisma.service';
 import { AuditService } from '../../common/audit/audit.service';
 
@@ -13,9 +13,11 @@ interface ListQuery {
 }
 
 /**
- * The admin inbox for student complaints. Complaints are readable ONLY here --
- * no instructor endpoint exposes them, so a complaint about an instructor never
- * reaches that instructor.
+ * The admin inbox for complaints -- a student's report, or (category
+ * 'student') an instructor's report about one of their students. Readable
+ * ONLY here: no instructor endpoint exposes a complaint about them or about
+ * another instructor's report, and a student never sees an instructor's
+ * report about them either.
  */
 @Injectable()
 export class AdminComplaintsService {
@@ -40,22 +42,9 @@ export class AdminComplaintsService {
       }),
       this.prisma.complaint.count({ where }),
     ]);
-    const names = await this.names(rows.flatMap((r) => [r.userId, r.instructorId].filter((v): v is string => Boolean(v))));
+    const names = await this.names(this.personIds(rows));
     return {
-      items: rows.map((r) => ({
-        id: r.id,
-        category: r.category,
-        status: r.status,
-        subject: r.subject,
-        studentId: r.userId,
-        studentName: names.get(r.userId) ?? null,
-        courseTitle: r.course?.title ?? null,
-        instructorId: r.instructorId,
-        instructorName: r.instructorId ? (names.get(r.instructorId) ?? null) : null,
-        messageCount: r._count.messages,
-        createdAt: r.createdAt.toISOString(),
-        updatedAt: r.updatedAt.toISOString(),
-      })),
+      items: rows.map((r) => this.toSummary(r, names, r._count.messages)),
       total,
       page,
       pageSize: PAGE_SIZE,
@@ -71,26 +60,16 @@ export class AdminComplaintsService {
       },
     });
     if (!row) throw new NotFoundException('Complaint not found.');
-    const names = await this.names([row.userId, row.instructorId, ...row.messages.map((m) => m.authorId)].filter((v): v is string => Boolean(v)));
-    const email = await this.email(row.userId);
+    const names = await this.names([...this.personIds([row]), ...row.messages.map((m) => m.authorId)]);
+    const summary = this.toSummary(row, names, row.messages.length);
+    const email = summary.studentId ? await this.email(summary.studentId) : null;
     return {
-      id: row.id,
-      category: row.category,
-      status: row.status,
-      subject: row.subject,
+      ...summary,
       body: row.body,
-      studentId: row.userId,
-      studentName: names.get(row.userId) ?? null,
       studentEmail: email,
-      courseTitle: row.course?.title ?? null,
-      instructorId: row.instructorId,
-      instructorName: row.instructorId ? (names.get(row.instructorId) ?? null) : null,
-      messageCount: row.messages.length,
-      createdAt: row.createdAt.toISOString(),
-      updatedAt: row.updatedAt.toISOString(),
       messages: row.messages.map((m) => ({
         id: m.id,
-        authorRole: m.authorRole === 'admin' ? 'admin' : 'student',
+        authorRole: m.authorRole === 'admin' ? 'admin' : m.authorRole === 'instructor' ? 'instructor' : 'student',
         authorName: names.get(m.authorId) ?? null,
         body: m.body,
         internal: m.internal,
@@ -99,9 +78,9 @@ export class AdminComplaintsService {
     };
   }
 
-  /** A reply the student sees (and is notified about), or an internal note only admins see. */
+  /** A reply the filer sees (and is notified about), or an internal note only admins see. */
   async reply(adminId: string, id: string, body: string, internal: boolean): Promise<AdminComplaintDetail> {
-    const row = await this.prisma.complaint.findUnique({ where: { id }, select: { userId: true, subject: true, status: true } });
+    const row = await this.prisma.complaint.findUnique({ where: { id }, select: { userId: true, filerRole: true, subject: true, status: true } });
     if (!row) throw new NotFoundException('Complaint not found.');
 
     await this.prisma.complaintMessage.create({
@@ -119,7 +98,7 @@ export class AdminComplaintsService {
           kind: 'system',
           title: `The AIIT team replied to your report: ${row.subject}`,
           body: body.trim().slice(0, 300),
-          href: '/portal/support',
+          href: this.filerHref(row.filerRole),
         },
       });
     }
@@ -128,7 +107,7 @@ export class AdminComplaintsService {
   }
 
   async setStatus(adminId: string, id: string, status: ComplaintStatus): Promise<AdminComplaintDetail> {
-    const row = await this.prisma.complaint.findUnique({ where: { id }, select: { userId: true, subject: true, status: true } });
+    const row = await this.prisma.complaint.findUnique({ where: { id }, select: { userId: true, filerRole: true, subject: true, status: true } });
     if (!row) throw new NotFoundException('Complaint not found.');
     const closing = status === 'resolved' || status === 'dismissed';
     await this.prisma.complaint.update({
@@ -141,13 +120,50 @@ export class AdminComplaintsService {
           userId: row.userId,
           kind: 'system',
           title: status === 'resolved' ? `Your report was resolved: ${row.subject}` : `Your report was closed: ${row.subject}`,
-          body: 'Open Support to read the details or reply.',
-          href: '/portal/support',
+          body: 'Open the report to read the details or reply.',
+          href: this.filerHref(row.filerRole),
         },
       });
     }
     await this.audit.record(adminId, 'complaint.status', 'complaint', id, { from: row.status, to: status });
     return this.detail(id);
+  }
+
+  // ---- helpers ----
+
+  private filerHref(filerRole: string): string {
+    return filerRole === 'instructor' ? '/instructor/complaints' : '/portal/support';
+  }
+
+  /** Every profile id a list/detail response might need a name for: the filer, the instructor a student complained about, and the student an instructor complained about. */
+  private personIds(rows: Complaint[]): string[] {
+    return rows.flatMap((r) => [r.userId, r.instructorId, r.targetStudentId].filter((v): v is string => Boolean(v)));
+  }
+
+  private toSummary(
+    row: Complaint & { course: { title: string | null } | null },
+    names: Map<string, string | null>,
+    messageCount: number,
+  ): AdminComplaintSummary {
+    const filerRole = (row.filerRole === 'instructor' ? 'instructor' : 'student') as ComplaintFilerRole;
+    const studentId = filerRole === 'instructor' ? row.targetStudentId : row.userId;
+    return {
+      id: row.id,
+      category: row.category,
+      status: row.status,
+      subject: row.subject,
+      filerRole,
+      filerId: row.userId,
+      filerName: names.get(row.userId) ?? null,
+      studentId,
+      studentName: studentId ? (names.get(studentId) ?? null) : null,
+      courseTitle: row.course?.title ?? null,
+      instructorId: row.instructorId,
+      instructorName: row.instructorId ? (names.get(row.instructorId) ?? null) : null,
+      messageCount,
+      createdAt: row.createdAt.toISOString(),
+      updatedAt: row.updatedAt.toISOString(),
+    };
   }
 
   private async names(ids: string[]): Promise<Map<string, string | null>> {

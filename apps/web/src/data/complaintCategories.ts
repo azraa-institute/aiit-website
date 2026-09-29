@@ -11,5 +11,6 @@ export const COMPLAINT_CATEGORY_LABEL: Record<ComplaintCategory, string> = {
   course_content: 'The course content',
   technical: 'A technical problem',
   payment: 'Payment or billing',
+  student: 'An issue with a student',
   other: 'Something else',
 };

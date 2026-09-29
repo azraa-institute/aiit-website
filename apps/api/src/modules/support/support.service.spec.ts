@@ -83,6 +83,13 @@ describe('SupportService', () => {
       expect(prisma.complaint.create).not.toHaveBeenCalled();
     });
 
+    it("refuses the 'student' category -- that's instructor-only, filed through a different endpoint", async () => {
+      await expect(
+        service.create(ME, { category: 'student', subject: 'Something', body: 'Details go here please.' }),
+      ).rejects.toBeInstanceOf(BadRequestException);
+      expect(prisma.complaint.create).not.toHaveBeenCalled();
+    });
+
     it('only accepts a course the student is enrolled in and an instructor who teaches it', async () => {
       prisma.enrollment.findFirst.mockResolvedValue(null);
       await expect(

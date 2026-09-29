@@ -19,10 +19,10 @@ const STATUS_LABEL: Record<ComplaintStatus, string> = {
   dismissed: 'Closed',
 };
 
-const CATEGORY_OPTIONS = (Object.keys(COMPLAINT_CATEGORY_LABEL) as ComplaintCategory[]).map((value) => ({
-  value,
-  label: COMPLAINT_CATEGORY_LABEL[value],
-}));
+// 'student' is instructor-only (reporting a student) -- not a category a student can file under.
+const CATEGORY_OPTIONS = (Object.keys(COMPLAINT_CATEGORY_LABEL) as ComplaintCategory[])
+  .filter((value) => value !== 'student')
+  .map((value) => ({ value, label: COMPLAINT_CATEGORY_LABEL[value] }));
 
 function when(iso: string): string {
   return new Date(iso).toLocaleString(undefined, { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });

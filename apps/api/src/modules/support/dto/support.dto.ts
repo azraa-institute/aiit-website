@@ -1,6 +1,6 @@
 import { IsBoolean, IsIn, IsNotEmpty, IsOptional, IsString, IsUUID, MaxLength, MinLength } from 'class-validator';
 
-export const COMPLAINT_CATEGORIES = ['learning_issue', 'instructor', 'course_content', 'technical', 'payment', 'other'] as const;
+export const COMPLAINT_CATEGORIES = ['learning_issue', 'instructor', 'course_content', 'technical', 'payment', 'student', 'other'] as const;
 export const COMPLAINT_STATUSES = ['open', 'in_review', 'resolved', 'dismissed'] as const;
 
 export class CreateComplaintDto {

@@ -33,6 +33,11 @@ export class SupportService {
   }
 
   async create(userId: string, dto: CreateComplaintDto): Promise<ComplaintSummary> {
+    // 'student' is instructor-only (see InstructorComplaintsService) -- checked here too since
+    // COMPLAINT_CATEGORIES (shared by both DTOs) would otherwise let a crafted request through.
+    if (dto.category === 'student') {
+      throw new BadRequestException('That category is not available here.');
+    }
     if (dto.instructorId && !dto.courseId) {
       throw new BadRequestException('Choose the course this instructor teaches you on.');
     }

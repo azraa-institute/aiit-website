@@ -7,6 +7,7 @@ const INSTRUCTOR_NAV: StaffNavEntry[] = [
   { to: '/instructor/classes', label: 'My classes' },
   { to: '/instructor/courses', label: 'My courses' },
   { to: '/instructor/grading', label: 'Grading' },
+  { to: '/instructor/complaints', label: 'Report a student' },
 ];
 
 export default function InstructorLayout() {

@@ -745,6 +745,7 @@ enum ComplaintCategory {
   course_content
   technical
   payment
+  student
   other
 
   @@schema("public")
@@ -760,23 +761,26 @@ enum ComplaintStatus {
 }
 
 model Complaint {
-  id           String            @id @default(uuid()) @db.Uuid
-  userId       String            @map("user_id") @db.Uuid // the student who filed it
-  category     ComplaintCategory
-  courseId     String?           @map("course_id") @db.Uuid
-  course       Course?           @relation(fields: [courseId], references: [id], onDelete: SetNull)
-  instructorId String?           @map("instructor_id") @db.Uuid // set when the complaint is about a teacher
-  subject      String
-  body         String
-  status       ComplaintStatus   @default(open)
-  resolvedAt   DateTime?         @map("resolved_at") @db.Timestamptz(6)
-  resolvedBy   String?           @map("resolved_by") @db.Uuid
-  messages     ComplaintMessage[]
-  createdAt    DateTime          @default(now()) @map("created_at") @db.Timestamptz(6)
-  updatedAt    DateTime          @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+  id              String             @id @default(uuid()) @db.Uuid
+  userId          String             @map("user_id") @db.Uuid // whoever filed it -- a student, or (filerRole = 'instructor') the instructor
+  filerRole       String             @default("student") @map("filer_role") // 'student' | 'instructor'
+  category        ComplaintCategory
+  courseId        String?            @map("course_id") @db.Uuid
+  course          Course?            @relation(fields: [courseId], references: [id], onDelete: SetNull)
+  instructorId    String?            @map("instructor_id") @db.Uuid // set when a student's complaint is about a teacher
+  targetStudentId String?            @map("target_student_id") @db.Uuid // set when an instructor's complaint is about a student
+  subject         String
+  body            String
+  status          ComplaintStatus    @default(open)
+  resolvedAt      DateTime?          @map("resolved_at") @db.Timestamptz(6)
+  resolvedBy      String?            @map("resolved_by") @db.Uuid
+  messages        ComplaintMessage[]
+  createdAt       DateTime           @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt       DateTime           @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
 
   @@index([status, createdAt])
   @@index([userId])
+  @@index([targetStudentId])
   @@map("complaints")
   @@schema("public")
 }
@@ -786,7 +790,7 @@ model ComplaintMessage {
   complaintId String    @map("complaint_id") @db.Uuid
   complaint   Complaint @relation(fields: [complaintId], references: [id], onDelete: Cascade)
   authorId    String    @map("author_id") @db.Uuid
-  authorRole  String    @map("author_role") // 'student' | 'admin'
+  authorRole  String    @map("author_role") // 'student' | 'instructor' | 'admin'
   body        String
   internal    Boolean   @default(false) // admin-only note, never shown to the student
   createdAt   DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)

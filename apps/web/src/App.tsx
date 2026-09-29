@@ -99,6 +99,7 @@ const InstructorCoursesPage = lazy(() => import('@/pages/instructor/InstructorCo
 const InstructorCoursePage = lazy(() => import('@/pages/instructor/InstructorCoursePage'));
 const InstructorAssignmentPage = lazy(() => import('@/pages/instructor/InstructorAssignmentPage'));
 const InstructorGradingPage = lazy(() => import('@/pages/instructor/InstructorGradingPage'));
+const InstructorComplaintsPage = lazy(() => import('@/pages/instructor/InstructorComplaintsPage'));
 const StaffLoginPage = lazy(() => import('@/pages/auth/StaffLoginPage'));
 const StaffChangePasswordPage = lazy(() => import('@/pages/auth/StaffChangePasswordPage'));
 const LiveClassroomPage = lazy(() => import('@/pages/portal/LiveClassroomPage'));
@@ -289,6 +290,7 @@ export function App() {
                 <Route path="courses/:courseId" element={<InstructorCoursePage />} />
                 <Route path="assignments/:id" element={<InstructorAssignmentPage />} />
                 <Route path="grading" element={<InstructorGradingPage />} />
+                <Route path="complaints" element={<InstructorComplaintsPage />} />
               </Route>
 
               <Route path="/privacy-policy" element={<LegalPage kind="privacy" />} />

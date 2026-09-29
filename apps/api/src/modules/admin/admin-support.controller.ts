@@ -1,4 +1,4 @@
-import { Body, Controller, Get, HttpCode, Param, ParseUUIDPipe, Patch, Post, Query, Res, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, HttpCode, Param, ParseUUIDPipe, Patch, Post, Query, Res, StreamableFile, UseGuards } from '@nestjs/common';
 import { Throttle } from '@nestjs/throttler';
 import { Transform } from 'class-transformer';
 import { IsIn, IsInt, IsNotEmpty, IsOptional, IsString, IsUUID, MaxLength, Min, MinLength } from 'class-validator';
@@ -63,9 +63,16 @@ class CourseFilterQuery {
   courseId?: string;
 }
 
-function xlsxAttachment(res: Response, filename: string, body: Buffer): Buffer {
+/**
+ * A raw Buffer return here would go through Nest's default JSON reply path
+ * (Express's res.json(), since a Buffer is typeof 'object') and come out as
+ * `{"type":"Buffer","data":[...]}` text wearing an .xlsx content-type --
+ * exactly what Excel calls "corrupted". StreamableFile is Nest's own escape
+ * hatch from that, same as the certificate PDF download.
+ */
+function xlsxAttachment(res: Response, filename: string, body: Buffer): StreamableFile {
   res.set({ 'Content-Type': XLSX_CONTENT_TYPE, 'Content-Disposition': `attachment; filename="${filename}"`, 'Cache-Control': 'no-store' });
-  return body;
+  return new StreamableFile(body);
 }
 
 /** Admin: complaints inbox, announcements, attendance report and CSV exports. */
@@ -132,17 +139,17 @@ export class AdminSupportController {
   }
 
   @Get('exports/students')
-  async studentsXlsx(@Res({ passthrough: true }) res: Response): Promise<Buffer> {
+  async studentsXlsx(@Res({ passthrough: true }) res: Response): Promise<StreamableFile> {
     return xlsxAttachment(res, 'aiit-students.xlsx', await this.reports.studentsXlsx());
   }
 
   @Get('exports/enrollments')
-  async enrollmentsXlsx(@Res({ passthrough: true }) res: Response): Promise<Buffer> {
+  async enrollmentsXlsx(@Res({ passthrough: true }) res: Response): Promise<StreamableFile> {
     return xlsxAttachment(res, 'aiit-enrollments.xlsx', await this.reports.enrollmentsXlsx());
   }
 
   @Get('exports/attendance')
-  async attendanceXlsx(@Query() query: CourseFilterQuery, @Res({ passthrough: true }) res: Response): Promise<Buffer> {
+  async attendanceXlsx(@Query() query: CourseFilterQuery, @Res({ passthrough: true }) res: Response): Promise<StreamableFile> {
     return xlsxAttachment(res, 'aiit-attendance.xlsx', await this.reports.attendanceXlsx(query.courseId));
   }
 }

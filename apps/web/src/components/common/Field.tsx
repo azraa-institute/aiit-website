@@ -31,12 +31,23 @@ function FieldShell({ label, hint, error, required, children, className }: Field
   );
 }
 
-type TextFieldProps = { label: string; hint?: string; error?: string } & InputHTMLAttributes<HTMLInputElement>;
+type TextFieldProps = { label: string; hint?: string; error?: string; icon?: ReactNode } & InputHTMLAttributes<HTMLInputElement>;
 
-export function TextField({ label, hint, error, required, className, ...rest }: TextFieldProps) {
+export function TextField({ label, hint, error, required, className, icon, ...rest }: TextFieldProps) {
   return (
     <FieldShell label={label} hint={hint} error={error} required={required} className={className}>
-      {(id) => <input id={id} className="field__control" required={required} {...rest} />}
+      {(id) =>
+        icon ? (
+          <div className="field__icon-wrap">
+            <span className="field__icon" aria-hidden="true">
+              {icon}
+            </span>
+            <input id={id} className="field__control" required={required} {...rest} />
+          </div>
+        ) : (
+          <input id={id} className="field__control" required={required} {...rest} />
+        )
+      }
     </FieldShell>
   );
 }
@@ -51,6 +62,7 @@ export function PasswordField({
   error,
   required,
   className,
+  icon,
   type: _type,
   ...rest
 }: TextFieldProps) {
@@ -58,7 +70,12 @@ export function PasswordField({
   return (
     <FieldShell label={label} hint={hint} error={error} required={required} className={className}>
       {(id) => (
-        <div className="field__password">
+        <div className={cn('field__password', icon ? 'field__password--icon' : undefined)}>
+          {icon ? (
+            <span className="field__icon" aria-hidden="true">
+              {icon}
+            </span>
+          ) : null}
           <input
             id={id}
             className="field__control"

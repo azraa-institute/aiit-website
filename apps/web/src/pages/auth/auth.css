@@ -118,18 +118,130 @@
   padding: clamp(1.5rem, 4vw, 4rem) var(--gutter);
 }
 
-/* Staff sign-in (/staff/login, /staff/change-password) -- a quiet, dark
-   diagonal gradient in the site's own ink/brass palette rather than the
-   student pages' plain paper, so the two sign-ins read as distinct without
-   introducing a new colour language. The card stays a crisp light panel on
-   top of it -- restrained, not a new theme. */
-.auth--staff .auth__main {
-  background: linear-gradient(135deg, #100d0b 0%, #1c1713 45%, #26201a 75%, #2e2620 100%);
+/* ============================================================
+   STAFF SIGN-IN (/staff/login, /staff/change-password)
+   A deliberately distinct look from the student pages, built to a supplied
+   reference: a soft violet-bloom ground, a crisp white card with a faint
+   ring flourish, and a purple gradient accent -- scoped entirely under
+   .auth--staff so nothing here touches the student sign-in/register pages.
+   ============================================================ */
+.auth--staff {
+  --staff-purple: #6244cf;
+  --staff-purple-deep: #402693;
+  --staff-purple-soft: #efeaf9;
 }
+
+.auth--staff .auth__main {
+  position: relative;
+  overflow: hidden;
+  background: #fbfaff;
+}
+/* Two soft glows, positioned like the reference: a broad one upper-right, a
+   deeper, smaller one lower-right nearer the card. */
+.auth--staff .auth__main::before,
+.auth--staff .auth__main::after {
+  content: '';
+  position: absolute;
+  z-index: 0;
+  border-radius: 50%;
+  pointer-events: none;
+}
+.auth--staff .auth__main::before {
+  top: -18%;
+  right: -22%;
+  width: 62%;
+  height: 62%;
+  background: radial-gradient(circle, rgba(154, 123, 214, 0.32) 0%, rgba(154, 123, 214, 0) 70%);
+}
+.auth--staff .auth__main::after {
+  bottom: -22%;
+  right: -16%;
+  width: 55%;
+  height: 55%;
+  background: radial-gradient(circle, rgba(64, 38, 147, 0.28) 0%, rgba(64, 38, 147, 0) 70%);
+}
+
 .auth--staff .auth__card {
+  position: relative;
+  z-index: 1;
+  overflow: hidden;
+  border-color: rgba(98, 68, 207, 0.14);
+  border-radius: 22px;
   box-shadow:
-    0 0 0 1px rgba(154, 123, 79, 0.14),
+    0 0 0 1px rgba(98, 68, 207, 0.08),
     var(--shadow-lift);
+}
+/* The reference's thin decorative ring, cropped into the card's top-right corner. */
+.auth--staff .auth__card::after {
+  content: '';
+  position: absolute;
+  z-index: 0;
+  top: -70px;
+  right: -70px;
+  width: 220px;
+  height: 220px;
+  border-radius: 50%;
+  border: 1px solid rgba(98, 68, 207, 0.22);
+  pointer-events: none;
+}
+.auth--staff .auth__card > * {
+  position: relative;
+  z-index: 1;
+}
+
+.auth--staff .auth__title,
+.auth--staff .auth__intro,
+.auth--staff .auth__form,
+.auth--staff .auth__footer {
+  position: relative;
+}
+
+/* Fields: rounded, filled, icon-led -- the reference's look, distinct from
+   the rest of the site's bordered-box inputs. */
+.auth--staff .field__control {
+  background: #faf9fe;
+  border-color: #e4e0f3;
+  border-radius: 12px;
+  padding-top: 0.95rem;
+  padding-bottom: 0.95rem;
+}
+.auth--staff .field__control:focus {
+  border-color: var(--staff-purple);
+  box-shadow: 0 0 0 3px rgba(98, 68, 207, 0.14);
+}
+.auth--staff .field__icon {
+  color: #9a90c4;
+}
+.auth--staff .field__reveal:hover,
+.auth--staff .field__reveal:focus-visible {
+  color: var(--staff-purple-deep);
+}
+
+.auth--staff .auth__aux a,
+.auth--staff .auth__footer a,
+.auth--staff .auth__mode-toggle {
+  color: var(--staff-purple);
+}
+.auth--staff .auth__aux a:hover,
+.auth--staff .auth__footer a:hover,
+.auth--staff .auth__mode-toggle:hover {
+  color: var(--staff-purple-deep);
+}
+
+.auth--staff .btn--primary {
+  background: linear-gradient(135deg, var(--staff-purple) 0%, var(--staff-purple-deep) 100%);
+  border-color: transparent;
+}
+.auth--staff .btn--primary:hover {
+  background: linear-gradient(135deg, var(--staff-purple-deep) 0%, #3a2482 100%);
+  --btn-border: transparent;
+}
+
+/* The supplied photo is a wide landscape frame (people + monitors, right of
+   centre) rather than the student page's portrait crop -- bias the crop right
+   so the group stays in frame inside this tall panel. */
+.auth--staff .auth__aside-art img {
+  object-position: 82% 42%;
 }
 
 .auth__card {

@@ -240,7 +240,7 @@ export function App() {
               <Route
                 path="/staff/change-password"
                 element={
-                  <RequireAuth>
+                  <RequireAuth to="/staff/login">
                     <RequireRole allow={['admin', 'instructor']} allowMustChangePassword>
                       <StaffChangePasswordPage />
                     </RequireRole>
@@ -252,7 +252,7 @@ export function App() {
               <Route
                 path="/admin"
                 element={
-                  <RequireAuth>
+                  <RequireAuth to="/staff/login">
                     <RequireRole allow={['admin']}>
                       <AdminLayout />
                     </RequireRole>
@@ -276,7 +276,7 @@ export function App() {
               <Route
                 path="/instructor"
                 element={
-                  <RequireAuth>
+                  <RequireAuth to="/staff/login">
                     <RequireRole allow={['instructor']}>
                       <InstructorLayout />
                     </RequireRole>

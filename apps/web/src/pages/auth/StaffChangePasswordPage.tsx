@@ -9,6 +9,9 @@ import { supabase } from '@/lib/supabaseClient';
 import { apiFetch } from '@/lib/api';
 import { invalidateMe, roleHome, useMe } from '@/lib/me';
 import { AuthLayout } from './AuthLayout';
+import { LockIcon } from './StaffFieldIcons';
+
+const ASIDE_IMAGE = '/assets/auth/aiit-staff-portal.webp';
 
 /** First sign-in for a staff account: replace the temporary password an administrator issued. */
 export default function StaffChangePasswordPage() {
@@ -57,6 +60,7 @@ export default function StaffChangePasswordPage() {
       <Seo title="Set your password" path="/staff/change-password" noindex />
       <AuthLayout
         tone="staff"
+        asideImage={ASIDE_IMAGE}
         title="Set your own password"
         intro="You signed in with a temporary password. Choose a new one to continue — only you should know it."
         footer={<>Need help? Contact the AIIT administrator.</>}
@@ -71,6 +75,8 @@ export default function StaffChangePasswordPage() {
             label="New password"
             name="password"
             autoComplete="new-password"
+            placeholder="Enter your new password"
+            icon={<LockIcon />}
             hint={PASSWORD_HINT}
             value={password}
             onChange={(e) => setPassword(e.target.value)}
@@ -81,6 +87,8 @@ export default function StaffChangePasswordPage() {
             label="Confirm new password"
             name="confirmPassword"
             autoComplete="new-password"
+            placeholder="Re-enter your new password"
+            icon={<LockIcon />}
             value={confirm}
             onChange={(e) => setConfirm(e.target.value)}
             required

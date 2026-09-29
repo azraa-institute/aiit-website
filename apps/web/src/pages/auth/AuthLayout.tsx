@@ -13,16 +13,20 @@ interface AuthLayoutProps {
   footer: ReactNode;
   /** Optional provider button(s), e.g. <GoogleAuthButton />. Renders below a divider. */
   social?: ReactNode;
-  /** 'staff' gives the form side a dark, quiet gradient instead of the student pages' plain paper -- see auth.css. */
+  /** 'staff' switches the card to the admin/instructor look (purple accent, icon fields) -- see auth.css. */
   tone?: 'default' | 'staff';
+  /** Overrides the photo-panel image; defaults to the student one. */
+  asideImage?: string;
 }
 
-export function AuthLayout({ title, intro, children, footer, social, tone = 'default' }: AuthLayoutProps) {
+const DEFAULT_ASIDE_IMAGE = '/assets/auth/aiit-registration.webp';
+
+export function AuthLayout({ title, intro, children, footer, social, tone = 'default', asideImage }: AuthLayoutProps) {
   return (
     <div className={cn('auth', tone === 'staff' && 'auth--staff')}>
       <aside className="auth__aside on-ink">
         <Plate
-          source="/assets/auth/aiit-registration.webp"
+          source={asideImage ?? DEFAULT_ASIDE_IMAGE}
           seed="auth"
           ratio={3 / 4}
           tone="ink"

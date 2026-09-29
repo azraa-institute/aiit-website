@@ -12,6 +12,9 @@ import { invalidateMe, roleHome } from '@/lib/me';
 import { needsMfaChallenge } from '@/lib/mfa';
 import { AuthLayout } from './AuthLayout';
 import { MfaChallenge } from './MfaChallenge';
+import { EnvelopeIcon, LockIcon } from './StaffFieldIcons';
+
+const ASIDE_IMAGE = '/assets/auth/aiit-staff-portal.webp';
 
 /**
  * Sign-in for AIIT staff (admins and instructors) only. There is deliberately
@@ -103,6 +106,7 @@ export default function StaffLoginPage() {
       <Seo title="Staff Sign In" path="/staff/login" noindex />
       <AuthLayout
         tone="staff"
+        asideImage={ASIDE_IMAGE}
         title={mfaPending ? 'Two-factor authentication' : 'Staff sign-in'}
         intro={
           mfaPending
@@ -135,6 +139,8 @@ export default function StaffLoginPage() {
               name="email"
               type="email"
               autoComplete="username"
+              placeholder="you@aiit.network"
+              icon={<EnvelopeIcon />}
               required
               value={email}
               onChange={(e) => setEmail(e.target.value)}
@@ -143,6 +149,8 @@ export default function StaffLoginPage() {
               label="Password"
               name="password"
               autoComplete="current-password"
+              placeholder="Enter your password"
+              icon={<LockIcon />}
               required
               value={password}
               onChange={(e) => setPassword(e.target.value)}

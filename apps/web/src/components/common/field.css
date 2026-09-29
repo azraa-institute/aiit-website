@@ -76,6 +76,29 @@
   min-height: 110px;
 }
 
+/* Leading icon slot -- only present in the DOM when a caller passes `icon`,
+   so every existing TextField/PasswordField call site is visually unchanged. */
+.field__icon-wrap {
+  position: relative;
+}
+.field__icon-wrap .field__control,
+.field__password--icon .field__control {
+  padding-left: 2.75rem;
+}
+.field__icon {
+  position: absolute;
+  left: 0.9rem;
+  top: 50%;
+  transform: translateY(-50%);
+  display: grid;
+  place-items: center;
+  color: var(--fg-faint);
+  pointer-events: none;
+}
+.field__icon svg {
+  display: block;
+}
+
 .field__select-wrap {
   position: relative;
 }

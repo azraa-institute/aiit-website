@@ -258,3 +258,25 @@ export class VotePollDto {
   @IsUUID()
   optionId!: string;
 }
+
+export class StartBreakoutsDto {
+  @IsInt()
+  @Min(2)
+  @Max(10)
+  roomCount!: number;
+}
+
+export class MoveBreakoutDto {
+  @IsUUID()
+  studentId!: string;
+
+  /** Omitted means "move back to the main room". */
+  @IsOptional()
+  @IsUUID()
+  roomId?: string;
+}
+
+export class JoinBreakoutDto {
+  @IsUUID()
+  roomId!: string;
+}

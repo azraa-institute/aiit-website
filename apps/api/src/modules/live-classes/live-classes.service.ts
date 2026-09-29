@@ -1,7 +1,16 @@
 import { randomUUID } from 'crypto';
 import { BadRequestException, ConflictException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
-import type { Prisma } from '@prisma/client';
-import type { LiveClassJoin, LiveClassPoll, LiveClassRole, LiveClassSummary, LiveClassWhiteboard, PinnedResource } from '@aiit/shared';
+import { Prisma } from '@prisma/client';
+import type {
+  BreakoutJoin,
+  LiveClassBreakouts,
+  LiveClassJoin,
+  LiveClassPoll,
+  LiveClassRole,
+  LiveClassSummary,
+  LiveClassWhiteboard,
+  PinnedResource,
+} from '@aiit/shared';
 import { PrismaService } from '../../common/prisma/prisma.service';
 import type { AuthenticatedUser } from '../../common/guards/jwt.guard';
 import { computeJoinState, joinOpensAt } from './live-class-state';
@@ -17,6 +26,13 @@ interface RawPoll {
   status: 'open' | 'closed';
   createdAt: string;
   closedAt: string | null;
+}
+
+interface RawBreakouts {
+  rooms: { id: string; name: string }[];
+  /** learnerId -> roomId. The host is never a key here -- see joinBreakout/toBreakoutsView. */
+  assignments: Record<string, string>;
+  startedAt: string;
 }
 
 export const CLASS_SELECT = {
@@ -43,6 +59,9 @@ const LIST_LOOKAHEAD_MS = 90 * 24 * 60 * 60 * 1000;
 const MAX_WHITEBOARD_JSON_LENGTH = 2_000_000;
 
 const MAX_PINNED_RESOURCES = 20;
+
+const MIN_BREAKOUT_ROOMS = 2;
+const MAX_BREAKOUT_ROOMS = 10;
 
 @Injectable()
 export class LiveClassesService {
@@ -320,6 +339,129 @@ export class LiveClassesService {
       if (counts[optionId] !== undefined) counts[optionId] += 1;
     }
     return counts;
+  }
+
+  /**
+   * Auto-splits whoever is actually connected to the main room right now
+   * (not the full roster -- someone enrolled but not in class today
+   * shouldn't get a room). Starting again replaces the previous rooms and
+   * assignments outright; the caller should close first if they want a
+   * clean slate rather than a reshuffle.
+   */
+  async startBreakouts(user: AuthenticatedUser, id: string, roomCount: number): Promise<LiveClassBreakouts> {
+    const cls = await this.getClass(id);
+    if (this.roleFor(user, cls) !== 'host') throw new ForbiddenException('Only the instructor can start breakout rooms.');
+    if (cls.status !== 'live') throw new ConflictException('This class is not live.');
+    if (roomCount < MIN_BREAKOUT_ROOMS || roomCount > MAX_BREAKOUT_ROOMS) {
+      throw new BadRequestException(`Choose between ${MIN_BREAKOUT_ROOMS} and ${MAX_BREAKOUT_ROOMS} rooms.`);
+    }
+
+    const connected = await this.livekit.listParticipants(cls.roomName);
+    const learnerIds = connected.filter((identity) => identity !== cls.hostUserId);
+
+    const rooms = Array.from({ length: roomCount }, (_, i) => ({ id: randomUUID(), name: `Room ${i + 1}` }));
+    const assignments: Record<string, string> = {};
+    learnerIds.forEach((identity, i) => {
+      assignments[identity] = rooms[i % rooms.length].id;
+    });
+
+    const state: RawBreakouts = { rooms, assignments, startedAt: new Date().toISOString() };
+    await this.saveBreakouts(id, state);
+    return this.toBreakoutsView(state, user.userId);
+  }
+
+  /** Null when breakout rooms are not active. */
+  async getBreakouts(user: AuthenticatedUser, id: string): Promise<LiveClassBreakouts | null> {
+    const cls = await this.getClass(id);
+    await this.assertEnrolledOrHost(user, cls);
+    const state = await this.currentBreakouts(id);
+    return state ? this.toBreakoutsView(state, user.userId) : null;
+  }
+
+  /** roomId omitted moves the student back to the main room (no longer assigned anywhere). */
+  async moveBreakout(user: AuthenticatedUser, id: string, studentId: string, roomId: string | null): Promise<LiveClassBreakouts> {
+    const cls = await this.getClass(id);
+    if (this.roleFor(user, cls) !== 'host') throw new ForbiddenException('Only the instructor can move a student.');
+    const state = await this.currentBreakouts(id);
+    if (!state) throw new NotFoundException('Breakout rooms are not active.');
+    if (roomId === null) {
+      delete state.assignments[studentId];
+    } else {
+      if (!state.rooms.some((r) => r.id === roomId)) throw new BadRequestException('That room does not exist.');
+      state.assignments[studentId] = roomId;
+    }
+    await this.saveBreakouts(id, state);
+    return this.toBreakoutsView(state, user.userId);
+  }
+
+  /** Best-effort: closes each breakout's LiveKit room (disconnecting anyone still in it) and clears the assignment record. */
+  async closeBreakouts(user: AuthenticatedUser, id: string): Promise<void> {
+    const cls = await this.getClass(id);
+    if (this.roleFor(user, cls) !== 'host') throw new ForbiddenException('Only the instructor can close breakout rooms.');
+    const state = await this.currentBreakouts(id);
+    if (state) {
+      await Promise.all(state.rooms.map((r) => this.livekit.deleteRoom(this.breakoutRoomName(cls.roomName, r.id)).catch(() => undefined)));
+    }
+    await this.prisma.liveClass.update({ where: { id }, data: { breakoutState: Prisma.JsonNull } });
+  }
+
+  /** The host may visit any room; a learner only the one they're assigned to. */
+  async joinBreakout(user: AuthenticatedUser, id: string, roomId: string): Promise<BreakoutJoin> {
+    const cls = await this.getClass(id);
+    const role = this.roleFor(user, cls);
+    const state = await this.currentBreakouts(id);
+    if (!state) throw new NotFoundException('Breakout rooms are not active.');
+    const room = state.rooms.find((r) => r.id === roomId);
+    if (!room) throw new NotFoundException('That breakout room does not exist.');
+    if (role !== 'host' && state.assignments[user.userId] !== roomId) {
+      throw new ForbiddenException('You are not assigned to that room.');
+    }
+    const displayName = await this.displayName(user);
+    const roomName = this.breakoutRoomName(cls.roomName, room.id);
+    const token = this.livekit.createJoinToken({
+      identity: user.userId,
+      name: displayName,
+      room: roomName,
+      host: role === 'host',
+      metadata: JSON.stringify({ role }),
+    });
+    return { token, url: this.livekit.wsUrl, roomId: room.id, roomName: room.name };
+  }
+
+  private breakoutRoomName(mainRoomName: string, roomId: string): string {
+    return `${mainRoomName}-bo-${roomId}`;
+  }
+
+  private async currentBreakouts(id: string): Promise<RawBreakouts | null> {
+    const row = await this.prisma.liveClass.findUnique({ where: { id }, select: { breakoutState: true } });
+    const value = row?.breakoutState;
+    return value && typeof value === 'object' ? (value as unknown as RawBreakouts) : null;
+  }
+
+  private async saveBreakouts(id: string, state: RawBreakouts): Promise<void> {
+    await this.prisma.liveClass.update({ where: { id }, data: { breakoutState: state as unknown as Prisma.InputJsonValue } });
+  }
+
+  private async toBreakoutsView(state: RawBreakouts, callerId: string): Promise<LiveClassBreakouts> {
+    const memberIds = Object.keys(state.assignments);
+    const names = await this.names(memberIds);
+    const byRoom = new Map<string, { id: string; name: string | null }[]>();
+    for (const [learnerId, roomId] of Object.entries(state.assignments)) {
+      const list = byRoom.get(roomId) ?? [];
+      list.push({ id: learnerId, name: names.get(learnerId) ?? null });
+      byRoom.set(roomId, list);
+    }
+    return {
+      rooms: state.rooms.map((r) => ({ id: r.id, name: r.name, members: byRoom.get(r.id) ?? [] })),
+      myRoomId: state.assignments[callerId] ?? null,
+      startedAt: state.startedAt,
+    };
+  }
+
+  private async names(ids: string[]): Promise<Map<string, string | null>> {
+    if (ids.length === 0) return new Map();
+    const rows = await this.prisma.profile.findMany({ where: { id: { in: [...new Set(ids)] } }, select: { id: true, name: true } });
+    return new Map(rows.map((r) => [r.id, r.name]));
   }
 
   // ---- LiveKit webhook -> attendance ----

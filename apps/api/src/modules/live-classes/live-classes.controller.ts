@@ -1,9 +1,25 @@
 import { Body, Controller, Delete, Get, HttpCode, Param, ParseUUIDPipe, Post, Put, UseGuards } from '@nestjs/common';
 import { Throttle } from '@nestjs/throttler';
-import type { LiveClassJoin, LiveClassPoll, LiveClassSummary, LiveClassWhiteboard, PinnedResource } from '@aiit/shared';
+import type {
+  BreakoutJoin,
+  LiveClassBreakouts,
+  LiveClassJoin,
+  LiveClassPoll,
+  LiveClassSummary,
+  LiveClassWhiteboard,
+  PinnedResource,
+} from '@aiit/shared';
 import { JwtGuard, type AuthenticatedUser } from '../../common/guards/jwt.guard';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
-import { CreatePollDto, PinResourceDto, SaveWhiteboardDto, VotePollDto } from './dto/live-class.dto';
+import {
+  CreatePollDto,
+  JoinBreakoutDto,
+  MoveBreakoutDto,
+  PinResourceDto,
+  SaveWhiteboardDto,
+  StartBreakoutsDto,
+  VotePollDto,
+} from './dto/live-class.dto';
 import { LiveClassesService } from './live-classes.service';
 
 /** Learner + instructor (+ admin-as-moderator) endpoints. Every route re-checks access in the service. */
@@ -132,5 +148,47 @@ export class LiveClassesController {
   @HttpCode(200)
   closePoll(@CurrentUser() user: AuthenticatedUser, @Param('id', ParseUUIDPipe) id: string): Promise<LiveClassPoll> {
     return this.liveClasses.closePoll(user, id);
+  }
+
+  /** Auto-splits whoever's actually connected right now; replaces any previous rooms/assignments. */
+  @Post('live-classes/:id/breakouts')
+  startBreakouts(
+    @CurrentUser() user: AuthenticatedUser,
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() dto: StartBreakoutsDto,
+  ): Promise<LiveClassBreakouts> {
+    return this.liveClasses.startBreakouts(user, id, dto.roomCount);
+  }
+
+  /** Null when breakout rooms are not active. */
+  @Get('live-classes/:id/breakouts')
+  getBreakouts(@CurrentUser() user: AuthenticatedUser, @Param('id', ParseUUIDPipe) id: string): Promise<LiveClassBreakouts | null> {
+    return this.liveClasses.getBreakouts(user, id);
+  }
+
+  @Post('live-classes/:id/breakouts/move')
+  moveBreakout(
+    @CurrentUser() user: AuthenticatedUser,
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() dto: MoveBreakoutDto,
+  ): Promise<LiveClassBreakouts> {
+    return this.liveClasses.moveBreakout(user, id, dto.studentId, dto.roomId ?? null);
+  }
+
+  /** Mints a token for that specific breakout room -- the client reconnects there, it isn't a UI-only switch. */
+  @Post('live-classes/:id/breakouts/join')
+  @HttpCode(200)
+  joinBreakout(
+    @CurrentUser() user: AuthenticatedUser,
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() dto: JoinBreakoutDto,
+  ): Promise<BreakoutJoin> {
+    return this.liveClasses.joinBreakout(user, id, dto.roomId);
+  }
+
+  @Post('live-classes/:id/breakouts/close')
+  @HttpCode(204)
+  async closeBreakouts(@CurrentUser() user: AuthenticatedUser, @Param('id', ParseUUIDPipe) id: string): Promise<void> {
+    await this.liveClasses.closeBreakouts(user, id);
   }
 }

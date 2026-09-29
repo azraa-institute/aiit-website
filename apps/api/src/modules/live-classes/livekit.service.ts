@@ -122,6 +122,12 @@ export class LiveKitService {
     await this.twirp('DeleteRoom', room, { room });
   }
 
+  /** Who's actually connected right now, for auto-splitting into breakout rooms -- an empty array if the room has no one in it (or doesn't exist yet, e.g. before anyone has joined). */
+  async listParticipants(room: string): Promise<string[]> {
+    const listed = await this.twirp<{ participants?: LiveKitParticipantInfo[] }>('ListParticipants', room, { room });
+    return (listed.participants ?? []).map((p) => p.identity);
+  }
+
   /** Mutes every audio track a participant is currently publishing. On its own this is a one-shot action -- the participant can simply unmute themselves again; pair with setMicrophonePublishAllowed(false) to actually prevent that. */
   async muteParticipant(room: string, identity: string): Promise<void> {
     const target = await this.findParticipant(room, identity);

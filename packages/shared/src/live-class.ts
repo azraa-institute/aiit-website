@@ -82,6 +82,37 @@ export interface LiveClassPoll {
   myVote: string | null;
 }
 
+/**
+ * GET /live-classes/:id/breakouts -- each breakout room is a genuinely
+ * separate LiveKit room; moving into one means reconnecting there (see
+ * POST .../breakouts/join), not just a UI state change.
+ */
+export interface BreakoutRoomMember {
+  id: string;
+  name: string | null;
+}
+
+export interface BreakoutRoomView {
+  id: string;
+  name: string;
+  members: BreakoutRoomMember[];
+}
+
+export interface LiveClassBreakouts {
+  rooms: BreakoutRoomView[];
+  /** The room the caller is assigned to, or null if they're not assigned (stay in the main room). Always null for the host, who visits rooms rather than being assigned. */
+  myRoomId: string | null;
+  startedAt: string;
+}
+
+/** POST /live-classes/:id/breakouts/join -- everything needed to reconnect into that specific breakout room. */
+export interface BreakoutJoin {
+  token: string;
+  url: string;
+  roomId: string;
+  roomName: string;
+}
+
 // ---- Admin ----
 
 export interface TimetableSlot {

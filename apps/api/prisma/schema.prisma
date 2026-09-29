@@ -654,6 +654,8 @@ model LiveClass {
   pinnedResources  Json?                 @map("pinned_resources")
   /// The current quick-check poll (question + options + raw votes), replaced wholesale by the next one -- no history kept.
   activePoll       Json?                 @map("active_poll")
+  /// Breakout rooms + assignments, if the host has started any. Null once closed.
+  breakoutState    Json?                 @map("breakout_state")
   attendance       LiveClassAttendance[]
   createdAt        DateTime              @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt        DateTime              @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)

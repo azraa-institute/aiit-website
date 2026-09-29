@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import {
   LiveKitRoom,
   RoomAudioRenderer,
@@ -17,10 +17,24 @@ import {
   type TrackReferenceOrPlaceholder,
 } from '@livekit/components-react';
 import { ConnectionState, DisconnectReason, Track } from 'livekit-client';
-import type { LiveClassJoin } from '@aiit/shared';
+import type { BreakoutJoin, LiveClassBreakouts, LiveClassJoin } from '@aiit/shared';
 import { apiFetch } from '@/lib/api';
 import { cn } from '@/lib/cn';
-import { CameraIcon, ChatIcon, HandIcon, LeaveIcon, MicIcon, PeopleIcon, PinIcon, PollIcon, ShareIcon, WhiteboardIcon } from './ClassroomIcons';
+import type { RoomConnection } from './breakouts';
+import { BreakoutsPanel } from './BreakoutsPanel';
+import {
+  BreakoutIcon,
+  CameraIcon,
+  ChatIcon,
+  HandIcon,
+  LeaveIcon,
+  MicIcon,
+  PeopleIcon,
+  PinIcon,
+  PollIcon,
+  ShareIcon,
+  WhiteboardIcon,
+} from './ClassroomIcons';
 import { ChatPanel, isMicLocked, PeoplePanel } from './ClassroomPanel';
 import { HAND_RAISED_ATTR, handRaisedAtMs, isHandRaised, useIsHandRaised } from './handRaise';
 import { displayName, participantRole } from './participant';
@@ -39,24 +53,67 @@ export interface ClassroomProps {
   onDisconnected: (reason?: DisconnectReason) => void;
 }
 
-/** The whole in-class experience, mounted only after the API has issued a join token. */
+/**
+ * The whole in-class experience, mounted only after the API has issued a
+ * join token. Each breakout room is a genuinely separate LiveKit room, so
+ * "moving" into one means fully reconnecting: `<LiveKitRoom>` is remounted
+ * (keyed on roomLabel) with a fresh token/url rather than trying to swap
+ * rooms on a live connection. A remount fires its own onDisconnected as the
+ * old connection tears down -- switchingRef swallows exactly that one event
+ * so the page doesn't mistake an intentional room switch for the caller
+ * leaving the class.
+ */
 export function Classroom({ join, startWithCamera, startWithMic, onDisconnected }: ClassroomProps) {
   const [deviceNotice, setDeviceNotice] = useState<string>();
+  const [connection, setConnection] = useState<RoomConnection>({ token: join.token, url: join.url, roomLabel: 'main' });
+  const switchingRef = useRef(false);
+
+  async function switchToMain() {
+    const fresh = await apiFetch<LiveClassJoin>(`/live-classes/${join.liveClass.id}/join`, { method: 'POST' });
+    switchingRef.current = true;
+    setConnection({ token: fresh.token, url: fresh.url, roomLabel: 'main' });
+  }
+
+  async function switchToBreakout(roomId: string) {
+    const bj = await apiFetch<BreakoutJoin>(`/live-classes/${join.liveClass.id}/breakouts/join`, {
+      method: 'POST',
+      body: JSON.stringify({ roomId }),
+    });
+    switchingRef.current = true;
+    setConnection({ token: bj.token, url: bj.url, roomLabel: bj.roomId });
+  }
+
+  function handleDisconnected(reason?: DisconnectReason) {
+    if (switchingRef.current) {
+      switchingRef.current = false;
+      return;
+    }
+    onDisconnected(reason);
+  }
+
   return (
     <LiveKitRoom
+      key={connection.roomLabel}
       className="classroom"
-      token={join.token}
-      serverUrl={join.url}
+      token={connection.token}
+      serverUrl={connection.url}
       connect
       audio={startWithMic}
       video={startWithCamera}
       options={{ adaptiveStream: true, dynacast: true }}
-      onDisconnected={onDisconnected}
+      onDisconnected={handleDisconnected}
       onMediaDeviceFailure={() =>
         setDeviceNotice('We could not use your camera or microphone. Check your browser permissions, then use the buttons below.')
       }
     >
-      <ClassroomInner join={join} deviceNotice={deviceNotice} dismissNotice={() => setDeviceNotice(undefined)} />
+      <ClassroomInner
+        join={join}
+        inBreakout={connection.roomLabel !== 'main'}
+        onSwitchToMain={switchToMain}
+        onSwitchToBreakout={switchToBreakout}
+        deviceNotice={deviceNotice}
+        dismissNotice={() => setDeviceNotice(undefined)}
+      />
       <RoomAudioRenderer />
     </LiveKitRoom>
   );
@@ -64,10 +121,16 @@ export function Classroom({ join, startWithCamera, startWithMic, onDisconnected 
 
 function ClassroomInner({
   join,
+  inBreakout,
+  onSwitchToMain,
+  onSwitchToBreakout,
   deviceNotice,
   dismissNotice,
 }: {
   join: LiveClassJoin;
+  inBreakout: boolean;
+  onSwitchToMain: () => void;
+  onSwitchToBreakout: (roomId: string) => void;
   deviceNotice?: string;
   dismissNotice: () => void;
 }) {
@@ -79,8 +142,9 @@ function ClassroomInner({
     ],
     { onlySubscribed: false },
   );
-  const [panel, setPanel] = useState<'chat' | 'people' | 'whiteboard' | 'resources' | 'poll' | null>(null);
+  const [panel, setPanel] = useState<'chat' | 'people' | 'whiteboard' | 'resources' | 'poll' | 'breakouts' | null>(null);
   const [reactions, setReactions] = useState<FloatingReaction[]>([]);
+  const [breakouts, setBreakouts] = useState<LiveClassBreakouts | null>(null);
 
   const { send: sendReaction } = useDataChannel('reaction', (msg) => {
     let payload: { emoji?: string };
@@ -108,7 +172,35 @@ function ClassroomInner({
     }
   }
 
+  // Breakout assignments can't be pushed to a client sitting in a *different*
+  // LiveKit room (its data channel is scoped to whichever room it's
+  // connected to), so this is polled from wherever the caller currently is.
+  useEffect(() => {
+    let cancelled = false;
+    async function poll() {
+      try {
+        const res = await apiFetch<LiveClassBreakouts | null>(`/live-classes/${join.liveClass.id}/breakouts`);
+        if (!cancelled) setBreakouts(res);
+      } catch {
+        // Transient -- try again next tick.
+      }
+    }
+    void poll();
+    const interval = setInterval(poll, 6000);
+    return () => {
+      cancelled = true;
+      clearInterval(interval);
+    };
+  }, [join.liveClass.id]);
+
   const isHost = join.role === 'host';
+  const myBreakoutRoom = breakouts?.myRoomId ? breakouts.rooms.find((r) => r.id === breakouts.myRoomId) : undefined;
+  const needsToMoveToBreakout = !isHost && !inBreakout && Boolean(breakouts?.myRoomId);
+
+  useEffect(() => {
+    if (inBreakout && (panel === 'whiteboard' || panel === 'resources' || panel === 'poll')) setPanel(null);
+  }, [inBreakout, panel]);
+
   const screen = tracks.find((t) => t.source === Track.Source.ScreenShare && isTrackReference(t));
   const cameras = tracks.filter((t) => t.source === Track.Source.Camera);
   const hostCamera = cameras.find((t) => participantRole(t.participant) === 'host');
@@ -135,6 +227,21 @@ function ClassroomInner({
           {deviceNotice}{' '}
           <button type="button" onClick={dismissNotice}>
             Dismiss
+          </button>
+        </p>
+      ) : null}
+      {inBreakout ? (
+        <p className="classroom__banner classroom__banner--action" role="status">
+          You're in {myBreakoutRoom?.name ?? 'a breakout room'}.{' '}
+          <button type="button" onClick={onSwitchToMain}>
+            Return to main room
+          </button>
+        </p>
+      ) : needsToMoveToBreakout && breakouts?.myRoomId ? (
+        <p className="classroom__banner classroom__banner--action" role="status">
+          You've been assigned to {myBreakoutRoom?.name ?? 'a breakout room'}.{' '}
+          <button type="button" onClick={() => onSwitchToBreakout(breakouts.myRoomId as string)}>
+            Join breakout room
           </button>
         </p>
       ) : null}
@@ -189,7 +296,9 @@ function ClassroomInner({
                   ? 'Whiteboard'
                   : panel === 'resources'
                     ? 'Resources'
-                    : 'Poll'
+                    : panel === 'poll'
+                      ? 'Poll'
+                      : 'Breakout rooms'
           }
         >
           <div className="classroom-panel__tabs" role="tablist">
@@ -211,33 +320,48 @@ function ClassroomInner({
             >
               People
             </button>
-            <button
-              type="button"
-              role="tab"
-              aria-selected={panel === 'whiteboard'}
-              className={cn(panel === 'whiteboard' && 'is-active')}
-              onClick={() => setPanel('whiteboard')}
-            >
-              Whiteboard
-            </button>
-            <button
-              type="button"
-              role="tab"
-              aria-selected={panel === 'resources'}
-              className={cn(panel === 'resources' && 'is-active')}
-              onClick={() => setPanel('resources')}
-            >
-              Resources
-            </button>
-            <button
-              type="button"
-              role="tab"
-              aria-selected={panel === 'poll'}
-              className={cn(panel === 'poll' && 'is-active')}
-              onClick={() => setPanel('poll')}
-            >
-              Poll
-            </button>
+            {!inBreakout ? (
+              <>
+                <button
+                  type="button"
+                  role="tab"
+                  aria-selected={panel === 'whiteboard'}
+                  className={cn(panel === 'whiteboard' && 'is-active')}
+                  onClick={() => setPanel('whiteboard')}
+                >
+                  Whiteboard
+                </button>
+                <button
+                  type="button"
+                  role="tab"
+                  aria-selected={panel === 'resources'}
+                  className={cn(panel === 'resources' && 'is-active')}
+                  onClick={() => setPanel('resources')}
+                >
+                  Resources
+                </button>
+                <button
+                  type="button"
+                  role="tab"
+                  aria-selected={panel === 'poll'}
+                  className={cn(panel === 'poll' && 'is-active')}
+                  onClick={() => setPanel('poll')}
+                >
+                  Poll
+                </button>
+              </>
+            ) : null}
+            {isHost ? (
+              <button
+                type="button"
+                role="tab"
+                aria-selected={panel === 'breakouts'}
+                className={cn(panel === 'breakouts' && 'is-active')}
+                onClick={() => setPanel('breakouts')}
+              >
+                Breakouts
+              </button>
+            ) : null}
             <button type="button" className="classroom-panel__close" onClick={() => setPanel(null)}>
               Close
             </button>
@@ -246,17 +370,28 @@ function ClassroomInner({
             <ChatPanel />
           ) : panel === 'people' ? (
             <PeoplePanel liveClassId={join.liveClass.id} canModerate={isHost} />
-          ) : panel === 'whiteboard' ? (
+          ) : panel === 'whiteboard' && !inBreakout ? (
             <WhiteboardPanel join={join} />
-          ) : panel === 'resources' ? (
+          ) : panel === 'resources' && !inBreakout ? (
             <ResourcesPanel join={join} />
-          ) : (
+          ) : panel === 'poll' && !inBreakout ? (
             <PollPanel join={join} />
+          ) : panel === 'breakouts' && isHost ? (
+            <BreakoutsPanel
+              join={join}
+              breakouts={breakouts}
+              onBreakoutsChanged={setBreakouts}
+              inBreakout={inBreakout}
+              onSwitchToMain={onSwitchToMain}
+              onSwitchToBreakout={onSwitchToBreakout}
+            />
+          ) : (
+            <p className="classroom-panel__note">Not available while you're in a breakout room.</p>
           )}
         </aside>
       ) : null}
 
-      <Controls join={join} panel={panel} setPanel={setPanel} onReact={react} />
+      <Controls join={join} panel={panel} setPanel={setPanel} onReact={react} inBreakout={inBreakout} />
       <StartAudio label="Click to hear the class" className="classroom__start-audio" />
     </div>
   );
@@ -307,11 +442,13 @@ function Controls({
   panel,
   setPanel,
   onReact,
+  inBreakout,
 }: {
   join: LiveClassJoin;
-  panel: 'chat' | 'people' | 'whiteboard' | 'resources' | 'poll' | null;
-  setPanel: (p: 'chat' | 'people' | 'whiteboard' | 'resources' | 'poll' | null) => void;
+  panel: 'chat' | 'people' | 'whiteboard' | 'resources' | 'poll' | 'breakouts' | null;
+  setPanel: (p: 'chat' | 'people' | 'whiteboard' | 'resources' | 'poll' | 'breakouts' | null) => void;
   onReact: (emoji: string) => void;
+  inBreakout: boolean;
 }) {
   const room = useRoomContext();
   const participants = useParticipants();
@@ -499,33 +636,48 @@ function Controls({
         <PeopleIcon />
         <span>People ({participants.length})</span>
       </button>
-      <button
-        type="button"
-        className={cn('controls__btn', panel === 'whiteboard' && 'is-on')}
-        aria-pressed={panel === 'whiteboard'}
-        onClick={() => setPanel(panel === 'whiteboard' ? null : 'whiteboard')}
-      >
-        <WhiteboardIcon />
-        <span>Whiteboard</span>
-      </button>
-      <button
-        type="button"
-        className={cn('controls__btn', panel === 'resources' && 'is-on')}
-        aria-pressed={panel === 'resources'}
-        onClick={() => setPanel(panel === 'resources' ? null : 'resources')}
-      >
-        <PinIcon />
-        <span>Resources</span>
-      </button>
-      <button
-        type="button"
-        className={cn('controls__btn', panel === 'poll' && 'is-on')}
-        aria-pressed={panel === 'poll'}
-        onClick={() => setPanel(panel === 'poll' ? null : 'poll')}
-      >
-        <PollIcon />
-        <span>Poll</span>
-      </button>
+      {!inBreakout ? (
+        <>
+          <button
+            type="button"
+            className={cn('controls__btn', panel === 'whiteboard' && 'is-on')}
+            aria-pressed={panel === 'whiteboard'}
+            onClick={() => setPanel(panel === 'whiteboard' ? null : 'whiteboard')}
+          >
+            <WhiteboardIcon />
+            <span>Whiteboard</span>
+          </button>
+          <button
+            type="button"
+            className={cn('controls__btn', panel === 'resources' && 'is-on')}
+            aria-pressed={panel === 'resources'}
+            onClick={() => setPanel(panel === 'resources' ? null : 'resources')}
+          >
+            <PinIcon />
+            <span>Resources</span>
+          </button>
+          <button
+            type="button"
+            className={cn('controls__btn', panel === 'poll' && 'is-on')}
+            aria-pressed={panel === 'poll'}
+            onClick={() => setPanel(panel === 'poll' ? null : 'poll')}
+          >
+            <PollIcon />
+            <span>Poll</span>
+          </button>
+        </>
+      ) : null}
+      {isHost ? (
+        <button
+          type="button"
+          className={cn('controls__btn', panel === 'breakouts' && 'is-on')}
+          aria-pressed={panel === 'breakouts'}
+          onClick={() => setPanel(panel === 'breakouts' ? null : 'breakouts')}
+        >
+          <BreakoutIcon />
+          <span>Breakouts</span>
+        </button>
+      ) : null}
 
       <span className="controls__divider" aria-hidden="true" />
 

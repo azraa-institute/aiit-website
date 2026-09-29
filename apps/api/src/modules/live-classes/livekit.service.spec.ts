@@ -108,3 +108,37 @@ describe('LiveKitService.setMicrophonePublishAllowed', () => {
     });
   });
 });
+
+describe('LiveKitService.listParticipants', () => {
+  let service: LiveKitService;
+  let fetchSpy: jest.SpiedFunction<typeof fetch>;
+
+  beforeEach(() => {
+    process.env.LIVEKIT_URL = 'wss://example.livekit.cloud';
+    process.env.LIVEKIT_API_KEY = 'APItestkey';
+    process.env.LIVEKIT_API_SECRET = 'test-secret-value-that-is-long-enough';
+    service = new LiveKitService();
+    fetchSpy = jest.spyOn(global, 'fetch');
+  });
+
+  afterEach(() => {
+    delete process.env.LIVEKIT_URL;
+    delete process.env.LIVEKIT_API_KEY;
+    delete process.env.LIVEKIT_API_SECRET;
+    fetchSpy.mockRestore();
+  });
+
+  it('returns just the identities', async () => {
+    fetchSpy.mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({ participants: [{ identity: 'a' }, { identity: 'b' }] }),
+    } as Response);
+
+    await expect(service.listParticipants(ROOM)).resolves.toEqual(['a', 'b']);
+  });
+
+  it('returns an empty array for an empty (or nonexistent) room', async () => {
+    fetchSpy.mockResolvedValueOnce({ ok: true, json: async () => ({}) } as Response);
+    await expect(service.listParticipants(ROOM)).resolves.toEqual([]);
+  });
+});

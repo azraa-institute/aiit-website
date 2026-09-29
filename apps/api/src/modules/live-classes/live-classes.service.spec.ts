@@ -402,6 +402,116 @@ describe('LiveClassesService', () => {
     });
   });
 
+  describe('breakout rooms', () => {
+    function breakoutsRow(overrides: Record<string, unknown> = {}) {
+      return {
+        rooms: [
+          { id: 'room-1', name: 'Room 1' },
+          { id: 'room-2', name: 'Room 2' },
+        ],
+        assignments: { [LEARNER_ID]: 'room-1' },
+        startedAt: '2026-10-01T10:00:00.000Z',
+        ...overrides,
+      };
+    }
+
+    it('only the host can start breakout rooms, and only while live', async () => {
+      prisma.liveClass.findUnique.mockResolvedValue(classRow());
+      await expect(service.startBreakouts(learner, 'cls-1', 3)).rejects.toBeInstanceOf(ForbiddenException);
+
+      prisma.liveClass.findUnique.mockResolvedValue(classRow({ status: 'ended' }));
+      await expect(service.startBreakouts(instructor, 'cls-1', 3)).rejects.toBeInstanceOf(ConflictException);
+    });
+
+    it('rejects an out-of-range room count', async () => {
+      prisma.liveClass.findUnique.mockResolvedValue(classRow());
+      await expect(service.startBreakouts(instructor, 'cls-1', 1)).rejects.toBeInstanceOf(BadRequestException);
+      await expect(service.startBreakouts(instructor, 'cls-1', 11)).rejects.toBeInstanceOf(BadRequestException);
+    });
+
+    it('auto-splits whoever is actually connected (excluding the host) evenly across the rooms', async () => {
+      prisma.liveClass.findUnique.mockResolvedValue(classRow());
+      const learnerIds = Array.from({ length: 5 }, (_, i) => `55555555-5555-4555-8555-55555555555${i}`);
+      jest.spyOn(livekit, 'listParticipants').mockResolvedValue([HOST_ID, ...learnerIds]);
+      prisma.profile.findMany.mockResolvedValue(learnerIds.map((id) => ({ id, name: `Student ${id.slice(-1)}` })));
+
+      const res = await service.startBreakouts(instructor, 'cls-1', 2);
+
+      expect(res.rooms).toHaveLength(2);
+      const counts = res.rooms.map((r) => r.members.length);
+      expect(counts.sort()).toEqual([2, 3]);
+      // The host was excluded from assignment entirely.
+      expect(res.rooms.flatMap((r) => r.members.map((m) => m.id))).not.toContain(HOST_ID);
+    });
+
+    it('is null when breakout rooms are not active', async () => {
+      prisma.liveClass.findUnique.mockResolvedValueOnce(classRow()).mockResolvedValueOnce({ breakoutState: null });
+      expect(await service.getBreakouts(instructor, 'cls-1')).toBeNull();
+    });
+
+    it("gives the learner their own room id, and null for the host who isn't assigned", async () => {
+      prisma.liveClass.findUnique.mockResolvedValueOnce(classRow()).mockResolvedValueOnce({ breakoutState: breakoutsRow() });
+      prisma.enrollment.findUnique.mockResolvedValue({ status: 'active' });
+      prisma.profile.findMany.mockResolvedValue([{ id: LEARNER_ID, name: 'Ada' }]);
+      const learnerView = await service.getBreakouts(learner, 'cls-1');
+      expect(learnerView?.myRoomId).toBe('room-1');
+
+      prisma.liveClass.findUnique.mockResolvedValueOnce(classRow()).mockResolvedValueOnce({ breakoutState: breakoutsRow() });
+      const hostView = await service.getBreakouts(instructor, 'cls-1');
+      expect(hostView?.myRoomId).toBeNull();
+    });
+
+    it('moves a student to a different room, or back to the main room when roomId is null', async () => {
+      prisma.liveClass.findUnique.mockResolvedValueOnce(classRow()).mockResolvedValueOnce({ breakoutState: breakoutsRow() });
+      const res = await service.moveBreakout(instructor, 'cls-1', LEARNER_ID, 'room-2');
+      expect(res.rooms.find((r) => r.id === 'room-2')?.members.map((m) => m.id)).toContain(LEARNER_ID);
+
+      prisma.liveClass.findUnique.mockResolvedValueOnce(classRow()).mockResolvedValueOnce({ breakoutState: breakoutsRow() });
+      const back = await service.moveBreakout(instructor, 'cls-1', LEARNER_ID, null);
+      expect(back.rooms.flatMap((r) => r.members.map((m) => m.id))).not.toContain(LEARNER_ID);
+    });
+
+    it('rejects moving to a room that does not exist, and only the host may move anyone', async () => {
+      prisma.liveClass.findUnique.mockResolvedValueOnce(classRow()).mockResolvedValueOnce({ breakoutState: breakoutsRow() });
+      await expect(service.moveBreakout(instructor, 'cls-1', LEARNER_ID, 'not-real')).rejects.toBeInstanceOf(BadRequestException);
+
+      prisma.liveClass.findUnique.mockResolvedValue(classRow());
+      await expect(service.moveBreakout(learner, 'cls-1', LEARNER_ID, 'room-2')).rejects.toBeInstanceOf(ForbiddenException);
+    });
+
+    it('joinBreakout lets the host into any room, but a learner only their assigned one', async () => {
+      prisma.liveClass.findUnique.mockResolvedValueOnce(classRow()).mockResolvedValueOnce({ breakoutState: breakoutsRow() });
+      const hostJoin = await service.joinBreakout(instructor, 'cls-1', 'room-2');
+      expect(hostJoin.roomName).toBe('Room 2');
+      const claims = jwt.verify(hostJoin.token, process.env.LIVEKIT_API_SECRET as string) as { video: { room: string; roomAdmin?: boolean } };
+      expect(claims.video.room).toBe('class-cls-1-bo-room-2');
+      expect(claims.video.roomAdmin).toBe(true);
+
+      prisma.liveClass.findUnique.mockResolvedValueOnce(classRow()).mockResolvedValueOnce({ breakoutState: breakoutsRow() });
+      await expect(service.joinBreakout(learner, 'cls-1', 'room-2')).rejects.toBeInstanceOf(ForbiddenException);
+
+      prisma.liveClass.findUnique.mockResolvedValueOnce(classRow()).mockResolvedValueOnce({ breakoutState: breakoutsRow() });
+      const learnerJoin = await service.joinBreakout(learner, 'cls-1', 'room-1');
+      expect(learnerJoin.roomId).toBe('room-1');
+    });
+
+    it('close deletes every breakout LiveKit room (best effort) and clears the assignment record', async () => {
+      prisma.liveClass.findUnique.mockResolvedValueOnce(classRow()).mockResolvedValueOnce({ breakoutState: breakoutsRow() });
+      const deleteRoom = jest.spyOn(livekit, 'deleteRoom').mockResolvedValue(undefined);
+
+      await service.closeBreakouts(instructor, 'cls-1');
+
+      expect(deleteRoom).toHaveBeenCalledWith('class-cls-1-bo-room-1');
+      expect(deleteRoom).toHaveBeenCalledWith('class-cls-1-bo-room-2');
+      expect(prisma.liveClass.update).toHaveBeenCalledWith(expect.objectContaining({ where: { id: 'cls-1' } }));
+    });
+
+    it('only the host can close breakout rooms', async () => {
+      prisma.liveClass.findUnique.mockResolvedValue(classRow());
+      await expect(service.closeBreakouts(learner, 'cls-1')).rejects.toBeInstanceOf(ForbiddenException);
+    });
+  });
+
   describe('timetable listing', () => {
     it('scopes a learner to the courses they are enrolled in (not cancelled)', async () => {
       prisma.enrollment.findMany.mockResolvedValue([{ courseId: 'crs-1' }]);

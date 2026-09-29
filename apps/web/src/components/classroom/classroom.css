@@ -217,6 +217,17 @@
 .classroom__banner--warn {
   border-color: var(--brass);
 }
+.classroom__banner--action {
+  border-color: var(--brass);
+  background: rgba(154, 123, 79, 0.16);
+}
+.classroom__banner--action button {
+  padding: 2px 10px;
+  border: 1px solid var(--brass);
+  border-radius: 999px;
+  text-decoration: none;
+  font-weight: 700;
+}
 .classroom__banner button {
   margin-left: var(--space-2);
   text-decoration: underline;
@@ -982,6 +993,130 @@
 .poll__form > button[type='submit']:disabled {
   opacity: 0.6;
   cursor: default;
+}
+
+.classroom-panel__note {
+  padding: var(--space-4);
+  font-size: 0.85rem;
+  color: rgba(244, 239, 231, 0.6);
+}
+
+/* ---- Breakout rooms ---- */
+.breakouts {
+  padding: var(--space-3) var(--space-4);
+  gap: var(--space-3);
+  overflow-y: auto;
+}
+.breakouts__error {
+  font-size: 0.85rem;
+  color: #ff8a80;
+}
+.breakouts__form {
+  display: grid;
+  gap: var(--space-3);
+}
+.breakouts__form label {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: 0.85rem;
+}
+.breakouts__form input {
+  width: 60px;
+  padding: 5px 8px;
+  border: 1px solid var(--room-line);
+  border-radius: var(--radius-sm);
+  background: var(--room-surface-2);
+  color: var(--ivory);
+}
+.breakouts__note {
+  font-size: 0.8rem;
+  color: rgba(244, 239, 231, 0.6);
+}
+.breakouts__form button,
+.breakouts__close,
+.breakouts__return {
+  justify-self: start;
+  padding: 6px 14px;
+  border-radius: var(--radius-sm);
+  background: var(--brass);
+  color: #14110f;
+  font-weight: 700;
+  font-size: 0.8rem;
+  cursor: pointer;
+}
+.breakouts__form button:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+.breakouts__close {
+  background: none;
+  border: 1px solid rgba(255, 138, 128, 0.4);
+  color: #ff8a80;
+  margin-top: var(--space-2);
+}
+.breakouts__return {
+  margin-bottom: var(--space-2);
+}
+.breakouts__rooms {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: var(--space-3);
+}
+.breakouts__rooms > li {
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--room-line);
+  border-radius: var(--radius-sm);
+  background: var(--room-surface-2);
+}
+.breakouts__room-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+  font-size: 0.85rem;
+  font-weight: 700;
+}
+.breakouts__room-count {
+  font-weight: 400;
+  color: rgba(244, 239, 231, 0.6);
+}
+.breakouts__room-head button {
+  padding: 3px 10px;
+  border: 1px solid var(--room-line);
+  border-radius: var(--radius-sm);
+  font-size: 0.72rem;
+  color: var(--ivory);
+  cursor: pointer;
+}
+.breakouts__empty {
+  margin-top: 6px;
+  font-size: 0.78rem;
+  color: rgba(244, 239, 231, 0.5);
+}
+.breakouts__members {
+  list-style: none;
+  margin: 6px 0 0;
+  padding: 0;
+  display: grid;
+  gap: 4px;
+}
+.breakouts__members li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+  font-size: 0.8rem;
+}
+.breakouts__members select {
+  padding: 2px 4px;
+  border: 1px solid var(--room-line);
+  border-radius: var(--radius-sm);
+  background: var(--room-surface);
+  color: var(--ivory);
+  font-size: 0.75rem;
 }
 
 .chat,

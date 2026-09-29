@@ -197,6 +197,9 @@
     'main panel'
     'controls panel';
 }
+.classroom__inner.has-wide-panel {
+  grid-template-columns: minmax(0, 1fr) min(680px, 55vw);
+}
 
 .classroom__banner {
   position: absolute;
@@ -558,6 +561,165 @@
   min-height: 0;
   display: flex;
   flex-direction: column;
+}
+
+/* ---- Whiteboard ---- */
+.wb {
+  padding: var(--space-3);
+  gap: var(--space-3);
+  overflow-y: auto;
+}
+.wb__notice {
+  font-size: 0.82rem;
+  color: rgba(244, 239, 231, 0.65);
+}
+.wb__error {
+  font-size: 0.82rem;
+  color: #ff8a80;
+}
+.wb__toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-3);
+  padding-bottom: var(--space-2);
+  border-bottom: 1px solid var(--room-line);
+}
+.wb__tools,
+.wb__colors,
+.wb__widths,
+.wb__actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.wb__tool {
+  padding: 5px 10px;
+  border: 1px solid var(--room-line);
+  border-radius: var(--radius-sm);
+  background: var(--room-surface-2);
+  color: var(--ivory);
+  font-size: 0.76rem;
+  cursor: pointer;
+}
+.wb__tool.is-active {
+  border-color: var(--brass);
+  color: var(--brass-tint);
+}
+.wb__color {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  border: 2px solid transparent;
+  box-shadow: 0 0 0 1px var(--room-line);
+  cursor: pointer;
+}
+.wb__color.is-active {
+  border-color: var(--brass);
+}
+.wb__color-picker {
+  width: 22px;
+  height: 22px;
+  padding: 0;
+  border: none;
+  background: none;
+  cursor: pointer;
+}
+.wb__width {
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  border: 1px solid var(--room-line);
+  border-radius: var(--radius-sm);
+  background: var(--room-surface-2);
+  cursor: pointer;
+}
+.wb__width.is-active {
+  border-color: var(--brass);
+}
+.wb__width span {
+  display: block;
+  border-radius: 50%;
+  background: var(--ivory);
+}
+.wb__actions button {
+  padding: 5px 10px;
+  border: 1px solid var(--room-line);
+  border-radius: var(--radius-sm);
+  background: var(--room-surface-2);
+  color: var(--ivory);
+  font-size: 0.76rem;
+  cursor: pointer;
+}
+.wb__actions button.is-danger {
+  color: #ff8a80;
+  border-color: rgba(255, 138, 128, 0.4);
+}
+.wb__presenter {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-3);
+  font-size: 0.8rem;
+  color: rgba(244, 239, 231, 0.75);
+}
+.wb__presenter select {
+  margin-left: 6px;
+  padding: 4px 6px;
+  border: 1px solid var(--room-line);
+  border-radius: var(--radius-sm);
+  background: var(--room-surface-2);
+  color: var(--ivory);
+}
+.wb__presenter ul {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.wb__presenter li {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 8px;
+  border-radius: 999px;
+  background: var(--room-surface-2);
+}
+.wb__presenter li button {
+  padding: 2px 8px;
+  border: 1px solid var(--room-line);
+  border-radius: var(--radius-sm);
+  font-size: 0.7rem;
+  color: var(--ivory);
+  cursor: pointer;
+}
+.wb__canvas-wrap {
+  position: relative;
+  width: 100%;
+  max-width: 900px;
+  margin: 0 auto;
+}
+.wb__canvas {
+  display: block;
+  width: 100%;
+  height: auto;
+  aspect-ratio: 16 / 9;
+  border-radius: var(--radius-sm);
+  background: #fff;
+  touch-action: none;
+}
+.wb__text-input {
+  position: absolute;
+  transform: translateY(-2px);
+  min-width: 120px;
+  padding: 2px 4px;
+  border: 1px dashed var(--brass);
+  border-radius: 2px;
+  background: rgba(255, 255, 255, 0.92);
+  font-size: 16px;
 }
 
 .chat,

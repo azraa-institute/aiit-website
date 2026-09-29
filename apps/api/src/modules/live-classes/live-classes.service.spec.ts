@@ -1,5 +1,5 @@
 import { createHash } from 'crypto';
-import { ConflictException, ForbiddenException, NotFoundException } from '@nestjs/common';
+import { BadRequestException, ConflictException, ForbiddenException, NotFoundException } from '@nestjs/common';
 import jwt from 'jsonwebtoken';
 import type { AuthenticatedUser } from '../../common/guards/jwt.guard';
 import { LiveClassesService } from './live-classes.service';
@@ -203,6 +203,56 @@ describe('LiveClassesService', () => {
 
       expect(mute).not.toHaveBeenCalled();
       expect(setAllowed).toHaveBeenCalledWith('class-cls-1', LEARNER_ID, true);
+    });
+  });
+
+  describe('whiteboard', () => {
+    it('lets an enrolled learner read the board, including after the class has ended', async () => {
+      prisma.liveClass.findUnique
+        .mockResolvedValueOnce(classRow({ status: 'ended' }))
+        .mockResolvedValueOnce({ whiteboardState: { strokes: [1] } });
+      prisma.enrollment.findUnique.mockResolvedValue({ status: 'active' });
+
+      const res = await service.getWhiteboard(learner, 'cls-1');
+
+      expect(res).toEqual({ state: { strokes: [1] } });
+    });
+
+    it('returns a null state when nothing has been saved yet', async () => {
+      prisma.liveClass.findUnique.mockResolvedValueOnce(classRow()).mockResolvedValueOnce({ whiteboardState: null });
+      const res = await service.getWhiteboard(instructor, 'cls-1');
+      expect(res).toEqual({ state: null });
+    });
+
+    it('refuses a learner who is not enrolled', async () => {
+      prisma.liveClass.findUnique.mockResolvedValue(classRow());
+      prisma.enrollment.findUnique.mockResolvedValue(null);
+      await expect(service.getWhiteboard(learner, 'cls-1')).rejects.toBeInstanceOf(ForbiddenException);
+    });
+
+    it('lets any current participant save, not just the host', async () => {
+      prisma.liveClass.findUnique.mockResolvedValue(classRow());
+      prisma.enrollment.findUnique.mockResolvedValue({ status: 'active' });
+
+      await service.saveWhiteboard(learner, 'cls-1', { strokes: [] });
+
+      expect(prisma.liveClass.update).toHaveBeenCalledWith({
+        where: { id: 'cls-1' },
+        data: { whiteboardState: { strokes: [] } },
+      });
+    });
+
+    it('refuses to save once the class is no longer live', async () => {
+      prisma.liveClass.findUnique.mockResolvedValue(classRow({ status: 'ended' }));
+      await expect(service.saveWhiteboard(instructor, 'cls-1', {})).rejects.toBeInstanceOf(ConflictException);
+    });
+
+    it('rejects an oversized board', async () => {
+      prisma.liveClass.findUnique.mockResolvedValue(classRow());
+      await expect(service.saveWhiteboard(instructor, 'cls-1', { big: 'x'.repeat(2_100_000) })).rejects.toBeInstanceOf(
+        BadRequestException,
+      );
+      expect(prisma.liveClass.update).not.toHaveBeenCalled();
     });
   });
 

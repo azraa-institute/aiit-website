@@ -1,8 +1,9 @@
-import { Controller, Get, HttpCode, Param, ParseUUIDPipe, Post, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, HttpCode, Param, ParseUUIDPipe, Post, Put, UseGuards } from '@nestjs/common';
 import { Throttle } from '@nestjs/throttler';
-import type { LiveClassJoin, LiveClassSummary } from '@aiit/shared';
+import type { LiveClassJoin, LiveClassSummary, LiveClassWhiteboard } from '@aiit/shared';
 import { JwtGuard, type AuthenticatedUser } from '../../common/guards/jwt.guard';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
+import { SaveWhiteboardDto } from './dto/live-class.dto';
 import { LiveClassesService } from './live-classes.service';
 
 /** Learner + instructor (+ admin-as-moderator) endpoints. Every route re-checks access in the service. */
@@ -60,5 +61,21 @@ export class LiveClassesController {
     @Param('identity', ParseUUIDPipe) identity: string,
   ): Promise<void> {
     await this.liveClasses.moderate(user, id, identity, 'remove');
+  }
+
+  /** Readable after the class ends too, so it can be reviewed from the course workspace. */
+  @Get('live-classes/:id/whiteboard')
+  getWhiteboard(@CurrentUser() user: AuthenticatedUser, @Param('id', ParseUUIDPipe) id: string): Promise<LiveClassWhiteboard> {
+    return this.liveClasses.getWhiteboard(user, id);
+  }
+
+  @Put('live-classes/:id/whiteboard')
+  @HttpCode(204)
+  async saveWhiteboard(
+    @CurrentUser() user: AuthenticatedUser,
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() body: SaveWhiteboardDto,
+  ): Promise<void> {
+    await this.liveClasses.saveWhiteboard(user, id, body.state);
   }
 }

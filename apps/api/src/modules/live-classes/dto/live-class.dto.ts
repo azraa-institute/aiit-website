@@ -7,6 +7,7 @@ import {
   IsDateString,
   IsIn,
   IsInt,
+  IsObject,
   IsOptional,
   IsString,
   IsUUID,
@@ -213,4 +214,10 @@ export class GenerateTimetableDto {
   @IsOptional()
   @IsBoolean()
   allowConflicts?: boolean;
+}
+
+/** The board's shape is owned by the client; the API just stores it (size-capped, see live-classes.service.ts). */
+export class SaveWhiteboardDto {
+  @IsObject()
+  state!: Record<string, unknown>;
 }

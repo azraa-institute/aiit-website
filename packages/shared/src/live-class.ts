@@ -42,6 +42,15 @@ export interface LiveClassJoin {
   liveClass: LiveClassSummary;
 }
 
+/**
+ * GET/PUT /live-classes/:id/whiteboard -- the board's shape (strokes,
+ * background, who currently holds the pen) is owned entirely by the web
+ * client; the API stores and returns it opaquely.
+ */
+export interface LiveClassWhiteboard {
+  state: unknown;
+}
+
 // ---- Admin ----
 
 export interface TimetableSlot {

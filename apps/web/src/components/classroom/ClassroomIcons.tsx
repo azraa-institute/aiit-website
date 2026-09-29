@@ -61,6 +61,13 @@ export const LeaveIcon = () => (
   </Icon>
 );
 
+export const WhiteboardIcon = () => (
+  <Icon>
+    <rect x="3" y="4" width="18" height="13" rx="2" />
+    <path d="M8 20h8M12 17v3M7 9l3 3-3 3M13 14h4" />
+  </Icon>
+);
+
 export const HandIcon = () => (
   <Icon>
     <path d="M9 12.5V5a1.5 1.5 0 0 1 3 0v6M12 11V4a1.5 1.5 0 0 1 3 0v7M15 11.5V6a1.5 1.5 0 0 1 3 0v8a7 7 0 0 1-7 7h-1a7 7 0 0 1-6.1-3.6L3 15.2a1.5 1.5 0 0 1 2.5-1.6L7 15.5" />

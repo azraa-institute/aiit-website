@@ -20,10 +20,11 @@ import { ConnectionState, DisconnectReason, Track } from 'livekit-client';
 import type { LiveClassJoin } from '@aiit/shared';
 import { apiFetch } from '@/lib/api';
 import { cn } from '@/lib/cn';
-import { CameraIcon, ChatIcon, HandIcon, LeaveIcon, MicIcon, PeopleIcon, ShareIcon } from './ClassroomIcons';
+import { CameraIcon, ChatIcon, HandIcon, LeaveIcon, MicIcon, PeopleIcon, ShareIcon, WhiteboardIcon } from './ClassroomIcons';
 import { ChatPanel, isMicLocked, PeoplePanel } from './ClassroomPanel';
 import { HAND_RAISED_ATTR, handRaisedAtMs, isHandRaised, useIsHandRaised } from './handRaise';
 import { displayName, participantRole } from './participant';
+import { WhiteboardPanel } from './Whiteboard';
 
 /** Tiles beside the main stage. Everyone is still in the People list; this just keeps a big class from decoding dozens of videos. */
 const MAX_STRIP_TILES = 11;
@@ -75,7 +76,7 @@ function ClassroomInner({
     ],
     { onlySubscribed: false },
   );
-  const [panel, setPanel] = useState<'chat' | 'people' | null>(null);
+  const [panel, setPanel] = useState<'chat' | 'people' | 'whiteboard' | null>(null);
 
   const isHost = join.role === 'host';
   const screen = tracks.find((t) => t.source === Track.Source.ScreenShare && isTrackReference(t));
@@ -88,7 +89,7 @@ function ClassroomInner({
   const hidden = Math.max(0, strip.length - MAX_STRIP_TILES);
 
   return (
-    <div className={cn('classroom__inner', panel && 'has-panel')}>
+    <div className={cn('classroom__inner', panel && 'has-panel', panel === 'whiteboard' && 'has-wide-panel')}>
       {connection === ConnectionState.Reconnecting || connection === ConnectionState.SignalReconnecting ? (
         <p className="classroom__banner" role="status">
           Connection lost — trying to reconnect…
@@ -138,7 +139,10 @@ function ClassroomInner({
       </div>
 
       {panel ? (
-        <aside className="classroom-panel" aria-label={panel === 'chat' ? 'Chat' : 'People'}>
+        <aside
+          className="classroom-panel"
+          aria-label={panel === 'chat' ? 'Chat' : panel === 'people' ? 'People' : 'Whiteboard'}
+        >
           <div className="classroom-panel__tabs" role="tablist">
             <button
               type="button"
@@ -158,14 +162,25 @@ function ClassroomInner({
             >
               People
             </button>
+            <button
+              type="button"
+              role="tab"
+              aria-selected={panel === 'whiteboard'}
+              className={cn(panel === 'whiteboard' && 'is-active')}
+              onClick={() => setPanel('whiteboard')}
+            >
+              Whiteboard
+            </button>
             <button type="button" className="classroom-panel__close" onClick={() => setPanel(null)}>
               Close
             </button>
           </div>
           {panel === 'chat' ? (
             <ChatPanel />
-          ) : (
+          ) : panel === 'people' ? (
             <PeoplePanel liveClassId={join.liveClass.id} canModerate={isHost} />
+          ) : (
+            <WhiteboardPanel join={join} />
           )}
         </aside>
       ) : null}
@@ -222,8 +237,8 @@ function Controls({
   setPanel,
 }: {
   join: LiveClassJoin;
-  panel: 'chat' | 'people' | null;
-  setPanel: (p: 'chat' | 'people' | null) => void;
+  panel: 'chat' | 'people' | 'whiteboard' | null;
+  setPanel: (p: 'chat' | 'people' | 'whiteboard' | null) => void;
 }) {
   const room = useRoomContext();
   const participants = useParticipants();
@@ -381,6 +396,15 @@ function Controls({
       >
         <PeopleIcon />
         <span>People ({participants.length})</span>
+      </button>
+      <button
+        type="button"
+        className={cn('controls__btn', panel === 'whiteboard' && 'is-on')}
+        aria-pressed={panel === 'whiteboard'}
+        onClick={() => setPanel(panel === 'whiteboard' ? null : 'whiteboard')}
+      >
+        <WhiteboardIcon />
+        <span>Whiteboard</span>
       </button>
 
       <span className="controls__divider" aria-hidden="true" />

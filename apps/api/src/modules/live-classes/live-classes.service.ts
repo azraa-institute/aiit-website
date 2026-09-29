@@ -1,6 +1,6 @@
-import { ConflictException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, ConflictException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
 import type { Prisma } from '@prisma/client';
-import type { LiveClassJoin, LiveClassRole, LiveClassSummary } from '@aiit/shared';
+import type { LiveClassJoin, LiveClassRole, LiveClassSummary, LiveClassWhiteboard } from '@aiit/shared';
 import { PrismaService } from '../../common/prisma/prisma.service';
 import type { AuthenticatedUser } from '../../common/guards/jwt.guard';
 import { computeJoinState, joinOpensAt } from './live-class-state';
@@ -25,6 +25,9 @@ export type ClassRow = Prisma.LiveClassGetPayload<{ select: typeof CLASS_SELECT 
 /** How far back / forward the "my classes" list looks. */
 const LIST_LOOKBACK_MS = 24 * 60 * 60 * 1000;
 const LIST_LOOKAHEAD_MS = 90 * 24 * 60 * 60 * 1000;
+
+/** Generous for a few hundred strokes plus one capped-size embedded background image; rejects anything wildly oversized rather than validating exact shape, which is the client's concern. */
+const MAX_WHITEBOARD_JSON_LENGTH = 2_000_000;
 
 @Injectable()
 export class LiveClassesService {
@@ -72,17 +75,7 @@ export class LiveClassesService {
    */
   async join(user: AuthenticatedUser, id: string): Promise<LiveClassJoin> {
     const cls = await this.getClass(id);
-    const role = this.roleFor(user, cls);
-
-    if (role === 'learner') {
-      const enrollment = await this.prisma.enrollment.findUnique({
-        where: { userId_courseId: { userId: user.userId, courseId: cls.courseId } },
-        select: { status: true },
-      });
-      if (!enrollment || enrollment.status === 'cancelled') {
-        throw new ForbiddenException('You are not enrolled in this course.');
-      }
-    }
+    const role = await this.assertEnrolledOrHost(user, cls);
 
     const state = computeJoinState(cls, role);
     if (state === 'cancelled') throw new ConflictException('This class has been cancelled.');
@@ -169,6 +162,29 @@ export class LiveClassesService {
     }
   }
 
+  /** Anyone who could join this class can read its board, including after the class has ended (for review). */
+  async getWhiteboard(user: AuthenticatedUser, id: string): Promise<LiveClassWhiteboard> {
+    const cls = await this.getClass(id);
+    await this.assertEnrolledOrHost(user, cls);
+    const row = await this.prisma.liveClass.findUnique({ where: { id }, select: { whiteboardState: true } });
+    return { state: row?.whiteboardState ?? null };
+  }
+
+  /**
+   * Same trust level as chat -- any current participant may save, not just
+   * the host, since the host can grant the pen to a learner client-side and
+   * whoever is holding it is the one with fresh state to persist.
+   */
+  async saveWhiteboard(user: AuthenticatedUser, id: string, state: Record<string, unknown>): Promise<void> {
+    const cls = await this.getClass(id);
+    await this.assertEnrolledOrHost(user, cls);
+    if (cls.status !== 'live') throw new ConflictException('This class is not live.');
+    if (JSON.stringify(state).length > MAX_WHITEBOARD_JSON_LENGTH) {
+      throw new BadRequestException('That whiteboard is too large to save.');
+    }
+    await this.prisma.liveClass.update({ where: { id }, data: { whiteboardState: state as Prisma.InputJsonValue } });
+  }
+
   // ---- LiveKit webhook -> attendance ----
 
   async recordParticipantEvent(
@@ -207,6 +223,21 @@ export class LiveClassesService {
     const cls = await this.prisma.liveClass.findUnique({ where: { id }, select: CLASS_SELECT });
     if (!cls) throw new NotFoundException('Class not found.');
     return cls;
+  }
+
+  /** The enrolled-or-host gate shared by join() and the whiteboard endpoints. */
+  private async assertEnrolledOrHost(user: AuthenticatedUser, cls: Pick<ClassRow, 'hostUserId' | 'courseId'>): Promise<LiveClassRole> {
+    const role = this.roleFor(user, cls);
+    if (role === 'learner') {
+      const enrollment = await this.prisma.enrollment.findUnique({
+        where: { userId_courseId: { userId: user.userId, courseId: cls.courseId } },
+        select: { status: true },
+      });
+      if (!enrollment || enrollment.status === 'cancelled') {
+        throw new ForbiddenException('You are not enrolled in this course.');
+      }
+    }
+    return role;
   }
 
   private async displayName(user: AuthenticatedUser): Promise<string> {

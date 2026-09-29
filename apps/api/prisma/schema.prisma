@@ -647,6 +647,9 @@ model LiveClass {
   joinOpensMinutes Int                   @default(15) @map("join_opens_minutes")
   startedAt        DateTime?             @map("started_at") @db.Timestamptz(6)
   endedAt          DateTime?             @map("ended_at") @db.Timestamptz(6)
+  /// Last-saved whiteboard board (strokes + optional background snapshot),
+  /// debounced up from whoever currently holds the pen. Null until first use.
+  whiteboardState  Json?                 @map("whiteboard_state")
   attendance       LiveClassAttendance[]
   createdAt        DateTime              @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt        DateTime              @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)

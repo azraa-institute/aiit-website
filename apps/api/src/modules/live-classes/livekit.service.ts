@@ -87,6 +87,10 @@ export class LiveKitService {
     } else {
       video.canPublishSources = ['camera', 'microphone'];
     }
+    // Lets a learner set their own participant attributes (e.g. a raised-hand
+    // timestamp) without granting them any moderation ability -- that stays
+    // on roomAdmin, which only the host gets above.
+    video.canUpdateOwnMetadata = true;
     return jwt.sign({ name: input.name, metadata: input.metadata, video }, apiSecret, {
       algorithm: 'HS256',
       issuer: apiKey,

@@ -357,6 +357,21 @@
   text-transform: uppercase;
   color: var(--brass-tint);
 }
+.tile__hand {
+  position: absolute;
+  top: var(--space-2);
+  right: var(--space-2);
+  z-index: 2;
+  display: inline-flex;
+  padding: 4px;
+  border-radius: 999px;
+  background: var(--brass);
+  color: #14110f;
+}
+.tile__hand svg {
+  width: 14px;
+  height: 14px;
+}
 
 /* ---- Controls ---- */
 .controls {
@@ -425,6 +440,73 @@
   text-align: center;
   font-size: 0.82rem;
   color: #ff8a80;
+}
+
+.controls__hands-wrap {
+  position: relative;
+  display: inline-flex;
+}
+.controls__hands {
+  position: absolute;
+  bottom: calc(100% + var(--space-2));
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 7;
+  width: 240px;
+  max-height: 260px;
+  overflow-y: auto;
+  padding: var(--space-2);
+  border: 1px solid var(--room-line);
+  border-radius: var(--radius-sm);
+  background: var(--room-surface);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.4);
+}
+.controls__hands-empty {
+  padding: var(--space-2);
+  font-size: 0.82rem;
+  color: rgba(244, 239, 231, 0.6);
+  text-align: center;
+}
+.controls__hands ul {
+  display: grid;
+  gap: 4px;
+}
+.controls__hands li {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-2);
+  border-radius: var(--radius-sm);
+  background: var(--room-surface-2);
+  font-size: 0.82rem;
+}
+.controls__hands-rank {
+  flex-shrink: 0;
+  display: grid;
+  place-items: center;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: var(--brass);
+  color: #14110f;
+  font-size: 0.7rem;
+  font-weight: 700;
+}
+.controls__hands-name {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.controls__hands li button {
+  flex-shrink: 0;
+  padding: 4px 10px;
+  border: 1px solid var(--room-line);
+  border-radius: var(--radius-sm);
+  font-size: 0.72rem;
+  color: var(--ivory);
+  cursor: pointer;
 }
 
 .classroom__start-audio {
@@ -586,6 +668,14 @@
 }
 .person__mic.is-off {
   color: #ff8a80;
+}
+.person__hand {
+  display: inline-flex;
+  color: var(--brass-tint);
+}
+.person__hand svg {
+  width: 16px;
+  height: 16px;
 }
 .person__locked {
   flex-basis: 100%;

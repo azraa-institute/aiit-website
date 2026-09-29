@@ -5,7 +5,8 @@ import { Track, type Participant } from 'livekit-client';
 import { TrackSource } from '@livekit/protocol';
 import { apiFetch } from '@/lib/api';
 import { cn } from '@/lib/cn';
-import { MicIcon } from './ClassroomIcons';
+import { HandIcon, MicIcon } from './ClassroomIcons';
+import { useIsHandRaised } from './handRaise';
 import { displayName, participantRole } from './participant';
 
 function formatTime(ts: number): string {
@@ -96,6 +97,7 @@ function PersonRow({
 }) {
   const micMuted = useIsMuted({ participant, source: Track.Source.Microphone });
   const micLocked = isMicLocked(participant);
+  const handRaised = useIsHandRaised(participant);
   const [busy, setBusy] = useState<'mute' | 'unmute' | 'remove' | null>(null);
   const [error, setError] = useState<string>();
   const role = participantRole(participant);
@@ -124,6 +126,11 @@ function PersonRow({
         {participant.isLocal ? ' (you)' : ''}
         {role === 'host' ? <span className="chat__role">Instructor</span> : null}
       </span>
+      {handRaised ? (
+        <span className="person__hand" title="Hand raised">
+          <HandIcon />
+        </span>
+      ) : null}
       <span
         className={cn('person__mic', micMuted && 'is-off')}
         title={micLocked ? 'Muted by the instructor' : micMuted ? 'Microphone off' : 'Microphone on'}

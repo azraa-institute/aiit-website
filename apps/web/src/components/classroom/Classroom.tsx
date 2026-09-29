@@ -6,6 +6,7 @@ import {
   VideoTrack,
   isTrackReference,
   useConnectionState,
+  useDataChannel,
   useIsMuted,
   useIsSpeaking,
   useLocalParticipant,
@@ -19,8 +20,9 @@ import { ConnectionState, DisconnectReason, Track } from 'livekit-client';
 import type { LiveClassJoin } from '@aiit/shared';
 import { apiFetch } from '@/lib/api';
 import { cn } from '@/lib/cn';
-import { CameraIcon, ChatIcon, LeaveIcon, MicIcon, PeopleIcon, ShareIcon } from './ClassroomIcons';
+import { CameraIcon, ChatIcon, HandIcon, LeaveIcon, MicIcon, PeopleIcon, ShareIcon } from './ClassroomIcons';
 import { ChatPanel, isMicLocked, PeoplePanel } from './ClassroomPanel';
+import { HAND_RAISED_ATTR, handRaisedAtMs, isHandRaised, useIsHandRaised } from './handRaise';
 import { displayName, participantRole } from './participant';
 
 /** Tiles beside the main stage. Everyone is still in the People list; this just keeps a big class from decoding dozens of videos. */
@@ -179,6 +181,7 @@ function Tile({ trackRef, large, isScreen }: { trackRef: TrackReferenceOrPlaceho
   const speaking = useIsSpeaking(participant);
   const micMuted = useIsMuted({ participant, source: Track.Source.Microphone });
   const camMuted = useIsMuted(trackRef);
+  const handRaised = useIsHandRaised(participant);
   const showVideo = isTrackReference(trackRef) && (isScreen || !camMuted);
   const name = displayName(participant);
   const role = participantRole(participant);
@@ -192,6 +195,11 @@ function Tile({ trackRef, large, isScreen }: { trackRef: TrackReferenceOrPlaceho
           <span>{name.slice(0, 1).toUpperCase()}</span>
         </div>
       )}
+      {handRaised && !isScreen ? (
+        <span className="tile__hand" title={`${name} raised their hand`}>
+          <HandIcon />
+        </span>
+      ) : null}
       <figcaption className="tile__label">
         {micMuted && !isScreen ? (
           <span className="tile__muted" title="Microphone off">
@@ -226,9 +234,39 @@ function Controls({
   const [confirmEnd, setConfirmEnd] = useState(false);
   const [ending, setEnding] = useState(false);
   const [endError, setEndError] = useState<string>();
+  const [handsOpen, setHandsOpen] = useState(false);
+  const [raisingHand, setRaisingHand] = useState(false);
   const isHost = join.role === 'host';
   const canShare = isHost && typeof navigator.mediaDevices?.getDisplayMedia === 'function';
   const micLocked = isMicLocked(localParticipant);
+  const handRaised = useIsHandRaised(localParticipant);
+  const raisedHands = participants
+    .filter((p) => p !== localParticipant && isHandRaised(p))
+    .sort((a, b) => handRaisedAtMs(a) - handRaisedAtMs(b));
+
+  const { send: sendHandAck } = useDataChannel('hand-ack', (msg) => {
+    try {
+      const payload = JSON.parse(new TextDecoder().decode(msg.payload)) as { identity?: string };
+      if (payload.identity === localParticipant.identity) {
+        void localParticipant.setAttributes({ [HAND_RAISED_ATTR]: '' });
+      }
+    } catch {
+      // Malformed payload -- ignore.
+    }
+  });
+
+  async function toggleHand() {
+    setRaisingHand(true);
+    try {
+      await localParticipant.setAttributes({ [HAND_RAISED_ATTR]: handRaised ? '' : new Date().toISOString() });
+    } finally {
+      setRaisingHand(false);
+    }
+  }
+
+  async function acknowledgeHand(identity: string) {
+    await sendHandAck(new TextEncoder().encode(JSON.stringify({ identity })), { reliable: true });
+  }
 
   async function endForEveryone() {
     setEnding(true);
@@ -276,6 +314,52 @@ function Controls({
           <ShareIcon />
           <span>{share.enabled ? 'Stop sharing' : 'Share screen'}</span>
         </button>
+      ) : null}
+
+      {!isHost ? (
+        <button
+          type="button"
+          className={cn('controls__btn', handRaised && 'is-on')}
+          aria-pressed={handRaised}
+          disabled={raisingHand}
+          onClick={() => void toggleHand()}
+        >
+          <HandIcon />
+          <span>{handRaised ? 'Lower hand' : 'Raise hand'}</span>
+        </button>
+      ) : null}
+
+      {isHost ? (
+        <span className="controls__hands-wrap">
+          <button
+            type="button"
+            className={cn('controls__btn', handsOpen && 'is-on')}
+            aria-pressed={handsOpen}
+            onClick={() => setHandsOpen((v) => !v)}
+          >
+            <HandIcon />
+            <span>Raised hands{raisedHands.length > 0 ? ` (${raisedHands.length})` : ''}</span>
+          </button>
+          {handsOpen ? (
+            <div className="controls__hands" role="menu" aria-label="Raised hands">
+              {raisedHands.length === 0 ? (
+                <p className="controls__hands-empty">No hands raised.</p>
+              ) : (
+                <ul role="list">
+                  {raisedHands.map((p, i) => (
+                    <li key={p.identity}>
+                      <span className="controls__hands-rank">{i + 1}</span>
+                      <span className="controls__hands-name">{displayName(p)}</span>
+                      <button type="button" onClick={() => void acknowledgeHand(p.identity)}>
+                        Acknowledge
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+          ) : null}
+        </span>
       ) : null}
 
       <span className="controls__divider" aria-hidden="true" />

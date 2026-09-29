@@ -688,7 +688,8 @@
   white-space: pre-wrap;
   overflow-wrap: anywhere;
 }
-.adm-card a {
+/* Title links only -- NOT .adm-card__actions, whose Links are .adm-btn buttons with their own color. */
+.adm-card__main a {
   color: inherit;
 }
 .adm-card__main h3 a:hover {

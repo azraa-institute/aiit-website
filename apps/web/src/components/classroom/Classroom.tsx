@@ -5,6 +5,7 @@ import {
   StartAudio,
   VideoTrack,
   isTrackReference,
+  useChat,
   useConnectionState,
   useDataChannel,
   useIsMuted,
@@ -17,7 +18,7 @@ import {
   type TrackReferenceOrPlaceholder,
 } from '@livekit/components-react';
 import { ConnectionState, DisconnectReason, Track } from 'livekit-client';
-import type { BreakoutJoin, LiveClassBreakouts, LiveClassJoin } from '@aiit/shared';
+import type { BreakoutJoin, LiveClassBreakouts, LiveClassJoin, PinnedResource } from '@aiit/shared';
 import { apiFetch } from '@/lib/api';
 import { cn } from '@/lib/cn';
 import type { RoomConnection } from './breakouts';
@@ -149,6 +150,15 @@ function ClassroomInner({
   const panelRef = useRef(panel);
   panelRef.current = panel;
 
+  // Held here (not inside ChatPanel) so it's listening for the whole class,
+  // not just while the Chat tab happens to be open -- see ChatPanelProps' doc comment.
+  const { chatMessages, send: sendChat, isSending: chatSending } = useChat();
+  const [chatSeenCount, setChatSeenCount] = useState(0);
+  useEffect(() => {
+    if (panel === 'chat') setChatSeenCount(chatMessages.length);
+  }, [panel, chatMessages.length]);
+  const chatUnseen = panel !== 'chat' && chatMessages.length > chatSeenCount;
+
   // Seeds "there's something to look at" for anyone who joins after the
   // board already has content; wb-notify (below) covers activity from here on.
   useEffect(() => {
@@ -169,6 +179,49 @@ function ClassroomInner({
 
   useDataChannel('wb-notify', () => {
     if (panelRef.current !== 'whiteboard') setWbUnseen(true);
+  });
+
+  // Resources: unlike the whiteboard's small dot, a pin is a discrete,
+  // nameable event ("Slides deck") worth surfacing on its own -- a toast
+  // banner, not just a badge someone has to notice and go looking behind.
+  const [resourcesUnseen, setResourcesUnseen] = useState(false);
+  const [resourceToast, setResourceToast] = useState<{ id: string; title: string } | null>(null);
+  const knownResourceIdsRef = useRef<Set<string>>(new Set());
+
+  useEffect(() => {
+    let cancelled = false;
+    apiFetch<PinnedResource[]>(`/live-classes/${join.liveClass.id}/resources`)
+      .then((res) => {
+        if (cancelled) return;
+        knownResourceIdsRef.current = new Set(res.map((r) => r.id));
+        if (res.length > 0) setResourcesUnseen(true);
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, [join.liveClass.id]);
+
+  useEffect(() => {
+    if (panel === 'resources') setResourcesUnseen(false);
+  }, [panel]);
+
+  useDataChannel('resources', (msg) => {
+    let payload: { resources?: PinnedResource[] };
+    try {
+      payload = JSON.parse(new TextDecoder().decode(msg.payload)) as { resources?: PinnedResource[] };
+    } catch {
+      return;
+    }
+    if (!payload.resources) return;
+    const known = knownResourceIdsRef.current;
+    const added = payload.resources.find((r) => !known.has(r.id));
+    knownResourceIdsRef.current = new Set(payload.resources.map((r) => r.id));
+    if (panelRef.current !== 'resources') setResourcesUnseen(true);
+    if (added) {
+      setResourceToast({ id: added.id, title: added.title });
+      setTimeout(() => setResourceToast((t) => (t?.id === added.id ? null : t)), 8000);
+    }
   });
 
   const { send: sendReaction } = useDataChannel('reaction', (msg) => {
@@ -267,6 +320,19 @@ function ClassroomInner({
           You've been assigned to {myBreakoutRoom?.name ?? 'a breakout room'}.{' '}
           <button type="button" onClick={() => onSwitchToBreakout(breakouts.myRoomId as string)}>
             Join breakout room
+          </button>
+        </p>
+      ) : resourceToast && !inBreakout ? (
+        <p className="classroom__banner classroom__banner--action" role="status">
+          📌 New resource pinned: {resourceToast.title}.{' '}
+          <button
+            type="button"
+            onClick={() => {
+              setPanel('resources');
+              setResourceToast(null);
+            }}
+          >
+            View
           </button>
         </p>
       ) : null}
@@ -392,7 +458,7 @@ function ClassroomInner({
             </button>
           </div>
           {panel === 'chat' ? (
-            <ChatPanel />
+            <ChatPanel chatMessages={chatMessages} send={sendChat} isSending={chatSending} />
           ) : panel === 'people' ? (
             <PeoplePanel liveClassId={join.liveClass.id} canModerate={isHost} />
           ) : panel === 'whiteboard' && !inBreakout ? (
@@ -416,7 +482,16 @@ function ClassroomInner({
         </aside>
       ) : null}
 
-      <Controls join={join} panel={panel} setPanel={setPanel} onReact={react} inBreakout={inBreakout} wbUnseen={wbUnseen} />
+      <Controls
+        join={join}
+        panel={panel}
+        setPanel={setPanel}
+        onReact={react}
+        inBreakout={inBreakout}
+        wbUnseen={wbUnseen}
+        chatUnseen={chatUnseen}
+        resourcesUnseen={resourcesUnseen}
+      />
       <StartAudio label="Click to hear the class" className="classroom__start-audio" />
     </div>
   );
@@ -469,13 +544,17 @@ function Controls({
   onReact,
   inBreakout,
   wbUnseen,
+  chatUnseen,
+  resourcesUnseen,
 }: {
   join: LiveClassJoin;
   panel: 'chat' | 'people' | 'whiteboard' | 'resources' | 'poll' | 'breakouts' | null;
   setPanel: (p: 'chat' | 'people' | 'whiteboard' | 'resources' | 'poll' | 'breakouts' | null) => void;
   onReact: (emoji: string) => void;
   inBreakout: boolean;
+  chatUnseen: boolean;
   wbUnseen: boolean;
+  resourcesUnseen: boolean;
 }) {
   const room = useRoomContext();
   const participants = useParticipants();
@@ -651,8 +730,11 @@ function Controls({
         aria-pressed={panel === 'chat'}
         onClick={() => setPanel(panel === 'chat' ? null : 'chat')}
       >
-        <ChatIcon />
-        <span>Chat</span>
+        <span className="controls__icon-wrap">
+          <ChatIcon />
+          {chatUnseen ? <span className="controls__dot" aria-hidden="true" /> : null}
+        </span>
+        <span>Chat{chatUnseen ? ' •' : ''}</span>
       </button>
       <button
         type="button"
@@ -683,8 +765,11 @@ function Controls({
             aria-pressed={panel === 'resources'}
             onClick={() => setPanel(panel === 'resources' ? null : 'resources')}
           >
-            <PinIcon />
-            <span>Resources</span>
+            <span className="controls__icon-wrap">
+              <PinIcon />
+              {resourcesUnseen ? <span className="controls__dot" aria-hidden="true" /> : null}
+            </span>
+            <span>Resources{resourcesUnseen ? ' •' : ''}</span>
           </button>
           <button
             type="button"

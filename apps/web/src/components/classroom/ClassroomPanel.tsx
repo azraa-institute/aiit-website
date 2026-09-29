@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import type { FormEvent } from 'react';
-import { useChat, useIsMuted, useLocalParticipant, useParticipants } from '@livekit/components-react';
+import { useIsMuted, useLocalParticipant, useParticipants } from '@livekit/components-react';
+import type { ReceivedChatMessage } from '@livekit/components-react';
 import { Track, type Participant } from 'livekit-client';
 import { TrackSource } from '@livekit/protocol';
 import { apiFetch } from '@/lib/api';
@@ -25,8 +26,23 @@ export function isMicLocked(participant: Participant): boolean {
   return !participant.permissions?.canPublishSources?.includes(TrackSource.MICROPHONE);
 }
 
-export function ChatPanel() {
-  const { chatMessages, send, isSending } = useChat();
+export interface ChatPanelProps {
+  chatMessages: ReceivedChatMessage[];
+  send: (message: string) => Promise<ReceivedChatMessage>;
+  isSending: boolean;
+}
+
+/**
+ * Takes chat state as props rather than calling useChat() itself: LiveKit's
+ * chat pipeline only starts listening for incoming messages the first time
+ * something subscribes to it for this room, so if that subscription lived
+ * here it would only exist while this tab was open -- a message sent while
+ * the instructor's Chat tab was closed would never be seen, not even by
+ * reopening it afterward (there's no server-side history, only a live
+ * stream). ClassroomInner holds useChat() for the whole class instead, so
+ * it's always listening.
+ */
+export function ChatPanel({ chatMessages, send, isSending }: ChatPanelProps) {
   const { localParticipant } = useLocalParticipant();
   const [draft, setDraft] = useState('');
   const endRef = useRef<HTMLDivElement>(null);

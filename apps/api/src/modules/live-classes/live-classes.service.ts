@@ -1,10 +1,12 @@
+import { randomUUID } from 'crypto';
 import { BadRequestException, ConflictException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
 import type { Prisma } from '@prisma/client';
-import type { LiveClassJoin, LiveClassRole, LiveClassSummary, LiveClassWhiteboard } from '@aiit/shared';
+import type { LiveClassJoin, LiveClassRole, LiveClassSummary, LiveClassWhiteboard, PinnedResource } from '@aiit/shared';
 import { PrismaService } from '../../common/prisma/prisma.service';
 import type { AuthenticatedUser } from '../../common/guards/jwt.guard';
 import { computeJoinState, joinOpensAt } from './live-class-state';
 import { LiveKitService } from './livekit.service';
+import type { PinResourceDto } from './dto/live-class.dto';
 
 export const CLASS_SELECT = {
   id: true,
@@ -28,6 +30,8 @@ const LIST_LOOKAHEAD_MS = 90 * 24 * 60 * 60 * 1000;
 
 /** Generous for a few hundred strokes plus one capped-size embedded background image; rejects anything wildly oversized rather than validating exact shape, which is the client's concern. */
 const MAX_WHITEBOARD_JSON_LENGTH = 2_000_000;
+
+const MAX_PINNED_RESOURCES = 20;
 
 @Injectable()
 export class LiveClassesService {
@@ -183,6 +187,42 @@ export class LiveClassesService {
       throw new BadRequestException('That whiteboard is too large to save.');
     }
     await this.prisma.liveClass.update({ where: { id }, data: { whiteboardState: state as Prisma.InputJsonValue } });
+  }
+
+  /** Readable after the class ends too, so pinned links survive into the course workspace for review. */
+  async listResources(user: AuthenticatedUser, id: string): Promise<PinnedResource[]> {
+    const cls = await this.getClass(id);
+    await this.assertEnrolledOrHost(user, cls);
+    return this.currentResources(id);
+  }
+
+  async pinResource(user: AuthenticatedUser, id: string, dto: PinResourceDto): Promise<PinnedResource[]> {
+    const cls = await this.getClass(id);
+    if (this.roleFor(user, cls) !== 'host') throw new ForbiddenException('Only the instructor can pin a resource.');
+    if (cls.status !== 'live') throw new ConflictException('This class is not live.');
+    const current = await this.currentResources(id);
+    if (current.length >= MAX_PINNED_RESOURCES) throw new BadRequestException('Unpin something before adding another.');
+    const next: PinnedResource[] = [
+      ...current,
+      { id: randomUUID(), title: dto.title.trim(), url: dto.url.trim(), note: dto.note?.trim() || null, pinnedAt: new Date().toISOString() },
+    ];
+    await this.prisma.liveClass.update({ where: { id }, data: { pinnedResources: next as unknown as Prisma.InputJsonValue } });
+    return next;
+  }
+
+  async unpinResource(user: AuthenticatedUser, id: string, resourceId: string): Promise<PinnedResource[]> {
+    const cls = await this.getClass(id);
+    if (this.roleFor(user, cls) !== 'host') throw new ForbiddenException('Only the instructor can unpin a resource.');
+    if (cls.status !== 'live') throw new ConflictException('This class is not live.');
+    const next = (await this.currentResources(id)).filter((r) => r.id !== resourceId);
+    await this.prisma.liveClass.update({ where: { id }, data: { pinnedResources: next as unknown as Prisma.InputJsonValue } });
+    return next;
+  }
+
+  private async currentResources(id: string): Promise<PinnedResource[]> {
+    const row = await this.prisma.liveClass.findUnique({ where: { id }, select: { pinnedResources: true } });
+    const value = row?.pinnedResources;
+    return Array.isArray(value) ? (value as unknown as PinnedResource[]) : [];
   }
 
   // ---- LiveKit webhook -> attendance ----

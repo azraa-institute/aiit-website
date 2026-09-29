@@ -11,6 +11,7 @@ import {
   IsOptional,
   IsString,
   IsUUID,
+  IsUrl,
   Matches,
   Max,
   MaxLength,
@@ -220,4 +221,20 @@ export class GenerateTimetableDto {
 export class SaveWhiteboardDto {
   @IsObject()
   state!: Record<string, unknown>;
+}
+
+export class PinResourceDto {
+  @IsString()
+  @MinLength(2)
+  @MaxLength(120)
+  title!: string;
+
+  @IsUrl({ require_protocol: true })
+  @MaxLength(2000)
+  url!: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(300)
+  note?: string;
 }

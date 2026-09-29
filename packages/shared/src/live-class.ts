@@ -51,6 +51,15 @@ export interface LiveClassWhiteboard {
   state: unknown;
 }
 
+/** GET/POST/DELETE /live-classes/:id/resources -- links or notes the host pins for everyone during class. */
+export interface PinnedResource {
+  id: string;
+  title: string;
+  url: string;
+  note: string | null;
+  pinnedAt: string;
+}
+
 // ---- Admin ----
 
 export interface TimetableSlot {

@@ -20,10 +20,12 @@ import { ConnectionState, DisconnectReason, Track } from 'livekit-client';
 import type { LiveClassJoin } from '@aiit/shared';
 import { apiFetch } from '@/lib/api';
 import { cn } from '@/lib/cn';
-import { CameraIcon, ChatIcon, HandIcon, LeaveIcon, MicIcon, PeopleIcon, ShareIcon, WhiteboardIcon } from './ClassroomIcons';
+import { CameraIcon, ChatIcon, HandIcon, LeaveIcon, MicIcon, PeopleIcon, PinIcon, ShareIcon, WhiteboardIcon } from './ClassroomIcons';
 import { ChatPanel, isMicLocked, PeoplePanel } from './ClassroomPanel';
 import { HAND_RAISED_ATTR, handRaisedAtMs, isHandRaised, useIsHandRaised } from './handRaise';
 import { displayName, participantRole } from './participant';
+import { newReactionId, REACTION_EMOJIS, type FloatingReaction } from './reactions';
+import { ResourcesPanel } from './ResourcesPanel';
 import { WhiteboardPanel } from './Whiteboard';
 
 /** Tiles beside the main stage. Everyone is still in the People list; this just keeps a big class from decoding dozens of videos. */
@@ -76,7 +78,34 @@ function ClassroomInner({
     ],
     { onlySubscribed: false },
   );
-  const [panel, setPanel] = useState<'chat' | 'people' | 'whiteboard' | null>(null);
+  const [panel, setPanel] = useState<'chat' | 'people' | 'whiteboard' | 'resources' | null>(null);
+  const [reactions, setReactions] = useState<FloatingReaction[]>([]);
+
+  const { send: sendReaction } = useDataChannel('reaction', (msg) => {
+    let payload: { emoji?: string };
+    try {
+      payload = JSON.parse(new TextDecoder().decode(msg.payload)) as { emoji?: string };
+    } catch {
+      return;
+    }
+    if (!payload.emoji) return;
+    addReaction(payload.emoji, msg.from ? displayName(msg.from) : 'Someone');
+  });
+
+  function addReaction(emoji: string, name: string) {
+    const id = newReactionId();
+    setReactions((r) => [...r, { id, emoji, name }]);
+    setTimeout(() => setReactions((r) => r.filter((x) => x.id !== id)), 3200);
+  }
+
+  async function react(emoji: string) {
+    addReaction(emoji, 'You');
+    try {
+      await sendReaction(new TextEncoder().encode(JSON.stringify({ emoji })), { reliable: false });
+    } catch {
+      // Ephemeral and best-effort -- a dropped reaction isn't worth surfacing an error for.
+    }
+  }
 
   const isHost = join.role === 'host';
   const screen = tracks.find((t) => t.source === Track.Source.ScreenShare && isTrackReference(t));
@@ -118,6 +147,15 @@ function ClassroomInner({
               <p>{isHost ? 'You are the only one here so far.' : 'Waiting for the instructor to appear…'}</p>
             </div>
           )}
+          {reactions.length > 0 ? (
+            <div className="classroom__reactions" aria-live="polite">
+              {reactions.map((r) => (
+                <span key={r.id} className="classroom__reaction" title={r.name}>
+                  {r.emoji}
+                </span>
+              ))}
+            </div>
+          ) : null}
         </section>
 
         {strip.length > 0 ? (
@@ -141,7 +179,7 @@ function ClassroomInner({
       {panel ? (
         <aside
           className="classroom-panel"
-          aria-label={panel === 'chat' ? 'Chat' : panel === 'people' ? 'People' : 'Whiteboard'}
+          aria-label={panel === 'chat' ? 'Chat' : panel === 'people' ? 'People' : panel === 'whiteboard' ? 'Whiteboard' : 'Resources'}
         >
           <div className="classroom-panel__tabs" role="tablist">
             <button
@@ -171,6 +209,15 @@ function ClassroomInner({
             >
               Whiteboard
             </button>
+            <button
+              type="button"
+              role="tab"
+              aria-selected={panel === 'resources'}
+              className={cn(panel === 'resources' && 'is-active')}
+              onClick={() => setPanel('resources')}
+            >
+              Resources
+            </button>
             <button type="button" className="classroom-panel__close" onClick={() => setPanel(null)}>
               Close
             </button>
@@ -179,13 +226,15 @@ function ClassroomInner({
             <ChatPanel />
           ) : panel === 'people' ? (
             <PeoplePanel liveClassId={join.liveClass.id} canModerate={isHost} />
-          ) : (
+          ) : panel === 'whiteboard' ? (
             <WhiteboardPanel join={join} />
+          ) : (
+            <ResourcesPanel join={join} />
           )}
         </aside>
       ) : null}
 
-      <Controls join={join} panel={panel} setPanel={setPanel} />
+      <Controls join={join} panel={panel} setPanel={setPanel} onReact={react} />
       <StartAudio label="Click to hear the class" className="classroom__start-audio" />
     </div>
   );
@@ -235,10 +284,12 @@ function Controls({
   join,
   panel,
   setPanel,
+  onReact,
 }: {
   join: LiveClassJoin;
-  panel: 'chat' | 'people' | 'whiteboard' | null;
-  setPanel: (p: 'chat' | 'people' | 'whiteboard' | null) => void;
+  panel: 'chat' | 'people' | 'whiteboard' | 'resources' | null;
+  setPanel: (p: 'chat' | 'people' | 'whiteboard' | 'resources' | null) => void;
+  onReact: (emoji: string) => void;
 }) {
   const room = useRoomContext();
   const participants = useParticipants();
@@ -251,6 +302,7 @@ function Controls({
   const [endError, setEndError] = useState<string>();
   const [handsOpen, setHandsOpen] = useState(false);
   const [raisingHand, setRaisingHand] = useState(false);
+  const [reactOpen, setReactOpen] = useState(false);
   const isHost = join.role === 'host';
   const canShare = isHost && typeof navigator.mediaDevices?.getDisplayMedia === 'function';
   const micLocked = isMicLocked(localParticipant);
@@ -377,6 +429,34 @@ function Controls({
         </span>
       ) : null}
 
+      <span className="controls__hands-wrap">
+        <button
+          type="button"
+          className={cn('controls__btn', reactOpen && 'is-on')}
+          aria-pressed={reactOpen}
+          onClick={() => setReactOpen((v) => !v)}
+        >
+          <span aria-hidden="true">🙂</span>
+          <span>React</span>
+        </button>
+        {reactOpen ? (
+          <div className="controls__reactions-menu" role="menu" aria-label="Send a reaction">
+            {REACTION_EMOJIS.map((emoji) => (
+              <button
+                key={emoji}
+                type="button"
+                onClick={() => {
+                  onReact(emoji);
+                  setReactOpen(false);
+                }}
+              >
+                {emoji}
+              </button>
+            ))}
+          </div>
+        ) : null}
+      </span>
+
       <span className="controls__divider" aria-hidden="true" />
 
       <button
@@ -405,6 +485,15 @@ function Controls({
       >
         <WhiteboardIcon />
         <span>Whiteboard</span>
+      </button>
+      <button
+        type="button"
+        className={cn('controls__btn', panel === 'resources' && 'is-on')}
+        aria-pressed={panel === 'resources'}
+        onClick={() => setPanel(panel === 'resources' ? null : 'resources')}
+      >
+        <PinIcon />
+        <span>Resources</span>
       </button>
 
       <span className="controls__divider" aria-hidden="true" />

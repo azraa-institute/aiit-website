@@ -68,6 +68,12 @@ export const WhiteboardIcon = () => (
   </Icon>
 );
 
+export const PinIcon = () => (
+  <Icon>
+    <path d="M12 2v6M8 8h8l1 4H7l1-4ZM9 12h6v4a3 3 0 0 1-6 0v-4ZM12 20v2" />
+  </Icon>
+);
+
 export const HandIcon = () => (
   <Icon>
     <path d="M9 12.5V5a1.5 1.5 0 0 1 3 0v6M12 11V4a1.5 1.5 0 0 1 3 0v7M15 11.5V6a1.5 1.5 0 0 1 3 0v8a7 7 0 0 1-7 7h-1a7 7 0 0 1-6.1-3.6L3 15.2a1.5 1.5 0 0 1 2.5-1.6L7 15.5" />

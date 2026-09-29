@@ -1,9 +1,9 @@
-import { Body, Controller, Get, HttpCode, Param, ParseUUIDPipe, Post, Put, UseGuards } from '@nestjs/common';
+import { Body, Controller, Delete, Get, HttpCode, Param, ParseUUIDPipe, Post, Put, UseGuards } from '@nestjs/common';
 import { Throttle } from '@nestjs/throttler';
-import type { LiveClassJoin, LiveClassSummary, LiveClassWhiteboard } from '@aiit/shared';
+import type { LiveClassJoin, LiveClassSummary, LiveClassWhiteboard, PinnedResource } from '@aiit/shared';
 import { JwtGuard, type AuthenticatedUser } from '../../common/guards/jwt.guard';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
-import { SaveWhiteboardDto } from './dto/live-class.dto';
+import { PinResourceDto, SaveWhiteboardDto } from './dto/live-class.dto';
 import { LiveClassesService } from './live-classes.service';
 
 /** Learner + instructor (+ admin-as-moderator) endpoints. Every route re-checks access in the service. */
@@ -77,5 +77,29 @@ export class LiveClassesController {
     @Body() body: SaveWhiteboardDto,
   ): Promise<void> {
     await this.liveClasses.saveWhiteboard(user, id, body.state);
+  }
+
+  /** Readable after the class ends too, so pinned links survive into the course workspace. */
+  @Get('live-classes/:id/resources')
+  resources(@CurrentUser() user: AuthenticatedUser, @Param('id', ParseUUIDPipe) id: string): Promise<PinnedResource[]> {
+    return this.liveClasses.listResources(user, id);
+  }
+
+  @Post('live-classes/:id/resources')
+  pinResource(
+    @CurrentUser() user: AuthenticatedUser,
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() dto: PinResourceDto,
+  ): Promise<PinnedResource[]> {
+    return this.liveClasses.pinResource(user, id, dto);
+  }
+
+  @Delete('live-classes/:id/resources/:resourceId')
+  unpinResource(
+    @CurrentUser() user: AuthenticatedUser,
+    @Param('id', ParseUUIDPipe) id: string,
+    @Param('resourceId') resourceId: string,
+  ): Promise<PinnedResource[]> {
+    return this.liveClasses.unpinResource(user, id, resourceId);
   }
 }

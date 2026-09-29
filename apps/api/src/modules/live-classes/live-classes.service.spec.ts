@@ -256,6 +256,62 @@ describe('LiveClassesService', () => {
     });
   });
 
+  describe('pinned resources', () => {
+    it('lets an enrolled learner read the pinned resources, defaulting to none saved yet', async () => {
+      prisma.liveClass.findUnique.mockResolvedValueOnce(classRow()).mockResolvedValueOnce({ pinnedResources: null });
+      prisma.enrollment.findUnique.mockResolvedValue({ status: 'active' });
+      const res = await service.listResources(learner, 'cls-1');
+      expect(res).toEqual([]);
+    });
+
+    it('only the host can pin, and only while the class is live', async () => {
+      prisma.liveClass.findUnique.mockResolvedValue(classRow());
+      await expect(
+        service.pinResource(learner, 'cls-1', { title: 'Slides', url: 'https://example.com/slides' }),
+      ).rejects.toBeInstanceOf(ForbiddenException);
+
+      prisma.liveClass.findUnique.mockResolvedValue(classRow({ status: 'ended' }));
+      await expect(
+        service.pinResource(instructor, 'cls-1', { title: 'Slides', url: 'https://example.com/slides' }),
+      ).rejects.toBeInstanceOf(ConflictException);
+    });
+
+    it('appends a resource with a generated id and timestamp, keeping any already pinned', async () => {
+      prisma.liveClass.findUnique.mockResolvedValueOnce(classRow()).mockResolvedValueOnce({
+        pinnedResources: [{ id: 'r1', title: 'Repo', url: 'https://example.com/repo', note: null, pinnedAt: '2026-10-01T10:00:00.000Z' }],
+      });
+
+      const res = await service.pinResource(instructor, 'cls-1', { title: 'Slides', url: 'https://example.com/slides', note: 'Chapter 4' });
+
+      expect(res).toHaveLength(2);
+      expect(res[1]).toMatchObject({ title: 'Slides', url: 'https://example.com/slides', note: 'Chapter 4' });
+      expect(prisma.liveClass.update).toHaveBeenCalledWith(expect.objectContaining({ data: { pinnedResources: res } }));
+    });
+
+    it('refuses to pin once at the cap', async () => {
+      const full = Array.from({ length: 20 }, (_, i) => ({ id: `r${i}`, title: `R${i}`, url: 'https://example.com', note: null, pinnedAt: '2026-10-01T10:00:00.000Z' }));
+      prisma.liveClass.findUnique.mockResolvedValueOnce(classRow()).mockResolvedValueOnce({ pinnedResources: full });
+      await expect(service.pinResource(instructor, 'cls-1', { title: 'One more', url: 'https://example.com' })).rejects.toBeInstanceOf(
+        BadRequestException,
+      );
+      expect(prisma.liveClass.update).not.toHaveBeenCalled();
+    });
+
+    it('unpins by id, and only the host may', async () => {
+      prisma.liveClass.findUnique.mockResolvedValueOnce(classRow()).mockResolvedValueOnce({
+        pinnedResources: [
+          { id: 'r1', title: 'Repo', url: 'https://example.com/repo', note: null, pinnedAt: '2026-10-01T10:00:00.000Z' },
+          { id: 'r2', title: 'Slides', url: 'https://example.com/slides', note: null, pinnedAt: '2026-10-01T10:05:00.000Z' },
+        ],
+      });
+      const res = await service.unpinResource(instructor, 'cls-1', 'r1');
+      expect(res.map((r) => r.id)).toEqual(['r2']);
+
+      prisma.liveClass.findUnique.mockResolvedValue(classRow());
+      await expect(service.unpinResource(learner, 'cls-1', 'r2')).rejects.toBeInstanceOf(ForbiddenException);
+    });
+  });
+
   describe('timetable listing', () => {
     it('scopes a learner to the courses they are enrolled in (not cancelled)', async () => {
       prisma.enrollment.findMany.mockResolvedValue([{ courseId: 'crs-1' }]);

@@ -86,3 +86,12 @@ export interface AttendanceReportRow {
   enrolled: number;
   attended: number;
 }
+
+export interface AdminContactMessage {
+  id: string;
+  name: string;
+  email: string;
+  topic: string;
+  message: string;
+  createdAt: string;
+}

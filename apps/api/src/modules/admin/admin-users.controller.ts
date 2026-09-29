@@ -83,6 +83,12 @@ export class AdminUsersController {
 
   @Get('audit-log')
   auditLog(@Query() query: ListAuditQueryDto): Promise<Paginated<AuditLogEntry>> {
-    return this.admin.auditLog(query.page);
+    return this.admin.auditLog(query);
+  }
+
+  /** Distinct action names seen so far, for the audit log's filter dropdown. */
+  @Get('audit-actions')
+  auditActions(): Promise<string[]> {
+    return this.admin.auditActions();
   }
 }

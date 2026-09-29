@@ -4,6 +4,7 @@ import { Seo } from '@/lib/Seo';
 import { cn } from '@/lib/cn';
 import { useAuth } from '@/lib/AuthContext';
 import { useMe } from '@/lib/me';
+import { useSessionHeartbeat } from '@/lib/useSessionHeartbeat';
 import { Logo } from '@/components/layout/Logo';
 import './staff-shell.css';
 
@@ -33,6 +34,7 @@ export function StaffShell({
   const { signOut, session } = useAuth();
   const me = useMe();
   const [open, setOpen] = useState(false);
+  useSessionHeartbeat();
 
   // Close the drawer whenever the route changes.
   useEffect(() => setOpen(false), [location.pathname]);

@@ -22,14 +22,30 @@ import { MfaChallenge } from './MfaChallenge';
 export default function StaffLoginPage() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const suspended = searchParams.get('reason') === 'suspended';
+  const suspendedRedirect = searchParams.get('reason') === 'suspended';
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string>();
   const [submitting, setSubmitting] = useState(false);
   const [mfaPending, setMfaPending] = useState(false);
+  // Set when a fresh sign-in attempt itself reveals the account is suspended
+  // -- see LoginPage.tsx's checkSuspended for why this asks our own backend
+  // rather than trusting Supabase's sign-in error text.
+  const [suspendedNow, setSuspendedNow] = useState(false);
+  const suspended = suspendedRedirect || suspendedNow;
 
   const canSubmit = /.+@.+\..+/.test(email) && password.length > 0 && !submitting;
+
+  async function checkSuspended(candidateEmail: string): Promise<boolean> {
+    try {
+      const { status } = await apiFetch<{ status: 'active' | 'suspended' | 'not_found' }>(
+        `/auth/account-status?email=${encodeURIComponent(candidateEmail)}`,
+      );
+      return status === 'suspended';
+    } catch {
+      return false;
+    }
+  }
 
   async function finishSignIn() {
     invalidateMe();
@@ -60,16 +76,18 @@ export default function StaffLoginPage() {
       return;
     }
     setError(undefined);
+    setSuspendedNow(false);
     setSubmitting(true);
     const { error: signInError } = await supabase.auth.signInWithPassword({ email: email.trim(), password });
     if (signInError) {
+      if (signInError.message.toLowerCase().includes('banned') || (await checkSuspended(email))) {
+        setSubmitting(false);
+        setSuspendedNow(true);
+        return;
+      }
       setSubmitting(false);
       // Deliberately generic -- never reveal whether the email exists.
-      setError(
-        signInError.message.toLowerCase().includes('banned')
-          ? 'This account has been suspended. Contact the AIIT administrator.'
-          : 'That email and password do not match.',
-      );
+      setError('That email and password do not match.');
       return;
     }
     if (await needsMfaChallenge()) {
@@ -102,7 +120,8 @@ export default function StaffLoginPage() {
           <form className="auth__form" onSubmit={onSubmit} noValidate>
             {suspended && !error ? (
               <p className="auth__alert" role="alert">
-                Your account has been suspended. Contact the AIIT administrator.
+                Your account has been suspended. If you think this is a mistake, please{' '}
+                <Link to="/contact">contact the AIIT team</Link>.
               </p>
             ) : null}
             {error ? (

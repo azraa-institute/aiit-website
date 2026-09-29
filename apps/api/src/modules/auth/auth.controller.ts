@@ -23,4 +23,11 @@ export class AuthController {
   async emailExists(@Query() query: EmailExistsQueryDto): Promise<{ exists: boolean }> {
     return { exists: await this.profiles.emailExists(query.email) };
   }
+
+  /** Public -- backs the sign-in pages' clear "account suspended" message; see ProfileService.accountStatus. */
+  @Get('account-status')
+  @Throttle({ default: { limit: 5, ttl: 60_000 } })
+  async accountStatus(@Query() query: EmailExistsQueryDto): Promise<{ status: 'active' | 'suspended' | 'not_found' }> {
+    return { status: await this.profiles.accountStatus(query.email) };
+  }
 }

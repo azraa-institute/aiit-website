@@ -7,15 +7,18 @@ import { AdminSupportController } from './admin-support.controller';
 import { AdminComplaintsService } from './admin-complaints.service';
 import { AdminAnnouncementsService } from './admin-announcements.service';
 import { AdminReportsService } from './admin-reports.service';
+import { AdminMessagesController } from './admin-messages.controller';
+import { AdminMessagesService } from './admin-messages.service';
 
 @Module({
-  controllers: [AdminUsersController, AdminCoursesController, AdminSupportController],
+  controllers: [AdminUsersController, AdminCoursesController, AdminSupportController, AdminMessagesController],
   providers: [
     AdminUsersService,
     AdminCoursesService,
     AdminComplaintsService,
     AdminAnnouncementsService,
     AdminReportsService,
+    AdminMessagesService,
   ],
 })
 export class AdminModule {}

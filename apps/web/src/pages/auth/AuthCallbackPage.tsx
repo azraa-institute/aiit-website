@@ -60,7 +60,18 @@ export default function AuthCallbackPage() {
       handled.current = true;
       supabase.auth.exchangeCodeForSession(window.location.href).then(({ error }) => {
         if (error) {
-          navigate('/login', { replace: true, state: { authError: error.message } });
+          // Supabase's own wording here doesn't reliably say so, but a
+          // suspended account is one real reason this can fail -- we have no
+          // session at all at this point (the exchange itself is what
+          // failed), so there's no account to check against; be honest that
+          // it's one of a few possible causes rather than guessing wrong.
+          navigate('/login', {
+            replace: true,
+            state: {
+              authError: `${error.message} This can also happen if your account has been suspended.`,
+              authErrorContact: true,
+            },
+          });
           return;
         }
         void landOrChallenge();
@@ -75,7 +86,11 @@ export default function AuthCallbackPage() {
       handled.current = true;
       navigate('/login', {
         replace: true,
-        state: { authError: 'That sign-in link is invalid or has expired.' },
+        state: {
+          authError:
+            'That sign-in link is invalid or has expired. This can happen if the link was already used or has expired, or if your account has been suspended.',
+          authErrorContact: true,
+        },
       });
     }
   }, [status, navigate]);

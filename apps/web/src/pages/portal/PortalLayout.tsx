@@ -8,6 +8,7 @@ import { Logo } from '@/components/layout/Logo';
 import { Toast } from '@/components/common/Toast';
 import { Avatar } from '@/components/common/Avatar';
 import { apiFetch } from '@/lib/api';
+import { useSessionHeartbeat } from '@/lib/useSessionHeartbeat';
 import { ProfileCompletionWizard } from './ProfileCompletionWizard';
 import { ProfileCompletionBanner } from './ProfileCompletionBanner';
 import { GuidedTour } from './GuidedTour';
@@ -61,6 +62,7 @@ export default function PortalLayout() {
   const location = useLocation();
   const { signOut } = useAuth();
   const learnerState = useLearner();
+  useSessionHeartbeat();
   const [menuOpen, setMenuOpen] = useState(false);
   const [showWelcome, setShowWelcome] = useState(false);
   const [profileMenuOpen, setProfileMenuOpen] = useState(false);
@@ -332,7 +334,7 @@ export default function PortalLayout() {
                     onClick={() => setProfileMenuOpen(false)}
                   >
                     View profile
-                  </Link>
+                  </Link>
                   <button
                     type="button"
                     role="menuitem"

@@ -1,4 +1,5 @@
 import { BadRequestException, ConflictException, ForbiddenException, NotFoundException } from '@nestjs/common';
+import { Prisma } from '@prisma/client';
 import { AdminUsersService } from './admin-users.service';
 import { generateTemporaryPassword } from '../../common/supabase-admin/supabase-admin.service';
 
@@ -11,6 +12,7 @@ describe('AdminUsersService', () => {
   let prisma: {
     profile: { findUnique: jest.Mock; findFirst: jest.Mock; findMany: jest.Mock; update: jest.Mock; upsert: jest.Mock };
     liveClass: { count: jest.Mock; groupBy: jest.Mock };
+    auditLog: { findMany: jest.Mock };
     $queryRaw: jest.Mock;
   };
   let supabase: { createUser: jest.Mock; setPassword: jest.Mock; tryBan: jest.Mock };
@@ -26,6 +28,7 @@ describe('AdminUsersService', () => {
         upsert: jest.fn(),
       },
       liveClass: { count: jest.fn().mockResolvedValue(0), groupBy: jest.fn().mockResolvedValue([]) },
+      auditLog: { findMany: jest.fn().mockResolvedValue([]) },
       $queryRaw: jest.fn().mockResolvedValue([]),
     };
     supabase = { createUser: jest.fn(), setPassword: jest.fn(), tryBan: jest.fn() };
@@ -130,6 +133,58 @@ describe('AdminUsersService', () => {
     prisma.profile.findFirst.mockResolvedValue(null);
     await expect(service.resetInstructorPassword(ADMIN, STUDENT)).rejects.toBeInstanceOf(NotFoundException);
     expect(supabase.setPassword).not.toHaveBeenCalled();
+  });
+
+  describe('auditLog', () => {
+    it('queries with no WHERE clause when no filters are given', async () => {
+      prisma.$queryRaw.mockResolvedValueOnce([]).mockResolvedValueOnce([{ total: 0 }]);
+      const res = await service.auditLog({});
+      expect(res).toEqual({ items: [], total: 0, page: 1, pageSize: 50 });
+      // The tagged-template call's first substitution is the WHERE fragment -- Prisma.empty when unfiltered.
+      expect(prisma.$queryRaw.mock.calls[0][1]).toBe(Prisma.empty);
+    });
+
+    it('maps rows including a free-text match and paginates from the total', async () => {
+      prisma.$queryRaw
+        .mockResolvedValueOnce([
+          {
+            id: 'a1',
+            actor_id: ADMIN,
+            actor_name: 'Grace Okoro',
+            action: 'user.suspend',
+            target_type: 'user',
+            target_id: STUDENT,
+            metadata: { reason: 'Repeated abuse' },
+            created_at: new Date('2026-09-29T10:00:00Z'),
+          },
+        ])
+        .mockResolvedValueOnce([{ total: 1 }]);
+
+      const res = await service.auditLog({ q: 'abuse', page: 1 });
+
+      expect(res.items).toEqual([
+        {
+          id: 'a1',
+          actorId: ADMIN,
+          actorName: 'Grace Okoro',
+          action: 'user.suspend',
+          targetType: 'user',
+          targetId: STUDENT,
+          metadata: { reason: 'Repeated abuse' },
+          createdAt: '2026-09-29T10:00:00.000Z',
+        },
+      ]);
+      expect(res.total).toBe(1);
+      expect(prisma.$queryRaw.mock.calls[0][1]).not.toBe(Prisma.empty);
+    });
+  });
+
+  it('lists the distinct action names for the filter dropdown', async () => {
+    prisma.auditLog.findMany.mockResolvedValue([{ action: 'user.suspend' }, { action: 'user.reactivate' }]);
+    await expect(service.auditActions()).resolves.toEqual(['user.suspend', 'user.reactivate']);
+    expect(prisma.auditLog.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({ distinct: ['action'] }),
+    );
   });
 
   it('generates readable temporary passwords with upper, lower and a digit', () => {

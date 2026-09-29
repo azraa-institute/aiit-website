@@ -386,6 +386,25 @@ describe('ProfileService', () => {
     });
   });
 
+  describe('accountStatus', () => {
+    it('reports suspended for a suspended account', async () => {
+      prisma.$queryRaw.mockResolvedValueOnce([{ status: 'suspended' }]);
+      await expect(service.accountStatus('ada@example.com')).resolves.toBe('suspended');
+    });
+
+    it('reports active for any other real status', async () => {
+      prisma.$queryRaw.mockResolvedValueOnce([{ status: 'active' }]);
+      await expect(service.accountStatus('ada@example.com')).resolves.toBe('active');
+      prisma.$queryRaw.mockResolvedValueOnce([{ status: 'pending_deletion' }]);
+      await expect(service.accountStatus('ada@example.com')).resolves.toBe('active');
+    });
+
+    it('reports not_found when no account matches that email', async () => {
+      prisma.$queryRaw.mockResolvedValueOnce([]);
+      await expect(service.accountStatus('nobody@example.com')).resolves.toBe('not_found');
+    });
+  });
+
   // notifyPasswordChanged and notify2faEnabled tests removed along with
   // the methods themselves -- see the comment in profile.service.ts.
 });

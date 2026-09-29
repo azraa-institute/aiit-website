@@ -7,7 +7,7 @@ import './auth.css';
 
 interface AuthLayoutProps {
   title: string;
-  intro: string;
+  intro: ReactNode;
   children: ReactNode;
   footer: ReactNode;
   /** Optional provider button(s), e.g. <GoogleAuthButton />. Renders below a divider. */

@@ -299,6 +299,24 @@ export class ProfileService {
     `;
     return rows[0]?.exists ?? false;
   }
+
+  /**
+   * Backs the sign-in pages' "your account has been suspended" message. A
+   * banned Supabase account never reaches our own JwtGuard (Supabase refuses
+   * to issue it a session at all), so that check can only run here, keyed by
+   * the email the person just typed -- not by a session we don't have yet.
+   * Same throttled, narrow-enumeration posture as emailExists() above.
+   */
+  async accountStatus(email: string): Promise<'active' | 'suspended' | 'not_found'> {
+    const rows = await this.prisma.$queryRaw<{ status: string | null }[]>`
+      SELECT p.status FROM auth.users u
+      JOIN public.profiles p ON p.id = u.id
+      WHERE lower(u.email) = lower(${email})
+    `;
+    const status = rows[0]?.status;
+    if (!status) return 'not_found';
+    return status === 'suspended' ? 'suspended' : 'active';
+  }
 }
 
 function toMe(profile: Profile, isNewSignup: boolean): Me {

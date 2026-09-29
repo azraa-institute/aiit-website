@@ -22,6 +22,16 @@ import { SupabaseAdminService, generateTemporaryPassword } from '../../common/su
 import type { CreateInstructorDto, ListStudentsQueryDto } from './dto/admin.dto';
 
 const DAY = 86_400_000;
+
+export interface AuditLogQuery {
+  q?: string;
+  action?: string;
+  targetType?: string;
+  /** YYYY-MM-DD, inclusive. */
+  from?: string;
+  to?: string;
+  page?: number;
+}
 const AUDIT_PAGE_SIZE = 50;
 
 interface StudentRow {
@@ -236,35 +246,79 @@ export class AdminUsersService {
 
   // ---- Audit log ----
 
-  async auditLog(page = 1): Promise<Paginated<AuditLogEntry>> {
-    const [rows, total] = await Promise.all([
-      this.prisma.auditLog.findMany({
-        orderBy: { createdAt: 'desc' },
-        skip: (page - 1) * AUDIT_PAGE_SIZE,
-        take: AUDIT_PAGE_SIZE,
-      }),
-      this.prisma.auditLog.count(),
+  /**
+   * `q` searches the actor's name/email, the target id, and the metadata
+   * JSON as text (e.g. a reason, a course title, an email address) -- so an
+   * admin who only half-remembers what happened ("something about Ada last
+   * month") can still find the entry without knowing the exact action name.
+   */
+  async auditLog(query: AuditLogQuery = {}): Promise<Paginated<AuditLogEntry>> {
+    const page = query.page ?? 1;
+    const conditions: Prisma.Sql[] = [];
+    if (query.action) conditions.push(Prisma.sql`a.action = ${query.action}`);
+    if (query.targetType) conditions.push(Prisma.sql`a.target_type = ${query.targetType}`);
+    if (query.from) conditions.push(Prisma.sql`a.created_at >= ${new Date(query.from)}`);
+    if (query.to) conditions.push(Prisma.sql`a.created_at < ${new Date(new Date(query.to).getTime() + 86_400_000)}`);
+    if (query.q?.trim()) {
+      const like = `%${query.q.trim().replace(/[%_\\]/g, '\\$&')}%`;
+      conditions.push(Prisma.sql`(
+        p.name ILIKE ${like}
+        OR u.email ILIKE ${like}
+        OR a.target_id ILIKE ${like}
+        OR a.metadata::text ILIKE ${like}
+      )`);
+    }
+    const where = conditions.length > 0 ? Prisma.sql`WHERE ${Prisma.join(conditions, ' AND ')}` : Prisma.empty;
+
+    const [rows, totals] = await Promise.all([
+      this.prisma.$queryRaw<
+        {
+          id: string;
+          actor_id: string;
+          actor_name: string | null;
+          action: string;
+          target_type: string;
+          target_id: string | null;
+          metadata: Prisma.JsonValue;
+          created_at: Date;
+        }[]
+      >`
+        SELECT a.id, a.actor_id, p.name AS actor_name, a.action, a.target_type, a.target_id, a.metadata, a.created_at
+        FROM audit_logs a
+        LEFT JOIN profiles p ON p.id = a.actor_id
+        LEFT JOIN auth.users u ON u.id = a.actor_id
+        ${where}
+        ORDER BY a.created_at DESC
+        LIMIT ${AUDIT_PAGE_SIZE} OFFSET ${(page - 1) * AUDIT_PAGE_SIZE}`,
+      this.prisma.$queryRaw<{ total: number }[]>`
+        SELECT count(*)::int AS total
+        FROM audit_logs a
+        LEFT JOIN profiles p ON p.id = a.actor_id
+        LEFT JOIN auth.users u ON u.id = a.actor_id
+        ${where}`,
     ]);
-    const actors = await this.prisma.profile.findMany({
-      where: { id: { in: [...new Set(rows.map((r) => r.actorId))] } },
-      select: { id: true, name: true },
-    });
-    const names = new Map(actors.map((a) => [a.id, a.name]));
+
     return {
       items: rows.map((r) => ({
         id: r.id,
-        actorId: r.actorId,
-        actorName: names.get(r.actorId) ?? null,
+        actorId: r.actor_id,
+        actorName: r.actor_name,
         action: r.action,
-        targetType: r.targetType,
-        targetId: r.targetId,
+        targetType: r.target_type,
+        targetId: r.target_id,
         metadata: r.metadata as Record<string, unknown>,
-        createdAt: r.createdAt.toISOString(),
+        createdAt: r.created_at.toISOString(),
       })),
-      total,
+      total: totals[0]?.total ?? 0,
       page,
       pageSize: AUDIT_PAGE_SIZE,
     };
+  }
+
+  /** The distinct action names seen so far, for the audit log's filter dropdown. */
+  async auditActions(): Promise<string[]> {
+    const rows = await this.prisma.auditLog.findMany({ distinct: ['action'], select: { action: true }, orderBy: { action: 'asc' } });
+    return rows.map((r) => r.action);
   }
 
   // ---- helpers ----

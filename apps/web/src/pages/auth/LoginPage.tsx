@@ -15,6 +15,8 @@ import { MfaChallenge } from './MfaChallenge';
 interface LocationState {
   from?: { pathname: string };
   authError?: string;
+  /** Set by AuthCallbackPage for a failure that could genuinely be a suspended account -- shows a Contact link under the error. */
+  authErrorContact?: boolean;
 }
 
 type Mode = 'password' | 'magic-link';
@@ -30,8 +32,15 @@ export default function LoginPage() {
   // only carry this via the URL, not location.state like authError below.
   const [searchParams] = useSearchParams();
   const deleted = searchParams.get('reason') === 'deleted';
-  const suspended = searchParams.get('reason') === 'suspended';
+  const suspendedRedirect = searchParams.get('reason') === 'suspended';
   const [staffAccount, setStaffAccount] = useState(false);
+  // Set when a fresh sign-in attempt itself reveals the account is suspended
+  // (Supabase refuses to issue a banned account a session at all, so this
+  // can only be found by asking our own backend, not from Supabase's error
+  // text -- see checkSuspended below). suspendedRedirect above covers the
+  // other case: being signed in already and then getting suspended.
+  const [suspendedNow, setSuspendedNow] = useState(false);
+  const suspended = suspendedRedirect || suspendedNow;
   const [mode, setMode] = useState<Mode>('password');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -54,6 +63,27 @@ export default function LoginPage() {
     setEmailTouched(true);
   }
 
+  /**
+   * A banned Supabase account never gets a session -- Supabase refuses at
+   * sign-in time, before our own JwtGuard ever runs -- so its error text is
+   * all we'd otherwise have to go on, and that text doesn't reliably say
+   * "suspended" (it can read as a generic invalid-credentials/expired-link
+   * message instead). Asking our own backend, keyed by the email just
+   * typed, gives a definite answer instead of guessing from Supabase's
+   * wording. Never throws -- a failed check just means the original,
+   * Supabase-supplied message is shown instead.
+   */
+  async function checkSuspended(candidateEmail: string): Promise<boolean> {
+    try {
+      const { status } = await apiFetch<{ status: 'active' | 'suspended' | 'not_found' }>(
+        `/auth/account-status?email=${encodeURIComponent(candidateEmail)}`,
+      );
+      return status === 'suspended';
+    } catch {
+      return false;
+    }
+  }
+
   async function onSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
     setEmailTouched(true);
@@ -66,6 +96,7 @@ export default function LoginPage() {
 
     if (mode === 'magic-link') {
       setError(undefined);
+      setSuspendedNow(false);
       setSubmitting(true);
       const { error: otpError } = await supabase.auth.signInWithOtp({
         email,
@@ -75,9 +106,14 @@ export default function LoginPage() {
         // collection and terms acceptance entirely.
         options: { emailRedirectTo: `${window.location.origin}/auth/callback`, shouldCreateUser: false },
       });
-      setSubmitting(false);
 
       if (otpError) {
+        if (await checkSuspended(email)) {
+          setSubmitting(false);
+          setSuspendedNow(true);
+          return;
+        }
+        setSubmitting(false);
         setError(
           otpError.message.toLowerCase().includes('signups not allowed')
             ? "We couldn't find an AIIT account for that email. Check the address, or create an account instead."
@@ -85,15 +121,22 @@ export default function LoginPage() {
         );
         return;
       }
+      setSubmitting(false);
       setMagicLinkSent(true);
       return;
     }
 
     setError(undefined);
+    setSuspendedNow(false);
     setSubmitting(true);
     const { error: signInError } = await supabase.auth.signInWithPassword({ email, password });
 
     if (signInError) {
+      if (await checkSuspended(email)) {
+        setSubmitting(false);
+        setSuspendedNow(true);
+        return;
+      }
       setSubmitting(false);
       setError(
         signInError.message.toLowerCase().includes('confirm')
@@ -160,6 +203,7 @@ export default function LoginPage() {
 
   function toggleMode() {
     setError(undefined);
+    setSuspendedNow(false);
     setMagicLinkSent(false);
     setMode((m) => (m === 'password' ? 'magic-link' : 'password'));
   }
@@ -175,7 +219,12 @@ export default function LoginPage() {
             : deleted
               ? "Your AIIT account has been deleted. You're welcome to create a new one any time."
               : suspended
-                ? 'Your account has been suspended. If you think this is a mistake, please contact the AIIT team.'
+                ? (
+                    <>
+                      Your account has been suspended. If you think this is a mistake, please{' '}
+                      <Link to="/contact">contact the AIIT team</Link>.
+                    </>
+                  )
                 : 'Sign in to continue your courses, track progress and access your certificates.'
         }
         social={
@@ -212,6 +261,11 @@ export default function LoginPage() {
                   />
                 </svg>
                 {error}
+              </p>
+            )}
+            {error && state?.authErrorContact && (
+              <p className="auth__aux">
+                <Link to="/contact">Contact the AIIT team</Link>
               </p>
             )}
             {staffAccount && (

@@ -147,7 +147,7 @@ export class JwtGuard implements CanActivate {
     try {
       const rows = await this.prisma.$queryRaw<{ has_verified_factor: boolean }[]>`
         SELECT EXISTS(
-          SELECT 1 FROM auth.mfa_factors WHERE user_id = ${userId} AND status = 'verified'
+          SELECT 1 FROM auth.mfa_factors WHERE user_id = ${userId}::uuid AND status = 'verified'
         ) AS has_verified_factor
       `;
       return rows[0]?.has_verified_factor ?? false;

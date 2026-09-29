@@ -652,6 +652,8 @@ model LiveClass {
   whiteboardState  Json?                 @map("whiteboard_state")
   /// Links/notes the host pinned during class (PinnedResource[]). Null until first use.
   pinnedResources  Json?                 @map("pinned_resources")
+  /// The current quick-check poll (question + options + raw votes), replaced wholesale by the next one -- no history kept.
+  activePoll       Json?                 @map("active_poll")
   attendance       LiveClassAttendance[]
   createdAt        DateTime              @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt        DateTime              @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)

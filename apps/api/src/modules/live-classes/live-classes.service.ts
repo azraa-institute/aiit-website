@@ -1,12 +1,23 @@
 import { randomUUID } from 'crypto';
 import { BadRequestException, ConflictException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
 import type { Prisma } from '@prisma/client';
-import type { LiveClassJoin, LiveClassRole, LiveClassSummary, LiveClassWhiteboard, PinnedResource } from '@aiit/shared';
+import type { LiveClassJoin, LiveClassPoll, LiveClassRole, LiveClassSummary, LiveClassWhiteboard, PinnedResource } from '@aiit/shared';
 import { PrismaService } from '../../common/prisma/prisma.service';
 import type { AuthenticatedUser } from '../../common/guards/jwt.guard';
 import { computeJoinState, joinOpensAt } from './live-class-state';
 import { LiveKitService } from './livekit.service';
-import type { PinResourceDto } from './dto/live-class.dto';
+import type { CreatePollDto, PinResourceDto } from './dto/live-class.dto';
+
+/** The full stored shape, including raw votes -- never sent to a client as-is, see toPollView(). */
+interface RawPoll {
+  id: string;
+  question: string;
+  options: { id: string; text: string }[];
+  votes: Record<string, string>;
+  status: 'open' | 'closed';
+  createdAt: string;
+  closedAt: string | null;
+}
 
 export const CLASS_SELECT = {
   id: true,
@@ -223,6 +234,92 @@ export class LiveClassesService {
     const row = await this.prisma.liveClass.findUnique({ where: { id }, select: { pinnedResources: true } });
     const value = row?.pinnedResources;
     return Array.isArray(value) ? (value as unknown as PinnedResource[]) : [];
+  }
+
+  /** Null when no poll has been run yet, or the current one still needs the client to know their own role's view of it. */
+  async getPoll(user: AuthenticatedUser, id: string): Promise<LiveClassPoll | null> {
+    const cls = await this.getClass(id);
+    const role = await this.assertEnrolledOrHost(user, cls);
+    const poll = await this.currentPoll(id);
+    return poll ? this.toPollView(poll, role === 'host', user.userId) : null;
+  }
+
+  /** Starting a new poll replaces the current one -- there is no poll history, only "the current one". */
+  async createPoll(user: AuthenticatedUser, id: string, dto: CreatePollDto): Promise<LiveClassPoll> {
+    const cls = await this.getClass(id);
+    if (this.roleFor(user, cls) !== 'host') throw new ForbiddenException('Only the instructor can start a poll.');
+    if (cls.status !== 'live') throw new ConflictException('This class is not live.');
+    const poll: RawPoll = {
+      id: randomUUID(),
+      question: dto.question.trim(),
+      options: dto.options.map((text) => ({ id: randomUUID(), text: text.trim() })),
+      votes: {},
+      status: 'open',
+      createdAt: new Date().toISOString(),
+      closedAt: null,
+    };
+    await this.savePoll(id, poll);
+    return this.toPollView(poll, true, user.userId);
+  }
+
+  /** Votes are keyed by user id, so a second vote replaces the caller's first rather than adding another. */
+  async votePoll(user: AuthenticatedUser, id: string, optionId: string): Promise<LiveClassPoll> {
+    const cls = await this.getClass(id);
+    const role = await this.assertEnrolledOrHost(user, cls);
+    if (cls.status !== 'live') throw new ConflictException('This class is not live.');
+    const poll = await this.currentPoll(id);
+    if (!poll) throw new NotFoundException('There is no active poll.');
+    if (poll.status !== 'open') throw new ConflictException('This poll is closed.');
+    if (!poll.options.some((o) => o.id === optionId)) throw new BadRequestException('That is not one of the poll options.');
+    poll.votes[user.userId] = optionId;
+    await this.savePoll(id, poll);
+    return this.toPollView(poll, role === 'host', user.userId);
+  }
+
+  /** Closing reveals results to everyone, not just the host. */
+  async closePoll(user: AuthenticatedUser, id: string): Promise<LiveClassPoll> {
+    const cls = await this.getClass(id);
+    if (this.roleFor(user, cls) !== 'host') throw new ForbiddenException('Only the instructor can close the poll.');
+    const poll = await this.currentPoll(id);
+    if (!poll) throw new NotFoundException('There is no active poll.');
+    poll.status = 'closed';
+    poll.closedAt = new Date().toISOString();
+    await this.savePoll(id, poll);
+    return this.toPollView(poll, true, user.userId);
+  }
+
+  private async currentPoll(id: string): Promise<RawPoll | null> {
+    const row = await this.prisma.liveClass.findUnique({ where: { id }, select: { activePoll: true } });
+    const value = row?.activePoll;
+    return value && typeof value === 'object' ? (value as unknown as RawPoll) : null;
+  }
+
+  private async savePoll(id: string, poll: RawPoll): Promise<void> {
+    await this.prisma.liveClass.update({ where: { id }, data: { activePoll: poll as unknown as Prisma.InputJsonValue } });
+  }
+
+  /** Raw votes never leave this function -- only a per-option tally, and only the caller's own vote. */
+  private toPollView(poll: RawPoll, showResults: boolean, userId: string): LiveClassPoll {
+    const reveal = showResults || poll.status === 'closed';
+    return {
+      id: poll.id,
+      question: poll.question,
+      options: poll.options,
+      status: poll.status,
+      createdAt: poll.createdAt,
+      closedAt: poll.closedAt,
+      results: reveal ? this.tally(poll) : null,
+      myVote: poll.votes[userId] ?? null,
+    };
+  }
+
+  private tally(poll: RawPoll): Record<string, number> {
+    const counts: Record<string, number> = {};
+    for (const o of poll.options) counts[o.id] = 0;
+    for (const optionId of Object.values(poll.votes)) {
+      if (counts[optionId] !== undefined) counts[optionId] += 1;
+    }
+    return counts;
   }
 
   // ---- LiveKit webhook -> attendance ----

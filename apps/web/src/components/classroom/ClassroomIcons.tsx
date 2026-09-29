@@ -68,6 +68,12 @@ export const WhiteboardIcon = () => (
   </Icon>
 );
 
+export const PollIcon = () => (
+  <Icon>
+    <path d="M5 20V10M12 20V4M19 20v-7" />
+  </Icon>
+);
+
 export const PinIcon = () => (
   <Icon>
     <path d="M12 2v6M8 8h8l1 4H7l1-4ZM9 12h6v4a3 3 0 0 1-6 0v-4ZM12 20v2" />

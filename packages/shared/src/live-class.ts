@@ -60,6 +60,28 @@ export interface PinnedResource {
   pinnedAt: string;
 }
 
+/**
+ * The host's current quick-check poll. Raw votes are never sent to the
+ * client -- `results` is a server-computed tally (visible to the host while
+ * open, to everyone once closed) and `myVote` is only the caller's own
+ * choice, so a student never sees how anyone else voted.
+ */
+export interface PollOption {
+  id: string;
+  text: string;
+}
+
+export interface LiveClassPoll {
+  id: string;
+  question: string;
+  options: PollOption[];
+  status: 'open' | 'closed';
+  createdAt: string;
+  closedAt: string | null;
+  results: Record<string, number> | null;
+  myVote: string | null;
+}
+
 // ---- Admin ----
 
 export interface TimetableSlot {

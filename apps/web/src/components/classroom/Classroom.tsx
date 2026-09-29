@@ -20,10 +20,11 @@ import { ConnectionState, DisconnectReason, Track } from 'livekit-client';
 import type { LiveClassJoin } from '@aiit/shared';
 import { apiFetch } from '@/lib/api';
 import { cn } from '@/lib/cn';
-import { CameraIcon, ChatIcon, HandIcon, LeaveIcon, MicIcon, PeopleIcon, PinIcon, ShareIcon, WhiteboardIcon } from './ClassroomIcons';
+import { CameraIcon, ChatIcon, HandIcon, LeaveIcon, MicIcon, PeopleIcon, PinIcon, PollIcon, ShareIcon, WhiteboardIcon } from './ClassroomIcons';
 import { ChatPanel, isMicLocked, PeoplePanel } from './ClassroomPanel';
 import { HAND_RAISED_ATTR, handRaisedAtMs, isHandRaised, useIsHandRaised } from './handRaise';
 import { displayName, participantRole } from './participant';
+import { PollPanel } from './PollPanel';
 import { newReactionId, REACTION_EMOJIS, type FloatingReaction } from './reactions';
 import { ResourcesPanel } from './ResourcesPanel';
 import { WhiteboardPanel } from './Whiteboard';
@@ -78,7 +79,7 @@ function ClassroomInner({
     ],
     { onlySubscribed: false },
   );
-  const [panel, setPanel] = useState<'chat' | 'people' | 'whiteboard' | 'resources' | null>(null);
+  const [panel, setPanel] = useState<'chat' | 'people' | 'whiteboard' | 'resources' | 'poll' | null>(null);
   const [reactions, setReactions] = useState<FloatingReaction[]>([]);
 
   const { send: sendReaction } = useDataChannel('reaction', (msg) => {
@@ -179,7 +180,17 @@ function ClassroomInner({
       {panel ? (
         <aside
           className="classroom-panel"
-          aria-label={panel === 'chat' ? 'Chat' : panel === 'people' ? 'People' : panel === 'whiteboard' ? 'Whiteboard' : 'Resources'}
+          aria-label={
+            panel === 'chat'
+              ? 'Chat'
+              : panel === 'people'
+                ? 'People'
+                : panel === 'whiteboard'
+                  ? 'Whiteboard'
+                  : panel === 'resources'
+                    ? 'Resources'
+                    : 'Poll'
+          }
         >
           <div className="classroom-panel__tabs" role="tablist">
             <button
@@ -218,6 +229,15 @@ function ClassroomInner({
             >
               Resources
             </button>
+            <button
+              type="button"
+              role="tab"
+              aria-selected={panel === 'poll'}
+              className={cn(panel === 'poll' && 'is-active')}
+              onClick={() => setPanel('poll')}
+            >
+              Poll
+            </button>
             <button type="button" className="classroom-panel__close" onClick={() => setPanel(null)}>
               Close
             </button>
@@ -228,8 +248,10 @@ function ClassroomInner({
             <PeoplePanel liveClassId={join.liveClass.id} canModerate={isHost} />
           ) : panel === 'whiteboard' ? (
             <WhiteboardPanel join={join} />
-          ) : (
+          ) : panel === 'resources' ? (
             <ResourcesPanel join={join} />
+          ) : (
+            <PollPanel join={join} />
           )}
         </aside>
       ) : null}
@@ -287,8 +309,8 @@ function Controls({
   onReact,
 }: {
   join: LiveClassJoin;
-  panel: 'chat' | 'people' | 'whiteboard' | 'resources' | null;
-  setPanel: (p: 'chat' | 'people' | 'whiteboard' | 'resources' | null) => void;
+  panel: 'chat' | 'people' | 'whiteboard' | 'resources' | 'poll' | null;
+  setPanel: (p: 'chat' | 'people' | 'whiteboard' | 'resources' | 'poll' | null) => void;
   onReact: (emoji: string) => void;
 }) {
   const room = useRoomContext();
@@ -494,6 +516,15 @@ function Controls({
       >
         <PinIcon />
         <span>Resources</span>
+      </button>
+      <button
+        type="button"
+        className={cn('controls__btn', panel === 'poll' && 'is-on')}
+        aria-pressed={panel === 'poll'}
+        onClick={() => setPanel(panel === 'poll' ? null : 'poll')}
+      >
+        <PollIcon />
+        <span>Poll</span>
       </button>
 
       <span className="controls__divider" aria-hidden="true" />

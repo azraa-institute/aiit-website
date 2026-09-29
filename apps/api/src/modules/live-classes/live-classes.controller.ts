@@ -1,9 +1,9 @@
 import { Body, Controller, Delete, Get, HttpCode, Param, ParseUUIDPipe, Post, Put, UseGuards } from '@nestjs/common';
 import { Throttle } from '@nestjs/throttler';
-import type { LiveClassJoin, LiveClassSummary, LiveClassWhiteboard, PinnedResource } from '@aiit/shared';
+import type { LiveClassJoin, LiveClassPoll, LiveClassSummary, LiveClassWhiteboard, PinnedResource } from '@aiit/shared';
 import { JwtGuard, type AuthenticatedUser } from '../../common/guards/jwt.guard';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
-import { PinResourceDto, SaveWhiteboardDto } from './dto/live-class.dto';
+import { CreatePollDto, PinResourceDto, SaveWhiteboardDto, VotePollDto } from './dto/live-class.dto';
 import { LiveClassesService } from './live-classes.service';
 
 /** Learner + instructor (+ admin-as-moderator) endpoints. Every route re-checks access in the service. */
@@ -101,5 +101,36 @@ export class LiveClassesController {
     @Param('resourceId') resourceId: string,
   ): Promise<PinnedResource[]> {
     return this.liveClasses.unpinResource(user, id, resourceId);
+  }
+
+  /** Null when no poll has been run yet. Results are only included for the host while it's open -- see LiveClassesService.toPollView. */
+  @Get('live-classes/:id/poll')
+  getPoll(@CurrentUser() user: AuthenticatedUser, @Param('id', ParseUUIDPipe) id: string): Promise<LiveClassPoll | null> {
+    return this.liveClasses.getPoll(user, id);
+  }
+
+  @Post('live-classes/:id/poll')
+  createPoll(
+    @CurrentUser() user: AuthenticatedUser,
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() dto: CreatePollDto,
+  ): Promise<LiveClassPoll> {
+    return this.liveClasses.createPoll(user, id, dto);
+  }
+
+  @Post('live-classes/:id/poll/vote')
+  @HttpCode(200)
+  votePoll(
+    @CurrentUser() user: AuthenticatedUser,
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() dto: VotePollDto,
+  ): Promise<LiveClassPoll> {
+    return this.liveClasses.votePoll(user, id, dto.optionId);
+  }
+
+  @Post('live-classes/:id/poll/close')
+  @HttpCode(200)
+  closePoll(@CurrentUser() user: AuthenticatedUser, @Param('id', ParseUUIDPipe) id: string): Promise<LiveClassPoll> {
+    return this.liveClasses.closePoll(user, id);
   }
 }

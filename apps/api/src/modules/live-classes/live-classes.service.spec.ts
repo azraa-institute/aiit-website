@@ -312,6 +312,96 @@ describe('LiveClassesService', () => {
     });
   });
 
+  describe('poll', () => {
+    function pollRow(overrides: Record<string, unknown> = {}) {
+      return {
+        id: 'poll-1',
+        question: 'How confident do you feel?',
+        options: [
+          { id: 'opt-1', text: 'Very' },
+          { id: 'opt-2', text: 'Not yet' },
+        ],
+        votes: {},
+        status: 'open',
+        createdAt: '2026-10-01T10:00:00.000Z',
+        closedAt: null,
+        ...overrides,
+      };
+    }
+
+    it('is null when no poll has been run yet', async () => {
+      prisma.liveClass.findUnique.mockResolvedValueOnce(classRow()).mockResolvedValueOnce({ activePoll: null });
+      prisma.enrollment.findUnique.mockResolvedValue({ status: 'active' });
+      expect(await service.getPoll(learner, 'cls-1')).toBeNull();
+    });
+
+    it('only the host can start one, and only while live', async () => {
+      prisma.liveClass.findUnique.mockResolvedValue(classRow());
+      await expect(service.createPoll(learner, 'cls-1', { question: 'Q?', options: ['A', 'B'] })).rejects.toBeInstanceOf(
+        ForbiddenException,
+      );
+
+      prisma.liveClass.findUnique.mockResolvedValue(classRow({ status: 'ended' }));
+      await expect(service.createPoll(instructor, 'cls-1', { question: 'Q?', options: ['A', 'B'] })).rejects.toBeInstanceOf(
+        ConflictException,
+      );
+    });
+
+    it('the host sees a live tally while open; a learner does not', async () => {
+      prisma.liveClass.findUnique.mockResolvedValueOnce(classRow()).mockResolvedValueOnce({
+        activePoll: pollRow({ votes: { [HOST_ID]: 'opt-1', [LEARNER_ID]: 'opt-1' } }),
+      });
+      const hostView = await service.getPoll(instructor, 'cls-1');
+      expect(hostView?.results).toEqual({ 'opt-1': 2, 'opt-2': 0 });
+      expect(hostView?.myVote).toBe('opt-1');
+
+      prisma.liveClass.findUnique.mockResolvedValueOnce(classRow()).mockResolvedValueOnce({
+        activePoll: pollRow({ votes: { [LEARNER_ID]: 'opt-2' } }),
+      });
+      prisma.enrollment.findUnique.mockResolvedValue({ status: 'active' });
+      const learnerView = await service.getPoll(learner, 'cls-1');
+      expect(learnerView?.results).toBeNull();
+      expect(learnerView?.myVote).toBe('opt-2');
+    });
+
+    it('reveals results to everyone once closed', async () => {
+      prisma.liveClass.findUnique.mockResolvedValueOnce(classRow()).mockResolvedValueOnce({
+        activePoll: pollRow({ status: 'closed', votes: { [LEARNER_ID]: 'opt-2' } }),
+      });
+      prisma.enrollment.findUnique.mockResolvedValue({ status: 'active' });
+      const res = await service.getPoll(learner, 'cls-1');
+      expect(res?.results).toEqual({ 'opt-1': 0, 'opt-2': 1 });
+    });
+
+    it('a second vote from the same person replaces their first, not adds another', async () => {
+      prisma.liveClass.findUnique.mockResolvedValueOnce(classRow()).mockResolvedValueOnce({
+        activePoll: pollRow({ votes: { [LEARNER_ID]: 'opt-1' } }),
+      });
+      prisma.enrollment.findUnique.mockResolvedValue({ status: 'active' });
+
+      await service.votePoll(learner, 'cls-1', 'opt-2');
+
+      const saved = prisma.liveClass.update.mock.calls[0][0].data.activePoll;
+      expect(saved.votes).toEqual({ [LEARNER_ID]: 'opt-2' });
+    });
+
+    it('rejects a vote for an option that does not exist, or once the poll is closed', async () => {
+      prisma.liveClass.findUnique.mockResolvedValueOnce(classRow()).mockResolvedValueOnce({ activePoll: pollRow() });
+      prisma.enrollment.findUnique.mockResolvedValue({ status: 'active' });
+      await expect(service.votePoll(learner, 'cls-1', 'not-real')).rejects.toBeInstanceOf(BadRequestException);
+
+      prisma.liveClass.findUnique.mockResolvedValueOnce(classRow()).mockResolvedValueOnce({
+        activePoll: pollRow({ status: 'closed' }),
+      });
+      await expect(service.votePoll(learner, 'cls-1', 'opt-1')).rejects.toBeInstanceOf(ConflictException);
+    });
+
+    it('only the host can close it', async () => {
+      prisma.liveClass.findUnique.mockResolvedValue(classRow());
+      await expect(service.closePoll(learner, 'cls-1')).rejects.toBeInstanceOf(ForbiddenException);
+    });
+  });
+
   describe('timetable listing', () => {
     it('scopes a learner to the courses they are enrolled in (not cancelled)', async () => {
       prisma.enrollment.findMany.mockResolvedValue([{ courseId: 'crs-1' }]);

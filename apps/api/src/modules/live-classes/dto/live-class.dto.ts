@@ -238,3 +238,23 @@ export class PinResourceDto {
   @MaxLength(300)
   note?: string;
 }
+
+export class CreatePollDto {
+  @IsString()
+  @MinLength(3)
+  @MaxLength(300)
+  question!: string;
+
+  @IsArray()
+  @ArrayMinSize(2)
+  @ArrayMaxSize(8)
+  @IsString({ each: true })
+  @MinLength(1, { each: true })
+  @MaxLength(120, { each: true })
+  options!: string[];
+}
+
+export class VotePollDto {
+  @IsUUID()
+  optionId!: string;
+}

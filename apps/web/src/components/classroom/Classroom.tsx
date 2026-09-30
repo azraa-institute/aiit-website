@@ -561,7 +561,14 @@ function Controls({
   const { localParticipant } = useLocalParticipant();
   const mic = useTrackToggle({ source: Track.Source.Microphone });
   const cam = useTrackToggle({ source: Track.Source.Camera });
-  const share = useTrackToggle({ source: Track.Source.ScreenShare });
+  // audio: true here is what makes the browser's own share picker even offer a
+  // "share tab/system audio" checkbox in the first place -- without it, LiveKit
+  // never asks for audio, so nothing could come through no matter what the
+  // instructor picked. Chrome/Edge honour it for a shared tab reliably (and for
+  // system audio on most platforms); Safari and Firefox largely ignore it and
+  // just capture video, same as before -- there's no capability check to fail,
+  // the browser silently drops what it can't do.
+  const share = useTrackToggle({ source: Track.Source.ScreenShare, captureOptions: { audio: true } });
   const [confirmEnd, setConfirmEnd] = useState(false);
   const [ending, setEnding] = useState(false);
   const [endError, setEndError] = useState<string>();

@@ -3,6 +3,7 @@ import { Test } from '@nestjs/testing';
 import type { Prisma } from '@prisma/client';
 import { PrismaService } from '../../common/prisma/prisma.service';
 import { CurrencyService } from '../../common/currency/currency.service';
+import { MemoryCacheService } from '../../common/cache/memory-cache.service';
 import { CoursesService } from './courses.service';
 
 function decimal(value: number): Prisma.Decimal {
@@ -65,6 +66,7 @@ describe('CoursesService', () => {
         CoursesService,
         { provide: PrismaService, useValue: prisma },
         { provide: CurrencyService, useValue: currency },
+        MemoryCacheService,
       ],
     }).compile();
 

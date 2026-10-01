@@ -1,5 +1,6 @@
 import { Test } from '@nestjs/testing';
 import { PrismaService } from '../../common/prisma/prisma.service';
+import { MemoryCacheService } from '../../common/cache/memory-cache.service';
 import { GeoService } from './geo.service';
 
 describe('GeoService', () => {
@@ -13,7 +14,7 @@ describe('GeoService', () => {
     };
 
     const moduleRef = await Test.createTestingModule({
-      providers: [GeoService, { provide: PrismaService, useValue: prisma }],
+      providers: [GeoService, { provide: PrismaService, useValue: prisma }, MemoryCacheService],
     }).compile();
 
     service = moduleRef.get(GeoService);

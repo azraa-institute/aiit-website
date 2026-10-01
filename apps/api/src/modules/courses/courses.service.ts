@@ -9,7 +9,17 @@ import type {
 } from '@aiit/shared';
 import { PrismaService } from '../../common/prisma/prisma.service';
 import { CurrencyService, type CurrencyRequestLike } from '../../common/currency/currency.service';
+import { MemoryCacheService } from '../../common/cache/memory-cache.service';
 import { mapBadge, mapCatalogueCategory, mapDomain, mapLevel, mapTechnologies } from './catalogue.mappers';
+
+/**
+ * Public catalogue reads only -- nothing in this API ever writes to
+ * course/courseDomain (the catalogue is seed-managed, see
+ * prisma/seed-data/courses.ts), so plain TTL expiry is correct with no
+ * invalidation to wire up: there's no write path that could make a cached
+ * response stale in a way a fresh deploy wouldn't already clear.
+ */
+const CACHE_TTL_MS = 60_000;
 
 const COURSE_LIST_SELECT = {
   id: true,
@@ -60,62 +70,76 @@ export class CoursesService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly currency: CurrencyService,
+    private readonly cache: MemoryCacheService,
   ) {}
 
   async list(request: CurrencyRequestLike): Promise<CourseListItem[]> {
     const currency = this.currency.resolveCurrency(request);
-    const courses = await this.prisma.course.findMany({
-      where: PUBLISHED_NOT_DELETED,
-      select: COURSE_LIST_SELECT,
-      orderBy: { publishedAt: 'desc' },
+    // Keyed by the already-resolved currency (not the raw request) so one
+    // cached response is correctly shared by everyone who resolves to the
+    // same currency, rather than needing a per-visitor cache entry.
+    return this.cache.getOrSet(`courses:list:${currency}`, CACHE_TTL_MS, async () => {
+      const courses = await this.prisma.course.findMany({
+        where: PUBLISHED_NOT_DELETED,
+        select: COURSE_LIST_SELECT,
+        orderBy: { publishedAt: 'desc' },
+      });
+      return Promise.all(courses.map((course) => this.toListItem(course, currency)));
     });
-    return Promise.all(courses.map((course) => this.toListItem(course, currency)));
   }
 
   async detail(slug: string, request: CurrencyRequestLike): Promise<CourseDetail> {
     const currency = this.currency.resolveCurrency(request);
-    const course = await this.prisma.course.findFirst({
-      where: { slug, ...PUBLISHED_NOT_DELETED },
-      select: COURSE_DETAIL_SELECT,
-    });
-    if (!course) throw new NotFoundException('Course not found.');
+    return this.cache.getOrSet(`courses:detail:${slug}:${currency}`, CACHE_TTL_MS, async () => {
+      const course = await this.prisma.course.findFirst({
+        where: { slug, ...PUBLISHED_NOT_DELETED },
+        select: COURSE_DETAIL_SELECT,
+      });
+      if (!course) throw new NotFoundException('Course not found.');
 
-    const item = await this.toListItem(course, currency);
-    return {
-      ...item,
-      description: course.description,
-      outcomes: course.outcomes,
-      requirements: course.requirements,
-      audience: course.audience,
-      toolsCovered: course.toolsCovered,
-      certification: course.certification,
-    };
+      const item = await this.toListItem(course, currency);
+      return {
+        ...item,
+        description: course.description,
+        outcomes: course.outcomes,
+        requirements: course.requirements,
+        audience: course.audience,
+        toolsCovered: course.toolsCovered,
+        certification: course.certification,
+      };
+    });
   }
 
   async curriculum(slug: string): Promise<CurriculumModule[]> {
-    const course = await this.prisma.course.findFirst({
-      where: { slug, ...PUBLISHED_NOT_DELETED },
-      select: {
-        modules: {
-          where: { deletedAt: null },
-          orderBy: { order: 'asc' },
-          select: {
-            title: true,
-            order: true,
-            lessons: {
-              where: { deletedAt: null },
-              orderBy: { order: 'asc' },
-              select: { slug: true, title: true, summary: true, durationMinutes: true },
+    return this.cache.getOrSet(`courses:curriculum:${slug}`, CACHE_TTL_MS, async () => {
+      const course = await this.prisma.course.findFirst({
+        where: { slug, ...PUBLISHED_NOT_DELETED },
+        select: {
+          modules: {
+            where: { deletedAt: null },
+            orderBy: { order: 'asc' },
+            select: {
+              title: true,
+              order: true,
+              lessons: {
+                where: { deletedAt: null },
+                orderBy: { order: 'asc' },
+                select: { slug: true, title: true, summary: true, durationMinutes: true },
+              },
             },
           },
         },
-      },
+      });
+      if (!course) throw new NotFoundException('Course not found.');
+      return course.modules;
     });
-    if (!course) throw new NotFoundException('Course not found.');
-    return course.modules;
   }
 
   async listDomains(): Promise<SharedCourseDomain[]> {
+    return this.cache.getOrSet('courses:domains', CACHE_TTL_MS, () => this.listDomainsUncached());
+  }
+
+  private async listDomainsUncached(): Promise<SharedCourseDomain[]> {
     const domains = await this.prisma.courseDomain.findMany({ orderBy: { order: 'asc' } });
     return domains.map(mapDomain);
   }

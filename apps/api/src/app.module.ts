@@ -20,6 +20,7 @@ import { InstructorModule } from './modules/instructor/instructor.module';
 import { SupportModule } from './modules/support/support.module';
 import { AuditModule } from './common/audit/audit.service';
 import { SupabaseAdminModule } from './common/supabase-admin/supabase-admin.service';
+import { MemoryCacheModule } from './common/cache/memory-cache.service';
 
 @Module({
   imports: [
@@ -41,6 +42,7 @@ import { SupabaseAdminModule } from './common/supabase-admin/supabase-admin.serv
     PrismaModule,
     AuditModule,
     SupabaseAdminModule,
+    MemoryCacheModule,
     HealthModule,
     AuthModule,
     CoursesModule,

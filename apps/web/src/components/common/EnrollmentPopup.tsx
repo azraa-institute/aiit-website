@@ -4,7 +4,7 @@ import { useLockBodyScroll } from '@/lib/useLockBodyScroll';
 import './enrollment-popup.css';
 
 const SEEN_KEY = 'aiit.enroll.popup.seen';
-const DELAY_MS = 2600;
+const DELAY_MS = 30_000;
 /** Routes where an enrolment promo would be redundant or intrusive.
  *  `/resources` is excluded so the promo never interrupts an article the
  *  reader has just started — the newsletter band at the end of each piece

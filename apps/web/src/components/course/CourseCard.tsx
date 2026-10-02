@@ -144,6 +144,15 @@ export function CourseCard({ course, layout = 'grid', index }: CourseCardProps) 
           <Link to={`/courses/${course.slug}`}>{course.title}</Link>
         </h3>
 
+        {/* The card's own enrol CTA -- same destination as the title (the course
+            page itself owns the real "Enroll now" logic: auth state, coming-soon,
+            already-enrolled), this is just a more obviously actionable label right
+            under the title rather than only the image/title being clickable. */}
+        <Link to={`/courses/${course.slug}`} className="course-card__enroll">
+          {comingSoon ? 'Join the waitlist' : 'Enroll now'}
+          <span aria-hidden="true">→</span>
+        </Link>
+
         {layout !== 'list' && <p className="course-card__summary">{course.summary}</p>}
 
         <dl className="course-card__facts">

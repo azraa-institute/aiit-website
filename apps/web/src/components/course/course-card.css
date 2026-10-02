@@ -290,6 +290,30 @@
   border-radius: var(--radius-xs);
 }
 
+.course-card__enroll {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  align-self: flex-start;
+  font-size: var(--fs-xs);
+  font-weight: 700;
+  letter-spacing: var(--tracking-wide);
+  text-transform: uppercase;
+  color: color-mix(in srgb, var(--card-accent) 78%, var(--ink));
+}
+.course-card__enroll span {
+  transition: transform var(--dur-base) var(--ease-out);
+}
+.course-card__enroll:hover span,
+.course-card__enroll:focus-visible span {
+  transform: translateX(3px);
+}
+.course-card__enroll:focus-visible {
+  outline: 2px solid var(--card-accent);
+  outline-offset: 3px;
+  border-radius: var(--radius-xs);
+}
+
 .course-card__summary {
   font-size: var(--fs-sm);
   color: var(--fg-soft);

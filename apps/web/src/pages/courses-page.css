@@ -98,6 +98,16 @@
   display: grid;
   gap: clamp(2rem, 1rem + 3vw, 3rem) clamp(1.5rem, 1rem + 1.5vw, 2.5rem);
 }
+/* Below 700px the grid is a single stacked column -- whitespace alone (the
+   gap above) doesn't read as a clear break between courses the way it does
+   across a multi-column grid, so add the same hairline divider the list
+   layout already uses between rows. */
+@media (max-width: 699px) {
+  .courses-page__grid > .course-card + .course-card {
+    padding-top: var(--space-6);
+    border-top: 1px solid var(--hairline);
+  }
+}
 @media (min-width: 700px) {
   .courses-page__grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));

@@ -3,10 +3,59 @@
 .adm-page__head {
   display: flex;
   flex-wrap: wrap;
-  align-items: flex-start;
+  align-items: center;
   justify-content: space-between;
   gap: var(--space-4);
   margin-bottom: var(--space-5);
+}
+/* The dark "letterhead" banner every admin/instructor page opens with --
+   targets the text block specifically (always a bare <div>, confirmed
+   across every current .adm-page__head usage), not .adm-page__head itself,
+   so an occasional sibling action button (e.g. AdminClassesPage's "Add a
+   one-off class") sits outside the banner instead of being squeezed inside
+   it or overlapping the seal. Colour comes from --shell-bg/--shell-accent,
+   the same custom properties StaffShell already sets per tone
+   (admin/instructor/affiliate) on the ancestor .shell element -- one rule
+   here, correct on every portal automatically, nothing to repeat per tone. */
+.adm-page__head > div {
+  position: relative;
+  overflow: hidden;
+  flex: 1 1 320px;
+  padding: var(--space-5) var(--space-6);
+  border-radius: var(--radius-sm);
+  background-image:
+    url('/assets/legal/az-seal-brass.webp'),
+    repeating-linear-gradient(135deg, rgba(255, 255, 255, 0.045) 0px, rgba(255, 255, 255, 0.045) 1px, transparent 1px, transparent 14px),
+    linear-gradient(135deg, var(--shell-bg) 0%, color-mix(in srgb, var(--shell-bg) 78%, black) 100%);
+  background-repeat: no-repeat, repeat, no-repeat;
+  background-position: calc(100% - 1.25rem) 50%, 0 0, 0 0;
+  background-size: 72px 72px, auto, cover;
+}
+.adm-page__head > div .adm-eyebrow,
+.adm-page__head > div .adm-title,
+.adm-page__head > div .adm-intro,
+.adm-page__head > div .adm-muted {
+  position: relative;
+}
+.adm-page__head > div .adm-eyebrow {
+  color: var(--shell-accent);
+}
+.adm-page__head > div .adm-title {
+  color: var(--ivory);
+}
+.adm-page__head > div .adm-intro,
+.adm-page__head > div .adm-muted {
+  color: rgba(244, 239, 231, 0.78);
+}
+.adm-page__head > div a {
+  color: inherit;
+}
+@media (max-width: 640px) {
+  .adm-page__head > div {
+    padding: var(--space-4) var(--space-5);
+    background-size: 52px 52px, auto, cover;
+    background-position: calc(100% - 1rem) 1.1rem, 0 0, 0 0;
+  }
 }
 .adm-eyebrow {
   font-size: var(--fs-eyebrow);

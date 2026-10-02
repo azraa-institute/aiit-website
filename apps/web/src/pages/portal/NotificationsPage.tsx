@@ -54,7 +54,7 @@ export default function NotificationsPage() {
 
   return (
     <div className="portal-page">
-      <header className="portal-page__head" data-reveal>
+      <header className="portal-page__head on-ink" data-reveal>
         <div className="portal-page__head-row">
           <div>
             <p className="portal-eyebrow">Notifications</p>

@@ -835,8 +835,35 @@
   color: var(--ink-faint);
 }
 
+/* The same dark "letterhead" banner admin.css's .adm-page__head uses
+   (brass seal watermark, serif title on a dark ink gradient) -- reused
+   here with the student portal's own rail colour (plain --ink, same as
+   .portal-rail already uses) rather than a StaffShell tone variable, since
+   the student portal has no tone system of its own. Unlike admin's
+   markup, a page's head here isn't always just [text][optional button] --
+   NotificationsPage nests a real action button (needs the Button
+   component's existing .on-ink variant, added in JSX) and WebinarsPage
+   puts its own stat row directly inside; both need their own contrast
+   overrides below rather than one blanket `> div` selector. */
 .portal-page__head {
+  position: relative;
+  overflow: hidden;
   margin-bottom: var(--space-7);
+  padding: var(--space-6) var(--space-7);
+  border-radius: var(--radius-sm);
+  background-image:
+    url('/assets/legal/az-seal-brass.webp'),
+    repeating-linear-gradient(135deg, rgba(255, 255, 255, 0.045) 0px, rgba(255, 255, 255, 0.045) 1px, transparent 1px, transparent 14px),
+    linear-gradient(135deg, var(--ink) 0%, color-mix(in srgb, var(--ink) 78%, black) 100%);
+  background-repeat: no-repeat, repeat, no-repeat;
+  background-position: calc(100% - 1.5rem) 1.75rem, 0 0, 0 0;
+  background-size: 84px 84px, auto, cover;
+}
+.portal-page__head > * {
+  position: relative;
+}
+.portal-page__head .portal-eyebrow {
+  color: var(--brass-tint);
 }
 .portal-page__head-row {
   display: flex;
@@ -854,6 +881,9 @@
   letter-spacing: -0.01em;
   color: var(--ink);
 }
+.portal-page__head .portal-page__title {
+  color: var(--ivory);
+}
 .portal-page__intro {
   margin-top: var(--space-3);
   max-width: 48rem;
@@ -861,10 +891,29 @@
   font-size: var(--fs-lead);
   line-height: 1.55;
 }
+.portal-page__head .portal-page__intro {
+  color: rgba(244, 239, 231, 0.78);
+}
 .portal-page__intro a {
   color: var(--brass-deep);
   text-decoration: underline;
   text-underline-offset: 2px;
+}
+.portal-page__head .portal-page__intro a {
+  color: var(--brass-tint);
+}
+.portal-page__head .webinar-summary__stat {
+  color: rgba(244, 239, 231, 0.78);
+}
+.portal-page__head .webinar-summary__stat strong {
+  color: var(--ivory);
+}
+@media (max-width: 640px) {
+  .portal-page__head {
+    padding: var(--space-5) var(--space-6);
+    background-size: 56px 56px, auto, cover;
+    background-position: calc(100% - 1.1rem) 1.1rem, 0 0, 0 0;
+  }
 }
 
 .portal-section {

@@ -64,6 +64,7 @@ export default function VerifyCertificatePage() {
 
         {state.status === 'found' && (
           <div className="verify-card">
+            <img className="verify-card__seal" src="/assets/legal/az-seal-brass.webp" alt="" aria-hidden="true" />
             <p className="verify-card__badge">✓ Verified AIIT credential</p>
             <h1 className="verify-card__name">{state.certificate.holderName}</h1>
             <p className="verify-card__body">

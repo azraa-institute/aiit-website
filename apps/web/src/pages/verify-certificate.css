@@ -7,12 +7,44 @@
   max-width: 640px;
 }
 
+/* A brass double-border frame + corner diamonds, echoing the issued
+   certificate PDF's own frame (certificate-pdf.service.ts) so the page
+   that proves a credential is real feels like the same object as the
+   credential itself. Two nested borders (not one thicker one) is what
+   reads as "frame" rather than "just a thick line" at this scale -- the
+   inner one via box-shadow since the element already uses `border` for
+   the outer rule. Corner diamonds follow the site's existing data-URI
+   seal-mark convention (global.css's .eyebrow::before): one background
+   image, repositioned per corner via four comma-separated placements,
+   hex hardcoded since custom properties don't resolve inside a data URI. */
 .verify-card {
-  padding: var(--space-6);
+  position: relative;
+  padding: var(--space-7) var(--space-6) var(--space-6);
   background: var(--surface);
-  border: 1px solid var(--line);
-  border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-panel);
+  border: 1.5px solid var(--brass-deep);
+  border-radius: var(--radius-sm);
+  box-shadow:
+    inset 0 0 0 5px var(--surface),
+    inset 0 0 0 6px var(--brass-tint),
+    var(--shadow-panel);
+  --corner-diamond: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='11' height='11' viewBox='0 0 11 11'%3E%3Crect x='1.4' y='1.4' width='8.2' height='8.2' fill='none' stroke='%237d6340' stroke-width='1.2' transform='rotate(45 5.5 5.5)'/%3E%3C/svg%3E");
+  background-image: var(--corner-diamond), var(--corner-diamond), var(--corner-diamond), var(--corner-diamond);
+  background-repeat: no-repeat;
+  background-position:
+    10px 10px,
+    calc(100% - 10px) 10px,
+    10px calc(100% - 10px),
+    calc(100% - 10px) calc(100% - 10px);
+  background-size: 11px 11px;
+}
+.verify-card__seal {
+  position: absolute;
+  top: calc(-1 * var(--space-5));
+  right: var(--space-6);
+  width: 76px;
+  height: 76px;
+  transform: rotate(-6deg);
+  filter: drop-shadow(0 3px 6px rgba(20, 17, 15, 0.18));
 }
 
 .verify-card__badge {

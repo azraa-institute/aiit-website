@@ -82,10 +82,7 @@ export default function CertificatesPage() {
               data-reveal
               style={{ '--reveal-delay': `${i * 90}ms` } as React.CSSProperties}
             >
-              <div className="cert__seal" aria-hidden="true">
-                <span className="cert__seal-ring" />
-                <span className="cert__seal-mark">AIIT</span>
-              </div>
+              <img className="cert__seal" src="/assets/legal/az-seal-brass.webp" alt="" aria-hidden="true" />
               <div className="cert__body">
                 <p className="cert__eyebrow">Certified</p>
                 <h2 className="cert__course">

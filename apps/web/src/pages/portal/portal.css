@@ -1471,30 +1471,10 @@
   background: linear-gradient(135deg, rgba(255, 255, 255, 0.7), rgba(246, 240, 227, 0.5));
 }
 .cert__seal {
-  position: relative;
-  display: grid;
-  place-items: center;
   width: 64px;
   height: 64px;
-}
-.cert__seal-ring {
-  position: absolute;
-  inset: 0;
-  border-radius: 50%;
-  border: 1px solid var(--brass);
-}
-.cert__seal-ring::after {
-  content: '';
-  position: absolute;
-  inset: 4px;
-  border-radius: 50%;
-  border: 1px solid var(--brass-tint);
-}
-.cert__seal-mark {
-  font-family: var(--font-display);
-  font-size: 0.75rem;
-  letter-spacing: 0.16em;
-  color: var(--brass-deep);
+  object-fit: contain;
+  flex-shrink: 0;
 }
 .cert__eyebrow {
   font-size: 0.6875rem;

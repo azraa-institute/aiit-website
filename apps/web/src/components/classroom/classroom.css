@@ -1322,23 +1322,30 @@
   .classroom-head__logo {
     height: 22px;
   }
+  /*
+   * The panel used to float as an absolutely-positioned sheet pinned to
+   * bottom:0, overlapping the same screen region as .controls (which sits
+   * on top via a higher z-index). Controls can wrap to two rows depending
+   * on role/button count, and whatever of the panel's own content fell
+   * behind that opaque bar was simply unreachable -- on a phone this
+   * silently ate the chat input, which sits at the bottom of the panel's
+   * content. Giving the panel its own grid row instead guarantees it never
+   * overlaps controls, however tall controls' content makes it.
+   */
   .classroom__inner.has-panel {
     grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: minmax(72px, 1fr) min(58dvh, 440px) auto;
     grid-template-areas:
       'main'
+      'panel'
       'controls';
   }
   .classroom-panel {
-    position: absolute;
-    z-index: 4;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    height: 62%;
+    position: relative;
+    height: auto;
+    min-height: 0;
     border-left: 0;
     border-top: 1px solid var(--room-line);
-    /* keep the control bar (its own row) visible under the sheet */
-    margin-bottom: 0;
   }
   .classroom__main {
     padding: var(--space-2);
@@ -1347,8 +1354,6 @@
     width: 128px;
   }
   .controls {
-    position: relative;
-    z-index: 5;
     gap: 6px;
     padding-inline: var(--space-2);
   }

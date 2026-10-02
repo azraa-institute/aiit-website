@@ -17,7 +17,7 @@ import {
   useTracks,
   type TrackReferenceOrPlaceholder,
 } from '@livekit/components-react';
-import { ConnectionState, DisconnectReason, Track } from 'livekit-client';
+import { AudioPresets, ConnectionState, DisconnectReason, Track } from 'livekit-client';
 import type { BreakoutJoin, LiveClassBreakouts, LiveClassJoin, PinnedResource } from '@aiit/shared';
 import { apiFetch } from '@/lib/api';
 import { cn } from '@/lib/cn';
@@ -101,7 +101,16 @@ export function Classroom({ join, startWithCamera, startWithMic, onDisconnected 
       connect
       audio={startWithMic}
       video={startWithCamera}
-      options={{ adaptiveStream: true, dynacast: true }}
+      options={{
+        adaptiveStream: true,
+        dynacast: true,
+        // Up from LiveKit's own default (music, 48kbps) -- a real, audible
+        // step for voice, not just screen-share audio. Mono, not stereo:
+        // a single microphone has no stereo content to spend bits on; the
+        // screen-share toggle below asks for the stereo-capable preset
+        // instead, since a shared tab/video often does have one.
+        publishDefaults: { audioPreset: AudioPresets.musicHighQuality, dtx: true, red: true },
+      }}
       onDisconnected={handleDisconnected}
       onMediaDeviceFailure={() =>
         setDeviceNotice('We could not use your camera or microphone. Check your browser permissions, then use the buttons below.')
@@ -568,7 +577,14 @@ function Controls({
   // system audio on most platforms); Safari and Firefox largely ignore it and
   // just capture video, same as before -- there's no capability check to fail,
   // the browser silently drops what it can't do.
-  const share = useTrackToggle({ source: Track.Source.ScreenShare, captureOptions: { audio: true } });
+  const share = useTrackToggle({
+    source: Track.Source.ScreenShare,
+    captureOptions: { audio: true },
+    // The room-wide default (musicHighQuality, mono) is tuned for a single
+    // mic; a shared tab/video often has real stereo content worth the extra
+    // bits, so this track asks for the top-tier preset specifically.
+    publishOptions: { audioPreset: AudioPresets.musicHighQualityStereo },
+  });
   const [confirmEnd, setConfirmEnd] = useState(false);
   const [ending, setEnding] = useState(false);
   const [endError, setEndError] = useState<string>();

@@ -844,7 +844,16 @@
    NotificationsPage nests a real action button (needs the Button
    component's existing .on-ink variant, added in JSX) and WebinarsPage
    puts its own stat row directly inside; both need their own contrast
-   overrides below rather than one blanket `> div` selector. */
+   overrides below rather than one blanket `> div` selector.
+
+   --shell-bg/--shell-accent (with the --ink/--brass-tint fallback) cover
+   SchedulePage specifically: it's reused verbatim at /instructor/classes
+   (App.tsx), rendered inside .shell--instructor, and without this
+   fallback chain it would show the student portal's plain ink tone
+   instead of the instructor's own slate -- a real bug, not a style
+   choice (reported 2026-10-03). Outside a .shell ancestor (every real
+   student-portal route) --shell-bg is simply undefined and the fallback
+   applies, so this is a no-op for every page except that one shared one. */
 .portal-page__head {
   position: relative;
   overflow: hidden;
@@ -854,7 +863,7 @@
   background-image:
     url('/assets/legal/az-seal-brass.webp'),
     repeating-linear-gradient(135deg, rgba(255, 255, 255, 0.045) 0px, rgba(255, 255, 255, 0.045) 1px, transparent 1px, transparent 14px),
-    linear-gradient(135deg, var(--ink) 0%, color-mix(in srgb, var(--ink) 78%, black) 100%);
+    linear-gradient(135deg, var(--shell-bg, var(--ink)) 0%, color-mix(in srgb, var(--shell-bg, var(--ink)) 78%, black) 100%);
   background-repeat: no-repeat, repeat, no-repeat;
   background-position: calc(100% - 1.5rem) 1.75rem, 0 0, 0 0;
   background-size: 84px 84px, auto, cover;
@@ -863,7 +872,7 @@
   position: relative;
 }
 .portal-page__head .portal-eyebrow {
-  color: var(--brass-tint);
+  color: var(--shell-accent, var(--brass-tint));
 }
 .portal-page__head-row {
   display: flex;
@@ -900,7 +909,7 @@
   text-underline-offset: 2px;
 }
 .portal-page__head .portal-page__intro a {
-  color: var(--brass-tint);
+  color: var(--shell-accent, var(--brass-tint));
 }
 .portal-page__head .webinar-summary__stat {
   color: rgba(244, 239, 231, 0.78);

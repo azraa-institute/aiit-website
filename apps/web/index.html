@@ -34,11 +34,17 @@
          annotations, the legal document pages (legal-book.css), and the
          Affiliate/Blueprint/Why-Join/Resources pages' editorial headings
          (each scoped to its own page via a literal font-family, not
-         --font-accent, per the comment at the top of that page's CSS). -->
+         --font-accent, per the comment at the top of that page's CSS).
+
+         Dancing Script: one deliberate exception to the two-typeface system
+         above -- a genuine script face (not just Source Serif 4's italic,
+         which is used elsewhere for a quieter accent) for the course card's
+         "Enroll now" CTA specifically, see course-card.css. Loaded only at
+         600/700 (the weights actually used) rather than the full range. -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
-      href="https://fonts.googleapis.com/css2?family=Google+Sans:ital,opsz,wght@0,17..18,400..700;1,17..18,400..700&family=Source+Serif+4:ital,opsz,wght@0,8..60,200..900;1,8..60,200..900&display=swap"
+      href="https://fonts.googleapis.com/css2?family=Google+Sans:ital,opsz,wght@0,17..18,400..700;1,17..18,400..700&family=Source+Serif+4:ital,opsz,wght@0,8..60,200..900;1,8..60,200..900&family=Dancing+Script:wght@600;700&display=swap"
       rel="stylesheet"
     />
     <style>

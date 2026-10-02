@@ -17,7 +17,7 @@ import {
   useTracks,
   type TrackReferenceOrPlaceholder,
 } from '@livekit/components-react';
-import { AudioPresets, ConnectionState, DisconnectReason, Track } from 'livekit-client';
+import { ConnectionState, DisconnectReason, Track } from 'livekit-client';
 import type { BreakoutJoin, LiveClassBreakouts, LiveClassJoin, PinnedResource } from '@aiit/shared';
 import { apiFetch } from '@/lib/api';
 import { cn } from '@/lib/cn';
@@ -104,12 +104,15 @@ export function Classroom({ join, startWithCamera, startWithMic, onDisconnected 
       options={{
         adaptiveStream: true,
         dynacast: true,
-        // Up from LiveKit's own default (music, 48kbps) -- a real, audible
-        // step for voice, not just screen-share audio. Mono, not stereo:
-        // a single microphone has no stereo content to spend bits on; the
-        // screen-share toggle below asks for the stereo-capable preset
-        // instead, since a shared tab/video often does have one.
-        publishDefaults: { audioPreset: AudioPresets.musicHighQuality, dtx: true, red: true },
+        // Pushed past LiveKit's own named presets (musicHighQuality tops out
+        // at 96kbps) up toward Opus's practical ceiling -- past roughly
+        // 160-192kbps for speech content the gains are not reliably
+        // audible, so this isn't "turned up to max", it's turned up to
+        // where turning it up further stops doing anything. Mono: a single
+        // microphone has no stereo content to spend the extra bits on; the
+        // screen-share toggle below asks for stereo specifically, since a
+        // shared tab/video often does have real stereo content.
+        publishDefaults: { audioPreset: { maxBitrate: 128_000 }, dtx: true, red: true },
       }}
       onDisconnected={handleDisconnected}
       onMediaDeviceFailure={() =>
@@ -580,10 +583,11 @@ function Controls({
   const share = useTrackToggle({
     source: Track.Source.ScreenShare,
     captureOptions: { audio: true },
-    // The room-wide default (musicHighQuality, mono) is tuned for a single
-    // mic; a shared tab/video often has real stereo content worth the extra
-    // bits, so this track asks for the top-tier preset specifically.
-    publishOptions: { audioPreset: AudioPresets.musicHighQualityStereo },
+    // The room-wide default (128kbps mono) is tuned for a single mic; a
+    // shared tab/video often has real stereo content, so this track asks
+    // for stereo at a bitrate close to where Opus stops making an audible
+    // difference even for music-like content.
+    publishOptions: { audioPreset: { maxBitrate: 192_000 }, forceStereo: true },
   });
   const [confirmEnd, setConfirmEnd] = useState(false);
   const [ending, setEnding] = useState(false);

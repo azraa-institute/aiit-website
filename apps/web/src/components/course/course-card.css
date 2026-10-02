@@ -290,18 +290,43 @@
   border-radius: var(--radius-xs);
 }
 
+/* A deliberate one-off: genuine script (Dancing Script, loaded in
+   index.html), not Source Serif 4 italic -- and a slow, animated gradient
+   "wave" across the letters rather than a flat colour, so this one line
+   reads as a hand-written flourish rather than just another label. The
+   sweep cycles through the card's own per-domain accent alongside brass,
+   so it stays tied to the site's palette instead of introducing a new one. */
 .course-card__enroll {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
+  gap: 4px;
   align-self: flex-start;
-  font-size: var(--fs-xs);
+  font-family: 'Dancing Script', cursive;
+  font-size: clamp(1.15rem, 1rem + 0.5vw, 1.35rem);
   font-weight: 700;
-  letter-spacing: var(--tracking-wide);
-  text-transform: uppercase;
-  color: color-mix(in srgb, var(--card-accent) 78%, var(--ink));
+  line-height: 1;
+  background: linear-gradient(
+    100deg,
+    var(--brass-deep) 0%,
+    var(--brass) 20%,
+    var(--card-accent) 40%,
+    var(--brass-tint) 60%,
+    var(--card-accent) 80%,
+    var(--brass-deep) 100%
+  );
+  background-size: 300% 100%;
+  background-position: 0% 50%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  animation: course-card-enroll-wave 6s ease-in-out infinite;
 }
 .course-card__enroll span {
+  /* The gradient clip above only paints this element's own text --
+     the arrow gets a plain solid colour rather than inheriting
+     `color: transparent`, which would otherwise make it invisible. */
+  color: var(--brass-deep);
+  font-family: var(--font-ui);
   transition: transform var(--dur-base) var(--ease-out);
 }
 .course-card__enroll:hover span,
@@ -312,6 +337,21 @@
   outline: 2px solid var(--card-accent);
   outline-offset: 3px;
   border-radius: var(--radius-xs);
+}
+@keyframes course-card-enroll-wave {
+  0%,
+  100% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .course-card__enroll {
+    animation: none;
+    background-position: 35% 50%;
+  }
 }
 
 .course-card__summary {

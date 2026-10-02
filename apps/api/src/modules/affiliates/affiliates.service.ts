@@ -1,9 +1,10 @@
 import { randomBytes } from 'node:crypto';
-import { ConflictException, Injectable } from '@nestjs/common';
+import { ConflictException, Injectable, NotFoundException } from '@nestjs/common';
 import type { Affiliate } from '@prisma/client';
 import type { AffiliateMe, AffiliateType } from '@aiit/shared';
 import { PrismaService } from '../../common/prisma/prisma.service';
 import { AuditService } from '../../common/audit/audit.service';
+import { AFFILIATE_AGREEMENT_VERSION } from './affiliate-agreement';
 
 export interface ApplyContext {
   phone?: string;
@@ -36,9 +37,26 @@ export class AffiliatesService {
     private readonly audit: AuditService,
   ) {}
 
-  async apply(userId: string, type: AffiliateType, context: ApplyContext = {}): Promise<AffiliateMe> {
+  async apply(
+    userId: string,
+    type: AffiliateType,
+    signedName: string,
+    signedIp: string | undefined,
+    context: ApplyContext = {},
+  ): Promise<AffiliateMe> {
     const affiliate = await this.prisma.affiliate
-      .create({ data: { userId, type, referralSlug: generateReferralSlug(), ...context } })
+      .create({
+        data: {
+          userId,
+          type,
+          referralSlug: generateReferralSlug(),
+          signedName: signedName.trim(),
+          signedIp: signedIp ?? null,
+          agreementVersion: AFFILIATE_AGREEMENT_VERSION,
+          signedAt: new Date(),
+          ...context,
+        },
+      })
       .catch((err: unknown) => {
         // Either this user already has a row, or (astronomically less likely) the
         // random slug collided -- either way it's a conflict the caller should
@@ -56,6 +74,13 @@ export class AffiliatesService {
     const affiliate = await this.prisma.affiliate.findUnique({ where: { userId } });
     if (!affiliate) return EMPTY_ME;
     return this.toMe(affiliate);
+  }
+
+  /** The caller's own signed record, for regenerating their agreement PDF on demand (GET /affiliates/me/agreement.pdf). */
+  async getOwnSignedRecord(userId: string): Promise<Affiliate> {
+    const affiliate = await this.prisma.affiliate.findUnique({ where: { userId } });
+    if (!affiliate?.signedAt) throw new NotFoundException('No signed agreement found for your account.');
+    return affiliate;
   }
 
   private async toMe(affiliate: Affiliate): Promise<AffiliateMe> {

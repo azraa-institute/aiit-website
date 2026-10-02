@@ -136,6 +136,14 @@ model Affiliate {
   country           String?
   city              String?
   source            String?
+  // Electronic signature evidence, captured at apply time -- see
+  // AffiliatesService.apply() and affiliate-agreement.ts. All nullable:
+  // rows created before e-signature existed (the real test application
+  // already in production) signed nothing and must stay valid.
+  signedName        String?                    @map("signed_name")
+  agreementVersion  String?                    @map("agreement_version")
+  signedAt          DateTime?                  @map("signed_at") @db.Timestamptz(6)
+  signedIp          String?                    @map("signed_ip")
   rejectionReason   String?                    @map("rejection_reason")
   reviewedAt        DateTime?                  @map("reviewed_at") @db.Timestamptz(6)
   reviewedBy        String?                    @map("reviewed_by") @db.Uuid

@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import type { AffiliateApplicationStatus, AffiliateType } from '@aiit/shared';
 import { cn } from '@/lib/cn';
+import { apiFetchBlob, downloadBlob, ApiError } from '@/lib/api';
 import { useAffiliateMe } from './affiliateData';
 import './affiliate-portal.css';
 
@@ -59,6 +60,8 @@ function StatusStepper({ status }: { status: AffiliateApplicationStatus }) {
 export default function AffiliateDashboardPage() {
   const state = useAffiliateMe();
   const [copied, setCopied] = useState(false);
+  const [downloading, setDownloading] = useState(false);
+  const [downloadError, setDownloadError] = useState<string>();
 
   if (state.status === 'loading') return <p className="aff-loading">Loading your affiliate status…</p>;
   if (state.status === 'error') {
@@ -89,6 +92,19 @@ export default function AffiliateDashboardPage() {
   }
 
   const rejected = data.applicationStatus === 'rejected';
+
+  async function downloadAgreement() {
+    setDownloading(true);
+    setDownloadError(undefined);
+    try {
+      const blob = await apiFetchBlob('/affiliates/me/agreement.pdf');
+      downloadBlob(blob, 'AIIT-Affiliate-Agreement.pdf');
+    } catch (err) {
+      setDownloadError(err instanceof ApiError ? err.message : 'Could not download your signed agreement.');
+    } finally {
+      setDownloading(false);
+    }
+  }
 
   return (
     <div className="aff-dash">
@@ -140,6 +156,22 @@ export default function AffiliateDashboardPage() {
           </section>
         </>
       ) : null}
+
+      <section className="aff-card">
+        <h2>Your signed agreement</h2>
+        <p>
+          A copy of the Affiliate Agreement exactly as you signed it, with your typed signature and the date --
+          available regardless of your application&apos;s status.
+        </p>
+        {downloadError ? (
+          <p className="aff-error" role="alert">
+            {downloadError}
+          </p>
+        ) : null}
+        <button type="button" className="adm-btn adm-btn--primary" disabled={downloading} onClick={downloadAgreement}>
+          {downloading ? 'Preparing…' : 'Download your signed agreement (PDF)'}
+        </button>
+      </section>
     </div>
   );
 }

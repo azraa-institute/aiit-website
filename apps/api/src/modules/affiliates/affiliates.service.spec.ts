@@ -1,8 +1,10 @@
-import { ConflictException } from '@nestjs/common';
+import { ConflictException, NotFoundException } from '@nestjs/common';
 import { AffiliatesService } from './affiliates.service';
+import { AFFILIATE_AGREEMENT_VERSION } from './affiliate-agreement';
 
 const USER = '11111111-1111-4111-8111-111111111111';
 const AFFILIATE_ID = '22222222-2222-4222-8222-222222222222';
+const IP = '203.0.113.7';
 
 describe('AffiliatesService', () => {
   let service: AffiliatesService;
@@ -21,7 +23,7 @@ describe('AffiliatesService', () => {
     service = new AffiliatesService(prisma as never, audit as never);
   });
 
-  it('creates a pending application and audits it', async () => {
+  it('creates a pending application, capturing the signature, and audits it', async () => {
     prisma.affiliate.create.mockResolvedValue({
       id: AFFILIATE_ID,
       userId: USER,
@@ -31,17 +33,36 @@ describe('AffiliatesService', () => {
       rejectionReason: null,
     });
 
-    const result = await service.apply(USER, 'creator');
+    const result = await service.apply(USER, 'creator', '  Ada Lovelace  ', IP);
 
     expect(result).toEqual(
       expect.objectContaining({ hasApplied: true, type: 'creator', applicationStatus: 'pending', referralLink: null, registrationCount: null }),
     );
+    expect(prisma.affiliate.create).toHaveBeenCalledWith({
+      data: expect.objectContaining({
+        signedName: 'Ada Lovelace',
+        signedIp: IP,
+        agreementVersion: AFFILIATE_AGREEMENT_VERSION,
+        signedAt: expect.any(Date),
+      }),
+    });
     expect(audit.record).toHaveBeenCalledWith(USER, 'affiliate.apply', 'affiliate', AFFILIATE_ID, { type: 'creator' });
   });
 
   it('turns a duplicate application (unique-index conflict) into a ConflictException', async () => {
     prisma.affiliate.create.mockRejectedValue({ code: 'P2002' });
-    await expect(service.apply(USER, 'student')).rejects.toBeInstanceOf(ConflictException);
+    await expect(service.apply(USER, 'student', 'Grace Hopper', IP)).rejects.toBeInstanceOf(ConflictException);
+  });
+
+  it('getOwnSignedRecord 404s for someone who never signed', async () => {
+    prisma.affiliate.findUnique.mockResolvedValue(null);
+    await expect(service.getOwnSignedRecord(USER)).rejects.toBeInstanceOf(NotFoundException);
+  });
+
+  it('getOwnSignedRecord returns the row once signed', async () => {
+    const row = { id: AFFILIATE_ID, userId: USER, signedAt: new Date(), signedName: 'Ada Lovelace' };
+    prisma.affiliate.findUnique.mockResolvedValue(row);
+    await expect(service.getOwnSignedRecord(USER)).resolves.toBe(row);
   });
 
   it('reports no application for someone who never applied', async () => {

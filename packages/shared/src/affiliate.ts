@@ -47,7 +47,21 @@ export interface AdminAffiliateDetail extends AdminAffiliateSummary {
   country: string | null;
   city: string | null;
   source: string | null;
+  /** Electronic signature evidence -- see Affiliate.signedName/signedAt and affiliate-agreement.ts. Null for the handful of rows that predate e-signature. */
+  signedName: string | null;
+  signedAt: string | null;
   rejectionReason: string | null;
   reviewedAt: string | null;
   reviewedByName: string | null;
+}
+
+/** The Affiliate Agreement's legal text, fetched fresh from GET /affiliates/agreement -- see apps/api/src/modules/affiliates/affiliate-agreement.ts for the single source of truth this mirrors. */
+export interface AffiliateAgreementSection {
+  heading: string;
+  paragraphs: string[];
+}
+
+export interface AffiliateAgreement {
+  version: string;
+  sections: AffiliateAgreementSection[];
 }

@@ -112,6 +112,10 @@ function Detail({ id, onChanged, onClose }: { id: string; onChanged: () => void;
               <dt>Registered via their link</dt>
               <dd>{state.data.registrationCount}</dd>
             </div>
+            <div>
+              <dt>Signature</dt>
+              <dd>{state.data.signedName ? `${state.data.signedName}${state.data.signedAt ? ` — ${formatWhen(state.data.signedAt)}` : ''}` : 'Not on file (applied before e-signature)'}</dd>
+            </div>
             {state.data.phone ? (
               <div>
                 <dt>Phone</dt>

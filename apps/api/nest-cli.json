@@ -4,7 +4,7 @@
   "sourceRoot": "src",
   "compilerOptions": {
     "deleteOutDir": true,
-    "assets": ["modules/certificates/assets/**/*"],
+    "assets": ["modules/certificates/assets/**/*", "modules/affiliates/assets/**/*"],
     "watchAssets": true
   }
 }

@@ -1,7 +1,7 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import type { FormEvent } from 'react';
 import { Link } from 'react-router-dom';
-import type { AffiliateType } from '@aiit/shared';
+import type { AffiliateAgreement, AffiliateType } from '@aiit/shared';
 import { Layout } from '@/components/layout/Layout';
 import { Seo } from '@/lib/Seo';
 import { useScrollReveal } from '@/lib/useScrollReveal';
@@ -87,6 +87,10 @@ export default function AffiliatePage() {
   const [city, setCity] = useState('');
   const [source, setSource] = useState('');
   const [type, setType] = useState<AffiliateType | ''>('');
+  // Deliberately its own field, not pre-filled from `name` -- typing it is
+  // the actual signing gesture (see onSubmit), the same convention real
+  // e-signature platforms use even when a name is already on file.
+  const [signedName, setSignedName] = useState('');
   const [agreed, setAgreed] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string>();
@@ -97,6 +101,18 @@ export default function AffiliatePage() {
   // RegisterPage.tsx's identical signUp() flow). The visitor finishes
   // applying by coming back to this page once logged in.
   const [awaitingConfirmation, setAwaitingConfirmation] = useState(false);
+
+  // The agreement's legal text, fetched fresh rather than hardcoded on this
+  // page -- apps/api's affiliate-agreement.ts is the one place it's
+  // actually written, so it can never drift from what's embedded in the
+  // signed PDF (see that file's own doc comment).
+  const [agreement, setAgreement] = useState<AffiliateAgreement>();
+  const [agreementError, setAgreementError] = useState<string>();
+  useEffect(() => {
+    apiFetch<AffiliateAgreement>('/affiliates/agreement')
+      .then(setAgreement)
+      .catch(() => setAgreementError('Could not load the agreement text right now. You can still apply below.'));
+  }, []);
 
   // Tiered, not flat: the first 500 direct referrals earn $7 each; only
   // referrals beyond 500 earn the $10 milestone rate (AFFILIATE.rates) —
@@ -154,6 +170,8 @@ export default function AffiliatePage() {
         method: 'POST',
         body: JSON.stringify({
           type,
+          signedName: signedName.trim(),
+          agreedToTerms: agreed,
           phone: phone || undefined,
           handle: handle || undefined,
           country: country || undefined,
@@ -172,6 +190,7 @@ export default function AffiliatePage() {
 
   const canSubmit =
     type.length > 0 &&
+    signedName.trim().length > 1 &&
     agreed &&
     (isLoggedIn || (name.trim().length > 0 && email.trim().length > 0 && passwordMeetsRequirements(password)));
 
@@ -354,29 +373,27 @@ export default function AffiliatePage() {
       <Section id="agreement" tone="paper" size="default">
         <div className="container container--wide">
           <div className="affiliate-agreement" data-reveal>
-            <div className="affiliate-agreement__copy">
-              <p className="eyebrow">Affiliate agreement</p>
-              <h2 className="affiliate-section-title affiliate-agreement__title">
-                Read the Affiliate Agreement first
-              </h2>
-              <p className="affiliate-section-intro">
-                Before you apply, review the full terms — commission structure, eligibility,
-                obligations and payment terms.
-              </p>
-            </div>
-            <div className="affiliate-agreement__action">
-              <Button
-                as="a"
-                href="/assets/affiliate/aiit-affiliate-agreement.pdf"
-                download="AIIT-Affiliate-Agreement.pdf"
-                type="application/pdf"
-                variant="secondary"
-                size="lg"
-                arrow
-              >
-                Download PDF
-              </Button>
-              <p className="affiliate-agreement__meta">3 pages · 158 KB</p>
+            <p className="eyebrow">Affiliate agreement</p>
+            <h2 className="affiliate-section-title affiliate-agreement__title">Read the Affiliate Agreement</h2>
+            <p className="affiliate-section-intro">
+              This is what you&apos;re agreeing to below -- commission structure, eligibility, obligations,
+              payment terms, and the rest. You&apos;ll sign it electronically as part of applying, and can download
+              your own signed copy afterwards from your affiliate dashboard.
+            </p>
+            {agreementError ? <p className="affiliate-agreement__error">{agreementError}</p> : null}
+            <div className="affiliate-agreement__text" tabIndex={0} aria-label="Affiliate Agreement, full text">
+              {agreement ? (
+                agreement.sections.map((section) => (
+                  <div key={section.heading} className="affiliate-agreement__clause">
+                    <h3>{section.heading}</h3>
+                    {section.paragraphs.map((paragraph, i) => (
+                      <p key={i}>{paragraph}</p>
+                    ))}
+                  </div>
+                ))
+              ) : !agreementError ? (
+                <p className="affiliate-agreement__loading">Loading the agreement…</p>
+              ) : null}
             </div>
           </div>
         </div>
@@ -495,6 +512,14 @@ export default function AffiliatePage() {
                   value={source}
                   onChange={(e) => setSource(e.target.value)}
                 />
+                <TextField
+                  label="Type your full legal name to sign this agreement"
+                  name="signedName"
+                  required
+                  hint="This is your electronic signature on the Affiliate Agreement above."
+                  value={signedName}
+                  onChange={(e) => setSignedName(e.target.value)}
+                />
                 <label className="affiliate__agree">
                   <input
                     type="checkbox"
@@ -502,8 +527,8 @@ export default function AffiliatePage() {
                     checked={agreed}
                     onChange={(e) => setAgreed(e.target.checked)}
                   />{' '}
-                  I have read and agree to the AIIT Affiliate Agreement, including the commission
-                  structure and referral terms.
+                  I have read and agree to the AIIT Affiliate Agreement above, including the commission structure
+                  and referral terms, and I consent to sign it electronically as described in Clause 21.
                 </label>
                 <Button as="button" type="submit" size="lg" fullWidth arrow loading={submitting} disabled={!canSubmit}>
                   {isLoggedIn ? 'Submit application' : 'Create account & apply'}

@@ -74,6 +74,8 @@ export class AdminAffiliatesService {
       handle: row.handle,
       country: row.country,
       city: row.city,
+      signedName: row.signedName,
+      signedAt: row.signedAt?.toISOString() ?? null,
       source: row.source,
       rejectionReason: row.rejectionReason,
       reviewedAt: row.reviewedAt?.toISOString() ?? null,

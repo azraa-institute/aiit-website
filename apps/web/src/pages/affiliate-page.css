@@ -627,46 +627,59 @@
    06 · READ THE AGREEMENT
    ============================================================ */
 .affiliate-agreement {
-  display: grid;
-  gap: clamp(1.5rem, 3vw, 2.25rem);
   padding: clamp(1.75rem, 1rem + 3vw, 2.75rem);
   border: 1px solid var(--line-strong);
   border-left: 3px solid var(--red);
   border-radius: var(--radius-lg);
   background: var(--surface-raised);
 }
-@media (min-width: 820px) {
-  .affiliate-agreement {
-    grid-template-columns: minmax(0, 1fr) auto;
-    align-items: center;
-    gap: clamp(2rem, 5vw, 4rem);
-  }
-}
 .affiliate-agreement__title {
   margin-top: var(--space-2);
   max-width: none;
 }
-.affiliate-agreement__copy .affiliate-section-intro {
-  max-width: 54ch;
+.affiliate-agreement .affiliate-section-intro {
+  max-width: 62ch;
 }
-.affiliate-agreement__action {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: var(--space-3);
+.affiliate-agreement__error {
+  margin-top: var(--space-3);
+  color: var(--red);
+  font-size: var(--fs-sm);
 }
-@media (min-width: 820px) {
-  .affiliate-agreement__action {
-    align-items: flex-end;
-    text-align: right;
-    flex-shrink: 0;
-  }
+/* A real "document viewer" -- the full agreement text, scrollable in place
+   rather than forcing the whole page to scroll past 21 clauses, same way
+   the terminal section of most e-signature flows presents the contract
+   being signed. tabIndex=0 + aria-label makes the scroll region itself
+   keyboard-reachable, since nothing inside it is otherwise focusable until
+   a reader reaches the form below. */
+.affiliate-agreement__text {
+  margin-top: var(--space-5);
+  max-height: 26rem;
+  overflow-y: auto;
+  padding: var(--space-5) clamp(1.25rem, 1rem + 1.5vw, 2rem);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  background: var(--paper);
 }
-.affiliate-agreement__meta {
-  font-size: var(--fs-xs);
-  letter-spacing: var(--tracking-wide);
-  text-transform: uppercase;
-  color: var(--fg-faint);
+.affiliate-agreement__loading {
+  color: var(--fg-muted);
+}
+.affiliate-agreement__clause + .affiliate-agreement__clause {
+  margin-top: var(--space-5);
+}
+.affiliate-agreement__clause h3 {
+  margin: 0 0 var(--space-2);
+  font-family: var(--font-accent);
+  font-size: 1.05rem;
+  color: var(--brass-deep);
+}
+.affiliate-agreement__clause p {
+  margin: 0 0 var(--space-3);
+  font-size: var(--fs-sm);
+  line-height: 1.6;
+  color: var(--fg-soft);
+}
+.affiliate-agreement__clause p:last-child {
+  margin-bottom: 0;
 }
 
 /* ============================================================

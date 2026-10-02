@@ -42,7 +42,9 @@ export interface StudentDetail extends StudentSummary {
   timeZone: string | null;
   suspendedAt: string | null;
   suspendedReason: string | null;
-  enrollments: { courseId: string; courseTitle: string; status: string; enrolledAt: string }[];
+  enrollments: { courseId: string; courseSlug: string; courseTitle: string; status: string; enrolledAt: string }[];
+  /** Certificates already issued to this learner -- lets the admin UI avoid offering to re-issue one. */
+  certificates: { courseId: string; credentialId: string; issuedAt: string }[];
   attendance: { attended: number };
 }
 

@@ -146,14 +146,18 @@ export class AdminUsersService {
   async studentDetail(id: string): Promise<StudentDetail> {
     const profile = await this.prisma.profile.findFirst({ where: { id, role: 'learner' } });
     if (!profile) throw new NotFoundException('Student not found.');
-    const [emails, enrollments, attended] = await Promise.all([
+    const [emails, enrollments, attended, certificates] = await Promise.all([
       this.emailsFor([id]),
       this.prisma.enrollment.findMany({
         where: { userId: id },
-        select: { status: true, enrolledAt: true, course: { select: { id: true, title: true } } },
+        select: { status: true, enrolledAt: true, course: { select: { id: true, slug: true, title: true } } },
         orderBy: { enrolledAt: 'desc' },
       }),
       this.prisma.liveClassAttendance.count({ where: { userId: id } }),
+      this.prisma.certificate.findMany({
+        where: { userId: id },
+        select: { courseId: true, credentialId: true, issuedAt: true },
+      }),
     ]);
     return {
       id: profile.id,
@@ -169,9 +173,15 @@ export class AdminUsersService {
       suspendedReason: profile.suspendedReason,
       enrollments: enrollments.map((e) => ({
         courseId: e.course.id,
+        courseSlug: e.course.slug,
         courseTitle: e.course.title,
         status: e.status,
         enrolledAt: e.enrolledAt.toISOString(),
+      })),
+      certificates: certificates.map((c) => ({
+        courseId: c.courseId,
+        credentialId: c.credentialId,
+        issuedAt: c.issuedAt.toISOString(),
       })),
       attendance: { attended },
     };

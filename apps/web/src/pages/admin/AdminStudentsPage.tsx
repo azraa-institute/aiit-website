@@ -13,6 +13,8 @@ function StudentPanel({ id, onChanged, onClose }: { id: string; onChanged: () =>
   const [suspending, setSuspending] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string>();
+  const [issuingSlug, setIssuingSlug] = useState<string | null>(null);
+  const [certError, setCertError] = useState<string>();
 
   async function act(path: string, body?: object) {
     setBusy(true);
@@ -26,6 +28,19 @@ function StudentPanel({ id, onChanged, onClose }: { id: string; onChanged: () =>
       setError(err instanceof Error ? err.message : 'That did not work.');
     } finally {
       setBusy(false);
+    }
+  }
+
+  async function issueCertificate(courseSlug: string) {
+    setIssuingSlug(courseSlug);
+    setCertError(undefined);
+    try {
+      await apiFetch(`/courses/${courseSlug}/certificates`, { method: 'POST', body: JSON.stringify({ userId: id }) });
+      state.reload();
+    } catch (err) {
+      setCertError(err instanceof Error ? err.message : 'Could not issue that certificate.');
+    } finally {
+      setIssuingSlug(null);
     }
   }
 
@@ -73,13 +88,29 @@ function StudentPanel({ id, onChanged, onClose }: { id: string; onChanged: () =>
             <p className="adm-muted">Not enrolled in any course.</p>
           ) : (
             <ul className="adm-plain">
-              {state.data.enrollments.map((e) => (
-                <li key={e.courseId}>
-                  {e.courseTitle} <span className="adm-muted">· {e.status}</span>
-                </li>
-              ))}
+              {state.data.enrollments.map((e) => {
+                const cert = state.data.certificates.find((c) => c.courseId === e.courseId);
+                return (
+                  <li key={e.courseId}>
+                    {e.courseTitle} <span className="adm-muted">· {e.status}</span>
+                    {cert ? (
+                      <span className="adm-muted"> · Certificate issued ({cert.credentialId})</span>
+                    ) : (
+                      <button
+                        type="button"
+                        className="adm-linkbtn"
+                        disabled={issuingSlug !== null}
+                        onClick={() => issueCertificate(e.courseSlug)}
+                      >
+                        {issuingSlug === e.courseSlug ? 'Issuing…' : 'Issue certificate'}
+                      </button>
+                    )}
+                  </li>
+                );
+              })}
             </ul>
           )}
+          {certError ? <p className="adm-error" role="alert">{certError}</p> : null}
 
           {state.data.status === 'suspended' ? (
             <p className="adm-notice">

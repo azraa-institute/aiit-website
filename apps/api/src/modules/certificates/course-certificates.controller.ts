@@ -7,7 +7,7 @@ import { Roles } from '../../common/decorators/roles.decorator';
 import { CertificatesService } from './certificates.service';
 import { IssueCertificateDto } from './dto/issue-certificate.dto';
 
-/** Not learner-callable. No admin UI yet -- called directly with an admin JWT until one exists. */
+/** Not learner-callable. Called from the admin student drawer (AdminStudentsPage). */
 @Controller('courses')
 @UseGuards(JwtGuard, RolesGuard)
 @Roles('admin')

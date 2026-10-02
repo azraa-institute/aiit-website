@@ -11,18 +11,29 @@ import { AFFILIATE } from '@/data/blueprint';
 import { SITE } from '@/data/site';
 import { Section } from '@/components/primitives/Section';
 import { Button } from '@/components/primitives/Button';
-import { TextField, PasswordField, SelectField } from '@/components/common/Field';
+import { TextField, PasswordField, SelectField, TextArea } from '@/components/common/Field';
 import { PASSWORD_HINT, passwordMeetsRequirements } from '@/components/common/PasswordRequirements';
 import { apiFetch } from '@/lib/api';
 import { useMe } from '@/lib/me';
 import { supabase } from '@/lib/supabaseClient';
 import { getPendingReferralSlug, clearPendingReferralSlug } from '@/lib/referralAttribution';
+import { COUNTRIES } from '@/data/countries';
+import { combinePhone } from '@/lib/phone';
+import { PhoneCountrySelect } from './portal/PhoneCountrySelect';
 import { useAffiliateMe } from './affiliate/affiliateData';
 import { AffiliateNetwork } from './AffiliateNetwork';
 import { cn } from '@/lib/cn';
 import './affiliate-page.css';
 
 const ALREADY_REGISTERED_MESSAGE = 'An account with this email already exists. Please sign in, then apply from this page.';
+
+// Same free-text-but-canonical-list convention as the student Profile/Settings
+// country field (SettingsPage.tsx's COUNTRY_OPTIONS) -- the backend stores
+// whatever string is sent (Affiliate.country, see schema.prisma), so this
+// sends the country's name, not its ISO code, to keep admin-facing display
+// plain. Using the same COUNTRIES list the rest of the site uses is the
+// actual fix for "the country list doesn't match the student side".
+const COUNTRY_OPTIONS = [{ value: '', label: 'Select a country' }, ...COUNTRIES.map((c) => ({ value: c.name, label: c.name }))];
 
 function MailIcon() {
   return (
@@ -38,6 +49,16 @@ function CheckBadgeIcon() {
     <svg width="22" height="22" viewBox="0 0 24 24" aria-hidden="true">
       <circle cx="12" cy="12" r="9.25" fill="none" stroke="currentColor" strokeWidth="1.6" />
       <path d="M7.5 12.5l3 3 6-6.5" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
+function ClipboardIcon() {
+  return (
+    <svg width="22" height="22" viewBox="0 0 24 24" aria-hidden="true">
+      <rect x="5" y="4.5" width="14" height="17" rx="2" fill="none" stroke="currentColor" strokeWidth="1.6" />
+      <rect x="9" y="3" width="6" height="3" rx="1" fill="none" stroke="currentColor" strokeWidth="1.6" />
+      <path d="M8.5 12.5h7M8.5 16h7" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
     </svg>
   );
 }
@@ -99,11 +120,13 @@ export default function AffiliatePage() {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [phone, setPhone] = useState('');
+  const [phoneCountry, setPhoneCountry] = useState('');
+  const [phoneNational, setPhoneNational] = useState('');
   const [handle, setHandle] = useState('');
   const [country, setCountry] = useState('');
   const [city, setCity] = useState('');
   const [source, setSource] = useState('');
+  const [motivation, setMotivation] = useState('');
   const [type, setType] = useState<AffiliateType | ''>('');
   // Deliberately its own field, not pre-filled from `name` -- typing it is
   // the actual signing gesture (see onSubmit), the same convention real
@@ -190,11 +213,12 @@ export default function AffiliatePage() {
           type,
           signedName: signedName.trim(),
           agreedToTerms: agreed,
-          phone: phone || undefined,
+          phone: combinePhone(phoneCountry, phoneNational) || undefined,
           handle: handle || undefined,
           country: country || undefined,
           city: city || undefined,
           source: source || undefined,
+          motivation: motivation.trim() || undefined,
         }),
       });
       affiliateMe.refetch();
@@ -208,6 +232,7 @@ export default function AffiliatePage() {
 
   const canSubmit =
     type.length > 0 &&
+    country.length > 0 &&
     signedName.trim().length > 1 &&
     agreed &&
     (isLoggedIn || (name.trim().length > 0 && email.trim().length > 0 && passwordMeetsRequirements(password)));
@@ -441,10 +466,20 @@ export default function AffiliatePage() {
             {isLoggedIn && affiliateMe.status === 'loading' ? <p className="affiliate__thanks">Checking your account…</p> : null}
 
             {isLoggedIn && affiliateMe.status === 'ready' && affiliateMe.data.hasApplied ? (
-              <p className="affiliate__thanks">
-                You&apos;ve already applied to the affiliate program.{' '}
-                <Link to="/affiliate-portal">Check your application status</Link>.
-              </p>
+              <div className="affiliate__status-card affiliate__status-card--applied" data-reveal>
+                <span className="affiliate__status-icon" aria-hidden="true">
+                  <ClipboardIcon />
+                </span>
+                <h3>You&apos;ve already applied</h3>
+                <p>
+                  Your application is on file and the AIIT team reviews every one by hand. Track its progress,
+                  download your signed agreement, and -- once approved -- grab your referral link, all from your
+                  dashboard.
+                </p>
+                <Link to="/affiliate-portal" className="affiliate__status-cta">
+                  Go to your affiliate dashboard →
+                </Link>
+              </div>
             ) : awaitingConfirmation ? (
               <div className="affiliate__status-card affiliate__status-card--pending" data-reveal>
                 <span className="affiliate__status-icon" aria-hidden="true">
@@ -482,7 +517,8 @@ export default function AffiliatePage() {
                   </p>
                 ) : null}
                 {!isLoggedIn ? (
-                  <>
+                  <fieldset className="affiliate__form-section">
+                    <legend>Your account</legend>
                     <TextField
                       label="Full name"
                       name="name"
@@ -506,78 +542,110 @@ export default function AffiliatePage() {
                       required
                       autoComplete="new-password"
                       hint={PASSWORD_HINT}
+                      className="field--wide"
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
                     />
-                  </>
+                  </fieldset>
                 ) : null}
-                <SelectField
-                  label="What kind of affiliate are you?"
-                  name="type"
-                  required
-                  options={[
-                    { value: '', label: 'Select one' },
-                    { value: 'creator', label: 'Creator -- I introduce content creators to AIIT' },
-                    { value: 'student', label: 'Student referrer -- I refer students directly' },
-                    { value: 'affiliate_to_affiliate', label: 'Affiliate-to-affiliate -- I bring in other affiliates' },
-                  ]}
-                  value={type}
-                  onChange={(e) => setType(e.target.value as AffiliateType | '')}
-                />
-                <TextField
-                  label="Phone number"
-                  name="phone"
-                  autoComplete="tel"
-                  value={phone}
-                  onChange={(e) => setPhone(e.target.value)}
-                />
-                <TextField
-                  label="Social media handle (optional)"
-                  name="handle"
-                  value={handle}
-                  onChange={(e) => setHandle(e.target.value)}
-                />
-                <TextField label="Country" name="country" value={country} onChange={(e) => setCountry(e.target.value)} />
-                <TextField label="City" name="city" value={city} onChange={(e) => setCity(e.target.value)} />
-                <SelectField
-                  label="How did you hear about us?"
-                  name="source"
-                  options={[
-                    { value: '', label: 'Select one' },
-                    { value: 'social', label: 'Social Media' },
-                    { value: 'friend', label: 'Through a Friend' },
-                    { value: 'other', label: 'Other' },
-                  ]}
-                  value={source}
-                  onChange={(e) => setSource(e.target.value)}
-                />
-                <p className="affiliate__read-notice">
-                  Please read the Affiliate Agreement above carefully, in full, before you sign below -- it covers
-                  how and when you&apos;re paid, confidentiality, and your obligations as a partner, and typing your
-                  name is a legally binding signature under Clause 21.
-                </p>
-                <TextField
-                  label="Type your full legal name to sign this agreement"
-                  name="signedName"
-                  required
-                  hint="This is your electronic signature on the Affiliate Agreement above."
-                  value={signedName}
-                  onChange={(e) => setSignedName(e.target.value)}
-                />
-                <label className="affiliate__agree">
-                  <input
-                    type="checkbox"
+
+                <fieldset className="affiliate__form-section">
+                  <legend>About you</legend>
+                  <SelectField
+                    label="What kind of affiliate are you?"
+                    name="type"
                     required
-                    checked={agreed}
-                    onChange={(e) => setAgreed(e.target.checked)}
-                  />{' '}
-                  I have read and agree to the AIIT Affiliate Agreement above, including the commission structure
-                  and referral terms, and I consent to sign it electronically as described in Clause 21.
-                </label>
-                <Button as="button" type="submit" size="lg" fullWidth arrow loading={submitting} disabled={!canSubmit}>
-                  {isLoggedIn ? 'Submit application' : 'Create account & apply'}
-                </Button>
-                <p className="affiliate__disclaimer">{a.disclaimer}</p>
+                    className="field--wide"
+                    options={[
+                      { value: '', label: 'Select one' },
+                      { value: 'creator', label: 'Creator -- I introduce content creators to AIIT' },
+                      { value: 'student', label: 'Student referrer -- I refer students directly' },
+                      { value: 'affiliate_to_affiliate', label: 'Affiliate-to-affiliate -- I bring in other affiliates' },
+                    ]}
+                    value={type}
+                    onChange={(e) => setType(e.target.value as AffiliateType | '')}
+                  />
+                  <PhoneCountrySelect label="Country code" value={phoneCountry} onChange={setPhoneCountry} />
+                  <TextField
+                    label="Mobile number"
+                    name="phone"
+                    type="tel"
+                    autoComplete="tel-national"
+                    hint="Without the leading 0, e.g. 8012345678."
+                    value={phoneNational}
+                    onChange={(e) => setPhoneNational(e.target.value)}
+                  />
+                  <TextField
+                    label="Platform or profile link (optional)"
+                    name="handle"
+                    hint="Instagram, YouTube, TikTok, a website -- wherever we can see your work."
+                    value={handle}
+                    onChange={(e) => setHandle(e.target.value)}
+                  />
+                  <SelectField
+                    label="Country"
+                    name="country"
+                    required
+                    options={COUNTRY_OPTIONS}
+                    value={country}
+                    onChange={(e) => setCountry(e.target.value)}
+                  />
+                  <TextField label="City" name="city" value={city} onChange={(e) => setCity(e.target.value)} />
+                  <SelectField
+                    label="How did you hear about us?"
+                    name="source"
+                    options={[
+                      { value: '', label: 'Select one' },
+                      { value: 'social', label: 'Social Media' },
+                      { value: 'friend', label: 'Through a Friend' },
+                      { value: 'other', label: 'Other' },
+                    ]}
+                    value={source}
+                    onChange={(e) => setSource(e.target.value)}
+                  />
+                  <TextArea
+                    label="Tell us about yourself and your audience (optional)"
+                    name="motivation"
+                    className="field--wide"
+                    rows={4}
+                    maxLength={1000}
+                    hint="Your platform, audience size, or why you'd be a great AIIT affiliate -- this is what we actually review you on."
+                    value={motivation}
+                    onChange={(e) => setMotivation(e.target.value)}
+                  />
+                </fieldset>
+
+                <fieldset className="affiliate__form-section">
+                  <legend>Sign the agreement</legend>
+                  <p className="affiliate__read-notice">
+                    Please read the Affiliate Agreement above carefully, in full, before you sign below -- it covers
+                    how and when you&apos;re paid, confidentiality, and your obligations as a partner, and typing
+                    your name is a legally binding signature under Clause 21.
+                  </p>
+                  <TextField
+                    label="Type your full legal name to sign this agreement"
+                    name="signedName"
+                    required
+                    className="field--wide"
+                    hint="This is your electronic signature on the Affiliate Agreement above."
+                    value={signedName}
+                    onChange={(e) => setSignedName(e.target.value)}
+                  />
+                  <label className="affiliate__agree">
+                    <input
+                      type="checkbox"
+                      required
+                      checked={agreed}
+                      onChange={(e) => setAgreed(e.target.checked)}
+                    />{' '}
+                    I have read and agree to the AIIT Affiliate Agreement above, including the commission structure
+                    and referral terms, and I consent to sign it electronically as described in Clause 21.
+                  </label>
+                  <Button as="button" type="submit" size="lg" fullWidth arrow loading={submitting} disabled={!canSubmit}>
+                    {isLoggedIn ? 'Submit application' : 'Create account & apply'}
+                  </Button>
+                  <p className="affiliate__disclaimer">{a.disclaimer}</p>
+                </fieldset>
               </form>
             ) : null}
           </div>

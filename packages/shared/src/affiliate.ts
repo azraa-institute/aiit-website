@@ -47,6 +47,7 @@ export interface AdminAffiliateDetail extends AdminAffiliateSummary {
   country: string | null;
   city: string | null;
   source: string | null;
+  motivation: string | null;
   /** Electronic signature evidence -- see Affiliate.signedName/signedAt and affiliate-agreement.ts. Null for the handful of rows that predate e-signature. */
   signedName: string | null;
   signedAt: string | null;

@@ -738,19 +738,93 @@
 .affiliate__code strong {
   color: var(--brass-tint);
 }
+/* The whole form reads as one physical document -- a paper card standing
+   out against the dark CTA section -- divided into named fieldsets (Your
+   account / About you / Sign the agreement) rather than one undifferentiated
+   list of inputs, matching the "official paperwork" language the agreement
+   reader and the signed PDF already use. */
 .affiliate__form {
+  /* This card sits inside the section's .on-ink context, which remaps --fg/
+     --hairline/etc to their light-on-dark values for everything around it
+     -- reset back to the page's normal light-mode semantics here, or every
+     label and hint on this cream card would render near-invisible light
+     text on a light background. */
+  --bg: var(--paper);
+  --bg-alt: var(--ivory);
+  --fg: var(--ink);
+  --fg-soft: var(--ink-soft);
+  --fg-muted: var(--ink-muted);
+  --fg-faint: var(--ink-faint);
+  --hairline: var(--line);
+  --accent: var(--brass);
+  --accent-strong: var(--brass-deep);
+  --accent-fg: #ffffff;
+  color-scheme: light;
+  display: grid;
+  gap: clamp(1.75rem, 1.4rem + 1.5vw, 2.5rem);
+  padding: clamp(1.5rem, 1rem + 2vw, 2.5rem);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--line);
+  background: var(--paper);
+}
+.affiliate__form > .auth__alert {
+  margin: 0;
+}
+/* field.css's `.on-ink .field__control` dark-translucent override still
+   matches here (its ancestor .on-ink section is still there -- only the
+   custom-property values were reset above, not the class itself), so
+   field inputs/selects/PhoneCountrySelect's trigger (also a .field__control)
+   need their own explicit light-mode values, at higher specificity than
+   that two-class selector, to actually win the cascade. */
+.affiliate__form .field .field__control {
+  background: var(--surface);
+  border-color: var(--line-strong);
+}
+.affiliate__form .field .field__control option {
+  background-color: var(--surface);
+  color: var(--fg);
+}
+.affiliate__form .field .field__control:-webkit-autofill,
+.affiliate__form .field .field__control:-webkit-autofill:hover,
+.affiliate__form .field .field__control:-webkit-autofill:focus {
+  -webkit-text-fill-color: var(--fg);
+  -webkit-box-shadow: 0 0 0 1000px var(--surface) inset;
+}
+/* Same problem as the fields above: button.css's `.on-ink .btn--primary`
+   would otherwise paint the submit button ivory-on-ivory against this card. */
+.affiliate__form .btn.btn--primary {
+  --btn-bg: var(--ink);
+  --btn-fg: var(--paper);
+  --btn-border: var(--ink);
+}
+.affiliate__form-section {
   display: grid;
   gap: var(--space-4);
+  margin: 0;
+  padding: 0;
+  border: none;
+}
+.affiliate__form-section + .affiliate__form-section {
+  padding-top: clamp(1.75rem, 1.4rem + 1.5vw, 2.5rem);
+  border-top: 1px solid var(--line);
+}
+.affiliate__form-section > legend {
+  grid-column: 1 / -1;
+  padding: 0 0 var(--space-1);
+  font-family: var(--font-accent);
+  font-size: 0.95rem;
+  letter-spacing: 0.02em;
+  color: var(--brass-deep);
 }
 @media (min-width: 560px) {
-  .affiliate__form {
+  .affiliate__form-section {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
-  .affiliate__form > .field:nth-child(7),
-  .affiliate__form > .affiliate__read-notice,
-  .affiliate__form > .affiliate__agree,
-  .affiliate__form > .btn,
-  .affiliate__form > .affiliate__disclaimer {
+  .affiliate__form-section > .field--wide,
+  .affiliate__form-section > .affiliate__read-notice,
+  .affiliate__form-section > .affiliate__agree,
+  .affiliate__form-section > .btn,
+  .affiliate__form-section > .affiliate__disclaimer {
     grid-column: 1 / -1;
   }
 }
@@ -785,14 +859,26 @@
 }
 
 .affiliate__status-card {
+  /* Same .on-ink token reset as .affiliate__form, and for the same reason --
+     this card's light paper background sits inside the dark section's
+     inverted --fg/etc context, which (left unreset) would paint its text in
+     near-white, nearly invisible on this surface. */
+  --fg: var(--ink);
+  --fg-soft: var(--ink-soft);
+  --fg-muted: var(--ink-muted);
+  --fg-faint: var(--ink-faint);
+  --hairline: var(--line);
+  color-scheme: light;
   position: relative;
   max-width: 46ch;
   padding: var(--space-5) clamp(1.5rem, 1rem + 2vw, 2.25rem);
   border-radius: var(--radius-md);
   border: 1px solid var(--line);
   background: var(--paper);
+  color: var(--fg);
 }
-.affiliate__status-card--pending {
+.affiliate__status-card--pending,
+.affiliate__status-card--applied {
   border-left: 3px solid var(--brass-tint);
 }
 .affiliate__status-card--success {

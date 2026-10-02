@@ -11,6 +11,7 @@ const BASE_AFFILIATE = {
   country: null,
   city: null,
   source: null,
+  motivation: null,
   signedName: 'Ada Lovelace',
   agreementVersion: '2026-10-03',
   signedAt: new Date('2026-10-03T12:00:00.000Z'),

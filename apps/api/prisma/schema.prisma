@@ -136,6 +136,10 @@ model Affiliate {
   country           String?
   city              String?
   source            String?
+  // Free-text "tell us about yourself / your audience" -- the one field
+  // that actually gives an admin something to screen on beyond type/
+  // location; optional so it never blocks someone who'd rather just apply.
+  motivation        String?
   // Electronic signature evidence, captured at apply time -- see
   // AffiliatesService.apply() and affiliate-agreement.ts. All nullable:
   // rows created before e-signature existed (the real test application

@@ -12,6 +12,7 @@ export interface ApplyContext {
   country?: string;
   city?: string;
   source?: string;
+  motivation?: string;
 }
 
 const EMPTY_ME: AffiliateMe = {

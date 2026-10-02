@@ -48,4 +48,9 @@ export class ApplyAffiliateDto {
   @IsString()
   @MaxLength(60)
   source?: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(1000)
+  motivation?: string;
 }

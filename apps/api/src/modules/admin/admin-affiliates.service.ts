@@ -77,6 +77,7 @@ export class AdminAffiliatesService {
       signedName: row.signedName,
       signedAt: row.signedAt?.toISOString() ?? null,
       source: row.source,
+      motivation: row.motivation,
       rejectionReason: row.rejectionReason,
       reviewedAt: row.reviewedAt?.toISOString() ?? null,
       reviewedByName: row.reviewedBy ? (reviewerName.get(row.reviewedBy)?.name ?? null) : null,

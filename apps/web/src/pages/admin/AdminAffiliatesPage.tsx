@@ -140,6 +140,12 @@ function Detail({ id, onChanged, onClose }: { id: string; onChanged: () => void;
                 <dd>{state.data.source}</dd>
               </div>
             ) : null}
+            {state.data.motivation ? (
+              <div>
+                <dt>About them / their audience</dt>
+                <dd>{state.data.motivation}</dd>
+              </div>
+            ) : null}
             {state.data.reviewedAt ? (
               <div>
                 <dt>Reviewed</dt>

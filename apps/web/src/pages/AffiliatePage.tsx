@@ -24,6 +24,24 @@ import './affiliate-page.css';
 
 const ALREADY_REGISTERED_MESSAGE = 'An account with this email already exists. Please sign in, then apply from this page.';
 
+function MailIcon() {
+  return (
+    <svg width="22" height="22" viewBox="0 0 24 24" aria-hidden="true">
+      <rect x="3" y="5" width="18" height="14" rx="2" fill="none" stroke="currentColor" strokeWidth="1.6" />
+      <path d="M4 7l8 6 8-6" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
+function CheckBadgeIcon() {
+  return (
+    <svg width="22" height="22" viewBox="0 0 24 24" aria-hidden="true">
+      <circle cx="12" cy="12" r="9.25" fill="none" stroke="currentColor" strokeWidth="1.6" />
+      <path d="M7.5 12.5l3 3 6-6.5" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
 /** One rate figure with a count-up-on-reveal animated number. */
 function RateFigure({
   value,
@@ -214,6 +232,9 @@ export default function AffiliatePage() {
                 {a.secondaryCta.label}
               </Button>
             </div>
+            <p className="affiliate-hero__signin">
+              Already applied? <Link to="/affiliate-portal">Sign in to your affiliate dashboard</Link>.
+            </p>
           </div>
           <div className="affiliate-hero__visual">
             <AffiliateNetwork active={heroActive} />
@@ -425,16 +446,34 @@ export default function AffiliatePage() {
                 <Link to="/affiliate-portal">Check your application status</Link>.
               </p>
             ) : awaitingConfirmation ? (
-              <p className="affiliate__thanks">
-                We&apos;ve sent a confirmation link to {email}. Once you confirm your account, come back to this page
-                signed in to finish applying.
-              </p>
+              <div className="affiliate__status-card affiliate__status-card--pending" data-reveal>
+                <span className="affiliate__status-icon" aria-hidden="true">
+                  <MailIcon />
+                </span>
+                <h3>Confirm your email to continue</h3>
+                <p>
+                  We&apos;ve sent a confirmation link to <strong>{email}</strong>. Open it from this device, then come
+                  back to this page signed in to finish your application -- your signed agreement is saved the moment
+                  you submit, right after that.
+                </p>
+                <p className="affiliate__status-meta">Didn&apos;t get it? Check spam, or call/WhatsApp {SITE.contact.phone}.</p>
+              </div>
             ) : done ? (
-              <p className="affiliate__thanks">
-                Thanks, your application is in. The AIIT team reviews every application by hand --{' '}
-                <Link to="/affiliate-portal">check your status any time</Link>, or we&apos;ll email you the moment a
-                decision is made. Questions? Call or WhatsApp {SITE.contact.phone}.
-              </p>
+              <div className="affiliate__status-card affiliate__status-card--success" data-reveal>
+                <span className="affiliate__status-icon" aria-hidden="true">
+                  <CheckBadgeIcon />
+                </span>
+                <h3>Application submitted</h3>
+                <p>
+                  Thanks -- your signed agreement is on file and the AIIT team reviews every application by hand.
+                  You&apos;ll see your status update in real time on your dashboard, and we&apos;ll email you the
+                  moment a decision is made.
+                </p>
+                <Link to="/affiliate-portal" className="affiliate__status-cta">
+                  Go to your affiliate dashboard →
+                </Link>
+                <p className="affiliate__status-meta">Questions? Call or WhatsApp {SITE.contact.phone}.</p>
+              </div>
             ) : !(isLoggedIn && affiliateMe.status === 'loading') ? (
               <form className="affiliate__form" onSubmit={onSubmit}>
                 {error ? (
@@ -512,6 +551,11 @@ export default function AffiliatePage() {
                   value={source}
                   onChange={(e) => setSource(e.target.value)}
                 />
+                <p className="affiliate__read-notice">
+                  Please read the Affiliate Agreement above carefully, in full, before you sign below -- it covers
+                  how and when you&apos;re paid, confidentiality, and your obligations as a partner, and typing your
+                  name is a legally binding signature under Clause 21.
+                </p>
                 <TextField
                   label="Type your full legal name to sign this agreement"
                   name="signedName"

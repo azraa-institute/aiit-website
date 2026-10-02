@@ -89,6 +89,16 @@
   gap: var(--space-3);
   margin-top: var(--space-6);
 }
+.affiliate-hero__signin {
+  margin-top: var(--space-4);
+  font-size: var(--fs-sm);
+  color: var(--fg-soft);
+}
+.affiliate-hero__signin a {
+  color: var(--brass-tint);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
 
 /* ---- The network visual ---- */
 .affiliate-hero__visual {
@@ -658,7 +668,17 @@
   padding: var(--space-5) clamp(1.25rem, 1rem + 1.5vw, 2rem);
   border: 1px solid var(--line);
   border-radius: var(--radius-sm);
-  background: var(--paper);
+  /* Same "official document" watermark as the signed PDF itself (and the
+     certificate before it) -- a near-opaque wash of --paper layered over
+     the logo fades it to a faint impression rather than a loud image, and
+     background-attachment's default (`scroll`, not `local`) keeps it fixed
+     in the box as the clause text scrolls inside it. */
+  background-image:
+    linear-gradient(rgba(251, 248, 242, 0.94), rgba(251, 248, 242, 0.94)),
+    url('/assets/brand/azraa-institute-of-information-technology-official-logo-black.png');
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: cover, 60% auto;
 }
 .affiliate-agreement__loading {
   color: var(--fg-muted);
@@ -727,11 +747,25 @@
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
   .affiliate__form > .field:nth-child(7),
+  .affiliate__form > .affiliate__read-notice,
   .affiliate__form > .affiliate__agree,
   .affiliate__form > .btn,
   .affiliate__form > .affiliate__disclaimer {
     grid-column: 1 / -1;
   }
+}
+.affiliate__read-notice {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-2);
+  padding: var(--space-3) var(--space-4);
+  border: 1px solid var(--line);
+  border-left: 3px solid var(--brass-tint);
+  border-radius: var(--radius-sm);
+  background: color-mix(in srgb, var(--brass-tint) 7%, transparent);
+  font-size: var(--fs-sm);
+  color: var(--fg-soft);
+  line-height: 1.55;
 }
 .affiliate__agree {
   display: flex;
@@ -748,4 +782,58 @@
   font-size: var(--fs-lead);
   line-height: 1.6;
   max-width: 46ch;
+}
+
+.affiliate__status-card {
+  position: relative;
+  max-width: 46ch;
+  padding: var(--space-5) clamp(1.5rem, 1rem + 2vw, 2.25rem);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--line);
+  background: var(--paper);
+}
+.affiliate__status-card--pending {
+  border-left: 3px solid var(--brass-tint);
+}
+.affiliate__status-card--success {
+  border-left: 3px solid var(--green, #2f7a4f);
+}
+.affiliate__status-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.5rem;
+  height: 2.5rem;
+  margin-bottom: var(--space-3);
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--brass-tint) 14%, transparent);
+  color: var(--brass-deep);
+}
+.affiliate__status-card--success .affiliate__status-icon {
+  background: color-mix(in srgb, var(--green, #2f7a4f) 14%, transparent);
+  color: var(--green, #2f7a4f);
+}
+.affiliate__status-card h3 {
+  font-family: var(--font-display);
+  font-size: var(--fs-h4);
+  margin-bottom: var(--space-2);
+}
+.affiliate__status-card p {
+  color: var(--fg-soft);
+  line-height: 1.6;
+}
+.affiliate__status-meta {
+  margin-top: var(--space-3);
+  font-size: var(--fs-xs);
+  color: var(--fg-faint);
+}
+.affiliate__status-cta {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin-top: var(--space-4);
+  font-weight: 600;
+  color: var(--brass-deep);
+  text-decoration: underline;
+  text-underline-offset: 3px;
 }

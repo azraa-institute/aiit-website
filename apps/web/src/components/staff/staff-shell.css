@@ -1,7 +1,7 @@
-/* Staff portals (admin + instructor). Same grammar as the student portal --
-   a fixed sidebar and a paper content area -- but each portal has its own
-   sidebar colour so nobody mistakes which one they are in:
-   admin = deep warm ink with a brass rule, instructor = deep slate. */
+/* Staff + affiliate portals. Same grammar as the student portal -- a fixed
+   sidebar and a paper content area -- but each has its own sidebar colour
+   so nobody mistakes which one they are in: admin = deep warm ink with a
+   brass rule, instructor = deep slate, affiliate = deep bronze. */
 
 .shell {
   --shell-side-w: 15.5rem;
@@ -15,6 +15,10 @@
 .shell--instructor {
   --shell-bg: var(--slate-deep);
   --shell-accent: #cfe0de;
+}
+.shell--affiliate {
+  --shell-bg: #2a2118;
+  --shell-accent: #c9a876;
 }
 
 .shell__side {

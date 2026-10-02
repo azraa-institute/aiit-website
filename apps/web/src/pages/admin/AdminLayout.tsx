@@ -9,6 +9,7 @@ const ADMIN_NAV: StaffNavEntry[] = [
   { to: '/admin/timetables', label: 'Timetables' },
   { to: '/admin/classes', label: 'Classes' },
   { to: '/admin/complaints', label: 'Complaints' },
+  { to: '/admin/affiliates', label: 'Affiliates' },
   { to: '/admin/announcements', label: 'Announcements' },
   { to: '/admin/reports', label: 'Reports' },
   { to: '/admin/messages', label: 'Messages' },

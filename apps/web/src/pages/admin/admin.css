@@ -795,6 +795,19 @@
 .adm-status--c-dismissed {
   color: var(--ink-faint);
 }
+.adm-status--a-pending,
+.adm-status--a-in_review {
+  color: var(--brass-deep);
+  border-color: var(--brass);
+}
+.adm-status--a-approved {
+  color: #2f6b3f;
+  border-color: #2f6b3f;
+}
+.adm-status--a-rejected {
+  color: var(--red);
+  border-color: var(--red);
+}
 .adm-h2 {
   margin: var(--space-6) 0 var(--space-3);
   font-size: 1.05rem;

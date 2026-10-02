@@ -7,8 +7,10 @@ import { AuthProvider } from '@/lib/AuthContext';
 import { RequireAuth } from '@/components/auth/RequireAuth';
 import { RequireCompleteProfile } from '@/components/auth/RequireCompleteProfile';
 import { RequireRole } from '@/components/auth/RequireRole';
+import { RequireAffiliate } from '@/components/auth/RequireAffiliate';
 import { CookieConsentProvider } from '@/lib/CookieConsentContext';
 import { CookieConsent } from '@/components/common/CookieConsent';
+import { setPendingReferralSlug } from '@/lib/referralAttribution';
 
 /**
  * Fades out and removes the static #splash overlay (defined in index.html)
@@ -93,6 +95,9 @@ const AdminComplaintsPage = lazy(() => import('@/pages/admin/AdminComplaintsPage
 const AdminAnnouncementsPage = lazy(() => import('@/pages/admin/AdminAnnouncementsPage'));
 const AdminReportsPage = lazy(() => import('@/pages/admin/AdminReportsPage'));
 const AdminMessagesPage = lazy(() => import('@/pages/admin/AdminMessagesPage'));
+const AdminAffiliatesPage = lazy(() => import('@/pages/admin/AdminAffiliatesPage'));
+const AffiliateLayout = lazy(() => import('@/pages/affiliate/AffiliateLayout'));
+const AffiliateDashboardPage = lazy(() => import('@/pages/affiliate/AffiliateDashboardPage'));
 const InstructorLayout = lazy(() => import('@/pages/instructor/InstructorLayout'));
 const InstructorDashboardPage = lazy(() => import('@/pages/instructor/InstructorDashboardPage'));
 const InstructorCoursesPage = lazy(() => import('@/pages/instructor/InstructorCoursesPage'));
@@ -110,6 +115,17 @@ const NotFoundPage = lazy(() => import('@/pages/NotFoundPage'));
 function LegacyClassroomRedirect() {
   const { id } = useParams();
   return <Navigate to={`/classroom/${id ?? ''}`} replace />;
+}
+
+/** An affiliate's referral link -- captures the slug for RegisterPage to pass through at
+ * signup, then sends the visitor on to the homepage (not /affiliate -- they might become
+ * a student, not necessarily a new affiliate, so this shouldn't presume which). */
+function ReferralRedirect() {
+  const { slug } = useParams();
+  useEffect(() => {
+    if (slug) setPendingReferralSlug(slug);
+  }, [slug]);
+  return <Navigate to="/" replace />;
 }
 
 export function App() {
@@ -145,6 +161,7 @@ export function App() {
               <Route path="/why-join" element={<WhyJoinPage />} />
               <Route path="/aiit-blueprint" element={<BlueprintPage />} />
               <Route path="/affiliate" element={<AffiliatePage />} />
+              <Route path="/r/:slug" element={<ReferralRedirect />} />
               <Route path="/login" element={<LoginPage />} />
               <Route path="/register" element={<RegisterPage />} />
               <Route path="/forgot-password" element={<ForgotPasswordPage />} />
@@ -236,6 +253,22 @@ export function App() {
               />
               <Route path="/portal/classes/:id" element={<LegacyClassroomRedirect />} />
 
+              {/* Affiliate portal: a regular (learner-login) account, not staff -- gated on
+                  having an Affiliate row at all, not on approval status (the dashboard
+                  itself shows pending/in-review/approved/rejected). */}
+              <Route
+                path="/affiliate-portal"
+                element={
+                  <RequireAuth>
+                    <RequireAffiliate>
+                      <AffiliateLayout />
+                    </RequireAffiliate>
+                  </RequireAuth>
+                }
+              >
+                <Route index element={<AffiliateDashboardPage />} />
+              </Route>
+
               {/* Staff sign-in (no sign-up: accounts are created by an admin) */}
               <Route path="/staff/login" element={<StaffLoginPage />} />
               <Route
@@ -267,6 +300,7 @@ export function App() {
                 <Route path="timetables" element={<AdminTimetablesPage />} />
                 <Route path="classes" element={<AdminClassesPage />} />
                 <Route path="complaints" element={<AdminComplaintsPage />} />
+                <Route path="affiliates" element={<AdminAffiliatesPage />} />
                 <Route path="announcements" element={<AdminAnnouncementsPage />} />
                 <Route path="reports" element={<AdminReportsPage />} />
                 <Route path="messages" element={<AdminMessagesPage />} />

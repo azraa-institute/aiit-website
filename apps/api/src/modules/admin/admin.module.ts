@@ -1,4 +1,5 @@
 import { Module } from '@nestjs/common';
+import { EmailModule } from '../../common/email/email.module';
 import { AdminUsersController } from './admin-users.controller';
 import { AdminUsersService } from './admin-users.service';
 import { AdminCoursesController } from './admin-courses.controller';
@@ -9,9 +10,12 @@ import { AdminAnnouncementsService } from './admin-announcements.service';
 import { AdminReportsService } from './admin-reports.service';
 import { AdminMessagesController } from './admin-messages.controller';
 import { AdminMessagesService } from './admin-messages.service';
+import { AdminAffiliatesController } from './admin-affiliates.controller';
+import { AdminAffiliatesService } from './admin-affiliates.service';
 
 @Module({
-  controllers: [AdminUsersController, AdminCoursesController, AdminSupportController, AdminMessagesController],
+  imports: [EmailModule],
+  controllers: [AdminUsersController, AdminCoursesController, AdminSupportController, AdminMessagesController, AdminAffiliatesController],
   providers: [
     AdminUsersService,
     AdminCoursesService,
@@ -19,6 +23,7 @@ import { AdminMessagesService } from './admin-messages.service';
     AdminAnnouncementsService,
     AdminReportsService,
     AdminMessagesService,
+    AdminAffiliatesService,
   ],
 })
 export class AdminModule {}

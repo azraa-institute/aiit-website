@@ -28,7 +28,7 @@ export function StaffShell({
 }: {
   /** Shown under the logo, e.g. "Administration" or "Instructor portal". */
   portal: string;
-  tone: 'admin' | 'instructor';
+  tone: 'admin' | 'instructor' | 'affiliate';
   nav: StaffNavEntry[];
 }) {
   const navigate = useNavigate();
@@ -48,8 +48,10 @@ export function StaffShell({
   const name = me.status === 'ready' ? me.me.name : null;
   const email = session?.user.email;
 
+  // Affiliates are regular accounts (RequireAuth's default /login gate), not
+  // staff -- only admin/instructor sign back in at /staff/login.
   function handleSignOut() {
-    signOut().then(() => navigate('/staff/login'));
+    signOut().then(() => navigate(tone === 'affiliate' ? '/login' : '/staff/login'));
   }
 
   return (

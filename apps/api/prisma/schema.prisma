@@ -81,10 +81,67 @@ model Profile {
   // the staff portal forces a password change before anything else.
   mustChangePassword  Boolean       @default(false) @map("must_change_password")
   createdBy           String?       @map("created_by") @db.Uuid // the admin who created this (staff) account
+  // Set once, at signup, if the visitor arrived via an affiliate's referral
+  // link (see Affiliate.referralSlug + the handle_new_user() trigger
+  // extension in the affiliate_referral_trigger migration). Never updated
+  // afterwards -- attribution is a point-in-time fact about how this
+  // account came to exist, not a live relationship.
+  referredByAffiliateId String?     @map("referred_by_affiliate_id") @db.Uuid
   createdAt           DateTime      @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt           DateTime      @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
 
   @@map("profiles")
+  @@schema("public")
+}
+
+// ---- Affiliate program ----
+// An affiliate is modeled as its own table, not a Profile.role value --
+// deliberately, so a learner can also be an affiliate without a second
+// account, and so a not-yet-approved applicant's base account stays
+// Profile.status = 'active' (JwtGuard hard-blocks every authenticated
+// endpoint, including /auth/me, for any non-active status -- see
+// jwt.guard.ts -- which would make a pending affiliate's own dashboard
+// inert if "pending" were modeled as a ProfileStatus instead).
+enum AffiliateType {
+  creator
+  student
+  affiliate_to_affiliate
+
+  @@schema("public")
+}
+
+enum AffiliateApplicationStatus {
+  pending
+  in_review
+  approved
+  rejected
+
+  @@schema("public")
+}
+
+model Affiliate {
+  id                String                     @id @default(uuid()) @db.Uuid
+  userId            String                     @unique @map("user_id") @db.Uuid
+  type              AffiliateType
+  applicationStatus AffiliateApplicationStatus @default(pending) @map("application_status")
+  // Short, URL-safe, public -- the path segment in /r/:referralSlug.
+  referralSlug      String                     @unique @map("referral_slug")
+  // Context collected on the public application form, for the admin's
+  // screening -- free text throughout (same convention as Profile.country/
+  // city: what the applicant typed, not a looked-up code), all optional
+  // since an already-logged-in learner applying skips straight to picking
+  // a type and these were never asked.
+  phone             String?
+  handle            String?
+  country           String?
+  city              String?
+  source            String?
+  rejectionReason   String?                    @map("rejection_reason")
+  reviewedAt        DateTime?                  @map("reviewed_at") @db.Timestamptz(6)
+  reviewedBy        String?                    @map("reviewed_by") @db.Uuid
+  createdAt         DateTime                   @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  @@map("affiliates")
   @@schema("public")
 }
 

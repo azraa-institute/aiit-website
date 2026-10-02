@@ -1,5 +1,7 @@
 import { useState } from 'react';
 import type { FormEvent } from 'react';
+import { Link } from 'react-router-dom';
+import type { AffiliateType } from '@aiit/shared';
 import { Layout } from '@/components/layout/Layout';
 import { Seo } from '@/lib/Seo';
 import { useScrollReveal } from '@/lib/useScrollReveal';
@@ -9,12 +11,18 @@ import { AFFILIATE } from '@/data/blueprint';
 import { SITE } from '@/data/site';
 import { Section } from '@/components/primitives/Section';
 import { Button } from '@/components/primitives/Button';
-import { TextField, SelectField } from '@/components/common/Field';
-import { Turnstile } from '@/components/common/Turnstile';
+import { TextField, PasswordField, SelectField } from '@/components/common/Field';
+import { PASSWORD_HINT, passwordMeetsRequirements } from '@/components/common/PasswordRequirements';
 import { apiFetch } from '@/lib/api';
+import { useMe } from '@/lib/me';
+import { supabase } from '@/lib/supabaseClient';
+import { getPendingReferralSlug, clearPendingReferralSlug } from '@/lib/referralAttribution';
+import { useAffiliateMe } from './affiliate/affiliateData';
 import { AffiliateNetwork } from './AffiliateNetwork';
 import { cn } from '@/lib/cn';
 import './affiliate-page.css';
+
+const ALREADY_REGISTERED_MESSAGE = 'An account with this email already exists. Please sign in, then apply from this page.';
 
 /** One rate figure with a count-up-on-reveal animated number. */
 function RateFigure({
@@ -66,20 +74,29 @@ export default function AffiliatePage() {
   const [hoveredWay, setHoveredWay] = useState<number | null>(null);
   useScrollReveal();
 
+  const me = useMe();
+  const isLoggedIn = me.status === 'ready';
+  const affiliateMe = useAffiliateMe();
+
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [phone, setPhone] = useState('');
   const [handle, setHandle] = useState('');
   const [country, setCountry] = useState('');
   const [city, setCity] = useState('');
-  const [referralCode, setReferralCode] = useState('');
   const [source, setSource] = useState('');
-  const [intent, setIntent] = useState('');
+  const [type, setType] = useState<AffiliateType | ''>('');
   const [agreed, setAgreed] = useState(false);
-  const [turnstileToken, setTurnstileToken] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string>();
   const [done, setDone] = useState(false);
+  // True once signUp() has sent a confirmation email (not-logged-in path
+  // only) -- the application itself still needs a session to submit, which
+  // this app only ever grants after that email is confirmed (see
+  // RegisterPage.tsx's identical signUp() flow). The visitor finishes
+  // applying by coming back to this page once logged in.
+  const [awaitingConfirmation, setAwaitingConfirmation] = useState(false);
 
   // Tiered, not flat: the first 500 direct referrals earn $7 each; only
   // referrals beyond 500 earn the $10 milestone rate (AFFILIATE.rates) —
@@ -108,21 +125,43 @@ export default function AffiliatePage() {
     setError(undefined);
     setSubmitting(true);
     try {
-      await apiFetch('/affiliate-applications', {
+      if (!isLoggedIn) {
+        if (!supabase) throw new Error('Sign-up is not configured yet.');
+        const referralSlug = getPendingReferralSlug();
+        const { data, error: signUpError } = await supabase.auth.signUp({
+          email,
+          password,
+          options: {
+            emailRedirectTo: `${window.location.origin}/auth/callback`,
+            data: { full_name: name, ...(referralSlug ? { referral_slug: referralSlug } : {}) },
+          },
+        });
+        if (signUpError) {
+          throw new Error(signUpError.message.toLowerCase().includes('already registered') ? ALREADY_REGISTERED_MESSAGE : signUpError.message);
+        }
+        // Same anti-enumeration check RegisterPage.tsx uses: a confirmed
+        // existing account comes back as a fake user with no identities,
+        // not a clear error.
+        if (data.user && data.user.identities && data.user.identities.length === 0) {
+          throw new Error(ALREADY_REGISTERED_MESSAGE);
+        }
+        clearPendingReferralSlug();
+        setAwaitingConfirmation(true);
+        return;
+      }
+
+      await apiFetch('/affiliates/apply', {
         method: 'POST',
         body: JSON.stringify({
-          name,
-          email,
+          type,
           phone: phone || undefined,
           handle: handle || undefined,
           country: country || undefined,
           city: city || undefined,
-          referralCode: referralCode || undefined,
           source: source || undefined,
-          intent: intent || undefined,
-          turnstileToken,
         }),
       });
+      affiliateMe.refetch();
       setDone(true);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Could not submit your application. Please try again.');
@@ -131,7 +170,10 @@ export default function AffiliatePage() {
     }
   }
 
-  const canSubmit = name.trim().length > 0 && email.trim().length > 0 && agreed && turnstileToken.length > 0;
+  const canSubmit =
+    type.length > 0 &&
+    agreed &&
+    (isLoggedIn || (name.trim().length > 0 && email.trim().length > 0 && passwordMeetsRequirements(password)));
 
   return (
     <Layout>
@@ -352,41 +394,79 @@ export default function AffiliatePage() {
           <div className="affiliate__apply" data-reveal>
             <div>
               <h2>Apply to become an AIIT Affiliate</h2>
-              <p>Takes about 2 minutes. We&apos;ll email you once your application is reviewed.</p>
-              <p className="affiliate__code">
-                Weren&apos;t referred by anyone specific? Use our default code:{' '}
-                <strong>{a.defaultCode}</strong>
+              <p>
+                Every application is screened by the AIIT team before it&apos;s approved -- once it is, you get a
+                personal referral link, not a code to hand out.
               </p>
             </div>
 
-            {done ? (
+            {isLoggedIn && affiliateMe.status === 'loading' ? <p className="affiliate__thanks">Checking your account…</p> : null}
+
+            {isLoggedIn && affiliateMe.status === 'ready' && affiliateMe.data.hasApplied ? (
               <p className="affiliate__thanks">
-                Thanks, your application is in. We&apos;ll email you at the address you gave once
-                it&apos;s reviewed. Questions? Call or WhatsApp {SITE.contact.phone}.
+                You&apos;ve already applied to the affiliate program.{' '}
+                <Link to="/affiliate-portal">Check your application status</Link>.
               </p>
-            ) : (
+            ) : awaitingConfirmation ? (
+              <p className="affiliate__thanks">
+                We&apos;ve sent a confirmation link to {email}. Once you confirm your account, come back to this page
+                signed in to finish applying.
+              </p>
+            ) : done ? (
+              <p className="affiliate__thanks">
+                Thanks, your application is in. The AIIT team reviews every application by hand --{' '}
+                <Link to="/affiliate-portal">check your status any time</Link>, or we&apos;ll email you the moment a
+                decision is made. Questions? Call or WhatsApp {SITE.contact.phone}.
+              </p>
+            ) : !(isLoggedIn && affiliateMe.status === 'loading') ? (
               <form className="affiliate__form" onSubmit={onSubmit}>
                 {error ? (
                   <p className="auth__alert" role="alert">
                     {error}
                   </p>
                 ) : null}
-                <TextField
-                  label="Full name"
-                  name="name"
+                {!isLoggedIn ? (
+                  <>
+                    <TextField
+                      label="Full name"
+                      name="name"
+                      required
+                      autoComplete="name"
+                      value={name}
+                      onChange={(e) => setName(e.target.value)}
+                    />
+                    <TextField
+                      label="Email address"
+                      name="email"
+                      type="email"
+                      required
+                      autoComplete="email"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                    />
+                    <PasswordField
+                      label="Password"
+                      name="password"
+                      required
+                      autoComplete="new-password"
+                      hint={PASSWORD_HINT}
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                    />
+                  </>
+                ) : null}
+                <SelectField
+                  label="What kind of affiliate are you?"
+                  name="type"
                   required
-                  autoComplete="name"
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                />
-                <TextField
-                  label="Email address"
-                  name="email"
-                  type="email"
-                  required
-                  autoComplete="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
+                  options={[
+                    { value: '', label: 'Select one' },
+                    { value: 'creator', label: 'Creator -- I introduce content creators to AIIT' },
+                    { value: 'student', label: 'Student referrer -- I refer students directly' },
+                    { value: 'affiliate_to_affiliate', label: 'Affiliate-to-affiliate -- I bring in other affiliates' },
+                  ]}
+                  value={type}
+                  onChange={(e) => setType(e.target.value as AffiliateType | '')}
                 />
                 <TextField
                   label="Phone number"
@@ -403,13 +483,6 @@ export default function AffiliatePage() {
                 />
                 <TextField label="Country" name="country" value={country} onChange={(e) => setCountry(e.target.value)} />
                 <TextField label="City" name="city" value={city} onChange={(e) => setCity(e.target.value)} />
-                <TextField
-                  label="Coupon code of who referred you"
-                  name="ref"
-                  placeholder={a.defaultCode}
-                  value={referralCode}
-                  onChange={(e) => setReferralCode(e.target.value)}
-                />
                 <SelectField
                   label="How did you hear about us?"
                   name="source"
@@ -422,18 +495,6 @@ export default function AffiliatePage() {
                   value={source}
                   onChange={(e) => setSource(e.target.value)}
                 />
-                <SelectField
-                  label="What would you like to do?"
-                  name="intent"
-                  options={[
-                    { value: '', label: 'Select one' },
-                    { value: 'refer', label: 'Refer Students' },
-                    { value: 'creators', label: 'Introduce Content Creators' },
-                    { value: 'both', label: 'Both' },
-                  ]}
-                  value={intent}
-                  onChange={(e) => setIntent(e.target.value)}
-                />
                 <label className="affiliate__agree">
                   <input
                     type="checkbox"
@@ -444,13 +505,12 @@ export default function AffiliatePage() {
                   I have read and agree to the AIIT Affiliate Agreement, including the commission
                   structure and referral terms.
                 </label>
-                <Turnstile onVerify={setTurnstileToken} />
                 <Button as="button" type="submit" size="lg" fullWidth arrow loading={submitting} disabled={!canSubmit}>
-                  Submit application
+                  {isLoggedIn ? 'Submit application' : 'Create account & apply'}
                 </Button>
                 <p className="affiliate__disclaimer">{a.disclaimer}</p>
               </form>
-            )}
+            ) : null}
           </div>
         </div>
       </Section>

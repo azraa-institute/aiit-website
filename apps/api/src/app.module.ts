@@ -11,6 +11,7 @@ import { CoursesModule } from './modules/courses/courses.module';
 import { EnrollmentsModule } from './modules/enrollments/enrollments.module';
 import { AssignmentsModule } from './modules/assignments/assignments.module';
 import { CertificatesModule } from './modules/certificates/certificates.module';
+import { AffiliatesModule } from './modules/affiliates/affiliates.module';
 import { NotificationsModule } from './modules/notifications/notifications.module';
 import { FormsModule } from './modules/forms/forms.module';
 import { GeoModule } from './modules/geo/geo.module';
@@ -49,6 +50,7 @@ import { MemoryCacheModule } from './common/cache/memory-cache.service';
     EnrollmentsModule,
     AssignmentsModule,
     CertificatesModule,
+    AffiliatesModule,
     NotificationsModule,
     FormsModule,
     GeoModule,

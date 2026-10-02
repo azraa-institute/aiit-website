@@ -7,6 +7,7 @@ import { TextField, PasswordField } from '@/components/common/Field';
 import { PasswordStrengthMeter } from '@/components/common/PasswordStrengthMeter';
 import { PASSWORD_HINT, passwordMeetsRequirements, PasswordRequirementsList } from '@/components/common/PasswordRequirements';
 import { supabase } from '@/lib/supabaseClient';
+import { getPendingReferralSlug, clearPendingReferralSlug } from '@/lib/referralAttribution';
 import { AuthLayout, GoogleAuthButton } from './AuthLayout';
 
 const EMAIL_RE = /.+@.+\..+/;
@@ -56,12 +57,13 @@ export default function RegisterPage() {
 
     setError(undefined);
     setSubmitting(true);
+    const referralSlug = getPendingReferralSlug();
     const { data, error: signUpError } = await supabase.auth.signUp({
       email,
       password,
       options: {
         emailRedirectTo: `${window.location.origin}/auth/callback`,
-        data: { first_name: firstName, last_name: lastName },
+        data: { first_name: firstName, last_name: lastName, ...(referralSlug ? { referral_slug: referralSlug } : {}) },
       },
     });
     setSubmitting(false);
@@ -86,6 +88,7 @@ export default function RegisterPage() {
       return;
     }
 
+    clearPendingReferralSlug();
     setSent(true);
   }
 

@@ -89,10 +89,9 @@ export const AFFILIATE = {
   ],
   steps: [
     { index: '01', title: 'Apply', body: "Fill in the form below with your details and how you'd like to contribute." },
-    { index: '02', title: 'Get approved', body: 'Our team reviews your application and sends your affiliate agreement and referral code.' },
-    { index: '03', title: 'Share your code', body: 'Promote AIIT to students or introduce us to a creator in your network.' },
+    { index: '02', title: 'Get approved', body: 'Our team reviews your application by hand -- once approved, your personal referral link is ready in your affiliate dashboard.' },
+    { index: '03', title: 'Share your link', body: 'Promote AIIT to students or introduce us to a creator in your network -- no code to remember or type.' },
     { index: '04', title: 'Get paid', body: 'Earnings are calculated on verified enrolments and paid on the agreed schedule.' },
   ],
-  defaultCode: 'AIIT-PROMO1',
   disclaimer: "By applying, you're not employed by AIIT, affiliates work as independent referral partners.",
 };

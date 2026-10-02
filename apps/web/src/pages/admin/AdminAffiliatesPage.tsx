@@ -1,9 +1,22 @@
 import { useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import type { AdminAffiliateDetail, AdminAffiliateSummary, AffiliateApplicationStatus, AffiliateType, Paginated } from '@aiit/shared';
+import type {
+  AdminAffiliateDetail,
+  AdminAffiliateStats,
+  AdminAffiliateSummary,
+  AffiliateApplicationStatus,
+  AffiliateType,
+  Paginated,
+} from '@aiit/shared';
 import { apiFetch } from '@/lib/api';
 import { cn } from '@/lib/cn';
 import { formatWhen, useAdminFetch } from './adminData';
+
+const TYPE_TAG_CLASS: Record<AffiliateType, string> = {
+  creator: 'adm-tag--creator',
+  student: 'adm-tag--student',
+  affiliate_to_affiliate: 'adm-tag--peer',
+};
 
 const STATUS_LABEL: Record<AffiliateApplicationStatus, string> = {
   pending: 'Pending',
@@ -17,6 +30,26 @@ const TYPE_LABEL: Record<AffiliateType, string> = {
   student: 'Student',
   affiliate_to_affiliate: 'Affiliate-to-affiliate',
 };
+
+function TypeTag({ type }: { type: AffiliateType }) {
+  return <span className={cn('adm-tag', TYPE_TAG_CLASS[type])}>{TYPE_LABEL[type]}</span>;
+}
+
+function Kpi({ label, value, active, onClick }: { label: string; value: number; active?: boolean; onClick?: () => void }) {
+  const body = (
+    <>
+      <span className="kpi__label">{label}</span>
+      <span className="kpi__value">{value.toLocaleString()}</span>
+    </>
+  );
+  return onClick ? (
+    <button type="button" className={cn('kpi', 'kpi--link', active && 'is-active')} onClick={onClick}>
+      {body}
+    </button>
+  ) : (
+    <div className="kpi">{body}</div>
+  );
+}
 
 function Detail({ id, onChanged, onClose }: { id: string; onChanged: () => void; onClose: () => void }) {
   const state = useAdminFetch<AdminAffiliateDetail>(`/admin/affiliates/${id}`);
@@ -59,7 +92,9 @@ function Detail({ id, onChanged, onClose }: { id: string; onChanged: () => void;
           <dl className="adm-dl">
             <div>
               <dt>Type</dt>
-              <dd>{TYPE_LABEL[state.data.type]}</dd>
+              <dd>
+                <TypeTag type={state.data.type} />
+              </dd>
             </div>
             <div>
               <dt>Status</dt>
@@ -151,6 +186,7 @@ export default function AdminAffiliatesPage() {
   const status = params.get('status') ?? '';
   const type = params.get('type') ?? '';
   const page = Math.max(1, Number(params.get('page') ?? 1));
+  const stats = useAdminFetch<AdminAffiliateStats>('/admin/affiliates/stats');
 
   const query = new URLSearchParams({ page: String(page) });
   if (status) query.set('status', status);
@@ -179,6 +215,16 @@ export default function AdminAffiliatesPage() {
           </p>
         </div>
       </div>
+
+      {stats.status === 'ready' ? (
+        <div className="kpis">
+          <Kpi label="Total applications" value={stats.data.total} active={status === ''} onClick={() => setParam('status', '')} />
+          <Kpi label="Pending" value={stats.data.pending} active={status === 'pending'} onClick={() => setParam('status', 'pending')} />
+          <Kpi label="In review" value={stats.data.inReview} active={status === 'in_review'} onClick={() => setParam('status', 'in_review')} />
+          <Kpi label="Approved" value={stats.data.approved} active={status === 'approved'} onClick={() => setParam('status', 'approved')} />
+          <Kpi label="Registered via affiliates" value={stats.data.totalRegistrations} />
+        </div>
+      ) : null}
 
       <div className="adm-toolbar">
         <label className="adm-field">
@@ -232,7 +278,9 @@ export default function AdminAffiliatesPage() {
                       </button>
                     </td>
                     <td>{a.email ?? '—'}</td>
-                    <td>{TYPE_LABEL[a.type]}</td>
+                    <td>
+                      <TypeTag type={a.type} />
+                    </td>
                     <td className="num">{a.registrationCount}</td>
                     <td>{formatWhen(a.createdAt)}</td>
                     <td>

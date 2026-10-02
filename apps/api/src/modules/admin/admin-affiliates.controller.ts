@@ -2,7 +2,7 @@ import { Body, Controller, Get, Param, ParseUUIDPipe, Patch, Query, UseGuards } 
 import { Throttle } from '@nestjs/throttler';
 import { Transform } from 'class-transformer';
 import { IsIn, IsInt, IsOptional, MaxLength, Min, ValidateIf } from 'class-validator';
-import type { AdminAffiliateDetail, AdminAffiliateSummary, AffiliateApplicationStatus, AffiliateType, Paginated } from '@aiit/shared';
+import type { AdminAffiliateDetail, AdminAffiliateStats, AdminAffiliateSummary, AffiliateApplicationStatus, AffiliateType, Paginated } from '@aiit/shared';
 import { JwtGuard, type AuthenticatedUser } from '../../common/guards/jwt.guard';
 import { RolesGuard } from '../../common/guards/roles.guard';
 import { Roles } from '../../common/decorators/roles.decorator';
@@ -47,6 +47,13 @@ export class AdminAffiliatesController {
   @Get()
   list(@Query() query: ListAffiliatesQuery): Promise<Paginated<AdminAffiliateSummary>> {
     return this.affiliates.list(query);
+  }
+
+  // Declared before ':id' -- Nest matches routes in order, so this would
+  // otherwise be swallowed by the :id param route.
+  @Get('stats')
+  stats(): Promise<AdminAffiliateStats> {
+    return this.affiliates.stats();
   }
 
   @Get(':id')

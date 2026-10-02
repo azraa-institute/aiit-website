@@ -31,6 +31,16 @@ export interface AdminAffiliateSummary {
   createdAt: string;
 }
 
+export interface AdminAffiliateStats {
+  total: number;
+  pending: number;
+  inReview: number;
+  approved: number;
+  rejected: number;
+  /** Across every approved affiliate's referral link, combined. */
+  totalRegistrations: number;
+}
+
 export interface AdminAffiliateDetail extends AdminAffiliateSummary {
   phone: string | null;
   handle: string | null;

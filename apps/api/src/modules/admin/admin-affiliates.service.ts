@@ -1,6 +1,6 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { Prisma, type Affiliate } from '@prisma/client';
-import type { AdminAffiliateDetail, AdminAffiliateSummary, AffiliateApplicationStatus, AffiliateType, Paginated } from '@aiit/shared';
+import type { AdminAffiliateDetail, AdminAffiliateStats, AdminAffiliateSummary, AffiliateApplicationStatus, AffiliateType, Paginated } from '@aiit/shared';
 import { PrismaService } from '../../common/prisma/prisma.service';
 import { AuditService } from '../../common/audit/audit.service';
 import { EmailService } from '../../common/email/email.service';
@@ -22,6 +22,22 @@ export class AdminAffiliatesService {
     private readonly audit: AuditService,
     private readonly email: EmailService,
   ) {}
+
+  async stats(): Promise<AdminAffiliateStats> {
+    const [byStatus, totalRegistrations] = await Promise.all([
+      this.prisma.affiliate.groupBy({ by: ['applicationStatus'], _count: { _all: true } }),
+      this.prisma.profile.count({ where: { referredByAffiliateId: { not: null } } }),
+    ]);
+    const count = (status: AffiliateApplicationStatus) => byStatus.find((b) => b.applicationStatus === status)?._count._all ?? 0;
+    return {
+      total: byStatus.reduce((sum, b) => sum + b._count._all, 0),
+      pending: count('pending'),
+      inReview: count('in_review'),
+      approved: count('approved'),
+      rejected: count('rejected'),
+      totalRegistrations,
+    };
+  }
 
   async list(query: ListQuery): Promise<Paginated<AdminAffiliateSummary>> {
     const page = query.page ?? 1;

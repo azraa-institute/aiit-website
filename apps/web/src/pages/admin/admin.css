@@ -273,9 +273,18 @@
   border-top: 3px solid var(--brass);
   background: var(--surface);
   color: var(--ink);
+  text-align: left;
+  font-family: inherit;
 }
 .kpi--link:hover {
   background: var(--accent-wash);
+}
+/* A <button>-based kpi--link (AdminAffiliatesPage's filter KPIs, unlike the
+   dashboard's <Link>-based ones) needs its own active/current-filter state. */
+.kpi--link.is-active {
+  border-top-color: var(--brass-deep);
+  background: var(--accent-wash);
+  box-shadow: inset 0 0 0 1px var(--brass);
 }
 .kpi__label {
   font-size: var(--fs-eyebrow);
@@ -807,6 +816,28 @@
 .adm-status--a-rejected {
   color: var(--red);
   border-color: var(--red);
+}
+/* A filled pill (not outlined like .adm-status) -- type is a description,
+   not an alert state, so it should read quieter than a status badge. */
+.adm-tag {
+  display: inline-block;
+  padding: 2px 10px;
+  border-radius: 999px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+.adm-tag--creator {
+  background: rgba(154, 123, 79, 0.16);
+  color: var(--brass-deep);
+}
+.adm-tag--student {
+  background: rgba(86, 107, 106, 0.16);
+  color: var(--slate-deep);
+}
+.adm-tag--peer {
+  background: rgba(47, 107, 63, 0.14);
+  color: #2f6b3f;
 }
 .adm-h2 {
   margin: var(--space-6) 0 var(--space-3);

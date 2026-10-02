@@ -59,17 +59,15 @@ export class CertificatePdfService {
     const sans = await doc.embedFont(StandardFonts.Helvetica);
     const sansBold = await doc.embedFont(StandardFonts.HelveticaBold);
 
-    // ---- Paper + a faint oversized monogram watermark, behind everything ----
+    // ---- Paper + the real logo, embedded once and reused for the header mark and a faint oversized watermark behind everything ----
     page.drawRectangle({ x: 0, y: 0, width, height, color: PAPER });
-    const wmSize = 270;
-    page.drawText('AZ', {
-      x: cx - serifBold.widthOfTextAtSize('AZ', wmSize) / 2,
-      y: height / 2 - wmSize * 0.37,
-      font: serifBold,
-      size: wmSize,
-      color: BRASS,
-      opacity: 0.035,
-    });
+    const logoBytes = await this.getLogoBytes();
+    const logo = logoBytes ? await doc.embedPng(logoBytes).catch(() => null) : null;
+    if (logo) {
+      const wmW = 380;
+      const wmH = (logo.height / logo.width) * wmW;
+      page.drawImage(logo, { x: cx - wmW / 2, y: height / 2 - wmH / 2 - 6, width: wmW, height: wmH, opacity: 0.045 });
+    }
 
     // ---- Frame: outer + inner rule, a small diamond accent at each corner ----
     const outerMargin = 26;
@@ -101,17 +99,13 @@ export class CertificatePdfService {
       page.drawCircle({ x: fx, y: fy, size: 1.6, color: BRASS_DEEP });
     }
 
-    // ---- Logo ----
-    const logoBytes = await this.getLogoBytes();
-    if (logoBytes) {
-      try {
-        const logo = await doc.embedPng(logoBytes);
-        const logoW = 104;
-        const logoH = (logo.height / logo.width) * logoW;
-        page.drawImage(logo, { x: cx - logoW / 2, y: height - 98, width: logoW, height: logoH });
-      } catch (error) {
-        this.logger.warn(`Could not embed logo in certificate PDF: ${String(error)}`);
-      }
+    // ---- Header logo mark ----
+    if (logo) {
+      const logoW = 118;
+      const logoH = (logo.height / logo.width) * logoW;
+      page.drawImage(logo, { x: cx - logoW / 2, y: height - 100, width: logoW, height: logoH });
+    } else {
+      this.logger.warn('Logo unavailable for certificate PDF -- rendering without it.');
     }
 
     // ---- Title ----

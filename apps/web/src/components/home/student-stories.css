@@ -141,11 +141,13 @@
   z-index: 1;
 }
 .stories-marginalia--left {
-  top: 267px;
+  /* Starts level with the top of the top-left photo. */
+  top: 243px;
   left: 260px;
 }
 .stories-marginalia--right {
-  top: 707px;
+  /* Starts where the bottom-left photo ends. */
+  top: 663px;
   right: 260px;
   text-align: right;
 }
@@ -720,7 +722,7 @@
   }
   .stories-marginalia--right {
     bottom: auto;
-    top: 612px;
+    top: 568px;
     right: 210px;
   }
   .stories-script--right {

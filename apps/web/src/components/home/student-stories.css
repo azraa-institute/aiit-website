@@ -146,8 +146,8 @@
   left: 260px;
 }
 .stories-marginalia--right {
-  /* Starts where the bottom-left photo ends. */
-  top: 663px;
+  /* Starts where the bottom-right photo ends. */
+  top: 1103px;
   right: 260px;
   text-align: right;
 }
@@ -722,7 +722,7 @@
   }
   .stories-marginalia--right {
     bottom: auto;
-    top: 568px;
+    top: 913px;
     right: 210px;
   }
   .stories-script--right {

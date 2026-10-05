@@ -118,7 +118,9 @@
   border-radius: inherit;
 }
 .stories-photo--right {
-  bottom: 0;
+  /* Level with the "Skills for a Brighter Tomorrow" caption (.stories-script--left),
+     not anchored to the bottom of the block. */
+  top: 440px;
   right: 0;
   border-radius: 24px 220px 190px 190px;
 }
@@ -686,6 +688,13 @@
   .stories-globe {
     display: block;
   }
+  /* The framing photos, the "Learning without Borders" globe and the script
+     captions are positioned against the inner container, so zeroing the
+     section's top padding lets them start exactly at the band's top edge
+     instead of ~150px below it. */
+  .stories-editorial.section--lg {
+    padding-top: 0;
+  }
 }
 
 /* 1368–1859px: a smaller photo pair fits beside the carousel once the
@@ -699,6 +708,9 @@
   .stories-photo {
     width: 170px;
     height: 325px;
+  }
+  .stories-photo--right {
+    top: 345px;
   }
   .stories-marginalia--left {
     left: 210px;

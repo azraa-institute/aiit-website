@@ -105,7 +105,8 @@
   display: block;
 }
 .stories-photo--left {
-  top: 0;
+  /* Level with the top of the featured (center) review card. */
+  top: 243px;
   /* Flush with the container edge, not bled past it -- on a real
      1920px-class monitor (the most common desktop width, and right at
      this tier's own lower bound once browser chrome/scrollbar are
@@ -118,9 +119,8 @@
   border-radius: inherit;
 }
 .stories-photo--right {
-  /* Level with the "Skills for a Brighter Tomorrow" caption (.stories-script--left),
-     not anchored to the bottom of the block. */
-  top: 440px;
+  /* Continues from the level of the "Skills for a Brighter Tomorrow" caption. */
+  top: 683px;
   right: 0;
   border-radius: 24px 220px 190px 190px;
 }
@@ -141,13 +141,11 @@
   z-index: 1;
 }
 .stories-marginalia--left {
-  top: 24px;
+  top: 267px;
   left: 260px;
 }
 .stories-marginalia--right {
-  /* Level with the bottom-right photo's top, mirroring the left label's
-     position beside the top-left photo. */
-  top: 464px;
+  top: 707px;
   right: 260px;
   text-align: right;
 }
@@ -186,11 +184,9 @@
   color: #b49a72;
 }
 .stories-script--left {
-  /* Sits just beneath the left photo (which is 420px tall, anchored to
-     the container top), not beside it. Pulled in from the photo's own
-     edge so it isn't sitting flush against the container/viewport
-     boundary. */
-  top: 440px;
+  /* Sits just beneath the left photo (420px tall, starting at the featured
+     card's top edge), not beside it. */
+  top: 683px;
   left: 16px;
 }
 .stories-script__rule {
@@ -201,9 +197,10 @@
   background: rgba(180, 154, 114, 0.55);
 }
 .stories-script--right {
-  /* Sits just beneath the bottom-right photo, mirroring the "Skills for a
-     Brighter Tomorrow" caption beneath the top-left photo. */
-  top: 880px;
+  /* Sits on top of the bottom-right photo, the reverse of the caption below
+     the top-left photo. */
+  top: 663px;
+  transform: translateY(-100%);
   right: 16px;
   text-align: right;
 }
@@ -213,8 +210,9 @@
 .stories-globe {
   position: absolute;
   z-index: 0;
-  /* Kept 24px above the "Learning without Borders" caption it frames. */
-  top: 856px;
+  /* Frames the "Learning without Borders" caption from above. */
+  top: 663px;
+  transform: translateY(-100%);
   right: 56px;
   width: 300px;
   height: 190px;
@@ -715,24 +713,24 @@
     height: 325px;
   }
   .stories-photo--right {
-    top: 345px;
+    top: 588px;
   }
   .stories-marginalia--left {
     left: 210px;
   }
   .stories-marginalia--right {
     bottom: auto;
-    top: 369px;
+    top: 612px;
     right: 210px;
   }
   .stories-script--right {
-    top: 690px;
+    top: 568px;
   }
   .stories-script--left {
-    top: 345px;
+    top: 588px;
   }
   .stories-globe {
-    top: 666px;
+    top: 568px;
     right: 43px;
     width: 230px;
     height: 145px;
@@ -778,6 +776,9 @@
 }
 
 @media (min-width: 1860px) {
+  .stories-marginalia {
+    display: none;
+  }
   .stories-editorial__inner.container--wide {
     /* Wider than the site's normal 1480px container cap, scoped to this
        one section only — the full editorial composition (two framing

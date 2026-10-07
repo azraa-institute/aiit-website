@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { apiFetch, ApiError } from '@/lib/api';
+import { captureException } from '@/lib/sentry';
 import type { CreatePayPalOrderRequest, CreatePayPalOrderResponse } from '@aiit/shared';
 
 interface PayPalButtonsActions {
@@ -58,13 +59,28 @@ export function PayPalCheckoutButton({ courseSlug, onSuccess }: PayPalCheckoutBu
   const [error, setError] = useState<string>();
   const clientId = import.meta.env.VITE_PAYPAL_CLIENT_ID as string | undefined;
 
+  // Read via a ref inside the effect below, not as a dependency -- `onSuccess`
+  // is a fresh inline function on every render of the course page, and
+  // depending on it directly re-ran the effect (re-rendering PayPal's
+  // Buttons into the same container, which PayPal's SDK appends to rather
+  // than replaces) on every unrelated re-render, producing duplicate
+  // buttons and a confused internal SDK error.
+  const onSuccessRef = useRef(onSuccess);
+  useEffect(() => {
+    onSuccessRef.current = onSuccess;
+  }, [onSuccess]);
+
   useEffect(() => {
     if (!clientId || !containerRef.current) return;
     let cancelled = false;
+    const container = containerRef.current;
 
     loadPayPalSdk(clientId)
       .then(() => {
-        if (cancelled || !containerRef.current || !window.paypal) return;
+        if (cancelled || !window.paypal) return;
+        // Defensive: never render into a container that may already have
+        // buttons in it (e.g. React StrictMode's double-invoke in dev).
+        container.innerHTML = '';
         window.paypal
           .Buttons({
             createOrder: async () => {
@@ -78,20 +94,24 @@ export function PayPalCheckoutButton({ courseSlug, onSuccess }: PayPalCheckoutBu
             },
             onApprove: async (data) => {
               await apiFetch(`/payments/paypal/orders/${encodeURIComponent(data.orderID)}/capture`, { method: 'POST' });
-              onSuccess();
+              onSuccessRef.current();
             },
             onError: (err) => {
+              captureException(err);
               setError(err instanceof ApiError ? err.message : 'Something went wrong with PayPal checkout. Please try again.');
             },
           })
-          .render(containerRef.current);
+          .render(container);
       })
-      .catch(() => setError('Could not load PayPal checkout. Please try again later.'));
+      .catch((err) => {
+        captureException(err);
+        setError('Could not load PayPal checkout. Please try again later.');
+      });
 
     return () => {
       cancelled = true;
     };
-  }, [clientId, courseSlug, onSuccess]);
+  }, [clientId, courseSlug]);
 
   if (!clientId) {
     return (

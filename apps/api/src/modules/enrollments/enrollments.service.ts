@@ -54,8 +54,17 @@ export class EnrollmentsService {
       );
     }
 
+    return this.upsertActiveEnrollment(userId, course.id);
+  }
+
+  /** Called by PaymentsService once a provider confirms a course was paid for -- no pricing gate, the caller already verified payment. */
+  async enrollAfterPayment(userId: string, courseId: string): Promise<Enrollment> {
+    return this.upsertActiveEnrollment(userId, courseId);
+  }
+
+  private async upsertActiveEnrollment(userId: string, courseId: string): Promise<Enrollment> {
     const existing = await this.prisma.enrollment.findUnique({
-      where: { userId_courseId: { userId, courseId: course.id } },
+      where: { userId_courseId: { userId, courseId } },
     });
     if (existing && existing.status !== 'cancelled') {
       throw new ConflictException('You are already enrolled in this course.');
@@ -69,7 +78,7 @@ export class EnrollmentsService {
         })
       : await this.prisma.enrollment
           .create({
-            data: { userId, courseId: course.id },
+            data: { userId, courseId },
             select: ENROLLMENT_SELECT,
           })
           .catch((err: unknown) => {

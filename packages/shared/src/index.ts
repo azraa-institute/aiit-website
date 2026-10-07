@@ -24,3 +24,4 @@ export * from './admin';
 export * from './instructor';
 export * from './support';
 export * from './affiliate';
+export * from './payment';

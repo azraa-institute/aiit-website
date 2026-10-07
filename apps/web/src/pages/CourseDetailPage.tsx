@@ -14,6 +14,7 @@ import { formatPrice, discountPercent, formatEnrollment } from '@/lib/format';
 import { Plate } from '@/components/primitives/Plate';
 import { Button } from '@/components/primitives/Button';
 import { Stars } from '@/components/common/Stars';
+import { PayPalCheckoutButton } from '@/components/common/PayPalCheckoutButton';
 import { CourseCard } from '@/components/course/CourseCard';
 import { RouteFallback } from '@/components/layout/RouteFallback';
 import { invalidateLearner, useLearner } from './portal/learnerData';
@@ -309,7 +310,7 @@ function EnrollAction({ course, comingSoon }: { course: Course; comingSoon: bool
     );
   }
 
-  if (course.pricing !== 'free') {
+  if (course.pricing === 'subscription') {
     return (
       <>
         <Button as="button" type="button" fullWidth size="lg" disabled>
@@ -319,6 +320,18 @@ function EnrollAction({ course, comingSoon }: { course: Course; comingSoon: bool
           Online payment isn&apos;t available yet for this course -- use &quot;Ask about this course&quot; below.
         </p>
       </>
+    );
+  }
+
+  if (course.pricing === 'paid') {
+    return (
+      <PayPalCheckoutButton
+        courseSlug={course.slug}
+        onSuccess={() => {
+          invalidateLearner();
+          navigate('/portal/courses');
+        }}
+      />
     );
   }
 

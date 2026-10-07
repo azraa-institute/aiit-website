@@ -166,6 +166,26 @@ describe('EnrollmentsService', () => {
     });
   });
 
+  describe('enrollAfterPayment', () => {
+    it('enrolls with no pricing gate -- the caller already verified payment', async () => {
+      prisma.enrollment.findUnique.mockResolvedValueOnce(null);
+      prisma.enrollment.create.mockResolvedValueOnce(ENROLLMENT_ROW);
+
+      const result = await service.enrollAfterPayment('user-1', 'crs-1');
+
+      expect(prisma.course.findFirst).not.toHaveBeenCalled();
+      expect(prisma.enrollment.create).toHaveBeenCalledWith(
+        expect.objectContaining({ data: { userId: 'user-1', courseId: 'crs-1' } }),
+      );
+      expect(result.id).toBe('enr-1');
+    });
+
+    it('throws ConflictException when already actively enrolled, same as the free-enroll path', async () => {
+      prisma.enrollment.findUnique.mockResolvedValueOnce({ id: 'enr-1', status: 'active' });
+      await expect(service.enrollAfterPayment('user-1', 'crs-1')).rejects.toBeInstanceOf(ConflictException);
+    });
+  });
+
   describe('markCompleted', () => {
     it('sets status completed and a completedAt timestamp', async () => {
       prisma.enrollment.updateMany.mockResolvedValueOnce({ count: 1 });

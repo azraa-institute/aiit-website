@@ -346,6 +346,7 @@ model Course {
   instructors      CourseInstructor[]
   announcements    Announcement[]
   complaints       Complaint[]
+  orders           Order[]
   createdAt        DateTime              @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt        DateTime              @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
   deletedAt        DateTime?             @map("deleted_at") @db.Timestamptz(6)
@@ -382,6 +383,57 @@ model Enrollment {
 
   @@unique([userId, courseId])
   @@map("enrollments")
+  @@schema("public")
+}
+
+// ---- Paid-course checkout ----
+// One provider-agnostic table for every payment provider (PayPal first;
+// Razorpay/Paystack clone the same shape later) rather than a table per
+// provider. Deliberately no self-insert RLS policy (see notifications'
+// identical comment) -- an Order is only ever created by the API's
+// service-role connection after talking to the provider, never directly by
+// a client. Idempotency on provider confirmation (capture callback AND
+// webhook can both fire) lives on this row's own pending->paid transition,
+// not on catching a duplicate-enrollment error -- see PaymentsService.
+
+enum PaymentProvider {
+  paypal
+  razorpay
+  paystack
+
+  @@schema("public")
+}
+
+enum OrderStatus {
+  pending
+  paid
+  failed
+  refunded
+  cancelled
+
+  @@schema("public")
+}
+
+model Order {
+  id          String          @id @default(uuid()) @db.Uuid
+  userId      String          @map("user_id") @db.Uuid // references auth.users.id, no Prisma relation -- same convention as Enrollment
+  courseId    String          @map("course_id") @db.Uuid
+  course      Course          @relation(fields: [courseId], references: [id])
+  provider    PaymentProvider
+  // The provider's own order/transaction id (PayPal order id, Razorpay order id, Paystack reference). Null until the provider call succeeds.
+  providerRef String?         @map("provider_ref")
+  currency    String          // ISO 4217 -- "USD" for every PayPal order this round
+  amountCents Int             @map("amount_cents") // snapshotted from Course.priceUsdCents at order-creation time, never client-supplied
+  status      OrderStatus     @default(pending)
+  paidAt      DateTime?       @map("paid_at") @db.Timestamptz(6)
+  // Last raw provider response/webhook payload -- support/debugging only, never rendered to users.
+  rawPayload  Json?           @map("raw_payload")
+  createdAt   DateTime        @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt   DateTime        @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  @@unique([provider, providerRef])
+  @@index([userId])
+  @@map("orders")
   @@schema("public")
 }
 

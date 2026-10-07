@@ -15,10 +15,20 @@ import { Plate } from '@/components/primitives/Plate';
 import { Button } from '@/components/primitives/Button';
 import { Stars } from '@/components/common/Stars';
 import { PayPalCheckoutButton } from '@/components/common/PayPalCheckoutButton';
+import { cn } from '@/lib/cn';
 import { CourseCard } from '@/components/course/CourseCard';
 import { RouteFallback } from '@/components/layout/RouteFallback';
 import { invalidateLearner, useLearner } from './portal/learnerData';
 import './course-detail.css';
+
+function CapIcon() {
+  return (
+    <svg width="14" height="14" viewBox="0 0 24 24" aria-hidden="true">
+      <path d="M12 4 2 9l10 5 8-4v6" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+      <path d="M6 11.5V16c0 1.5 2.7 3 6 3s6-1.5 6-3v-4.5" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
 
 export default function CourseDetailPage() {
   const { slug } = useParams();
@@ -142,12 +152,25 @@ export default function CourseDetailPage() {
               <aside className="course-detail__enroll" data-reveal>
                 <Plate source={course.image} seed={course.slug} motif={domain?.motif} ratio={4 / 3} fit="contain" />
                 <div className="course-detail__enroll-body">
-                  <div className="course-detail__price">
-                    {course.priceWas && (
-                      <span className="course-detail__was">{formatPrice(course.priceWas, course.currency)}</span>
+                  <div
+                    className={cn(
+                      'course-detail__price-panel',
+                      course.pricing === 'paid' && 'course-detail__price-panel--checkout',
                     )}
-                    <span className="course-detail__now">{formatPrice(course.price, course.currency)}</span>
-                    {off && <span className="course-detail__off">Save {off}%</span>}
+                  >
+                    {course.pricing === 'paid' && <p className="course-detail__checkout-eyebrow">Enrollment</p>}
+                    <div className="course-detail__price">
+                      {course.priceWas && (
+                        <span className="course-detail__was">{formatPrice(course.priceWas, course.currency)}</span>
+                      )}
+                      <span className="course-detail__now">{formatPrice(course.price, course.currency)}</span>
+                      {off && <span className="course-detail__off">Save {off}%</span>}
+                    </div>
+                    {course.pricing === 'paid' && (
+                      <p className="course-detail__checkout-sub">
+                        <CapIcon /> One-time payment -- instant access after checkout
+                      </p>
+                    )}
                   </div>
                   {course.pricing === 'subscription' && (
                     <p className="course-detail__note">Included with AIIT membership.</p>

@@ -1,0 +1,48 @@
+/* Frames PayPal's own rendered button (its colour/shape/label are tuned via
+   the SDK's own `style` option in PayPalCheckoutButton.tsx -- there is no
+   supported way to fully custom-render a replacement button, PayPal's
+   hosted element is what actually handles the secure popup/redirect flow)
+   in the site's own card language rather than leaving it floating bare. */
+.pp-checkout {
+  margin-top: var(--space-2);
+  padding: var(--space-4);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
+  background: var(--surface);
+}
+.pp-checkout__label {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin-bottom: var(--space-3);
+  font-family: var(--font-ui);
+  font-size: var(--fs-xs);
+  font-weight: 700;
+  letter-spacing: var(--tracking-wide);
+  text-transform: uppercase;
+  color: var(--fg-muted);
+}
+.pp-checkout__label svg {
+  flex-shrink: 0;
+  color: var(--brass-deep);
+}
+/* Reserves the rendered button's height up front so the card doesn't jump
+   while the PayPal SDK script is still loading. */
+.pp-checkout__buttons {
+  min-height: 48px;
+}
+.pp-checkout__footer {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  margin-top: var(--space-3);
+  font-size: var(--fs-xs);
+  color: var(--fg-faint);
+}
+.pp-checkout__footer::before,
+.pp-checkout__footer::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--line);
+}

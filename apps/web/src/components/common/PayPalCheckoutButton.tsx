@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { apiFetch, ApiError } from '@/lib/api';
 import { captureException } from '@/lib/sentry';
 import type { CreatePayPalOrderRequest, CreatePayPalOrderResponse } from '@aiit/shared';
+import './paypal-checkout-button.css';
 
 interface PayPalButtonsActions {
   render: (container: HTMLElement) => void;
@@ -9,6 +10,7 @@ interface PayPalButtonsActions {
 
 interface PayPalSdk {
   Buttons: (options: {
+    style?: { layout?: 'vertical' | 'horizontal'; color?: 'gold' | 'blue' | 'silver' | 'black'; shape?: 'pill' | 'rect'; label?: 'paypal' | 'pay'; height?: number };
     createOrder: () => Promise<string>;
     onApprove: (data: { orderID: string }) => Promise<void>;
     onError?: (err: unknown) => void;
@@ -19,6 +21,21 @@ declare global {
   interface Window {
     paypal?: PayPalSdk;
   }
+}
+
+function ShieldIcon() {
+  return (
+    <svg width="14" height="14" viewBox="0 0 24 24" aria-hidden="true">
+      <path
+        d="M12 3.5 19.5 6.5V11.5C19.5 16 16.3 19.8 12 21C7.7 19.8 4.5 16 4.5 11.5V6.5L12 3.5Z"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.6"
+        strokeLinejoin="round"
+      />
+      <path d="M8.75 12 11 14.25 15.25 10" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
 }
 
 // Module-level, not per-mount -- several PayPalCheckoutButton instances
@@ -83,6 +100,7 @@ export function PayPalCheckoutButton({ courseSlug, onSuccess }: PayPalCheckoutBu
         container.innerHTML = '';
         window.paypal
           .Buttons({
+            style: { layout: 'vertical', color: 'gold', shape: 'pill', label: 'paypal', height: 48 },
             createOrder: async () => {
               setError(undefined);
               const body: CreatePayPalOrderRequest = { courseSlug };
@@ -122,13 +140,17 @@ export function PayPalCheckoutButton({ courseSlug, onSuccess }: PayPalCheckoutBu
   }
 
   return (
-    <>
+    <div className="pp-checkout">
+      <p className="pp-checkout__label">
+        <ShieldIcon /> Secure checkout
+      </p>
       {error ? (
         <p className="auth__alert" role="alert">
           {error}
         </p>
       ) : null}
-      <div ref={containerRef} />
-    </>
+      <div className="pp-checkout__buttons" ref={containerRef} />
+      <p className="pp-checkout__footer">Payment processed securely by PayPal</p>
+    </div>
   );
 }

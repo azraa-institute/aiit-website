@@ -2,6 +2,7 @@ import { ConflictException, Injectable, Logger, NotFoundException } from '@nestj
 import type { Order, PaymentProvider, Prisma } from '@prisma/client';
 import { PrismaService } from '../../common/prisma/prisma.service';
 import { AuditService } from '../../common/audit/audit.service';
+import { CurrencyService } from '../../common/currency/currency.service';
 import { NotificationsService } from '../notifications/notifications.service';
 import { EnrollmentsService } from '../enrollments/enrollments.service';
 
@@ -20,17 +21,26 @@ export class PaymentsService {
     private readonly enrollments: EnrollmentsService,
     private readonly notifications: NotificationsService,
     private readonly audit: AuditService,
+    private readonly currency: CurrencyService,
   ) {}
 
   /**
-   * Looks up the course itself and snapshots its USD price -- never trusts
-   * an amount supplied by the client. 404s if the course doesn't exist (or
+   * Looks up the course itself and snapshots its price -- never trusts an
+   * amount supplied by the client. 404s if the course doesn't exist (or
    * isn't published), throws if it isn't a one-time-paid course.
+   *
+   * `currency` defaults to 'USD' (the course's own canonical
+   * `priceUsdCents`, used as-is -- PayPal's path). A non-USD currency (e.g.
+   * Razorpay's 'INR') is resolved fresh via `CurrencyService.convert()`
+   * right here, not reused from whatever price the page happened to render
+   * earlier -- same "never trust a stale/precomputed amount" reasoning as
+   * not trusting the client.
    */
   async createPendingOrder(
     userId: string,
     courseSlug: string,
     provider: PaymentProvider,
+    currency = 'USD',
   ): Promise<{ order: Order; courseTitle: string }> {
     const course = await this.prisma.course.findFirst({
       where: { slug: courseSlug, status: 'published', deletedAt: null },
@@ -41,13 +51,16 @@ export class PaymentsService {
       throw new ConflictException('This course is not available for one-time purchase.');
     }
 
+    const amountCents =
+      currency === 'USD' ? course.priceUsdCents : (await this.currency.convert(course.priceUsdCents, currency)).amountCents;
+
     const order = await this.prisma.order.create({
       data: {
         userId,
         courseId: course.id,
         provider,
-        currency: 'USD',
-        amountCents: course.priceUsdCents,
+        currency,
+        amountCents,
       },
     });
     return { order, courseTitle: course.title };

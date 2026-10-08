@@ -2,6 +2,7 @@ import { ConflictException, NotFoundException } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
 import { PrismaService } from '../../common/prisma/prisma.service';
 import { AuditService } from '../../common/audit/audit.service';
+import { CurrencyService } from '../../common/currency/currency.service';
 import { NotificationsService } from '../notifications/notifications.service';
 import { EnrollmentsService } from '../enrollments/enrollments.service';
 import { PaymentsService } from './payments.service';
@@ -40,6 +41,7 @@ describe('PaymentsService', () => {
   let enrollments: { enrollAfterPayment: jest.Mock };
   let notifications: { create: jest.Mock };
   let audit: { record: jest.Mock };
+  let currency: { convert: jest.Mock };
 
   beforeEach(async () => {
     prisma = {
@@ -49,6 +51,7 @@ describe('PaymentsService', () => {
     enrollments = { enrollAfterPayment: jest.fn() };
     notifications = { create: jest.fn() };
     audit = { record: jest.fn() };
+    currency = { convert: jest.fn() };
 
     const moduleRef = await Test.createTestingModule({
       providers: [
@@ -57,6 +60,7 @@ describe('PaymentsService', () => {
         { provide: EnrollmentsService, useValue: enrollments },
         { provide: NotificationsService, useValue: notifications },
         { provide: AuditService, useValue: audit },
+        { provide: CurrencyService, useValue: currency },
       ],
     }).compile();
 
@@ -89,6 +93,20 @@ describe('PaymentsService', () => {
         data: { userId: 'user-1', courseId: 'course-1', provider: 'paypal', currency: 'USD', amountCents: 4900 },
       });
       expect(result).toEqual({ order: ORDER, courseTitle: 'Full Stack Development' });
+    });
+
+    it('resolves a non-USD amount fresh via CurrencyService, not a precomputed/stale price', async () => {
+      prisma.course.findFirst.mockResolvedValueOnce(COURSE);
+      currency.convert.mockResolvedValueOnce({ currency: 'INR', amountCents: 406_000 });
+      prisma.order.create.mockResolvedValueOnce({ ...ORDER, provider: 'razorpay', currency: 'INR', amountCents: 406_000 });
+
+      const result = await service.createPendingOrder('user-1', 'full-stack-development', 'razorpay', 'INR');
+
+      expect(currency.convert).toHaveBeenCalledWith(4900, 'INR');
+      expect(prisma.order.create).toHaveBeenCalledWith({
+        data: { userId: 'user-1', courseId: 'course-1', provider: 'razorpay', currency: 'INR', amountCents: 406_000 },
+      });
+      expect(result.order.amountCents).toBe(406_000);
     });
   });
 

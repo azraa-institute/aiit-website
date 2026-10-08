@@ -142,10 +142,14 @@
    sections -- the PayPal card, the "ask about this course" fallback, and
    the certificate note -- each closed off with the same hairline the price
    panel uses, so the whole aside reads as one field, not stacked boxes. */
-.course-detail__enroll-body--checkout > .pp-checkout {
+.course-detail__enroll-body--checkout > .pp-checkout,
+.course-detail__enroll-body--checkout > .rzp-checkout {
   padding-bottom: var(--space-4);
   margin-bottom: var(--space-4);
   border-bottom: 1px solid color-mix(in srgb, var(--brass-tint) 35%, var(--line));
+}
+.course-detail__enroll-body--checkout > .rzp-checkout {
+  margin-top: 0;
 }
 .course-detail__enroll-body--checkout > .btn {
   margin-bottom: var(--space-3);

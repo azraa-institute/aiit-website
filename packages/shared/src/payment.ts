@@ -14,3 +14,19 @@ export interface CreatePayPalOrderRequest {
 export interface CreatePayPalOrderResponse {
   paypalOrderId: string;
 }
+
+export interface CreateRazorpayOrderRequest {
+  courseSlug: string;
+}
+
+export interface CreateRazorpayOrderResponse {
+  razorpayOrderId: string;
+  /** INR, in paise -- what Checkout.js's own `amount`/`currency` options must be opened with. */
+  amountCents: number;
+  currency: string;
+}
+
+export interface VerifyRazorpayPaymentRequest {
+  razorpayPaymentId: string;
+  razorpaySignature: string;
+}

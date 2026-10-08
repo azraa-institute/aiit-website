@@ -15,6 +15,7 @@ import { Plate } from '@/components/primitives/Plate';
 import { Button } from '@/components/primitives/Button';
 import { Stars } from '@/components/common/Stars';
 import { PayPalCheckoutButton } from '@/components/common/PayPalCheckoutButton';
+import { RazorpayCheckoutButton } from '@/components/common/RazorpayCheckoutButton';
 import { cn } from '@/lib/cn';
 import { CourseCard } from '@/components/course/CourseCard';
 import { RouteFallback } from '@/components/layout/RouteFallback';
@@ -352,14 +353,23 @@ function EnrollAction({ course, comingSoon }: { course: Course; comingSoon: bool
   }
 
   if (course.pricing === 'paid') {
+    const noProviderConfigured = !import.meta.env.VITE_PAYPAL_CLIENT_ID && !import.meta.env.VITE_RAZORPAY_KEY_ID;
+    if (noProviderConfigured) {
+      return (
+        <p className="course-detail__note">
+          Online payment isn&apos;t available yet for this course -- use &quot;Ask about this course&quot; below.
+        </p>
+      );
+    }
+    const onPaymentSuccess = () => {
+      invalidateLearner();
+      navigate('/portal/courses');
+    };
     return (
-      <PayPalCheckoutButton
-        courseSlug={course.slug}
-        onSuccess={() => {
-          invalidateLearner();
-          navigate('/portal/courses');
-        }}
-      />
+      <>
+        <PayPalCheckoutButton courseSlug={course.slug} onSuccess={onPaymentSuccess} />
+        <RazorpayCheckoutButton courseSlug={course.slug} onSuccess={onPaymentSuccess} />
+      </>
     );
   }
 

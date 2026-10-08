@@ -131,13 +131,9 @@ export function PayPalCheckoutButton({ courseSlug, onSuccess }: PayPalCheckoutBu
     };
   }, [clientId, courseSlug]);
 
-  if (!clientId) {
-    return (
-      <p className="course-detail__note">
-        Online payment isn&apos;t available yet for this course -- use &quot;Ask about this course&quot; below.
-      </p>
-    );
-  }
+  // No fallback message here -- CourseDetailPage shows one combined note
+  // only if neither this nor RazorpayCheckoutButton is configured.
+  if (!clientId) return null;
 
   return (
     <div className="pp-checkout">

@@ -25,6 +25,10 @@ async function bootstrap() {
   // one path gets a raw Buffer instead. Must be registered before Nest's own
   // body parsers, which are attached later at init.
   app.use('/v1/livekit/webhook', raw({ type: '*/*', limit: '256kb' }));
+  // Razorpay signs webhooks with a local HMAC over the exact raw body too
+  // (unlike PayPal, which verifies via PayPal's own remote API) -- same
+  // reasoning as the LiveKit line above.
+  app.use('/v1/payments/webhooks/razorpay', raw({ type: '*/*', limit: '256kb' }));
 
   const corsOrigins = (process.env.CORS_ORIGINS ?? '')
     .split(',')

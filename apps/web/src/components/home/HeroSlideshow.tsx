@@ -18,10 +18,38 @@ export function HeroSlideshow() {
   const reduced = useReducedMotion();
   const touchX = useRef<number | null>(null);
   const regionRef = useRef<HTMLElement>(null);
+  const videoRef = useRef<HTMLVideoElement>(null);
 
   const count = HERO_SLIDES.length;
   const go = useCallback((next: number) => setActive((next + count) % count), [count]);
   const advance = useCallback(() => setActive((a) => (a + 1) % count), [count]);
+
+  /* The video slide drives its own advance via onEnded (see below) rather
+     than the fixed-INTERVAL progress bar, so it needs to restart from 0 each
+     time it becomes active again -- including when the carousel loops back
+     around to it, not just on first mount -- and stop when the visitor
+     pauses or navigates away mid-playback. Skipped entirely under reduced
+     motion, matching how every other slide holds still there. */
+  useEffect(() => {
+    const el = videoRef.current;
+    if (!el) return;
+    const slide = HERO_SLIDES[active];
+    if (!slide.video || reduced) return;
+    if (paused) {
+      el.pause();
+      return;
+    }
+    el.currentTime = 0;
+    el.play().catch(() => {
+      /* Autoplay can be legitimately interrupted (power-saving pause, a
+         rapid pause/resume toggle) -- nothing to recover from here, the
+         slideshow's own play/pause control is the source of truth. */
+    });
+  }, [active, paused, reduced]);
+
+  const onVideoEnded = useCallback(() => {
+    if (!paused) advance();
+  }, [paused, advance]);
 
   /* Warm the browser cache for every slide up front, so a slide never begins
      its turn before its artwork is ready to show. */
@@ -73,11 +101,27 @@ export function HeroSlideshow() {
       }}
     >
       <div className="hero__stage">
-        {HERO_SLIDES.map((s, i) => (
-          <div key={s.id} className={cn('hero__bg', i === active && 'is-active')} aria-hidden="true">
-            <Plate source={s.image} seed={`hero-${s.id}`} motif={s.motif} tone="ink" ratio={16 / 9} alt="" />
-          </div>
-        ))}
+        {HERO_SLIDES.map((s, i) =>
+          s.video && !reduced ? (
+            <div key={s.id} className={cn('hero__bg', i === active && 'is-active')} aria-hidden="true">
+              <video
+                ref={i === active ? videoRef : undefined}
+                className="hero__video"
+                src={s.video}
+                poster={s.image}
+                muted
+                autoPlay
+                playsInline
+                preload="auto"
+                onEnded={i === active ? onVideoEnded : undefined}
+              />
+            </div>
+          ) : (
+            <div key={s.id} className={cn('hero__bg', i === active && 'is-active')} aria-hidden="true">
+              <Plate source={s.image} seed={`hero-${s.id}`} motif={s.motif} tone="ink" ratio={16 / 9} alt="" />
+            </div>
+          ),
+        )}
         <div className="hero__scrim" aria-hidden="true" />
       </div>
 
@@ -120,8 +164,8 @@ export function HeroSlideshow() {
             >
               <span
                 className="hero__dot-fill"
-                style={{ animationDuration: `${INTERVAL}ms` }}
-                onAnimationEnd={i === active ? onProgressEnd : undefined}
+                style={{ animationDuration: `${s.durationMs ?? INTERVAL}ms` }}
+                onAnimationEnd={i === active && !s.video ? onProgressEnd : undefined}
               />
             </button>
           ))}

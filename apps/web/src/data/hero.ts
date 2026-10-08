@@ -4,17 +4,31 @@ export interface HeroSlide {
   heading: string;
   /** Second line — the subtext, verbatim from aiit.network. */
   subtext: string;
-  /** Real hero image, or a motif keyword for the procedural fallback plate. */
+  /** Real hero image, or a motif keyword for the procedural fallback plate. Used as the video's poster when `video` is set. */
   image: string;
   motif: 'lattice' | 'flow' | 'strata' | 'field' | 'horizon' | 'depth' | 'mesh' | 'signal';
   cta: { label: string; to: string };
+  /** When set, this slide plays a muted autoplay video instead of a static image; advances on the video's own `ended` event rather than the fixed INTERVAL. */
+  video?: string;
+  /** Overrides INTERVAL for this slide's progress-dot fill duration -- used for the video slide so the dot animates over the video's real length. */
+  durationMs?: number;
 }
 
 /**
- * The seven homepage hero slides — headings, subtext, button labels and links
- * exactly as they appear on aiit.network.
+ * The homepage hero slides — headings, subtext, button labels and links
+ * exactly as they appear on aiit.network, plus a video intro slide.
  */
 export const HERO_SLIDES: HeroSlide[] = [
+  {
+    id: 'intro',
+    heading: 'Technology, People, Opportunity — Without Borders',
+    subtext: 'Global tech education for a brighter tomorrow.',
+    image: '/assets/hero/hero-intro-poster.jpg',
+    video: '/assets/hero/hero-intro.mp4',
+    durationMs: 9334,
+    motif: 'lattice',
+    cta: { label: 'Ready to get started?', to: '/courses' },
+  },
   {
     id: 'career',
     heading: 'Ready to build your global career?',

@@ -251,20 +251,22 @@ function SignInSecuritySection() {
               </p>
             ) : null}
             {passwordMessage ? <p className="profile-edit__saved">{passwordMessage}</p> : null}
-            <PasswordField
-              label="New password"
-              value={newPassword}
-              onChange={(e) => setNewPassword(e.target.value)}
-              hint={PASSWORD_HINT}
-              required
-            />
+            <div className="profile-details__grid">
+              <PasswordField
+                label="New password"
+                value={newPassword}
+                onChange={(e) => setNewPassword(e.target.value)}
+                hint={PASSWORD_HINT}
+                required
+              />
+              <PasswordField
+                label="Confirm new password"
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+                required
+              />
+            </div>
             <PasswordRequirementsList password={newPassword} />
-            <PasswordField
-              label="Confirm new password"
-              value={confirmPassword}
-              onChange={(e) => setConfirmPassword(e.target.value)}
-              required
-            />
             <Button as="button" type="submit" variant="secondary" size="sm" loading={passwordSaving}>
               Update password
             </Button>
@@ -358,14 +360,16 @@ function RegionLanguageSection() {
           </p>
         ) : null}
         {saved ? <p className="profile-edit__saved">Saved.</p> : null}
-        <SelectField
-          label="Country"
-          value={country}
-          onChange={(e) => setCountry(e.target.value)}
-          options={COUNTRY_OPTIONS}
-          hint="Used to resolve course pricing to your local currency."
-        />
-        <SelectField label="Preferred language" value={language} onChange={(e) => setLanguage(e.target.value)} options={LANGUAGE_OPTIONS} />
+        <div className="profile-details__grid">
+          <SelectField
+            label="Country"
+            value={country}
+            onChange={(e) => setCountry(e.target.value)}
+            options={COUNTRY_OPTIONS}
+            hint="Used to resolve course pricing to your local currency."
+          />
+          <SelectField label="Preferred language" value={language} onChange={(e) => setLanguage(e.target.value)} options={LANGUAGE_OPTIONS} />
+        </div>
         <Button as="button" type="submit" variant="secondary" size="sm" loading={saving}>
           Save preferences
         </Button>

@@ -317,16 +317,18 @@ export function ProfileCompletionWizard({ open, profile, onClose, onComplete }: 
                 hint="Use the name you would like to appear on your certificates."
                 required
               />
-              <PhoneCountrySelect label="Country code" value={phoneCountry} onChange={setPhoneCountry} required />
-              <TextField
-                label="Mobile number"
-                type="tel"
-                value={phoneNational}
-                onChange={(e) => setPhoneNational(e.target.value)}
-                maxLength={14}
-                hint="Without the leading 0, e.g. 8012345678."
-                required
-              />
+              <div className="profile-details__grid">
+                <PhoneCountrySelect label="Country code" value={phoneCountry} onChange={setPhoneCountry} required />
+                <TextField
+                  label="Mobile number"
+                  type="tel"
+                  value={phoneNational}
+                  onChange={(e) => setPhoneNational(e.target.value)}
+                  maxLength={14}
+                  hint="Without the leading 0, e.g. 8012345678."
+                  required
+                />
+              </div>
               <div className="pcw-step__actions">
                 <Button as="button" onClick={next} disabled={!name.trim() || !phoneCountry || !phoneNational.trim()}>
                   Continue
@@ -380,18 +382,20 @@ export function ProfileCompletionWizard({ open, profile, onClose, onComplete }: 
               >
                 {universityOther ? 'Choose from the list instead' : "Can't find it? Enter it manually."}
               </button>
-              <TextField
-                label="Field of study / discipline"
-                value={fieldOfStudy}
-                onChange={(e) => setFieldOfStudy(e.target.value)}
-                maxLength={120}
-              />
-              <SelectField
-                label="Current status"
-                value={currentStatus}
-                onChange={(e) => setCurrentStatus(e.target.value)}
-                options={STATUS_OPTIONS}
-              />
+              <div className="profile-details__grid">
+                <TextField
+                  label="Field of study / discipline"
+                  value={fieldOfStudy}
+                  onChange={(e) => setFieldOfStudy(e.target.value)}
+                  maxLength={120}
+                />
+                <SelectField
+                  label="Current status"
+                  value={currentStatus}
+                  onChange={(e) => setCurrentStatus(e.target.value)}
+                  options={STATUS_OPTIONS}
+                />
+              </div>
               <div className="pcw-step__actions">
                 <Button as="button" onClick={next} disabled={!qualification}>
                   Continue
@@ -453,45 +457,49 @@ export function ProfileCompletionWizard({ open, profile, onClose, onComplete }: 
               <p className="pcw-step__body">
                 Your location helps us present dates, webinars and learning activities in the right local time.
               </p>
-              <SelectField
-                label="Country"
-                value={country}
-                onChange={(e) => setCountry(e.target.value)}
-                options={COUNTRY_OPTIONS}
-                required
-              />
-              <SearchableSelect
-                label="State / province"
-                value={state}
-                onChange={setState}
-                options={states.map((s) => ({ value: s.name, label: s.name }))}
-                loading={statesLoading}
-                disabled={!country}
-                disabledHint="Select a country first."
-                placeholder="Select or search…"
-                searchPlaceholder="Search states…"
-                emptyMessage={statesLoading ? undefined : 'No states listed for this country.'}
-              />
-              <SearchableSelect
-                label="City"
-                value={city}
-                onChange={setCity}
-                options={cities.map((c) => ({ value: c.name, label: c.name }))}
-                loading={citiesLoading}
-                disabled={!state}
-                disabledHint="Select a state or province first."
-                placeholder="Select or search…"
-                searchPlaceholder="Search cities…"
-                emptyMessage={citiesLoading ? undefined : 'No cities listed for this state.'}
-              />
-              <TextField
-                label="Postal / pin code"
-                value={postalCode}
-                onChange={(e) => setPostalCode(e.target.value)}
-                maxLength={20}
-                error={postalCodeError}
-                hint={!postalCodeError && postalExample ? `e.g. ${postalExample}` : undefined}
-              />
+              <div className="profile-details__grid">
+                <SelectField
+                  label="Country"
+                  value={country}
+                  onChange={(e) => setCountry(e.target.value)}
+                  options={COUNTRY_OPTIONS}
+                  required
+                />
+                <SearchableSelect
+                  label="State / province"
+                  value={state}
+                  onChange={setState}
+                  options={states.map((s) => ({ value: s.name, label: s.name }))}
+                  loading={statesLoading}
+                  disabled={!country}
+                  disabledHint="Select a country first."
+                  placeholder="Select or search…"
+                  searchPlaceholder="Search states…"
+                  emptyMessage={statesLoading ? undefined : 'No states listed for this country.'}
+                />
+              </div>
+              <div className="profile-details__grid">
+                <SearchableSelect
+                  label="City"
+                  value={city}
+                  onChange={setCity}
+                  options={cities.map((c) => ({ value: c.name, label: c.name }))}
+                  loading={citiesLoading}
+                  disabled={!state}
+                  disabledHint="Select a state or province first."
+                  placeholder="Select or search…"
+                  searchPlaceholder="Search cities…"
+                  emptyMessage={citiesLoading ? undefined : 'No cities listed for this state.'}
+                />
+                <TextField
+                  label="Postal / pin code"
+                  value={postalCode}
+                  onChange={(e) => setPostalCode(e.target.value)}
+                  maxLength={20}
+                  error={postalCodeError}
+                  hint={!postalCodeError && postalExample ? `e.g. ${postalExample}` : undefined}
+                />
+              </div>
               <SelectField
                 label="Time zone"
                 value={timeZone}

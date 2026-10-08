@@ -16,6 +16,7 @@ export * from './auth';
 export * from './catalogue';
 export * from './enrollment';
 export * from './assignment';
+export * from './practice';
 export * from './certificate';
 export * from './notification';
 export * from './geo';

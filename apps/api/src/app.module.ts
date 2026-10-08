@@ -10,6 +10,7 @@ import { AuthModule } from './modules/auth/auth.module';
 import { CoursesModule } from './modules/courses/courses.module';
 import { EnrollmentsModule } from './modules/enrollments/enrollments.module';
 import { AssignmentsModule } from './modules/assignments/assignments.module';
+import { PracticeModule } from './modules/practice/practice.module';
 import { CertificatesModule } from './modules/certificates/certificates.module';
 import { AffiliatesModule } from './modules/affiliates/affiliates.module';
 import { PaymentsModule } from './modules/payments/payments.module';
@@ -50,6 +51,7 @@ import { MemoryCacheModule } from './common/cache/memory-cache.service';
     CoursesModule,
     EnrollmentsModule,
     AssignmentsModule,
+    PracticeModule,
     CertificatesModule,
     AffiliatesModule,
     PaymentsModule,

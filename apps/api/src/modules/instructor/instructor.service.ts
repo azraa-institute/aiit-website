@@ -95,7 +95,7 @@ export class InstructorService {
           id: true,
           slug: true,
           title: true,
-          _count: { select: { enrollments: { where: { status: { not: 'cancelled' } } }, assignments: true } },
+          _count: { select: { enrollments: { where: { status: { not: 'cancelled' } } }, assignments: true, quizzes: true } },
         },
         orderBy: { title: 'asc' },
       }),
@@ -119,6 +119,7 @@ export class InstructorService {
       title: c.title,
       enrolled: c._count.enrollments,
       assignments: c._count.assignments,
+      quizzes: c._count.quizzes,
       upcomingClasses: upcomingBy.get(c.id) ?? 0,
       needsGrading: ungradedBy.get(c.id) ?? 0,
     }));

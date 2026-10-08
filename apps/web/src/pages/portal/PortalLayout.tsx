@@ -37,6 +37,7 @@ const NAV: NavItem[] = [
   { to: '/portal/schedule', label: 'Timetable', group: 'primary' },
   { to: '/portal/certificates', label: 'Certificates', group: 'primary', tourId: 'tour-certificates' },
   { to: '/portal/assignments', label: 'Assignments', group: 'primary', tourId: 'tour-assignments' },
+  { to: '/portal/practice', label: 'Practice', group: 'primary' },
   { to: '/portal/resources', label: 'Learning resources', group: 'study' },
   { to: '/portal/webinars', label: 'Webinar registrations', group: 'study' },
   { to: '/portal/notifications', label: 'Notifications', group: 'study' },

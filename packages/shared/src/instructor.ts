@@ -27,6 +27,7 @@ export interface InstructorCourse {
   enrolled: number;
   upcomingClasses: number;
   assignments: number;
+  quizzes: number;
   needsGrading: number;
 }
 

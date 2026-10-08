@@ -111,3 +111,40 @@ export type GenerateTimetableResponse =
       instructorName: string | null;
     }
   | { status: 'conflicts'; instructorName: string | null; conflicts: TimetableConflict[] };
+
+// ---- Payments / revenue ----
+// Orders are never a single currency -- each provider settles in its own
+// (PayPal: USD, Razorpay: INR, Paystack: NGN) -- so revenue is reported per
+// currency, never summed across them into one misleading total.
+
+export type AdminOrderStatus = 'pending' | 'paid' | 'failed' | 'refunded' | 'cancelled';
+export type AdminPaymentProvider = 'paypal' | 'razorpay' | 'paystack';
+
+export interface RevenueByCurrency {
+  currency: string;
+  amountCents: number;
+  orders: number;
+}
+
+export interface PaymentsSummary {
+  /** Paid orders only, one entry per currency actually in use. */
+  revenueByCurrency: RevenueByCurrency[];
+  ordersByStatus: Record<AdminOrderStatus, number>;
+  ordersByProvider: { provider: AdminPaymentProvider; currency: string; amountCents: number; orders: number }[];
+  /** Paid revenue per course, each course's figures in its own order currency(ies). */
+  topCourses: { courseId: string; courseTitle: string; revenueByCurrency: RevenueByCurrency[] }[];
+}
+
+export interface AdminOrderRow {
+  id: string;
+  userName: string | null;
+  userEmail: string | null;
+  courseId: string;
+  courseTitle: string;
+  provider: AdminPaymentProvider;
+  currency: string;
+  amountCents: number;
+  status: AdminOrderStatus;
+  createdAt: string;
+  paidAt: string | null;
+}

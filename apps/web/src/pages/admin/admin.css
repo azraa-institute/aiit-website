@@ -893,6 +893,22 @@
   background: rgba(47, 107, 63, 0.14);
   color: #2f6b3f;
 }
+.adm-tag--paid {
+  background: rgba(47, 107, 63, 0.14);
+  color: #2f6b3f;
+}
+.adm-tag--pending {
+  background: rgba(154, 123, 79, 0.16);
+  color: var(--brass-deep);
+}
+.adm-tag--failed {
+  background: rgba(192, 43, 35, 0.1);
+  color: var(--red);
+}
+.adm-tag--refunded {
+  background: rgba(86, 107, 106, 0.16);
+  color: var(--slate-deep);
+}
 .adm-h2 {
   margin: var(--space-6) 0 var(--space-3);
   font-size: 1.05rem;

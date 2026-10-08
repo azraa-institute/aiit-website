@@ -76,6 +76,7 @@ const MyCoursesPage = lazy(() => import('@/pages/portal/MyCoursesPage'));
 const CourseWorkspacePage = lazy(() => import('@/pages/portal/CourseWorkspacePage'));
 const CertificatesPage = lazy(() => import('@/pages/portal/CertificatesPage'));
 const AssignmentsPage = lazy(() => import('@/pages/portal/AssignmentsPage'));
+const PracticePage = lazy(() => import('@/pages/portal/PracticePage'));
 const PortalResourcesPage = lazy(() => import('@/pages/portal/PortalResourcesPage'));
 const WebinarsPage = lazy(() => import('@/pages/portal/WebinarsPage'));
 const NotificationsPage = lazy(() => import('@/pages/portal/NotificationsPage'));
@@ -96,6 +97,7 @@ const AdminAnnouncementsPage = lazy(() => import('@/pages/admin/AdminAnnouncemen
 const AdminReportsPage = lazy(() => import('@/pages/admin/AdminReportsPage'));
 const AdminMessagesPage = lazy(() => import('@/pages/admin/AdminMessagesPage'));
 const AdminAffiliatesPage = lazy(() => import('@/pages/admin/AdminAffiliatesPage'));
+const AdminPaymentsPage = lazy(() => import('@/pages/admin/AdminPaymentsPage'));
 const AdminSettingsPage = lazy(() => import('@/pages/admin/AdminSettingsPage'));
 const AffiliateLayout = lazy(() => import('@/pages/affiliate/AffiliateLayout'));
 const AffiliateDashboardPage = lazy(() => import('@/pages/affiliate/AffiliateDashboardPage'));
@@ -214,6 +216,14 @@ export function App() {
                   }
                 />
                 <Route
+                  path="practice"
+                  element={
+                    <RequireCompleteProfile>
+                      <PracticePage />
+                    </RequireCompleteProfile>
+                  }
+                />
+                <Route
                   path="resources"
                   element={
                     <RequireCompleteProfile>
@@ -304,6 +314,7 @@ export function App() {
                 <Route path="complaints" element={<AdminComplaintsPage />} />
                 <Route path="affiliates" element={<AdminAffiliatesPage />} />
                 <Route path="announcements" element={<AdminAnnouncementsPage />} />
+                <Route path="payments" element={<AdminPaymentsPage />} />
                 <Route path="reports" element={<AdminReportsPage />} />
                 <Route path="messages" element={<AdminMessagesPage />} />
                 <Route path="audit" element={<AdminAuditPage />} />

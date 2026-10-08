@@ -1,8 +1,15 @@
 import { Injectable } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
-import type { AttendanceReportRow } from '@aiit/shared';
+import type { AdminOrderRow, AdminOrderStatus, AdminPaymentProvider, AttendanceReportRow, Paginated, PaymentsSummary, RevenueByCurrency } from '@aiit/shared';
 import { PrismaService } from '../../common/prisma/prisma.service';
 import { buildXlsx } from '../../common/xlsx';
+
+export interface ListOrdersQuery {
+  page?: number;
+  status?: AdminOrderStatus;
+  provider?: AdminPaymentProvider;
+  courseId?: string;
+}
 
 /** Attendance figures and .xlsx exports for the admin portal. */
 @Injectable()
@@ -48,6 +55,143 @@ export class AdminReportsService {
       enrolled: enrolledBy.get(c.courseId) ?? 0,
       attended: c._count.attendance,
     }));
+  }
+
+  // ---- Payments / revenue ----
+  // Orders settle in whichever currency their provider uses (PayPal: USD,
+  // Razorpay: INR, Paystack: NGN) -- every aggregate here is grouped by
+  // currency, never summed across currencies into one number that would
+  // misrepresent the actual revenue.
+
+  async payments(): Promise<PaymentsSummary> {
+    const [byStatus, byCurrency, byProviderCurrency, byCourseCurrency] = await Promise.all([
+      this.prisma.order.groupBy({ by: ['status'], _count: { _all: true } }),
+      this.prisma.order.groupBy({ by: ['currency'], where: { status: 'paid' }, _sum: { amountCents: true }, _count: { _all: true } }),
+      this.prisma.order.groupBy({
+        by: ['provider', 'currency'],
+        where: { status: 'paid' },
+        _sum: { amountCents: true },
+        _count: { _all: true },
+      }),
+      this.prisma.order.groupBy({
+        by: ['courseId', 'currency'],
+        where: { status: 'paid' },
+        _sum: { amountCents: true },
+        _count: { _all: true },
+        orderBy: { _count: { courseId: 'desc' } },
+      }),
+    ]);
+
+    const ordersByStatus: Record<AdminOrderStatus, number> = { pending: 0, paid: 0, failed: 0, refunded: 0, cancelled: 0 };
+    for (const row of byStatus) ordersByStatus[row.status] = row._count._all;
+
+    const revenueByCurrency: RevenueByCurrency[] = byCurrency.map((r) => ({
+      currency: r.currency,
+      amountCents: r._sum.amountCents ?? 0,
+      orders: r._count._all,
+    }));
+
+    const ordersByProvider = byProviderCurrency.map((r) => ({
+      provider: r.provider as AdminPaymentProvider,
+      currency: r.currency,
+      amountCents: r._sum.amountCents ?? 0,
+      orders: r._count._all,
+    }));
+
+    const courseIds = [...new Set(byCourseCurrency.map((r) => r.courseId))].slice(0, 10);
+    const courses =
+      courseIds.length > 0 ? await this.prisma.course.findMany({ where: { id: { in: courseIds } }, select: { id: true, title: true } }) : [];
+    const courseTitleById = new Map(courses.map((c) => [c.id, c.title]));
+    const topCourses = courseIds.map((courseId) => ({
+      courseId,
+      courseTitle: courseTitleById.get(courseId) ?? 'Unknown course',
+      revenueByCurrency: byCourseCurrency
+        .filter((r) => r.courseId === courseId)
+        .map((r) => ({ currency: r.currency, amountCents: r._sum.amountCents ?? 0, orders: r._count._all })),
+    }));
+
+    return { revenueByCurrency, ordersByStatus, ordersByProvider, topCourses };
+  }
+
+  async orders(query: ListOrdersQuery): Promise<Paginated<AdminOrderRow>> {
+    const page = query.page ?? 1;
+    const pageSize = 25;
+    const where: Prisma.OrderWhereInput = {
+      ...(query.status ? { status: query.status } : {}),
+      ...(query.provider ? { provider: query.provider } : {}),
+      ...(query.courseId ? { courseId: query.courseId } : {}),
+    };
+
+    const [rows, total] = await Promise.all([
+      this.prisma.order.findMany({
+        where,
+        orderBy: { createdAt: 'desc' },
+        skip: (page - 1) * pageSize,
+        take: pageSize,
+        include: { course: { select: { title: true } } },
+      }),
+      this.prisma.order.count({ where }),
+    ]);
+
+    const userIds = [...new Set(rows.map((r) => r.userId))];
+    const users = userIds.length > 0 ? await this.userNamesAndEmails(userIds) : new Map<string, { name: string | null; email: string | null }>();
+
+    return {
+      items: rows.map((r) => {
+        const u = users.get(r.userId);
+        return {
+          id: r.id,
+          userName: u?.name ?? null,
+          userEmail: u?.email ?? null,
+          courseId: r.courseId,
+          courseTitle: r.course.title,
+          provider: r.provider as AdminPaymentProvider,
+          currency: r.currency,
+          amountCents: r.amountCents,
+          status: r.status as AdminOrderStatus,
+          createdAt: r.createdAt.toISOString(),
+          paidAt: r.paidAt ? r.paidAt.toISOString() : null,
+        };
+      }),
+      total,
+      page,
+      pageSize,
+    };
+  }
+
+  async paymentsXlsx(): Promise<Buffer> {
+    const rows = await this.prisma.$queryRaw<
+      {
+        course: string;
+        provider: string;
+        currency: string;
+        amount_cents: number;
+        status: string;
+        name: string | null;
+        email: string | null;
+        created_at: Date;
+        paid_at: Date | null;
+      }[]
+    >`
+      SELECT c.title AS course, o.provider, o.currency, o.amount_cents, o.status, p.name, u.email, o.created_at, o.paid_at
+      FROM orders o
+      JOIN courses c ON c.id = o.course_id
+      LEFT JOIN profiles p ON p.id = o.user_id
+      LEFT JOIN auth.users u ON u.id = o.user_id
+      ORDER BY o.created_at DESC`;
+    return buildXlsx(
+      'Payments',
+      ['Course', 'Provider', 'Currency', 'Amount (minor units)', 'Status', 'Student', 'Email', 'Created', 'Paid'],
+      rows.map((r) => [r.course, r.provider, r.currency, r.amount_cents, r.status, r.name, r.email, r.created_at, r.paid_at]),
+    );
+  }
+
+  private async userNamesAndEmails(ids: string[]): Promise<Map<string, { name: string | null; email: string | null }>> {
+    const rows = await this.prisma.$queryRaw<{ id: string; name: string | null; email: string | null }[]>`
+      SELECT p.id, p.name, u.email
+      FROM profiles p LEFT JOIN auth.users u ON u.id = p.id
+      WHERE p.id IN (${Prisma.join(ids.map((id) => Prisma.sql`${id}::uuid`))})`;
+    return new Map(rows.map((r) => [r.id, { name: r.name, email: r.email }]));
   }
 
   // ---- .xlsx exports ----

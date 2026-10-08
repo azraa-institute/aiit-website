@@ -340,6 +340,7 @@ model Course {
   modules          CourseModule[]
   enrollments      Enrollment[]
   assignments      Assignment[]
+  quizzes          Quiz[]
   certificates     Certificate[]
   timetables       Timetable[]
   liveClasses      LiveClass[]
@@ -475,6 +476,72 @@ model AssignmentSubmission {
 
   @@unique([assignmentId, userId])
   @@map("assignment_submissions")
+  @@schema("public")
+}
+
+// ---- Learner portal: practice quizzes ----
+// The "Practice" phase of AIIT's five-phase model (Learn / Practice /
+// Certify / Progress / Globalize) had no feature behind it until this --
+// low-stakes, instructor-authored, multiple-choice self-checks, distinct
+// from graded Assignments. A learner can retake a quiz; QuizAttempt keeps
+// every attempt (not just the best), same "never overwrite history"
+// instinct as Order/AssignmentSubmission elsewhere in this schema.
+
+model Quiz {
+  id          String         @id @default(uuid()) @db.Uuid
+  courseId    String         @map("course_id") @db.Uuid
+  course      Course         @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  title       String
+  description String?
+  createdBy   String?        @map("created_by") @db.Uuid // the instructor who authored it (null for seeded ones)
+  questions   QuizQuestion[]
+  attempts    QuizAttempt[]
+  createdAt   DateTime       @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt   DateTime       @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  @@map("quizzes")
+  @@schema("public")
+}
+
+model QuizQuestion {
+  id        String       @id @default(uuid()) @db.Uuid
+  quizId    String       @map("quiz_id") @db.Uuid
+  quiz      Quiz         @relation(fields: [quizId], references: [id], onDelete: Cascade)
+  prompt    String
+  position  Int          @default(0)
+  options   QuizOption[]
+  createdAt DateTime     @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  @@map("quiz_questions")
+  @@schema("public")
+}
+
+model QuizOption {
+  id         String       @id @default(uuid()) @db.Uuid
+  questionId String       @map("question_id") @db.Uuid
+  question   QuizQuestion @relation(fields: [questionId], references: [id], onDelete: Cascade)
+  text       String
+  isCorrect  Boolean      @default(false) @map("is_correct")
+  position   Int          @default(0)
+
+  @@map("quiz_options")
+  @@schema("public")
+}
+
+model QuizAttempt {
+  id             String   @id @default(uuid()) @db.Uuid
+  quizId         String   @map("quiz_id") @db.Uuid
+  quiz           Quiz     @relation(fields: [quizId], references: [id], onDelete: Cascade)
+  userId         String   @map("user_id") @db.Uuid
+  scorePct       Int      @map("score_pct")
+  correctCount   Int      @map("correct_count")
+  totalQuestions Int      @map("total_questions")
+  // { [questionId]: optionId } -- the option the learner picked per question, kept for review.
+  answers        Json
+  completedAt    DateTime @default(now()) @map("completed_at") @db.Timestamptz(6)
+
+  @@index([quizId, userId])
+  @@map("quiz_attempts")
   @@schema("public")
 }
 

@@ -7,10 +7,14 @@ import type {
   AdminAnnouncement,
   AdminComplaintDetail,
   AdminComplaintSummary,
+  AdminOrderRow,
+  AdminOrderStatus,
+  AdminPaymentProvider,
   AnnouncementAudience,
   AttendanceReportRow,
   ComplaintStatus,
   Paginated,
+  PaymentsSummary,
 } from '@aiit/shared';
 import { JwtGuard, type AuthenticatedUser } from '../../common/guards/jwt.guard';
 import { RolesGuard } from '../../common/guards/roles.guard';
@@ -58,6 +62,26 @@ class CreateAnnouncementBody {
 }
 
 class CourseFilterQuery {
+  @IsOptional()
+  @IsUUID()
+  courseId?: string;
+}
+
+class ListOrdersQueryDto {
+  @IsOptional()
+  @Transform(({ value }) => Number(value))
+  @IsInt()
+  @Min(1)
+  page?: number;
+
+  @IsOptional()
+  @IsIn(['pending', 'paid', 'failed', 'refunded', 'cancelled'])
+  status?: AdminOrderStatus;
+
+  @IsOptional()
+  @IsIn(['paypal', 'razorpay', 'paystack'])
+  provider?: AdminPaymentProvider;
+
   @IsOptional()
   @IsUUID()
   courseId?: string;
@@ -151,5 +175,22 @@ export class AdminSupportController {
   @Get('exports/attendance')
   async attendanceXlsx(@Query() query: CourseFilterQuery, @Res({ passthrough: true }) res: Response): Promise<StreamableFile> {
     return xlsxAttachment(res, 'aiit-attendance.xlsx', await this.reports.attendanceXlsx(query.courseId));
+  }
+
+  // ---- payments / revenue ----
+
+  @Get('payments/summary')
+  paymentsSummary(): Promise<PaymentsSummary> {
+    return this.reports.payments();
+  }
+
+  @Get('payments/orders')
+  orders(@Query() query: ListOrdersQueryDto): Promise<Paginated<AdminOrderRow>> {
+    return this.reports.orders(query);
+  }
+
+  @Get('exports/payments')
+  async paymentsXlsx(@Res({ passthrough: true }) res: Response): Promise<StreamableFile> {
+    return xlsxAttachment(res, 'aiit-payments.xlsx', await this.reports.paymentsXlsx());
   }
 }

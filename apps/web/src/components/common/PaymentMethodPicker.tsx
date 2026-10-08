@@ -22,11 +22,29 @@ function CardIcon() {
   );
 }
 
-function NairaIcon() {
+// Real logo marks for the two round provider badges, sourced the same way
+// as the card-network marks below (simple-icons, CC0-1.0, official path
+// data + brand hex) rather than the plain letter placeholders this used to
+// show. Paystack has no entry in simple-icons or any other open-licensed
+// icon set I could find (and I'm not going to trace their trademarked mark
+// freehand), so its badge stays a plain "Paystack" wordmark -- same
+// no-guessing rule already applied to Verve/RuPay below.
+const PAYPAL_MARK_PATH =
+  'M15.607 4.653H8.941L6.645 19.251H1.82L4.862 0h7.995c3.754 0 6.375 2.294 6.473 5.513-.648-.478-2.105-.86-3.722-.86m6.57 5.546c0 3.41-3.01 6.853-6.958 6.853h-2.493L11.595 24H6.74l1.845-11.538h3.592c4.208 0 7.346-3.634 7.153-6.949a5.24 5.24 0 0 1 2.848 4.686M9.653 5.546h6.408c.907 0 1.942.222 2.363.541-.195 2.741-2.655 5.483-6.441 5.483H8.714Z';
+const RAZORPAY_MARK_PATH =
+  'M22.436 0l-11.91 7.773-1.174 4.276 6.625-4.297L11.65 24h4.391l6.395-24zM14.26 10.098L3.389 17.166 1.564 24h9.008l3.688-13.902Z';
+
+function PayPalMark() {
   return (
-    <svg width="22" height="22" viewBox="0 0 24 24" aria-hidden="true">
-      <path d="M6 4v16M18 4v16M6 4l12 16M6 20 18 4" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
-      <path d="M3 9h18M3 15h18" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+    <svg width="28" height="28" viewBox="0 0 24 24" aria-hidden="true">
+      <path fill="#fff" d={PAYPAL_MARK_PATH} />
+    </svg>
+  );
+}
+function RazorpayMark() {
+  return (
+    <svg width="28" height="28" viewBox="0 0 24 24" aria-hidden="true">
+      <path fill="#fff" d={RAZORPAY_MARK_PATH} />
     </svg>
   );
 }
@@ -174,7 +192,7 @@ export function PaymentMethodPicker({ courseSlug, onSuccess }: PaymentMethodPick
         {paypalClientId ? (
           <div className="pm-card pm-card--paypal">
             <span className="pm-card__badge pm-card__badge--paypal" aria-hidden="true">
-              P
+              <PayPalMark />
             </span>
             <h3 className="pm-card__title">PayPal</h3>
             <p className="pm-card__desc">Pay with your PayPal balance, card, or bank</p>
@@ -206,7 +224,7 @@ export function PaymentMethodPicker({ courseSlug, onSuccess }: PaymentMethodPick
         {razorpayKeyId ? (
           <div className="pm-card pm-card--razorpay">
             <span className="pm-card__badge pm-card__badge--razorpay" aria-hidden="true">
-              R
+              <RazorpayMark />
             </span>
             <h3 className="pm-card__title">Razorpay</h3>
             <p className="pm-card__desc">Pay using UPI, cards, netbanking, or wallets</p>
@@ -228,8 +246,8 @@ export function PaymentMethodPicker({ courseSlug, onSuccess }: PaymentMethodPick
 
         {paystackPublicKey ? (
           <div className="pm-card pm-card--paystack">
-            <span className="pm-card__badge pm-card__badge--paystack" aria-hidden="true">
-              <NairaIcon />
+            <span className="pm-card__badge pm-card__badge--paystack pm-card__badge--wordmark" aria-hidden="true">
+              Paystack
             </span>
             <h3 className="pm-card__title">Paystack</h3>
             <p className="pm-card__desc">Pay using card, bank transfer, or USSD</p>

@@ -78,6 +78,18 @@
 .pm-card__badge--paystack {
   background: linear-gradient(155deg, #0a3d33 0%, #00a884 100%);
 }
+/* "Paystack" wordmark badge -- no official icon-only mark exists in any
+   open-licensed set, so the full name is shown instead of a guessed-at
+   symbol; font-size is cut way down from the letter badges' 1.4rem so the
+   whole word fits inside the same 60px circle. */
+.pm-card__badge--wordmark {
+  font-size: 0.56rem;
+  font-weight: var(--fw-strong);
+  letter-spacing: 0.01em;
+  padding: 0 4px;
+  text-align: center;
+  line-height: 1.1;
+}
 
 .pm-card__title {
   font-family: var(--font-display);

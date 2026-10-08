@@ -5,6 +5,7 @@ import { useScrollReveal } from '@/lib/useScrollReveal';
 import { cn } from '@/lib/cn';
 import { downloadBlob } from '@/lib/api';
 import { buildClassCalendar } from '@/lib/ics';
+import { CalendarIcon, ChevronRightIcon, ClockIcon, VideoIcon } from './ContentIcons';
 import { PortalEmpty } from './PortalEmpty';
 import { PortalLoader } from './PortalLoader';
 import {
@@ -80,6 +81,20 @@ function ClassRow({ item, zone, clash }: { item: LiveClassSummary; zone: string;
   );
 }
 
+/** Weekday/date/month as separate parts -- the redesigned day header gives
+    each its own typographic weight (date large and serif, weekday/month
+    small and understated) rather than one combined string. */
+function dayParts(key: string) {
+  const d = new Date(`${key}T00:00:00Z`);
+  return {
+    weekday: d.toLocaleDateString(undefined, { weekday: 'short', timeZone: 'UTC' }).toUpperCase(),
+    day: d.toLocaleDateString(undefined, { day: 'numeric', timeZone: 'UTC' }),
+    month: d.toLocaleDateString(undefined, { month: 'short', timeZone: 'UTC' }).toUpperCase(),
+  };
+}
+const rangeLabel = (key: string) =>
+  new Date(`${key}T00:00:00Z`).toLocaleDateString(undefined, { day: 'numeric', month: 'short', timeZone: 'UTC' });
+
 function WeekView({ classes, zone, clashes }: { classes: LiveClassSummary[]; zone: string; clashes: Map<string, string[]> }) {
   const [offset, setOffset] = useState(0);
   const today = dayKey(new Date().toISOString(), zone);
@@ -89,55 +104,76 @@ function WeekView({ classes, zone, clashes }: { classes: LiveClassSummary[]; zon
     const key = dayKey(c.startsAt, zone);
     byDay.set(key, [...(byDay.get(key) ?? []), c]);
   }
-  const label = (key: string) =>
-    new Date(`${key}T00:00:00Z`).toLocaleDateString(undefined, { weekday: 'short', day: 'numeric', month: 'short', timeZone: 'UTC' });
 
   return (
     <div className="week">
       <div className="week__nav">
-        <button type="button" onClick={() => setOffset(offset - 1)} aria-label="Previous week">
-          ‹ Previous
+        <button type="button" className="week__nav-arrow" onClick={() => setOffset(offset - 1)} aria-label="Previous week">
+          <ChevronRightIcon className="week__nav-chevron week__nav-chevron--prev" />
         </button>
         <span className="week__range">
-          {label(days[0])} – {label(days[6])}
+          {rangeLabel(days[0])} – {rangeLabel(days[6])}
+          {offset !== 0 ? (
+            <button type="button" className="week__today-link" onClick={() => setOffset(0)}>
+              This week
+            </button>
+          ) : null}
         </span>
-        <button type="button" onClick={() => setOffset(offset + 1)} aria-label="Next week">
-          Next ›
+        <button type="button" className="week__nav-arrow" onClick={() => setOffset(offset + 1)} aria-label="Next week">
+          <ChevronRightIcon className="week__nav-chevron" />
         </button>
-        {offset !== 0 ? (
-          <button type="button" onClick={() => setOffset(0)}>
-            This week
-          </button>
-        ) : null}
       </div>
       <div className="week__grid">
         {days.map((key) => {
+          const parts = dayParts(key);
           const items = (byDay.get(key) ?? []).sort((a, b) => new Date(a.startsAt).getTime() - new Date(b.startsAt).getTime());
+          const isToday = key === today;
           return (
-            <section key={key} className={cn('week__day', key === today && 'is-today')} aria-label={label(key)}>
-              <h3 className="week__dayname">{label(key)}</h3>
+            <section
+              key={key}
+              className={cn('week__day', isToday && 'is-today')}
+              aria-label={`${parts.weekday} ${parts.day} ${parts.month}`}
+              aria-current={isToday ? 'date' : undefined}
+            >
+              <header className="week__dayhead">
+                <p className="week__weekday">{parts.weekday}</p>
+                <p className="week__date">{parts.day}</p>
+                <p className="week__month">{parts.month}</p>
+              </header>
               {items.length === 0 ? (
-                <p className="week__none">—</p>
+                <p className="week__none">
+                  <CalendarIcon className="week__none-icon" />
+                  No classes
+                  <br />
+                  scheduled
+                </p>
               ) : (
-                items.map((c) => {
-                  const clash = clashes.get(c.id);
-                  const action = actionLabel(c);
-                  return (
-                    <div key={c.id} className={cn('week__event', c.status === 'cancelled' && 'is-cancelled', clash && 'has-clash')}>
-                      <p className="week__time">
-                        {formatClassTime(c.startsAt, zone)} – {formatClassTime(c.endsAt, zone)}
-                      </p>
-                      <p className="week__title">{c.courseTitle}</p>
-                      {clash ? <p className="lesson__clash">Overlaps</p> : null}
-                      {c.status === 'cancelled' ? <p className="week__note">Cancelled</p> : null}
-                      {action ? (
-                        <Link to={`/classroom/${c.id}`} className="week__cta">
-                          {action}
-                        </Link>
-                      ) : null}
-                    </div>
-                  );
-                })
+                <div className="week__events">
+                  {items.map((c) => {
+                    const clash = clashes.get(c.id);
+                    const action = actionLabel(c);
+                    return (
+                      <div key={c.id} className={cn('week__event', c.status === 'cancelled' && 'is-cancelled', clash && 'has-clash')}>
+                        <p className="week__time">
+                          <ClockIcon className="week__event-icon" />
+                          {formatClassTime(c.startsAt, zone)} – {formatClassTime(c.endsAt, zone)}
+                        </p>
+                        <p className="week__title">{c.courseTitle}</p>
+                        <p className="week__mode">
+                          <VideoIcon className="week__event-icon" />
+                          Online class
+                        </p>
+                        {clash ? <p className="lesson__clash">Overlaps</p> : null}
+                        {c.status === 'cancelled' ? <p className="week__note">Cancelled</p> : null}
+                        {action ? (
+                          <Link to={`/classroom/${c.id}`} className="week__cta">
+                            {action}
+                          </Link>
+                        ) : null}
+                      </div>
+                    );
+                  })}
+                </div>
               )}
             </section>
           );

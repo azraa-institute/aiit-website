@@ -17,7 +17,12 @@ export default function AboutPage() {
   return (
     <Layout>
       <Seo title="About Us" description={SITE.mission} path="/about" jsonLd={organizationLd()} />
-      <PageBanner eyebrow="Welcome to AIIT" title="Azraa Institute of Information Technology" intro={SITE.blurb} />
+      <PageBanner
+        eyebrow="Welcome to AIIT"
+        title="Azraa Institute of Information Technology"
+        intro={SITE.blurb}
+        titleWidth="wide"
+      />
 
       <Section tone="paper" size="lg">
         <div className="container container--wide about-page__intro">

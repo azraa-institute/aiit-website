@@ -61,6 +61,10 @@ export function PaymentMethodPicker({ courseSlug, onSuccess }: PaymentMethodPick
   // during initialize. This is used purely as a "is Paystack configured,
   // should this card render" signal, mirroring how the other two
   // providers gate their own cards on their public key's presence.
+  // (Re-touched when switching to the Live key -- see the Vercel
+  // build-cache gotcha in the phase1-deployment-status memory/notes:
+  // a brand-new VITE_* value can get served stale unless the referencing
+  // source file's content hash actually changes.)
   const paystackPublicKey = import.meta.env.VITE_PAYSTACK_PUBLIC_KEY as string | undefined;
 
   function handleRazorpayClick() {

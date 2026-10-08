@@ -186,6 +186,9 @@
   flex-shrink: 0;
   width: clamp(110px, 10vw + 60px, 170px);
   height: auto;
+  aspect-ratio: 1 / 1;
+  object-fit: cover;
+  border-radius: var(--radius-md);
   align-self: center;
 }
 .payment-section__heading {

@@ -81,7 +81,7 @@ export default function WebinarPage() {
           ...(w.startsAt ? { startDate: w.startsAt } : {}),
         }}
       />
-      <PageBanner eyebrow="Free live webinar · Seats limited" title={w.title} intro={w.summary} />
+      <PageBanner eyebrow="Free live webinar · Seats limited" title={w.title} intro={w.summary} titleWidth="wide" />
 
       <Section tone="paper" size="default">
         <div className="container container--wide">

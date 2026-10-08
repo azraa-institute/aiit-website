@@ -33,6 +33,13 @@
   max-width: 18ch;
   text-wrap: balance;
 }
+/* For a long sentence-style title (see PageBanner's titleWidth prop) --
+   wide enough for 4-5 words per line at this font size instead of 1-2,
+   still narrower than the 1480px container so it keeps an editorial,
+   not full-bleed-paragraph, column. */
+.page-banner__title--wide {
+  max-width: 32ch;
+}
 /* --fs-display-2's own clamp floors at 2.25rem (36px) below a ~312px
    viewport and stays flat from there down -- so on an actual phone
    (360-430px) it's sitting at ~38-40px regardless, just above that floor.

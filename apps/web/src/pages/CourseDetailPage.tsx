@@ -40,6 +40,16 @@ function LockIcon() {
   );
 }
 
+function InfoIcon() {
+  return (
+    <svg width="14" height="14" viewBox="0 0 24 24" aria-hidden="true">
+      <circle cx="12" cy="12" r="8.2" fill="none" stroke="currentColor" strokeWidth="1.6" />
+      <path d="M12 11v5" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+      <circle cx="12" cy="8" r="0.9" fill="currentColor" />
+    </svg>
+  );
+}
+
 export default function CourseDetailPage() {
   const { slug } = useParams();
   const courseState = useCourseDetail(slug);
@@ -239,9 +249,16 @@ export default function CourseDetailPage() {
                 const providerList =
                   providers.length < 2 ? providers[0] : `${providers.slice(0, -1).join(', ')} and ${providers[providers.length - 1]}`;
                 return (
-                  <p className="payment-section__footnote">
-                    <LockIcon /> Your payment is processed securely by {providerList}. We do not store your card details.
-                  </p>
+                  <>
+                    <p className="payment-section__footnote">
+                      <LockIcon /> Your payment is processed securely by {providerList}. We do not store your card details.
+                    </p>
+                    {import.meta.env.VITE_PAYSTACK_PUBLIC_KEY && (
+                      <p className="payment-section__footnote">
+                        <InfoIcon /> Paying with Paystack: a small processing fee may be added to your total at checkout.
+                      </p>
+                    )}
+                  </>
                 );
               })()}
             </div>

@@ -289,16 +289,26 @@
 .week__day:last-child {
   border-radius: 0 var(--radius-lg) var(--radius-lg) 0;
 }
+/* A day with classes scheduled reads warmer than an empty one -- quieter
+   than --is-today so the current day still stands out on top of it when
+   both apply (source order: this rule first, is-today's stronger wash
+   after, so it wins on specificity ties). */
+.week__day.has-classes {
+  background: linear-gradient(165deg, color-mix(in srgb, var(--brass-tint) 20%, transparent) 0%, transparent 75%);
+}
 .week__day.is-today {
-  background: linear-gradient(165deg, color-mix(in srgb, var(--brass-tint) 40%, transparent) 0%, transparent 70%);
+  background: linear-gradient(165deg, color-mix(in srgb, var(--brass-tint) 55%, transparent) 0%, transparent 70%);
 }
 .week__dayhead {
   margin-bottom: var(--space-4);
   padding-bottom: var(--space-3);
   border-bottom: 1px solid rgba(20, 17, 15, 0.1);
 }
+.week__day.has-classes .week__dayhead {
+  border-bottom-color: color-mix(in srgb, var(--brass) 25%, transparent);
+}
 .week__day.is-today .week__dayhead {
-  border-bottom-color: color-mix(in srgb, var(--brass) 45%, transparent);
+  border-bottom-color: color-mix(in srgb, var(--brass) 55%, transparent);
 }
 .week__weekday {
   font-size: 0.68rem;

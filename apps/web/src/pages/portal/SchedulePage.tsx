@@ -131,7 +131,7 @@ function WeekView({ classes, zone, clashes }: { classes: LiveClassSummary[]; zon
           return (
             <section
               key={key}
-              className={cn('week__day', isToday && 'is-today')}
+              className={cn('week__day', items.length > 0 && 'has-classes', isToday && 'is-today')}
               aria-label={`${parts.weekday} ${parts.day} ${parts.month}`}
               aria-current={isToday ? 'date' : undefined}
             >
@@ -187,7 +187,14 @@ export default function SchedulePage() {
   const state = useLiveClasses(POLL_MS);
   const { zone, fromProfile } = useDisplayZone();
   const [view, setView] = useState<View>('list');
-  useScrollReveal([state.status]);
+  // The List view's sections carry [data-reveal] and fully unmount when
+  // switching to Week, then remount fresh (opacity:0, unobserved) on
+  // switching back -- without `view` in the dependency array, nothing
+  // re-triggers the IntersectionObserver for those newly-mounted nodes, so
+  // the list stayed invisible until a full page reload. Same root cause as
+  // the SupportPage bug fixed earlier, different trigger (a view toggle
+  // instead of a second gating fetch).
+  useScrollReveal([state.status, view]);
 
   if (state.status === 'loading') return <PortalLoader label="Loading your timetable" />;
 

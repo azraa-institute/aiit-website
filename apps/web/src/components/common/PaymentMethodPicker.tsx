@@ -31,6 +31,43 @@ function NairaIcon() {
   );
 }
 
+/**
+ * Small "accepted card networks" marks -- the same informational row
+ * pattern PayPal/Stripe/every other checkout shows near their payment
+ * button. Built as simple brand-colour shapes/wordmarks (same approach as
+ * the circular provider badges above), not traced reproductions of each
+ * network's actual logo artwork.
+ */
+function VisaMark() {
+  return (
+    <svg width="34" height="22" viewBox="0 0 34 22" role="img" aria-label="Visa">
+      <rect width="34" height="22" rx="3" fill="#fff" stroke="var(--line)" />
+      <text x="17" y="15" textAnchor="middle" fontFamily="Georgia, serif" fontStyle="italic" fontWeight="700" fontSize="11" fill="#1a1f71">
+        VISA
+      </text>
+    </svg>
+  );
+}
+function MastercardMark() {
+  return (
+    <svg width="34" height="22" viewBox="0 0 34 22" role="img" aria-label="Mastercard">
+      <rect width="34" height="22" rx="3" fill="#fff" stroke="var(--line)" />
+      <circle cx="14.5" cy="11" r="6.4" fill="#eb001b" />
+      <circle cx="19.5" cy="11" r="6.4" fill="#f79e1b" fillOpacity="0.9" />
+    </svg>
+  );
+}
+function VerveMark() {
+  return (
+    <svg width="34" height="22" viewBox="0 0 34 22" role="img" aria-label="Verve">
+      <rect width="34" height="22" rx="3" fill="#fff" stroke="var(--line)" />
+      <text x="17" y="14.5" textAnchor="middle" fontFamily="var(--font-ui)" fontWeight="700" fontSize="9" fill="#003e7e">
+        verve
+      </text>
+    </svg>
+  );
+}
+
 interface PaymentMethodPickerProps {
   courseSlug: string;
   /** Called once a payment is confirmed and the learner is enrolled. */
@@ -153,6 +190,11 @@ export function PaymentMethodPicker({ courseSlug, onSuccess }: PaymentMethodPick
             </span>
             <h3 className="pm-card__title">Paystack</h3>
             <p className="pm-card__desc">Pay using card, bank transfer, or USSD</p>
+            <div className="pm-card__networks" aria-hidden="true">
+              <VisaMark />
+              <MastercardMark />
+              <VerveMark />
+            </div>
             <div className="pm-card__action">
               <button
                 type="button"

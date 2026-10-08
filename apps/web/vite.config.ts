@@ -183,6 +183,20 @@ const sentryPlugin = process.env.SENTRY_AUTH_TOKEN
     })
   : null;
 
+// TEMPORARY diagnostic -- remove once the VITE_PAYSTACK_PUBLIC_KEY
+// build-time-missing investigation is resolved. Prints presence only
+// (never the value) to the Vercel build log.
+console.log(
+  '[diagnostic] VITE_PAYSTACK_PUBLIC_KEY present at build time:',
+  Boolean(process.env.VITE_PAYSTACK_PUBLIC_KEY),
+  '| length:',
+  (process.env.VITE_PAYSTACK_PUBLIC_KEY ?? '').length,
+);
+console.log(
+  '[diagnostic] all VITE_-prefixed env var names seen:',
+  Object.keys(process.env).filter((k) => k.startsWith('VITE_')),
+);
+
 // https://vite.dev/config/
 export default defineConfig({
   plugins: [react(), aiitBlog(), sitemapPlugin(), sentryPlugin],

@@ -21,14 +21,14 @@ export default function MyCoursesPage() {
         <p className="portal-eyebrow">My courses</p>
         <h1 className="portal-page__title">Your courses</h1>
         <p className="portal-page__intro">
-          Everything you are enrolled in — where you are, and the next step in each.
+          Everything you are enrolled in: where you are, and the next step in each.
         </p>
       </header>
 
       {enrolled.length === 0 ? (
         <PortalEmpty
           title="No courses yet"
-          body="Once you enrol in an AIIT programme it appears here — your status and the way back into the course."
+          body="Once you enrol in an AIIT programme it appears here, with your status and the way back into the course."
           action={{ label: 'Browse courses', to: '/courses' }}
         />
       ) : (

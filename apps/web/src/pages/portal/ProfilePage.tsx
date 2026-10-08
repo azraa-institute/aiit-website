@@ -485,8 +485,8 @@ export default function ProfilePage() {
       <section className="profile-support" aria-labelledby="profile-support-title">
         <h2 id="profile-support-title">Support &amp; complaints</h2>
         <p>
-          Having trouble with your learning, or an issue with a course or an instructor? Report it to the AIIT team —
-          your report is private and we reply here in your portal.
+          Having trouble with your learning, or an issue with a course or an instructor? Report it to the AIIT team.
+          Your report is private and we reply here in your portal.
         </p>
         <Link to="/portal/support" className="btn btn--secondary">
           Report a problem or see your reports

@@ -191,9 +191,9 @@ export default function SchedulePage() {
         <h1 className="portal-page__title">Live classes</h1>
         <p className="portal-page__intro">
           {isHost
-            ? 'The classes assigned to you. Start a class when you are ready — learners can join once it is live.'
+            ? 'The classes assigned to you. Start a class when you are ready; learners can join once it is live.'
             : courseCount > 1
-              ? `One timetable for all ${courseCount} of your courses — it updates by itself as classes are scheduled. A class opens shortly before it starts, and you join once your instructor begins.`
+              ? `One timetable for all ${courseCount} of your courses. It updates by itself as classes are scheduled. A class opens shortly before it starts, and you join once your instructor begins.`
               : 'Your live classes. A class opens shortly before it starts, and you join once your instructor begins.'}
         </p>
         <p className="schedule-zone">
@@ -201,13 +201,13 @@ export default function SchedulePage() {
           {!isHost && fromProfile ? (
             <>
               {' '}
-              (from your profile — <Link to="/portal/profile">change</Link>)
+              (from your profile, <Link to="/portal/profile">change</Link>)
             </>
           ) : null}
           {!isHost && !fromProfile ? (
             <>
               {' '}
-              (your device&apos;s time zone — <Link to="/portal/profile">set yours in your profile</Link>)
+              (your device&apos;s time zone, <Link to="/portal/profile">set yours in your profile</Link>)
             </>
           ) : null}
         </p>
@@ -241,7 +241,7 @@ export default function SchedulePage() {
 
           {clashes.size > 0 && !isHost ? (
             <p className="schedule-warning" role="status">
-              Two of your courses have classes at the same time. They are marked below — talk to the AIIT team if you need one moved.
+              Two of your courses have classes at the same time. They are marked below; talk to the AIIT team if you need one moved.
             </p>
           ) : null}
 

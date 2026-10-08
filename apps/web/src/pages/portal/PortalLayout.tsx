@@ -201,8 +201,8 @@ export default function PortalLayout() {
         <Toast
           message={
             firstName
-              ? `Welcome, ${firstName} — you're all set. Please complete your profile to unlock enrollment and your portal.`
-              : "Welcome — you're all set. Please complete your profile to unlock enrollment and your portal."
+              ? `Welcome, ${firstName}. You're all set. Please complete your profile to unlock enrollment and your portal.`
+              : "Welcome. You're all set. Please complete your profile to unlock enrollment and your portal."
           }
           onDismiss={() => setShowWelcome(false)}
         />

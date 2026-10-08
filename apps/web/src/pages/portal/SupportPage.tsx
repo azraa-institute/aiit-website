@@ -217,7 +217,7 @@ export default function SupportPage() {
 
       {sent ? (
         <p className="support-sent" role="status">
-          Thank you — your report has been sent. We will reply here, and you will get a notification.
+          Thank you. Your report has been sent. We will reply here, and you will get a notification.
         </p>
       ) : null}
 

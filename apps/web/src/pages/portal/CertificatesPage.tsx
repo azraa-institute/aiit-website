@@ -50,7 +50,7 @@ export default function CertificatesPage() {
         <p className="portal-eyebrow">Certificates</p>
         <h1 className="portal-page__title">Your credentials</h1>
         <p className="portal-page__intro">
-          Every course you complete on AIIT is certified by AIIT. Your credentials live here —
+          Every course you complete on AIIT is certified by AIIT. Your credentials live here,
           verifiable, and yours to share.
         </p>
       </header>

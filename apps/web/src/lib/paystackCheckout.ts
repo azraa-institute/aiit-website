@@ -51,6 +51,20 @@ function loadPaystackSdk(): Promise<void> {
 
 interface OpenPaystackCheckoutOptions {
   courseSlug: string;
+  /**
+   * Not sent to Paystack's API or SDK -- Inline v2 deliberately doesn't
+   * accept a key from the client at all (see below). Validated here
+   * instead, so this function (not just the caller) fails closed if
+   * Paystack genuinely isn't configured. Also keeps this value a real,
+   * content-dependent runtime check rather than a bare presence flag --
+   * a string only ever used for `if (x)` is exactly the kind of thing a
+   * minifier can prove is safe to discard and keep just `true`, which is
+   * what silently stripped VITE_PAYSTACK_PUBLIC_KEY out of the bundle
+   * entirely in an earlier version of this integration (it was only
+   * ever truthiness-checked, never read) -- using the actual value here
+   * is what prevents that regression, not merely referencing it.
+   */
+  publicKey: string;
   /** Called once a payment is verified and the learner is enrolled -- the caller owns navigation/cache invalidation, same as the other two providers. */
   onSuccess: () => void;
   onError: (message: string) => void;
@@ -66,8 +80,13 @@ interface OpenPaystackCheckoutOptions {
  * whole point of the access-code handoff is that the popup can't be used
  * to pay a different amount than what the server initialized.
  */
-export async function openPaystackCheckout({ courseSlug, onSuccess, onError, onDismiss }: OpenPaystackCheckoutOptions): Promise<void> {
+export async function openPaystackCheckout({ courseSlug, publicKey, onSuccess, onError, onDismiss }: OpenPaystackCheckoutOptions): Promise<void> {
   try {
+    if (!publicKey.startsWith('pk_')) {
+      onError('Payments are not configured yet.');
+      onDismiss?.();
+      return;
+    }
     await loadPaystackSdk();
     if (!window.PaystackPop) throw new Error('Paystack SDK failed to load.');
 

@@ -183,18 +183,6 @@ const sentryPlugin = process.env.SENTRY_AUTH_TOKEN
     })
   : null;
 
-// TEMPORARY diagnostic -- remove once the Paystack Live-key investigation
-// is resolved. Prints presence/prefix only (never the full value) to the
-// Vercel build log.
-console.log(
-  '[diagnostic] VITE_PAYSTACK_PUBLIC_KEY present at build time:',
-  Boolean(process.env.VITE_PAYSTACK_PUBLIC_KEY),
-  '| prefix:',
-  (process.env.VITE_PAYSTACK_PUBLIC_KEY ?? '').slice(0, 12),
-  '| length:',
-  (process.env.VITE_PAYSTACK_PUBLIC_KEY ?? '').length,
-);
-
 // https://vite.dev/config/
 export default defineConfig({
   plugins: [react(), aiitBlog(), sitemapPlugin(), sentryPlugin],

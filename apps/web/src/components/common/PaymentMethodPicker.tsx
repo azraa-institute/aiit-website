@@ -56,16 +56,14 @@ export function PaymentMethodPicker({ courseSlug, onSuccess }: PaymentMethodPick
 
   const paypalClientId = import.meta.env.VITE_PAYPAL_CLIENT_ID as string | undefined;
   const razorpayKeyId = import.meta.env.VITE_RAZORPAY_KEY_ID as string | undefined;
-  // Inline v2's checkout() call doesn't actually accept a public key (or
-  // amount/ref) from the client at all -- those are resolved server-side
-  // during initialize. This is used purely as a "is Paystack configured,
-  // should this card render" signal, mirroring how the other two
-  // providers gate their own cards on their public key's presence.
-  // (Re-touched when switching to the Live key -- see the Vercel
-  // build-cache gotcha in the phase1-deployment-status memory/notes:
-  // a brand-new VITE_* value can get served stale unless the referencing
-  // source file's content hash actually changes.)
-  const paystackPublicKey = import.meta.env.VITE_PAYSTACK_PUBLIC_KEY as string | undefined;
+  // Gates whether this card renders at all, same as the other two
+  // providers' keys above -- also passed into openPaystackCheckout(),
+  // which validates its actual content (not just presence). Keeping a
+  // real downstream use matters: a value only ever truthiness-checked is
+  // exactly what a minifier can prove is safe to discard down to `true`,
+  // which is what silently stripped this key out of a production build
+  // in an earlier version of this file.
+  const paystackPublicKey = (import.meta.env.VITE_PAYSTACK_PUBLIC_KEY as string | undefined) ?? '';
 
   function handleRazorpayClick() {
     if (!razorpayKeyId) return;
@@ -86,6 +84,7 @@ export function PaymentMethodPicker({ courseSlug, onSuccess }: PaymentMethodPick
     setPaystackLoading(true);
     void openPaystackCheckout({
       courseSlug,
+      publicKey: paystackPublicKey,
       onSuccess,
       onError: setError,
       onDismiss: () => setPaystackLoading(false),

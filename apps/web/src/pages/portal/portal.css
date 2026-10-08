@@ -843,16 +843,22 @@
   color: var(--ink-faint);
 }
 
-/* The same dark "letterhead" banner admin.css's .adm-page__head uses
-   (brass seal watermark, serif title on a dark ink gradient) -- reused
-   here with the student portal's own rail colour (plain --ink, same as
-   .portal-rail already uses) rather than a StaffShell tone variable, since
-   the student portal has no tone system of its own. Unlike admin's
-   markup, a page's head here isn't always just [text][optional button] --
-   NotificationsPage nests a real action button (needs the Button
-   component's existing .on-ink variant, added in JSX) and WebinarsPage
-   puts its own stat row directly inside; both need their own contrast
-   overrides below rather than one blanket `> div` selector.
+/* A real photo banner (warm, sunlit desk scene) instead of the old flat
+   dark gradient + brass seal watermark + repeating stripe texture --
+   replaced 2026-10-09, the "letterhead" treatment read as dated/heavy
+   next to the rest of the redesigned portal. A left-to-right scrim keeps
+   text legible over the photo regardless of exactly which part of it
+   `cover` crops in at a given box width; it's tinted from --shell-bg so
+   SchedulePage's reuse at /instructor/classes (see below) still reads
+   with the instructor shell's own slate tone, not just a copy-paste of
+   the student portal's ink tone.
+
+   Unlike admin's markup, a page's head here isn't always just [text]
+   [optional button] -- NotificationsPage nests a real action button
+   (needs the Button component's existing .on-ink variant, added in JSX)
+   and WebinarsPage puts its own stat row directly inside; both need
+   their own contrast overrides below rather than one blanket `> div`
+   selector.
 
    --shell-bg/--shell-accent (with the --ink/--brass-tint fallback) cover
    SchedulePage specifically: it's reused verbatim at /instructor/classes
@@ -869,12 +875,17 @@
   padding: var(--space-5) var(--space-6);
   border-radius: var(--radius-sm);
   background-image:
-    url('/assets/legal/az-seal-brass.webp'),
-    repeating-linear-gradient(135deg, rgba(255, 255, 255, 0.045) 0px, rgba(255, 255, 255, 0.045) 1px, transparent 1px, transparent 14px),
-    linear-gradient(135deg, var(--shell-bg, var(--ink)) 0%, color-mix(in srgb, var(--shell-bg, var(--ink)) 78%, black) 100%);
-  background-repeat: no-repeat, repeat, no-repeat;
-  background-position: calc(100% - 1.25rem) 1.25rem, 0 0, 0 0;
-  background-size: 56px 56px, auto, cover;
+    linear-gradient(
+      90deg,
+      color-mix(in srgb, var(--shell-bg, var(--ink)) 92%, black) 0%,
+      color-mix(in srgb, var(--shell-bg, var(--ink)) 70%, black) 42%,
+      color-mix(in srgb, var(--shell-bg, var(--ink)) 38%, transparent) 72%,
+      color-mix(in srgb, var(--shell-bg, var(--ink)) 14%, transparent) 100%
+    ),
+    url('/assets/portal/page-head-banner.webp');
+  background-repeat: no-repeat, no-repeat;
+  background-position: 0 0, center;
+  background-size: cover, cover;
 }
 .portal-page__head > * {
   position: relative;
@@ -928,8 +939,6 @@
 @media (max-width: 640px) {
   .portal-page__head {
     padding: var(--space-4) var(--space-5);
-    background-size: 44px 44px, auto, cover;
-    background-position: calc(100% - 1rem) 1rem, 0 0, 0 0;
   }
 }
 

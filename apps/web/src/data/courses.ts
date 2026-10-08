@@ -222,7 +222,7 @@ export const COURSES: Course[] = [
   {
     id: 'crs-cloud-fundamentals',
     slug: 'cloud-computing-fundamentals',
-    title: 'Cloud Computing Fundamentals',
+    title: 'Cloud Computing',
     categoryId: 'Cloud Computing',
     catalogueCategorySlug: 'cloud-computing-devops',
     catalogueCategoryName: 'Cloud Computing & DevOps',
@@ -424,7 +424,7 @@ export const COURSES: Course[] = [
   {
     id: 'crs-quantum-fundamentals',
     slug: 'quantum-computing-fundamentals',
-    title: 'Quantum Computing Fundamentals',
+    title: 'Quantum Computing',
     categoryId: 'Quantum Computing',
     catalogueCategorySlug: 'emerging-advanced-computing',
     catalogueCategoryName: 'Emerging & Advanced Computing',
@@ -473,7 +473,7 @@ export const COURSES: Course[] = [
   {
     id: 'crs-blockchain-web3',
     slug: 'blockchain-technology-and-web3-fundamentals',
-    title: 'Blockchain Technology & Web3 Fundamentals',
+    title: 'Blockchain Technology & Web3',
     categoryId: 'Blockchain & Web3 Fundamentals',
     catalogueCategorySlug: 'blockchain-web3',
     catalogueCategoryName: 'Blockchain & Web3',
@@ -535,7 +535,7 @@ export const COURSES: Course[] = [
   {
     id: 'crs-digital-marketing',
     slug: 'digital-marketing-fundamentals',
-    title: 'Digital Marketing Fundamentals',
+    title: 'Digital Marketing',
     categoryId: 'Digital Marketing',
     catalogueCategorySlug: 'digital-business-marketing',
     catalogueCategoryName: 'Digital Business & Marketing',
@@ -599,7 +599,7 @@ export const COURSES: Course[] = [
   {
     id: 'crs-it-business',
     slug: 'it-business-management-fundamentals',
-    title: 'IT Business Management Fundamentals',
+    title: 'IT Business Management',
     categoryId: 'IT Business Management',
     catalogueCategorySlug: 'technology-management-business',
     catalogueCategoryName: 'Technology Management & Business',

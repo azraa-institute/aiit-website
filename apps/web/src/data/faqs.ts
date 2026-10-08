@@ -57,7 +57,7 @@ export const FAQS: FaqItem[] = [
     id: "faq-what-are-some-popular-courses-offered",
     category: "Courses & Learning",
     question: "What are some popular courses offered by AIIT?",
-    answer: "Popular programs include Cloud Computing Fundamentals, Cisco CCNA (Cisco Certified Network Associate), and Quantum Computing Fundamentals, alongside a growing catalog across AI, cybersecurity, and software development.",
+    answer: "Popular programs include Cloud Computing, Cisco CCNA (Cisco Certified Network Associate), and Quantum Computing, alongside a growing catalog across AI, cybersecurity, and software development.",
   },
   {
     id: "faq-are-aiit-courses-self-paced-or",
@@ -147,7 +147,7 @@ export const FAQS: FaqItem[] = [
     id: "faq-how-much-do-aiit-courses-cost",
     category: "Pricing & Enrollment",
     question: "How much do AIIT courses cost?",
-    answer: "Course pricing varies by program — for example, Cloud Computing Fundamentals and Cisco CCNA are listed at $140+, and Quantum Computing Fundamentals at $169+. Visit the Courses page for current pricing on each program.",
+    answer: "Course pricing varies by program — for example, Cloud Computing and Cisco CCNA are listed at $140+, and Quantum Computing at $169+. Visit the Courses page for current pricing on each program.",
   },
   {
     id: "faq-does-aiit-offer-discounts-on-courses",

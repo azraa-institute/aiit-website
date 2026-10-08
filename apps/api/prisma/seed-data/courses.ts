@@ -248,7 +248,7 @@ export const COURSES: CourseSeed[] = [
   },
   {
     slug: 'cloud-computing-fundamentals',
-    title: 'Cloud Computing Fundamentals',
+    title: 'Cloud Computing',
     categoryKey: 'cat-cloud',
     domainSlug: 'cloud-computing',
     catalogueCategory: 'cloud-computing-devops',
@@ -434,7 +434,7 @@ export const COURSES: CourseSeed[] = [
   },
   {
     slug: 'quantum-computing-fundamentals',
-    title: 'Quantum Computing Fundamentals',
+    title: 'Quantum Computing',
     categoryKey: 'cat-quantum',
     domainSlug: 'quantum-computing',
     catalogueCategory: 'emerging-advanced-computing',
@@ -479,7 +479,7 @@ export const COURSES: CourseSeed[] = [
   },
   {
     slug: 'blockchain-technology-and-web3-fundamentals',
-    title: 'Blockchain Technology & Web3 Fundamentals',
+    title: 'Blockchain Technology & Web3',
     categoryKey: 'cat-blockchain',
     domainSlug: 'blockchain-technology',
     catalogueCategory: 'blockchain-web3',
@@ -537,7 +537,7 @@ export const COURSES: CourseSeed[] = [
   },
   {
     slug: 'digital-marketing-fundamentals',
-    title: 'Digital Marketing Fundamentals',
+    title: 'Digital Marketing',
     categoryKey: 'cat-digital-marketing',
     domainSlug: null,
     catalogueCategory: 'digital-business-marketing',
@@ -597,7 +597,7 @@ export const COURSES: CourseSeed[] = [
   },
   {
     slug: 'it-business-management-fundamentals',
-    title: 'IT Business Management Fundamentals',
+    title: 'IT Business Management',
     categoryKey: 'cat-it-business',
     domainSlug: null,
     catalogueCategory: 'technology-management-business',

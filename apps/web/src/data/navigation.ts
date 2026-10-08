@@ -56,7 +56,7 @@ export const FOOTER_QUICK_LINKS = [
  */
 export const FOOTER_POPULAR_COURSES = [
   {
-    label: 'Cloud Computing Fundamentals',
+    label: 'Cloud Computing',
     to: '/courses/cloud-computing-fundamentals',
     image: '/assets/courses/cloud-computing-fundamentals.jpg',
   },
@@ -66,7 +66,7 @@ export const FOOTER_POPULAR_COURSES = [
     image: '/assets/courses/cisco-ccna-cisco-certified-network-associate.jpg',
   },
   {
-    label: 'Quantum Computing Fundamentals',
+    label: 'Quantum Computing',
     to: '/courses/quantum-computing-fundamentals',
     image: '/assets/courses/quantum-computing-fundamentals.jpg',
   },

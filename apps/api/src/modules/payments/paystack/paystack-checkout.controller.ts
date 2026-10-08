@@ -34,7 +34,12 @@ export class PaystackCheckoutController {
     if (order.status === 'paid') return { status: order.status };
 
     const transaction = await this.paystack.verifyTransaction(reference);
-    if (transaction.status !== 'success' || transaction.amountCents !== order.amountCents || transaction.currency !== order.currency) {
+    // Not a strict equality check: when "pass transaction fees to customers"
+    // is enabled on Paystack's side, Paystack adds its own fee on top at
+    // checkout, so the amount actually charged is legitimately *more* than
+    // what we initialized -- only reject if it's LESS than the order's
+    // price (the one thing that would indicate real tampering/mismatch).
+    if (transaction.status !== 'success' || transaction.amountCents < order.amountCents || transaction.currency !== order.currency) {
       throw new ConflictException('This payment could not be verified.');
     }
 

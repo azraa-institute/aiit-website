@@ -58,7 +58,10 @@ export class PaystackWebhookController {
     if (!order || order.status !== 'pending') return { ok: true };
 
     const transaction = await this.paystack.verifyTransaction(reference);
-    if (transaction.status !== 'success' || transaction.amountCents !== order.amountCents || transaction.currency !== order.currency) {
+    // See the matching comment in PaystackCheckoutController.verify() --
+    // "pass transaction fees to customers" legitimately inflates the
+    // charged amount above order.amountCents, so only reject if it's less.
+    if (transaction.status !== 'success' || transaction.amountCents < order.amountCents || transaction.currency !== order.currency) {
       this.logger.error(`Paystack webhook payment mismatch for order ${order.id}.`);
       return { ok: true };
     }

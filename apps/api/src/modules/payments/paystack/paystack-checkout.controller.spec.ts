@@ -85,7 +85,7 @@ describe('PaystackCheckoutController', () => {
       expect(result).toEqual({ status: 'paid' });
     });
 
-    it('rejects a verified transaction whose confirmed amount does not match the order', async () => {
+    it('rejects a verified transaction whose confirmed amount is less than the order', async () => {
       payments.findByProviderRef.mockResolvedValueOnce(PENDING_ORDER);
       paystack.verifyTransaction.mockResolvedValueOnce({ status: 'success', amountCents: 100, currency: 'NGN' });
 
@@ -102,6 +102,18 @@ describe('PaystackCheckoutController', () => {
       const result = await controller.verify('PAYSTACK-REF-1', USER);
 
       expect(paystack.verifyTransaction).toHaveBeenCalledWith('PAYSTACK-REF-1');
+      expect(payments.markOrderPaid).toHaveBeenCalledWith('order-1', transaction);
+      expect(result).toEqual({ status: 'paid' });
+    });
+
+    it('accepts a confirmed amount greater than the order -- "pass transaction fees to customers" adds Paystack\'s fee on top', async () => {
+      payments.findByProviderRef.mockResolvedValueOnce(PENDING_ORDER);
+      const transaction = { status: 'success', amountCents: 6_020_000 + 5_000, currency: 'NGN' };
+      paystack.verifyTransaction.mockResolvedValueOnce(transaction);
+      payments.markOrderPaid.mockResolvedValueOnce({ ...PENDING_ORDER, status: 'paid' });
+
+      const result = await controller.verify('PAYSTACK-REF-1', USER);
+
       expect(payments.markOrderPaid).toHaveBeenCalledWith('order-1', transaction);
       expect(result).toEqual({ status: 'paid' });
     });

@@ -63,7 +63,10 @@ export class RazorpayWebhookController {
     if (!order || order.status !== 'pending') return { ok: true };
 
     const payment = await this.razorpay.fetchPayment(paymentId);
-    if (payment.status !== 'captured' || payment.amountCents !== order.amountCents || payment.currency !== order.currency) {
+    // See the matching comment in RazorpayCheckoutController.verify() -- a
+    // Convenience Fee (if ever activated) legitimately inflates the
+    // captured amount above order.amountCents, so only reject if it's less.
+    if (payment.status !== 'captured' || payment.amountCents < order.amountCents || payment.currency !== order.currency) {
       this.logger.error(`Razorpay webhook payment mismatch for order ${order.id}.`);
       return { ok: true };
     }

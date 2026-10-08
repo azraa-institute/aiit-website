@@ -89,7 +89,7 @@ describe('RazorpayCheckoutController', () => {
       expect(payments.markOrderPaid).not.toHaveBeenCalled();
     });
 
-    it('rejects a verified payment whose confirmed amount does not match the order', async () => {
+    it('rejects a verified payment whose confirmed amount is less than the order', async () => {
       payments.findByProviderRef.mockResolvedValueOnce(PENDING_ORDER);
       razorpay.verifyPaymentSignature.mockReturnValueOnce(true);
       razorpay.fetchPayment.mockResolvedValueOnce({ status: 'captured', amountCents: 100, currency: 'INR', orderId: 'RAZORPAY-ORDER-1' });
@@ -108,6 +108,19 @@ describe('RazorpayCheckoutController', () => {
       const result = await controller.verify('RAZORPAY-ORDER-1', DTO, USER);
 
       expect(razorpay.verifyPaymentSignature).toHaveBeenCalledWith('RAZORPAY-ORDER-1', 'pay_1', 'sig_1');
+      expect(payments.markOrderPaid).toHaveBeenCalledWith('order-1', payment);
+      expect(result).toEqual({ status: 'paid' });
+    });
+
+    it('accepts a confirmed amount greater than the order -- a Convenience Fee, if ever activated, adds Razorpay\'s fee on top', async () => {
+      payments.findByProviderRef.mockResolvedValueOnce(PENDING_ORDER);
+      razorpay.verifyPaymentSignature.mockReturnValueOnce(true);
+      const payment = { status: 'captured', amountCents: 406_000 + 5_000, currency: 'INR', orderId: 'RAZORPAY-ORDER-1' };
+      razorpay.fetchPayment.mockResolvedValueOnce(payment);
+      payments.markOrderPaid.mockResolvedValueOnce({ ...PENDING_ORDER, status: 'paid' });
+
+      const result = await controller.verify('RAZORPAY-ORDER-1', DTO, USER);
+
       expect(payments.markOrderPaid).toHaveBeenCalledWith('order-1', payment);
       expect(result).toEqual({ status: 'paid' });
     });

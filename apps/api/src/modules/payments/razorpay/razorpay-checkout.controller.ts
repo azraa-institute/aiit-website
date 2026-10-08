@@ -42,7 +42,13 @@ export class RazorpayCheckoutController {
     }
 
     const payment = await this.razorpay.fetchPayment(dto.razorpayPaymentId);
-    if (payment.status !== 'captured' || payment.amountCents !== order.amountCents || payment.currency !== order.currency) {
+    // Not a strict equality check: if Razorpay's Convenience Fee model is
+    // ever activated on this account (adds Razorpay's own fee on top at
+    // checkout when enabled, same mechanism as Paystack's "pass fees to
+    // customers"), the amount actually captured is legitimately *more*
+    // than what we initialized -- only reject if it's LESS than the
+    // order's price, which is what would indicate real tampering.
+    if (payment.status !== 'captured' || payment.amountCents < order.amountCents || payment.currency !== order.currency) {
       throw new ConflictException('This payment could not be verified.');
     }
 

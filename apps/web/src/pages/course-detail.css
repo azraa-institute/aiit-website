@@ -91,6 +91,17 @@
   flex-direction: column;
   gap: var(--space-3);
 }
+/* The paid-checkout version drops the generic card's flat surface for one
+   continuous warm gradient that runs from the price down through the
+   certificate note -- the price panel, the PayPal card and the footer notes
+   all sit inside this single field, separated by hairlines rather than
+   stacked as separate boxes. */
+.course-detail__enroll-body--checkout {
+  gap: 0;
+  background:
+    radial-gradient(ellipse 140% 90% at 15% 0%, color-mix(in srgb, var(--brass-tint) 30%, transparent) 0%, transparent 62%),
+    linear-gradient(175deg, color-mix(in srgb, var(--brass-tint) 14%, var(--surface)) 0%, var(--surface) 46%, color-mix(in srgb, var(--ink) 5%, var(--surface)) 100%);
+}
 /* Invisible by default -- preserves the exact previous layout for free/
    subscription courses, which never get the --checkout treatment below. */
 .course-detail__price-panel {
@@ -98,12 +109,9 @@
 }
 .course-detail__price-panel--checkout {
   display: block;
-  padding: var(--space-4);
-  margin-bottom: var(--space-2);
-  border: 1px solid var(--line);
-  border-left: 3px solid var(--brass-tint);
-  border-radius: var(--radius-sm);
-  background: color-mix(in srgb, var(--brass-tint) 7%, transparent);
+  padding-bottom: var(--space-4);
+  margin-bottom: var(--space-4);
+  border-bottom: 1px solid color-mix(in srgb, var(--brass-tint) 35%, var(--line));
 }
 .course-detail__price-panel--checkout .course-detail__price {
   margin-bottom: 0;
@@ -128,6 +136,19 @@
 .course-detail__checkout-sub svg {
   flex-shrink: 0;
   color: var(--brass-deep);
+}
+/* These three sit directly inside the gradient panel (see
+   .course-detail__enroll-body--checkout above) as the panel's remaining
+   sections -- the PayPal card, the "ask about this course" fallback, and
+   the certificate note -- each closed off with the same hairline the price
+   panel uses, so the whole aside reads as one field, not stacked boxes. */
+.course-detail__enroll-body--checkout > .pp-checkout {
+  padding-bottom: var(--space-4);
+  margin-bottom: var(--space-4);
+  border-bottom: 1px solid color-mix(in srgb, var(--brass-tint) 35%, var(--line));
+}
+.course-detail__enroll-body--checkout > .btn {
+  margin-bottom: var(--space-3);
 }
 .course-detail__price {
   display: flex;

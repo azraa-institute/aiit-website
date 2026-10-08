@@ -151,7 +151,12 @@ export default function CourseDetailPage() {
 
               <aside className="course-detail__enroll" data-reveal>
                 <Plate source={course.image} seed={course.slug} motif={domain?.motif} ratio={4 / 3} fit="contain" />
-                <div className="course-detail__enroll-body">
+                <div
+                  className={cn(
+                    'course-detail__enroll-body',
+                    course.pricing === 'paid' && 'course-detail__enroll-body--checkout',
+                  )}
+                >
                   <div
                     className={cn(
                       'course-detail__price-panel',

@@ -144,13 +144,24 @@ export function PayPalCheckoutButton({ courseSlug, onSuccess }: PayPalCheckoutBu
       <p className="pp-checkout__label">
         <ShieldIcon /> Secure checkout
       </p>
+      <div className="pp-method">
+        <span className="pp-method__badge" aria-hidden="true">
+          P
+        </span>
+        <span className="pp-method__text">
+          <span className="pp-method__name">PayPal</span>
+          <span className="pp-method__sub">Pay with PayPal balance, card, or bank</span>
+        </span>
+      </div>
       {error ? (
         <p className="auth__alert" role="alert">
           {error}
         </p>
       ) : null}
       <div className="pp-checkout__buttons" ref={containerRef} />
-      <p className="pp-checkout__footer">Payment processed securely by PayPal</p>
+      <p className="pp-checkout__footer">
+        <ShieldIcon /> Payment processed securely by PayPal
+      </p>
     </div>
   );
 }

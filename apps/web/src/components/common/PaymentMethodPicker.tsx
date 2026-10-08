@@ -67,6 +67,26 @@ function VerveMark() {
     </svg>
   );
 }
+function UpiMark() {
+  return (
+    <svg width="34" height="22" viewBox="0 0 34 22" role="img" aria-label="UPI">
+      <rect width="34" height="22" rx="3" fill="#fff" stroke="var(--line)" />
+      <text x="17" y="14.5" textAnchor="middle" fontFamily="var(--font-ui)" fontWeight="700" fontSize="10" fill="#097939">
+        UPI
+      </text>
+    </svg>
+  );
+}
+function RupayMark() {
+  return (
+    <svg width="34" height="22" viewBox="0 0 34 22" role="img" aria-label="RuPay">
+      <rect width="34" height="22" rx="3" fill="#fff" stroke="var(--line)" />
+      <text x="17" y="14.5" textAnchor="middle" fontFamily="var(--font-ui)" fontWeight="700" fontSize="8" fill="#0d4d9c">
+        Ru<tspan fill="#ec7625">Pay</tspan>
+      </text>
+    </svg>
+  );
+}
 
 interface PaymentMethodPickerProps {
   courseSlug: string;
@@ -175,6 +195,12 @@ export function PaymentMethodPicker({ courseSlug, onSuccess }: PaymentMethodPick
             </span>
             <h3 className="pm-card__title">Razorpay</h3>
             <p className="pm-card__desc">Pay using UPI, cards, netbanking, or wallets</p>
+            <div className="pm-card__networks" aria-hidden="true">
+              <UpiMark />
+              <VisaMark />
+              <MastercardMark />
+              <RupayMark />
+            </div>
             <div className="pm-card__action">
               <button type="button" className="pm-card__circle pm-card__circle--razorpay" onClick={handleRazorpayClick} disabled={razorpayLoading} aria-label="Pay with Razorpay">
                 <ArrowIcon />

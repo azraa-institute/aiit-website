@@ -9,10 +9,20 @@ import { PayPalWebhookController } from './paypal/paypal-webhook.controller';
 import { RazorpayClientService } from './razorpay/razorpay-client.service';
 import { RazorpayCheckoutController } from './razorpay/razorpay-checkout.controller';
 import { RazorpayWebhookController } from './razorpay/razorpay-webhook.controller';
+import { PaystackClientService } from './paystack/paystack-client.service';
+import { PaystackCheckoutController } from './paystack/paystack-checkout.controller';
+import { PaystackWebhookController } from './paystack/paystack-webhook.controller';
 
 @Module({
   imports: [EnrollmentsModule, NotificationsModule, CurrencyModule],
-  controllers: [PayPalCheckoutController, PayPalWebhookController, RazorpayCheckoutController, RazorpayWebhookController],
-  providers: [PaymentsService, PayPalClientService, RazorpayClientService],
+  controllers: [
+    PayPalCheckoutController,
+    PayPalWebhookController,
+    RazorpayCheckoutController,
+    RazorpayWebhookController,
+    PaystackCheckoutController,
+    PaystackWebhookController,
+  ],
+  providers: [PaymentsService, PayPalClientService, RazorpayClientService, PaystackClientService],
 })
 export class PaymentsModule {}

@@ -228,13 +228,19 @@ export default function CourseDetailPage() {
               <TrustBar />
 
               {(() => {
-                const providers = [import.meta.env.VITE_PAYPAL_CLIENT_ID && 'PayPal', import.meta.env.VITE_RAZORPAY_KEY_ID && 'Razorpay'].filter(
-                  Boolean,
-                );
+                const providers = (
+                  [
+                    import.meta.env.VITE_PAYPAL_CLIENT_ID && 'PayPal',
+                    import.meta.env.VITE_RAZORPAY_KEY_ID && 'Razorpay',
+                    import.meta.env.VITE_PAYSTACK_PUBLIC_KEY && 'Paystack',
+                  ] as (string | false | undefined)[]
+                ).filter((p): p is string => Boolean(p));
                 if (providers.length === 0) return null;
+                const providerList =
+                  providers.length < 2 ? providers[0] : `${providers.slice(0, -1).join(', ')} and ${providers[providers.length - 1]}`;
                 return (
                   <p className="payment-section__footnote">
-                    <LockIcon /> Your payment is processed securely by {providers.join(' and ')}. We do not store your card details.
+                    <LockIcon /> Your payment is processed securely by {providerList}. We do not store your card details.
                   </p>
                 );
               })()}

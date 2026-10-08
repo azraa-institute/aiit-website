@@ -29,6 +29,9 @@ async function bootstrap() {
   // (unlike PayPal, which verifies via PayPal's own remote API) -- same
   // reasoning as the LiveKit line above.
   app.use('/v1/payments/webhooks/razorpay', raw({ type: '*/*', limit: '256kb' }));
+  // Paystack also signs over the exact raw body (HMAC-SHA512, keyed by the
+  // secret key itself -- no separate webhook secret) -- same reasoning.
+  app.use('/v1/payments/webhooks/paystack', raw({ type: '*/*', limit: '256kb' }));
 
   const corsOrigins = (process.env.CORS_ORIGINS ?? '')
     .split(',')

@@ -30,3 +30,13 @@ export interface VerifyRazorpayPaymentRequest {
   razorpayPaymentId: string;
   razorpaySignature: string;
 }
+
+export interface CreatePaystackOrderRequest {
+  courseSlug: string;
+}
+
+export interface CreatePaystackOrderResponse {
+  /** Passed to PaystackPop's checkout() call -- the amount/currency are already locked in server-side at this point, Inline v2 doesn't accept them from the client. */
+  accessCode: string;
+  reference: string;
+}

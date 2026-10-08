@@ -4,26 +4,31 @@
   gap: var(--space-5);
 }
 
+/* auto-fit rather than a fixed column count -- the number of cards is
+   genuinely variable (1-4: either provider's env var can be unset, and
+   PayPal's own Card funding can turn out ineligible for a given buyer), so
+   the grid has to look right at any of those counts, not just exactly 3. */
 .pm-grid {
   display: grid;
   gap: var(--space-5);
   grid-template-columns: 1fr;
 }
-@media (min-width: 760px) {
+@media (min-width: 560px) {
   .pm-grid {
-    grid-template-columns: repeat(3, 1fr);
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
     align-items: stretch;
   }
 }
 
 /* Organic "blob" card -- asymmetric border-radius rather than a rectangle,
    a soft radial tint behind a glassy surface, matching the reference
-   design's shape language. Colours are the muted tokens already in the
-   system (brass, PayPal's own blue, the existing slate accent) rather than
-   the brighter hues in the reference -- this site's whole palette is
-   deliberately "black + warm cream + one metallic accent, nothing
-   saturated" (see tokens.css), so these are the closest honest match, not
-   a literal colour copy. */
+   design's shape language. Colours are muted/dark-gradient versions of
+   each option's identity -- brass (the site's own accent) for Card, and
+   each real provider's own brand hue (PayPal navy/blue, a slate teal for
+   Razorpay, a dark teal/green for Paystack) toned down rather than the
+   brighter saturated hues a literal copy would use -- this site's whole
+   palette is deliberately "black + warm cream + one metallic accent,
+   nothing saturated" (see tokens.css). */
 .pm-card {
   position: relative;
   display: flex;
@@ -45,16 +50,8 @@
 .pm-card--razorpay {
   background: radial-gradient(120% 100% at 30% 0%, color-mix(in srgb, var(--slate) 16%, var(--surface)) 0%, var(--surface) 65%);
 }
-@media (min-width: 760px) {
-  .pm-card--paypal {
-    margin-right: -8%;
-  }
-  .pm-card--razorpay {
-    margin-left: -8%;
-  }
-  .pm-card--card {
-    z-index: 1;
-  }
+.pm-card--paystack {
+  background: radial-gradient(120% 100% at 30% 0%, color-mix(in srgb, #00a884 16%, var(--surface)) 0%, var(--surface) 65%);
 }
 
 .pm-card__badge {
@@ -77,6 +74,9 @@
 }
 .pm-card__badge--razorpay {
   background: linear-gradient(155deg, var(--slate-deep) 0%, var(--slate) 100%);
+}
+.pm-card__badge--paystack {
+  background: linear-gradient(155deg, #0a3d33 0%, #00a884 100%);
 }
 
 .pm-card__title {
@@ -115,10 +115,15 @@
   place-items: center;
   border: none;
   cursor: pointer;
-  background: linear-gradient(155deg, var(--slate-deep) 0%, var(--slate) 100%);
   color: #fff;
   box-shadow: var(--shadow-soft);
   transition: transform var(--dur-fast) var(--ease-out);
+}
+.pm-card__circle--razorpay {
+  background: linear-gradient(155deg, var(--slate-deep) 0%, var(--slate) 100%);
+}
+.pm-card__circle--paystack {
+  background: linear-gradient(155deg, #0a3d33 0%, #00a884 100%);
 }
 .pm-card__circle:hover:not(:disabled) {
   transform: scale(1.06);

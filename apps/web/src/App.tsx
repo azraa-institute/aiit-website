@@ -96,6 +96,7 @@ const AdminAnnouncementsPage = lazy(() => import('@/pages/admin/AdminAnnouncemen
 const AdminReportsPage = lazy(() => import('@/pages/admin/AdminReportsPage'));
 const AdminMessagesPage = lazy(() => import('@/pages/admin/AdminMessagesPage'));
 const AdminAffiliatesPage = lazy(() => import('@/pages/admin/AdminAffiliatesPage'));
+const AdminSettingsPage = lazy(() => import('@/pages/admin/AdminSettingsPage'));
 const AffiliateLayout = lazy(() => import('@/pages/affiliate/AffiliateLayout'));
 const AffiliateDashboardPage = lazy(() => import('@/pages/affiliate/AffiliateDashboardPage'));
 const InstructorLayout = lazy(() => import('@/pages/instructor/InstructorLayout'));
@@ -105,6 +106,7 @@ const InstructorCoursePage = lazy(() => import('@/pages/instructor/InstructorCou
 const InstructorAssignmentPage = lazy(() => import('@/pages/instructor/InstructorAssignmentPage'));
 const InstructorGradingPage = lazy(() => import('@/pages/instructor/InstructorGradingPage'));
 const InstructorComplaintsPage = lazy(() => import('@/pages/instructor/InstructorComplaintsPage'));
+const InstructorSettingsPage = lazy(() => import('@/pages/instructor/InstructorSettingsPage'));
 const StaffLoginPage = lazy(() => import('@/pages/auth/StaffLoginPage'));
 const StaffChangePasswordPage = lazy(() => import('@/pages/auth/StaffChangePasswordPage'));
 const LiveClassroomPage = lazy(() => import('@/pages/portal/LiveClassroomPage'));
@@ -305,6 +307,7 @@ export function App() {
                 <Route path="reports" element={<AdminReportsPage />} />
                 <Route path="messages" element={<AdminMessagesPage />} />
                 <Route path="audit" element={<AdminAuditPage />} />
+                <Route path="settings" element={<AdminSettingsPage />} />
               </Route>
 
               {/* Instructor portal */}
@@ -325,6 +328,7 @@ export function App() {
                 <Route path="assignments/:id" element={<InstructorAssignmentPage />} />
                 <Route path="grading" element={<InstructorGradingPage />} />
                 <Route path="complaints" element={<InstructorComplaintsPage />} />
+                <Route path="settings" element={<InstructorSettingsPage />} />
               </Route>
 
               <Route path="/privacy-policy" element={<LegalPage kind="privacy" />} />

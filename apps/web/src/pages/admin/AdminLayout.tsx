@@ -14,6 +14,7 @@ const ADMIN_NAV: StaffNavEntry[] = [
   { to: '/admin/reports', label: 'Reports' },
   { to: '/admin/messages', label: 'Messages' },
   { to: '/admin/audit', label: 'Audit log' },
+  { to: '/admin/settings', label: 'Settings' },
 ];
 
 export default function AdminLayout() {

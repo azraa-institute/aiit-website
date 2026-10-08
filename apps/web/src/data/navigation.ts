@@ -39,8 +39,8 @@ export const PRIMARY_NAV: NavItem[] = [
 
 /**
  * Footer "QUICK LINKS". Deliberately excludes anything already in
- * FOOTER_NAV.explore below (Courses, AIIT Resources, AIIT Shop all used to
- * be listed in both columns at once -- the same link twice, side by side).
+ * FOOTER_NAV.explore below (Courses, AIIT Resources all used to be listed
+ * in both columns at once -- the same link twice, side by side).
  */
 export const FOOTER_QUICK_LINKS = [
   { label: 'Affiliate', to: '/affiliate' },
@@ -79,7 +79,9 @@ export const FOOTER_NAV = {
     { label: 'AIIT Resources', to: '/resources' },
     { label: 'FAQs', to: '/faqs' },
     { label: 'Contact Us', to: '/contact' },
-    { label: 'AIIT Shop', to: '/shop' },
+    // AIIT Shop is deliberately not linked here -- the feature (routes,
+    // pages, product data) is intact at /shop, just not surfaced in the UI
+    // for now. Add the link back here to re-enable it site-wide.
   ],
   learning: FOOTER_POPULAR_COURSES,
   opportunities: FOOTER_QUICK_LINKS,

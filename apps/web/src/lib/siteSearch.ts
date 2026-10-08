@@ -22,7 +22,8 @@ const PAGES: Omit<SearchResult, 'hay'>[] = [
   { id: 'pg-webinar', type: 'Page', title: 'Free live webinar', subtitle: 'AI, Cyber Security & Blockchain in one session', to: '/webinar' },
   { id: 'pg-blog', type: 'Page', title: 'AIIT.network Blog', subtitle: 'Guides, explainers and career resources', to: '/resources' },
   { id: 'pg-affiliate', type: 'Page', title: 'Affiliate Programme', subtitle: 'Refer learners, earn on every enrolment', to: '/affiliate' },
-  { id: 'pg-shop', type: 'Page', title: 'AIIT Shop', subtitle: 'Branded merchandise and the learner kit', to: '/shop' },
+  // AIIT Shop deliberately excluded -- not surfaced in the UI for now
+  // (see data/navigation.ts), so it shouldn't be findable via search either.
   { id: 'pg-faqs', type: 'Page', title: 'FAQs', subtitle: 'Answers on courses, certification and pricing', to: '/faqs' },
   { id: 'pg-contact', type: 'Page', title: 'Contact Us', subtitle: "We'd love to hear from you", to: '/contact' },
 ];

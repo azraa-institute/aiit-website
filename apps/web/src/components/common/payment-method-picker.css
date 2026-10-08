@@ -1,0 +1,129 @@
+.pm-picker {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+}
+
+.pm-grid {
+  display: grid;
+  gap: var(--space-5);
+  grid-template-columns: 1fr;
+}
+@media (min-width: 760px) {
+  .pm-grid {
+    grid-template-columns: repeat(3, 1fr);
+    align-items: stretch;
+  }
+}
+
+/* Organic "blob" card -- asymmetric border-radius rather than a rectangle,
+   a soft radial tint behind a glassy surface, matching the reference
+   design's shape language. Colours are the muted tokens already in the
+   system (brass, PayPal's own blue, the existing slate accent) rather than
+   the brighter hues in the reference -- this site's whole palette is
+   deliberately "black + warm cream + one metallic accent, nothing
+   saturated" (see tokens.css), so these are the closest honest match, not
+   a literal colour copy. */
+.pm-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: var(--space-2);
+  padding: var(--space-7) var(--space-5) var(--space-6);
+  border-radius: 62% 38% 53% 47% / 44% 51% 49% 56%;
+  box-shadow: var(--shadow-soft);
+  background: var(--surface);
+}
+.pm-card--paypal {
+  background: radial-gradient(120% 100% at 30% 0%, color-mix(in srgb, #0070ba 14%, var(--surface)) 0%, var(--surface) 65%);
+}
+.pm-card--card {
+  background: radial-gradient(120% 100% at 30% 0%, color-mix(in srgb, var(--brass) 16%, var(--surface)) 0%, var(--surface) 65%);
+}
+.pm-card--razorpay {
+  background: radial-gradient(120% 100% at 30% 0%, color-mix(in srgb, var(--slate) 16%, var(--surface)) 0%, var(--surface) 65%);
+}
+@media (min-width: 760px) {
+  .pm-card--paypal {
+    margin-right: -8%;
+  }
+  .pm-card--razorpay {
+    margin-left: -8%;
+  }
+  .pm-card--card {
+    z-index: 1;
+  }
+}
+
+.pm-card__badge {
+  display: grid;
+  place-items: center;
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  color: #fff;
+  font-family: var(--font-display);
+  font-size: 1.4rem;
+  font-weight: var(--fw-display);
+  box-shadow: var(--shadow-soft);
+}
+.pm-card__badge--paypal {
+  background: linear-gradient(155deg, #003087 0%, #0070ba 100%);
+}
+.pm-card__badge--card {
+  background: linear-gradient(155deg, var(--brass-deep) 0%, var(--brass) 100%);
+}
+.pm-card__badge--razorpay {
+  background: linear-gradient(155deg, var(--slate-deep) 0%, var(--slate) 100%);
+}
+
+.pm-card__title {
+  font-family: var(--font-display);
+  font-size: var(--fs-subhead);
+  font-weight: var(--fw-display);
+  margin-top: var(--space-2);
+}
+.pm-card__desc {
+  font-size: var(--fs-sm);
+  color: var(--fg-muted);
+  max-width: 24ch;
+  line-height: 1.5;
+}
+
+.pm-card__action {
+  margin-top: var(--space-3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
+}
+/* PayPal's own hosted button renders here -- can't be shrunk to a plain
+   circle (their branding terms require it stay visibly PayPal-branded),
+   but constrained to a compact width so it still reads as this card's
+   single call-to-action rather than a full-width bar. */
+.pm-card__action > div {
+  width: 168px;
+}
+
+.pm-card__circle {
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  border: none;
+  cursor: pointer;
+  background: linear-gradient(155deg, var(--slate-deep) 0%, var(--slate) 100%);
+  color: #fff;
+  box-shadow: var(--shadow-soft);
+  transition: transform var(--dur-fast) var(--ease-out);
+}
+.pm-card__circle:hover:not(:disabled) {
+  transform: scale(1.06);
+}
+.pm-card__circle:disabled {
+  opacity: 0.6;
+  cursor: default;
+}

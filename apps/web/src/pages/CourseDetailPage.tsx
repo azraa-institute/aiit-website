@@ -14,9 +14,9 @@ import { formatPrice, discountPercent, formatEnrollment } from '@/lib/format';
 import { Plate } from '@/components/primitives/Plate';
 import { Button } from '@/components/primitives/Button';
 import { Stars } from '@/components/common/Stars';
-import { PayPalCheckoutButton } from '@/components/common/PayPalCheckoutButton';
-import { RazorpayCheckoutButton } from '@/components/common/RazorpayCheckoutButton';
-import { cn } from '@/lib/cn';
+import { PaymentMethodPicker } from '@/components/common/PaymentMethodPicker';
+import { TrustBar } from '@/components/common/TrustBar';
+import { EnrollmentIllustration } from '@/components/common/EnrollmentIllustration';
 import { CourseCard } from '@/components/course/CourseCard';
 import { RouteFallback } from '@/components/layout/RouteFallback';
 import { invalidateLearner, useLearner } from './portal/learnerData';
@@ -27,6 +27,15 @@ function CapIcon() {
     <svg width="14" height="14" viewBox="0 0 24 24" aria-hidden="true">
       <path d="M12 4 2 9l10 5 8-4v6" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
       <path d="M6 11.5V16c0 1.5 2.7 3 6 3s6-1.5 6-3v-4.5" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
+function LockIcon() {
+  return (
+    <svg width="14" height="14" viewBox="0 0 24 24" aria-hidden="true">
+      <rect x="5" y="11" width="14" height="9" rx="2" fill="none" stroke="currentColor" strokeWidth="1.6" />
+      <path d="M8 11V8a4 4 0 0 1 8 0v3" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
     </svg>
   );
 }
@@ -152,19 +161,8 @@ export default function CourseDetailPage() {
 
               <aside className="course-detail__enroll" data-reveal>
                 <Plate source={course.image} seed={course.slug} motif={domain?.motif} ratio={4 / 3} fit="contain" />
-                <div
-                  className={cn(
-                    'course-detail__enroll-body',
-                    course.pricing === 'paid' && 'course-detail__enroll-body--checkout',
-                  )}
-                >
-                  <div
-                    className={cn(
-                      'course-detail__price-panel',
-                      course.pricing === 'paid' && 'course-detail__price-panel--checkout',
-                    )}
-                  >
-                    {course.pricing === 'paid' && <p className="course-detail__checkout-eyebrow">Enrollment</p>}
+                <div className="course-detail__enroll-body">
+                  <div className="course-detail__price-panel">
                     <div className="course-detail__price">
                       {course.priceWas && (
                         <span className="course-detail__was">{formatPrice(course.priceWas, course.currency)}</span>
@@ -172,16 +170,24 @@ export default function CourseDetailPage() {
                       <span className="course-detail__now">{formatPrice(course.price, course.currency)}</span>
                       {off && <span className="course-detail__off">Save {off}%</span>}
                     </div>
-                    {course.pricing === 'paid' && (
-                      <p className="course-detail__checkout-sub">
-                        <CapIcon /> One-time payment -- instant access after checkout
-                      </p>
-                    )}
                   </div>
                   {course.pricing === 'subscription' && (
                     <p className="course-detail__note">Included with AIIT membership.</p>
                   )}
-                  <EnrollAction course={course} comingSoon={comingSoon} />
+                  {course.pricing === 'paid' ? (
+                    <Button
+                      as="button"
+                      type="button"
+                      fullWidth
+                      size="lg"
+                      arrow
+                      onClick={() => document.getElementById('payment-methods')?.scrollIntoView({ behavior: 'smooth' })}
+                    >
+                      Enroll now
+                    </Button>
+                  ) : (
+                    <EnrollAction course={course} comingSoon={comingSoon} />
+                  )}
                   <Button as="link" to="/webinar" variant="secondary" fullWidth>
                     Ask about this course
                   </Button>
@@ -191,6 +197,50 @@ export default function CourseDetailPage() {
             </div>
           </div>
         </header>
+
+        {course.pricing === 'paid' && (
+          <section className="payment-section" id="payment-methods">
+            <div className="container container--wide">
+              <div className="payment-section__header">
+                <div className="payment-section__header-text">
+                  <p className="course-detail__checkout-eyebrow">Enrollment</p>
+                  <div className="course-detail__price">
+                    {course.priceWas && (
+                      <span className="course-detail__was">{formatPrice(course.priceWas, course.currency)}</span>
+                    )}
+                    <span className="course-detail__now">{formatPrice(course.price, course.currency)}</span>
+                    {off && <span className="course-detail__off">Save {off}%</span>}
+                  </div>
+                  <p className="course-detail__checkout-sub">
+                    <CapIcon /> One-time payment -- instant access after checkout
+                  </p>
+                </div>
+                <EnrollmentIllustration className="payment-section__illustration" />
+              </div>
+
+              <h2 className="payment-section__heading">Choose a payment method</h2>
+              <p className="payment-section__sub">Complete your payment securely and start learning immediately.</p>
+
+              <div className="payment-section__action">
+                <EnrollAction course={course} comingSoon={comingSoon} />
+              </div>
+
+              <TrustBar />
+
+              {(() => {
+                const providers = [import.meta.env.VITE_PAYPAL_CLIENT_ID && 'PayPal', import.meta.env.VITE_RAZORPAY_KEY_ID && 'Razorpay'].filter(
+                  Boolean,
+                );
+                if (providers.length === 0) return null;
+                return (
+                  <p className="payment-section__footnote">
+                    <LockIcon /> Your payment is processed securely by {providers.join(' and ')}. We do not store your card details.
+                  </p>
+                );
+              })()}
+            </div>
+          </section>
+        )}
 
         <div className="container container--wide course-detail__main">
           <div className="course-detail__content">
@@ -365,12 +415,7 @@ function EnrollAction({ course, comingSoon }: { course: Course; comingSoon: bool
       invalidateLearner();
       navigate('/portal/courses');
     };
-    return (
-      <>
-        <PayPalCheckoutButton courseSlug={course.slug} onSuccess={onPaymentSuccess} />
-        <RazorpayCheckoutButton courseSlug={course.slug} onSuccess={onPaymentSuccess} />
-      </>
-    );
+    return <PaymentMethodPicker courseSlug={course.slug} onSuccess={onPaymentSuccess} />;
   }
 
   async function handleEnroll() {

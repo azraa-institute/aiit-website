@@ -936,6 +936,36 @@
 .portal-page__head .webinar-summary__stat strong {
   color: var(--ivory);
 }
+/* The plain outline .btn--secondary.on-ink treatment (an 18%-opacity
+   border, no fill) was built for flat dark cards -- against this header's
+   busy photo it nearly disappeared. A solid frosted pill reads clearly
+   regardless of what's behind it. */
+.portal-page__head .btn--secondary {
+  --btn-bg: rgba(20, 17, 15, 0.55);
+  --btn-border: rgba(244, 239, 231, 0.55);
+  --btn-fg: var(--ivory);
+  border-radius: var(--radius-pill);
+  backdrop-filter: blur(3px);
+  -webkit-backdrop-filter: blur(3px);
+}
+.portal-page__head .btn--secondary:hover {
+  --btn-bg: rgba(20, 17, 15, 0.72);
+  --btn-border: var(--brass-tint);
+  --btn-fg: var(--brass-tint);
+}
+.notif-mark-read {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+/* Same low-contrast problem as the button above: --ink-muted is tuned for
+   captions on light paper, not for sitting on a dark photo. */
+.portal-page__head .schedule-zone {
+  color: rgba(244, 239, 231, 0.78);
+}
+.portal-page__head .schedule-zone a {
+  color: var(--brass-tint);
+}
 @media (max-width: 640px) {
   .portal-page__head {
     padding: var(--space-4) var(--space-5);

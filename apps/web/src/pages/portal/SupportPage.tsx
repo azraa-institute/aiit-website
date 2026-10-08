@@ -200,7 +200,14 @@ export default function SupportPage() {
   const [creating, setCreating] = useState(false);
   const [open, setOpen] = useState<string | null>(null);
   const [sent, setSent] = useState(false);
-  useScrollReveal([list.status]);
+  // Both fetches gate the real content (see the loading check below) -- a
+  // reveal re-scan triggered by only one of them could run before the other
+  // resolves, leaving `[data-reveal]` nodes that mount later (the header,
+  // notably) permanently stuck at opacity:0 since nothing re-triggers the
+  // observer afterwards. This was a real bug, not just a slow-animation
+  // appearance -- confirmed via getComputedStyle showing the header stuck
+  // at opacity:0 with its pre-reveal transform still applied.
+  useScrollReveal([list.status, options.status]);
 
   if (list.status === 'loading' || options.status === 'loading') return <PortalLoader label="Loading support" />;
 

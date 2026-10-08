@@ -66,7 +66,9 @@ export default function NotificationsPage() {
           </div>
           {unreadCount > 0 ? (
             <Button as="button" variant="secondary" size="sm" onClick={markAllRead}>
-              Mark all as read
+              <span className="notif-mark-read">
+                <BellIcon /> Mark all as read
+              </span>
             </Button>
           ) : null}
         </div>

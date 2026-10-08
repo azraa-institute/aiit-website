@@ -23,6 +23,7 @@ interface RazorpaySdk {
     order_id: string;
     name: string;
     description?: string;
+    image?: string;
     theme?: { color?: string };
     handler: (response: RazorpayCheckoutHandlerResponse) => void;
     modal?: { ondismiss?: () => void };
@@ -113,6 +114,9 @@ export function RazorpayCheckoutButton({ courseSlug, onSuccess }: RazorpayChecko
         currency: order.currency,
         order_id: order.razorpayOrderId,
         name: 'AIIT.NETWORK',
+        // Razorpay's checkout fetches this from its own hosted modal, not
+        // our page -- needs an absolute URL, a relative path won't resolve.
+        image: 'https://aiit.network/apple-touch-icon.png',
         theme: { color: '#2b2420' },
         handler: (response) => {
           const verifyBody: VerifyRazorpayPaymentRequest = {

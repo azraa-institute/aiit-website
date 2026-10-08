@@ -10,7 +10,7 @@
   --portal-bottomnav-h: 58px;
   --portal-max: 1180px;
   --portal-pad-x: clamp(1.25rem, 0.5rem + 3vw, 3.5rem);
-  --portal-pad-y: clamp(1.75rem, 1.25rem + 3vw, 3.5rem);
+  --portal-pad-y: clamp(1.25rem, 1rem + 1.2vw, 2.25rem);
 }
 
 .portal {

@@ -1001,7 +1001,7 @@
 .dash__lead {
   margin-top: var(--space-4);
   max-width: 44rem;
-  font-size: var(--fs-lead);
+  font-size: var(--fs-sm);
   line-height: 1.5;
   color: var(--ink-muted);
 }
@@ -1455,7 +1455,7 @@
 .portal-empty__body {
   margin-top: var(--space-4);
   max-width: 44rem;
-  font-size: var(--fs-lead);
+  font-size: var(--fs-sm);
   line-height: 1.55;
   color: var(--ink-muted);
 }

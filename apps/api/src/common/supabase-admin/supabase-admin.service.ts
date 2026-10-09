@@ -47,11 +47,19 @@ export class SupabaseAdminService {
     });
   }
 
-  /** Creates a confirmed email+password user. Returns the new auth user id. */
-  async createUser(email: string, password: string, name: string): Promise<string> {
+  /**
+   * Creates a confirmed email+password user. Returns the new auth user id.
+   * `extraMetadata` is merged into `user_metadata` -- the same
+   * `raw_user_meta_data` the `handle_new_user()` DB trigger reads (see
+   * 20261002010000_affiliate_referral_trigger/migration.sql), so passing
+   * `{ referral_slug }` here attributes the new profile exactly the way a
+   * client-side `supabase.auth.signUp()` call already does, even though
+   * this goes through the admin API instead.
+   */
+  async createUser(email: string, password: string, name: string, extraMetadata?: Record<string, unknown>): Promise<string> {
     const res = await this.request('/users', {
       method: 'POST',
-      body: JSON.stringify({ email, password, email_confirm: true, user_metadata: { name } }),
+      body: JSON.stringify({ email, password, email_confirm: true, user_metadata: { name, ...extraMetadata } }),
     });
     if (res.ok) return ((await res.json()) as { id: string }).id;
 

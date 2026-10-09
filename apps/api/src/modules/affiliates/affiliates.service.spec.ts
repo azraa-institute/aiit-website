@@ -162,7 +162,7 @@ describe('AffiliatesService', () => {
 
       await service.applyNew(dto, IP);
 
-      expect(supabase.createUser).toHaveBeenCalledWith('ada@example.com', expect.any(String), 'Ada Lovelace');
+      expect(supabase.createUser).toHaveBeenCalledWith('ada@example.com', expect.any(String), 'Ada Lovelace', undefined);
       expect(prisma.profile.upsert).toHaveBeenCalledWith({
         where: { id: USER },
         create: { id: USER, name: 'Ada Lovelace', mustChangePassword: true },
@@ -178,6 +178,21 @@ describe('AffiliatesService', () => {
       expect(sent.to).toBe('ada@example.com');
       expect(sent.html).toContain('ada@example.com');
       expect(sent.html).toContain('AIIT-AFF-ABC123');
+    });
+
+    it('passes a pending referral slug through as Supabase user_metadata, so the handle_new_user() trigger can attribute the profile', async () => {
+      supabase.createUser.mockResolvedValue(USER);
+      prisma.affiliate.create.mockResolvedValue({
+        id: AFFILIATE_ID,
+        userId: USER,
+        referenceCode: 'AIIT-AFF-ABC123',
+      });
+
+      await service.applyNew({ ...dto, referralSlug: 'abc123' }, IP);
+
+      expect(supabase.createUser).toHaveBeenCalledWith('ada@example.com', expect.any(String), 'Ada Lovelace', {
+        referral_slug: 'abc123',
+      });
     });
   });
 

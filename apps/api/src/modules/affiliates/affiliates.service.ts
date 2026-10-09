@@ -67,13 +67,24 @@ export class AffiliatesService {
    * password plus a separate reference code (see activate()) to the
    * address they gave us. Mirrors AdminUsersService.createInstructor()'s
    * shape -- same "upsert the Profile the on_auth_user_created trigger
-   * already inserted" pattern.
+   * already inserted" pattern. If they arrived via a /r/:slug referral
+   * link, dto.referralSlug carries that through to the trigger too (as
+   * `referral_slug` in Supabase's own user_metadata), the same way
+   * RegisterPage.tsx's client-side signUp() already does -- so the new
+   * Profile.referredByAffiliateId still gets set even though this account
+   * is created server-side, not via the client signUp() path.
    */
   async applyNew(dto: ApplyNewAffiliateDto, signedIp: string | undefined): Promise<void> {
     const email = dto.email.trim().toLowerCase();
     const name = dto.name.trim();
     const password = generateTemporaryPassword();
-    const userId = await this.supabase.createUser(email, password, name);
+    const referralSlug = dto.referralSlug?.trim();
+    const userId = await this.supabase.createUser(
+      email,
+      password,
+      name,
+      referralSlug ? { referral_slug: referralSlug } : undefined,
+    );
 
     await this.prisma.profile.upsert({
       where: { id: userId },

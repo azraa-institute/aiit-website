@@ -66,4 +66,10 @@ export class ApplyNewAffiliateDto {
   @IsString()
   @MaxLength(1000)
   motivation?: string;
+
+  /** A pending /r/:slug click (getPendingReferralSlug()), if the applicant arrived via one -- see AffiliatesService.applyNew(). */
+  @IsOptional()
+  @IsString()
+  @MaxLength(40)
+  referralSlug?: string;
 }

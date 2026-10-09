@@ -5,17 +5,13 @@ import { PDFDocument, StandardFonts, rgb, degrees, type PDFFont, type PDFPage, t
 import fontkit from '@pdf-lib/fontkit';
 import QRCode from 'qrcode';
 
-const LOGO_URL =
-  'https://www.aiit.network/assets/brand/azraa-institute-of-information-technology-official-logo-black.png';
-
 const FONTS_DIR = join(__dirname, 'assets', 'fonts');
-const SEAL_PATH = join(__dirname, 'assets', 'seal', 'az-seal-brass.png');
+const TEMPLATE_PATH = join(__dirname, 'assets', 'template', 'certificate-bg.jpg');
 
-const INK = rgb(0x14 / 255, 0x11 / 255, 0x0f / 255);
-const INK_SOFT = rgb(0x55 / 255, 0x50 / 255, 0x4a / 255);
+// Sampled directly from the gold/ivory reference design.
+const INK = rgb(0, 0, 0);
+const INK_CRED = rgb(0x1d / 255, 0x15 / 255, 0x0e / 255);
 const BRASS = rgb(0x9a / 255, 0x7b / 255, 0x4f / 255);
-const BRASS_DEEP = rgb(0x7a / 255, 0x5c / 255, 0x34 / 255);
-const PAPER = rgb(0xf4 / 255, 0xef / 255, 0xe7 / 255);
 
 export interface CertificatePdfInput {
   holderName: string;
@@ -28,19 +24,33 @@ export interface CertificatePdfInput {
  * Renders a certificate as a real PDF, server-side. Pure JS (no headless
  * browser, unlike scripts/build-docs-pdf.mjs's local Chrome dependency --
  * that approach doesn't work on Render's containers, and pdf-lib has no
- * native binary to install/deploy). Custom display faces (Dancing Script
- * for the cursive title/faux-signature, Playfair Display for the editorial
- * serif body) are embedded via @pdf-lib/fontkit from TTF files bundled at
- * assets/fonts/ (copied into dist by nest-cli.json's `assets` config --
- * see that file's comment) and subsetted at embed time so only the glyphs
- * actually drawn ship in the PDF, not the full font. Helvetica is kept for
- * small meta/label text where a script or display face would be unreadable
- * at that size.
+ * native binary to install/deploy).
+ *
+ * The decorative design (ivory/gold ribbons, charcoal corner panels,
+ * ornamental frame, the gold gradient "Certificate of Completion" heading,
+ * the laurel-wreath seal, every static label) is 100% identical on every
+ * certificate, so it's a single pre-built background image --
+ * assets/template/certificate-bg.jpg, generated once from the approved
+ * reference design with its 4 dynamic regions (recipient name, course
+ * title, issue date, credential ID) and the QR code's white box cleanly
+ * erased back to bare background. Only those 4 strings plus the QR code
+ * are drawn per-certificate, as real vector PDF text/graphics -- selectable,
+ * dynamic, and positioned to match the reference's exact layout (measured
+ * directly off the reference image and converted to this page's point
+ * space). This is NOT "flattening the reference into a static image": the
+ * recipient name, course title, date, credential id and QR code are never
+ * part of that background bitmap, only the parts of the design that are
+ * genuinely identical across every certificate are.
+ *
+ * Custom display faces (Playfair Display Bold/Italic) are embedded via
+ * @pdf-lib/fontkit from TTF files bundled at assets/fonts/ (copied into
+ * dist by nest-cli.json's `assets` config) and subsetted at embed time so
+ * only the glyphs actually drawn ship in the PDF.
  */
 @Injectable()
 export class CertificatePdfService {
   private readonly logger = new Logger(CertificatePdfService.name);
-  private logoBytesPromise: Promise<ArrayBuffer | null> | null = null;
+  private templateBytesPromise: Promise<Buffer | null> | null = null;
 
   async render(input: CertificatePdfInput): Promise<Buffer> {
     const doc = await PDFDocument.create();
@@ -48,153 +58,65 @@ export class CertificatePdfService {
     doc.setTitle(`AIIT Certificate — ${input.courseTitle}`);
     doc.setAuthor('AIIT — Azraa Institute of Information Technology');
 
-    const page = doc.addPage([792, 612]); // US Letter, landscape
+    const page = doc.addPage([792, 612]); // US Letter, landscape -- matches the reference's ~1.29:1 aspect ratio
     const { width, height } = page.getSize();
     const cx = width / 2;
 
-    const script = await this.embed(doc, 'DancingScript-Bold.ttf');
-    const scriptSoft = await this.embed(doc, 'DancingScript-Medium.ttf');
     const serifBold = await this.embed(doc, 'PlayfairDisplay-Bold.ttf');
     const serifItalic = await this.embed(doc, 'PlayfairDisplay-Italic.ttf');
     const sans = await doc.embedFont(StandardFonts.Helvetica);
-    const sansBold = await doc.embedFont(StandardFonts.HelveticaBold);
 
-    // ---- Paper + the real logo, embedded once and reused for the header mark and a faint oversized watermark behind everything ----
-    page.drawRectangle({ x: 0, y: 0, width, height, color: PAPER });
-    const logoBytes = await this.getLogoBytes();
-    const logo = logoBytes ? await doc.embedPng(logoBytes).catch(() => null) : null;
-    if (logo) {
-      const wmW = 380;
-      const wmH = (logo.height / logo.width) * wmW;
-      page.drawImage(logo, { x: cx - wmW / 2, y: height / 2 - wmH / 2 - 6, width: wmW, height: wmH, opacity: 0.045 });
-    }
-
-    // ---- Frame: outer + inner rule, a small diamond accent at each corner ----
-    const outerMargin = 26;
-    const innerMargin = 40;
-    page.drawRectangle({
-      x: outerMargin,
-      y: outerMargin,
-      width: width - outerMargin * 2,
-      height: height - outerMargin * 2,
-      borderColor: BRASS_DEEP,
-      borderWidth: 1.75,
-    });
-    page.drawRectangle({
-      x: innerMargin,
-      y: innerMargin,
-      width: width - innerMargin * 2,
-      height: height - innerMargin * 2,
-      borderColor: BRASS,
-      borderWidth: 0.6,
-    });
-    const cornerInset = (outerMargin + innerMargin) / 2;
-    for (const [fx, fy] of [
-      [cornerInset, height - cornerInset],
-      [width - cornerInset, height - cornerInset],
-      [cornerInset, cornerInset],
-      [width - cornerInset, cornerInset],
-    ]) {
-      drawDiamond(page, { x: fx, y: fy, size: 13, border: BRASS_DEEP, fill: PAPER, borderWidth: 1 });
-      page.drawCircle({ x: fx, y: fy, size: 1.6, color: BRASS_DEEP });
-    }
-
-    // ---- Header logo mark ----
-    if (logo) {
-      const logoW = 118;
-      const logoH = (logo.height / logo.width) * logoW;
-      page.drawImage(logo, { x: cx - logoW / 2, y: height - 100, width: logoW, height: logoH });
+    // ---- Background: the full static design, the one piece of this
+    // certificate that's a bitmap -- everything below is real vector text
+    // drawn on top of it. ----
+    const templateBytes = await this.getTemplateBytes();
+    if (templateBytes) {
+      const bg = await doc.embedJpg(templateBytes).catch((error: unknown) => {
+        this.logger.warn(`Could not embed certificate background template: ${String(error)}`);
+        return null;
+      });
+      if (bg) page.drawImage(bg, { x: 0, y: 0, width, height });
     } else {
-      this.logger.warn('Logo unavailable for certificate PDF -- rendering without it.');
+      this.logger.warn('Certificate background template unavailable -- rendering on a blank page.');
     }
 
-    // ---- Title ----
-    centerText(page, 'Certificate of Completion', { y: height - 168, font: script, size: 46, color: BRASS_DEEP });
-    drawFlourishDivider(page, { cx, y: height - 190, halfWidth: 70, color: BRASS });
-
-    centerText(page, 'THIS CERTIFIES THAT', {
-      y: height - 222,
-      font: sans,
-      size: 10.5,
-      color: INK_SOFT,
-      charSpacing: 2.5,
-    });
-
-    // ---- Recipient ----
-    const nameSize = fitSize(serifBold, input.holderName, 34, 22, width - innerMargin * 2 - 120);
-    centerText(page, input.holderName, { y: height - 268, font: serifBold, size: nameSize, color: INK });
+    // ---- Recipient name, centered, with a divider sized to the name (the
+    // reference's own divider is exactly as wide as the sample name, so it
+    // has to be redrawn here rather than kept in the background). ----
+    const nameSize = fitSize(serifBold, input.holderName, 42, 22, 640);
+    centerText(page, input.holderName, { cx, y: 289.7, font: serifBold, size: nameSize, color: INK });
     const nameWidth = serifBold.widthOfTextAtSize(input.holderName, nameSize);
-    page.drawLine({
-      start: { x: cx - nameWidth / 2 - 24, y: height - 282 },
-      end: { x: cx + nameWidth / 2 + 24, y: height - 282 },
-      thickness: 0.75,
-      color: BRASS,
-    });
+    const dividerY = 276.6;
+    const dividerHalf = nameWidth / 2 + 22;
+    page.drawLine({ start: { x: cx - dividerHalf, y: dividerY }, end: { x: cx - 8, y: dividerY }, thickness: 0.75, color: BRASS });
+    page.drawLine({ start: { x: cx + 8, y: dividerY }, end: { x: cx + dividerHalf, y: dividerY }, thickness: 0.75, color: BRASS });
+    drawDiamond(page, { x: cx, y: dividerY, size: 6.5, color: BRASS });
 
-    centerText(page, 'has successfully completed the course', {
-      y: height - 312,
-      font: serifItalic,
-      size: 12.5,
-      color: INK_SOFT,
-    });
+    // ---- Course title, centered, italic ----
+    const courseSize = fitSize(serifItalic, input.courseTitle, 26, 15, 600);
+    centerText(page, input.courseTitle, { cx, y: 212, font: serifItalic, size: courseSize, color: INK });
 
-    const courseSize = fitSize(serifItalic, input.courseTitle, 21, 14, width - innerMargin * 2 - 140);
-    centerText(page, input.courseTitle, { y: height - 345, font: serifItalic, size: courseSize, color: INK });
-
-    drawFlourishDivider(page, { cx, y: height - 368, halfWidth: 46, color: BRASS });
-
-    // ---- Seal, overlapping the footer rule like a stamp ----
-    const sealY = 162;
-    const footerRuleY = 128;
-    const sealHalfGap = 64;
-
-    const leftSeg = { x1: innerMargin + 52, x2: cx - sealHalfGap };
-    const rightSeg = { x1: cx + sealHalfGap, x2: width - innerMargin - 52 };
-    page.drawLine({ start: { x: leftSeg.x1, y: footerRuleY }, end: { x: leftSeg.x2, y: footerRuleY }, thickness: 0.75, color: BRASS });
-    page.drawLine({ start: { x: rightSeg.x1, y: footerRuleY }, end: { x: rightSeg.x2, y: footerRuleY }, thickness: 0.75, color: BRASS });
-
+    // ---- Date issued, left-aligned in its column ----
     const dateLabel = input.issuedAt.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
-    centerText(page, dateLabel, { y: footerRuleY + 9, font: sans, size: 11, color: INK_SOFT, x: (leftSeg.x1 + leftSeg.x2) / 2 });
-    centerText(page, 'DATE ISSUED', { y: footerRuleY - 13, font: sansBold, size: 7.5, color: BRASS_DEEP, charSpacing: 1.6, x: (leftSeg.x1 + leftSeg.x2) / 2 });
+    page.drawText(dateLabel, { x: 148, y: 123, font: sans, size: 11, color: INK });
 
-    centerText(page, 'AIIT', { y: footerRuleY + 4, font: scriptSoft, size: 22, color: INK, x: (rightSeg.x1 + rightSeg.x2) / 2 });
-    centerText(page, 'AUTHORIZED SIGNATURE', { y: footerRuleY - 13, font: sansBold, size: 7.5, color: BRASS_DEEP, charSpacing: 1.6, x: (rightSeg.x1 + rightSeg.x2) / 2 });
+    // ---- Credential ID, left-aligned, lower-left ----
+    page.drawText(`Credential ID: ${input.credentialId}`, { x: 53, y: 52, font: sans, size: 9, color: INK_CRED });
 
-    // The site's own brass seal mark (legal pages, verify page) rather than
-    // a hand-drawn one -- one seal design everywhere a credential is shown.
-    try {
-      const sealBytes = await readFile(SEAL_PATH);
-      const seal = await doc.embedPng(sealBytes);
-      const sealW = 72;
-      const sealH = (seal.height / seal.width) * sealW;
-      page.drawImage(seal, { x: cx - sealW / 2, y: sealY - sealH / 2, width: sealW, height: sealH });
-    } catch (error) {
-      this.logger.warn(`Could not embed seal in certificate PDF: ${String(error)}`);
-    }
-
-    // ---- Credential + QR verification ----
+    // ---- QR verification, square, sitting inside the background's blank white box ----
     const verifyUrl = `${(process.env.APP_URL ?? 'https://aiit.network').replace(/\/$/, '')}/verify/${input.credentialId}`;
-    page.drawText(`Credential ID: ${input.credentialId}`, {
-      x: innerMargin + 16,
-      y: 66,
-      font: sans,
-      size: 9,
-      color: INK_SOFT,
-    });
-
     try {
-      const qrPng = await QRCode.toBuffer(verifyUrl, { margin: 0, width: 160, color: { dark: '#14110f', light: '#00000000' } });
+      const qrPng = await QRCode.toBuffer(verifyUrl, { margin: 0, width: 200, color: { dark: '#14110f', light: '#00000000' } });
       const qrImage = await doc.embedPng(qrPng);
       const qrSize = 46;
-      const qrX = width - innerMargin - 16 - qrSize;
-      const qrY = 52;
+      const qrX = 748.1 - qrSize / 2;
+      const qrY = 60.9 - qrSize / 2;
       page.drawImage(qrImage, { x: qrX, y: qrY, width: qrSize, height: qrSize });
-      centerText(page, 'SCAN TO VERIFY', { y: qrY + qrSize + 6, font: sansBold, size: 6.5, color: BRASS_DEEP, charSpacing: 1.2, x: qrX + qrSize / 2 });
     } catch (error) {
       this.logger.warn(`Could not render verification QR code: ${String(error)}`);
       const fallback = `Verify at ${verifyUrl}`;
-      const fw = sans.widthOfTextAtSize(fallback, 9);
-      page.drawText(fallback, { x: width - innerMargin - 16 - fw, y: 66, font: sans, size: 9, color: INK_SOFT });
+      const fw = sans.widthOfTextAtSize(fallback, 7);
+      page.drawText(fallback, { x: 725 - fw / 2, y: 60, font: sans, size: 7, color: INK });
     }
 
     const bytes = await doc.save();
@@ -206,46 +128,30 @@ export class CertificatePdfService {
     return doc.embedFont(bytes, { subset: true });
   }
 
-  /** Fetched once per process and reused -- the logo is static, no reason to refetch it for every certificate rendered. */
-  private getLogoBytes(): Promise<ArrayBuffer | null> {
-    if (!this.logoBytesPromise) {
-      this.logoBytesPromise = fetch(LOGO_URL)
-        .then((res) => (res.ok ? res.arrayBuffer() : null))
-        .catch((error: unknown) => {
-          this.logger.warn(`Could not fetch logo for certificate PDF: ${String(error)}`);
-          return null;
-        });
+  /** Read once per process and reused -- the template is static, no reason to re-read it for every certificate rendered. */
+  private getTemplateBytes(): Promise<Buffer | null> {
+    if (!this.templateBytesPromise) {
+      this.templateBytesPromise = readFile(TEMPLATE_PATH).catch((error: unknown) => {
+        this.logger.warn(`Could not read certificate background template: ${String(error)}`);
+        return null;
+      });
     }
-    return this.logoBytesPromise;
+    return this.templateBytesPromise;
   }
 }
 
 interface CenterTextOptions {
+  cx: number;
   y: number;
   font: PDFFont;
   size: number;
   color: Color;
-  /** Extra points between letters, drawn one glyph at a time -- pdf-lib's drawText has no native letter-spacing option. Omitted, the string draws in one call. */
-  charSpacing?: number;
-  /** Center on this x instead of the page's horizontal center -- used for the two footer columns either side of the seal. */
-  x?: number;
 }
 
 function centerText(page: PDFPage, text: string, opts: CenterTextOptions): void {
-  const { font, size, color, charSpacing = 0 } = opts;
-  const center = opts.x ?? page.getSize().width / 2;
-
-  const textWidth = font.widthOfTextAtSize(text, size) + charSpacing * (text.length - 1);
-  let x = center - textWidth / 2;
-
-  if (!charSpacing) {
-    page.drawText(text, { x, y: opts.y, font, size, color });
-    return;
-  }
-  for (const ch of text) {
-    page.drawText(ch, { x, y: opts.y, font, size, color });
-    x += font.widthOfTextAtSize(ch, size) + charSpacing;
-  }
+  const { font, size, color, cx, y } = opts;
+  const textWidth = font.widthOfTextAtSize(text, size);
+  page.drawText(text, { x: cx - textWidth / 2, y, font, size, color });
 }
 
 /** Shrinks from `max` towards `min` until `text` fits `maxWidth` at this font -- a long recipient name or course title shouldn't overrun the frame. */
@@ -255,25 +161,14 @@ function fitSize(font: PDFFont, text: string, max: number, min: number, maxWidth
   return size;
 }
 
-function drawDiamond(page: PDFPage, opts: { x: number; y: number; size: number; border: Color; fill: Color; borderWidth: number }): void {
-  const { x, y, size, border, fill, borderWidth } = opts;
+function drawDiamond(page: PDFPage, opts: { x: number; y: number; size: number; color: Color }): void {
+  const { x, y, size, color } = opts;
   page.drawRectangle({
     x: x - size / 2,
     y: y - size / 2,
     width: size,
     height: size,
     rotate: degrees(45),
-    color: fill,
-    borderColor: border,
-    borderWidth,
+    color,
   });
 }
-
-/** A short rule — gap — diamond — gap — rule, the recurring section-break motif. */
-function drawFlourishDivider(page: PDFPage, opts: { cx: number; y: number; halfWidth: number; color: Color }): void {
-  const { cx, y, halfWidth, color } = opts;
-  page.drawLine({ start: { x: cx - halfWidth, y }, end: { x: cx - 10, y }, thickness: 0.75, color });
-  page.drawLine({ start: { x: cx + 10, y }, end: { x: cx + halfWidth, y }, thickness: 0.75, color });
-  drawDiamond(page, { x: cx, y, size: 7, border: color, fill: color, borderWidth: 0.75 });
-}
-

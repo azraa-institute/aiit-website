@@ -85,7 +85,8 @@ export default function VerifyCertificatePage() {
             </VerifyCardShell>
           )}
 
-          {state.status === 'found' && <VerifiedCard certificate={state.certificate} />}
+          {state.status === 'found' && state.certificate.revokedAt && <RevokedCard certificate={state.certificate} />}
+          {state.status === 'found' && !state.certificate.revokedAt && <VerifiedCard certificate={state.certificate} />}
         </div>
       </div>
     </Layout>
@@ -96,11 +97,60 @@ function VerifyCardShell({ children }: { children: React.ReactNode }) {
   return <div className="verify-card">{children}</div>;
 }
 
-function StatusPill({ tone, label }: { tone: 'verified' | 'invalid' | 'error'; label: string }) {
+function StatusPill({ tone, label }: { tone: 'verified' | 'invalid' | 'error' | 'revoked'; label: string }) {
   return (
     <div className={`verify-status verify-status--${tone}`}>
       {tone === 'verified' ? <CheckCircleIcon className="verify-status__mark" /> : <XCircleIcon className="verify-status__mark" />}
       <span>{label}</span>
+    </div>
+  );
+}
+
+/**
+ * The row stays resolvable (not a 404) once revoked -- see the schema
+ * comment on Certificate.revokedAt -- so an employer sees exactly why this
+ * credential no longer stands rather than a bare "not found" that reads
+ * identically to a forged ID. No download link here: a revoked certificate
+ * shouldn't be handed out as if it still is one.
+ */
+function RevokedCard({ certificate }: { certificate: Certificate }) {
+  return (
+    <div className="verify-card verify-card--credential">
+      <img className="verify-card__seal" src="/assets/legal/az-seal-gold.webp" alt="" aria-hidden="true" />
+
+      <StatusPill tone="revoked" label="Revoked credential" />
+
+      <h1 className="verify-card__title verify-card__title--status">
+        This credential for {certificate.holderName} has been revoked.
+      </h1>
+      <p className="verify-card__status-body">
+        AIIT issued this credential for <strong>{certificate.course.title}</strong>, but it is no longer valid as of{' '}
+        {formatDate(certificate.revokedAt!)}
+        {certificate.revokedReason ? <>: {certificate.revokedReason}</> : '.'}
+      </p>
+
+      <dl className="verify-card__meta">
+        <div className="verify-card__meta-item">
+          <span className="verify-card__meta-icon">
+            <CalendarIcon />
+          </span>
+          <div>
+            <dt>Originally issued</dt>
+            <dd>{formatDate(certificate.issuedAt)}</dd>
+          </div>
+        </div>
+        <div className="verify-card__meta-item">
+          <span className="verify-card__meta-icon">
+            <IdCardIcon />
+          </span>
+          <div>
+            <dt>Credential ID</dt>
+            <dd className="verify-card__meta-id">{certificate.credentialId}</dd>
+          </div>
+        </div>
+      </dl>
+
+      <div className="verify-reference">Verification reference · {certificate.credentialId}</div>
     </div>
   );
 }

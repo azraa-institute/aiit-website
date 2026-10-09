@@ -573,6 +573,13 @@ model Certificate {
   // day it was earned even if the learner renames themselves afterwards.
   holderName   String   @map("holder_name")
   issuedAt     DateTime @default(now()) @map("issued_at") @db.Timestamptz(6)
+  // Set only via an admin's explicit revoke action (CertificatesService.revoke)
+  // -- a refund, an academic-integrity finding, a data-entry error. Never
+  // deleted: the row (and its credential id) stays resolvable on the public
+  // verify page so a holder's employer sees "revoked, as of <date>: <reason>"
+  // rather than a bare 404 indistinguishable from a forged ID.
+  revokedAt     DateTime? @map("revoked_at") @db.Timestamptz(6)
+  revokedReason String?   @map("revoked_reason")
 
   @@unique([userId, courseId])
   @@map("certificates")

@@ -43,8 +43,15 @@ export interface StudentDetail extends StudentSummary {
   suspendedAt: string | null;
   suspendedReason: string | null;
   enrollments: { courseId: string; courseSlug: string; courseTitle: string; status: string; enrolledAt: string }[];
-  /** Certificates already issued to this learner -- lets the admin UI avoid offering to re-issue one. */
-  certificates: { courseId: string; credentialId: string; issuedAt: string }[];
+  /** Certificates already issued to this learner -- lets the admin UI avoid offering to re-issue one, and offer revoke/un-revoke instead. */
+  certificates: {
+    id: string;
+    courseId: string;
+    credentialId: string;
+    issuedAt: string;
+    revokedAt: string | null;
+    revokedReason: string | null;
+  }[];
   attendance: { attended: number };
 }
 

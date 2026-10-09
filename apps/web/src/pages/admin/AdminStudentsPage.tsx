@@ -5,6 +5,7 @@ import { apiFetch } from '@/lib/api';
 import { cn } from '@/lib/cn';
 import { formatWhen, useAdminCourses, useAdminFetch } from './adminData';
 import { SuspendForm } from './SuspendForm';
+import { RevokeCertificateForm } from './RevokeCertificateForm';
 
 const PAGE_SIZE = 25;
 
@@ -15,6 +16,9 @@ function StudentPanel({ id, onChanged, onClose }: { id: string; onChanged: () =>
   const [error, setError] = useState<string>();
   const [issuingSlug, setIssuingSlug] = useState<string | null>(null);
   const [certError, setCertError] = useState<string>();
+  const [revokingCertId, setRevokingCertId] = useState<string | null>(null);
+  const [certActionBusy, setCertActionBusy] = useState(false);
+  const [revokeError, setRevokeError] = useState<string>();
 
   async function act(path: string, body?: object) {
     setBusy(true);
@@ -41,6 +45,33 @@ function StudentPanel({ id, onChanged, onClose }: { id: string; onChanged: () =>
       setCertError(err instanceof Error ? err.message : 'Could not issue that certificate.');
     } finally {
       setIssuingSlug(null);
+    }
+  }
+
+  async function revokeCertificate(certId: string, reason: string) {
+    setCertActionBusy(true);
+    setRevokeError(undefined);
+    try {
+      await apiFetch(`/admin/certificates/${certId}/revoke`, { method: 'POST', body: JSON.stringify({ reason }) });
+      setRevokingCertId(null);
+      state.reload();
+    } catch (err) {
+      setRevokeError(err instanceof Error ? err.message : 'Could not revoke that certificate.');
+    } finally {
+      setCertActionBusy(false);
+    }
+  }
+
+  async function unrevokeCertificate(certId: string) {
+    setCertActionBusy(true);
+    setRevokeError(undefined);
+    try {
+      await apiFetch(`/admin/certificates/${certId}/unrevoke`, { method: 'POST' });
+      state.reload();
+    } catch (err) {
+      setRevokeError(err instanceof Error ? err.message : 'Could not un-revoke that certificate.');
+    } finally {
+      setCertActionBusy(false);
     }
   }
 
@@ -93,8 +124,43 @@ function StudentPanel({ id, onChanged, onClose }: { id: string; onChanged: () =>
                 return (
                   <li key={e.courseId}>
                     {e.courseTitle} <span className="adm-muted">· {e.status}</span>
-                    {cert ? (
-                      <span className="adm-muted"> · Certificate issued ({cert.credentialId})</span>
+                    {cert?.revokedAt ? (
+                      <>
+                        <span className="adm-muted">
+                          {' '}
+                          · Certificate revoked ({cert.credentialId}){cert.revokedReason ? ` — ${cert.revokedReason}` : ''}
+                        </span>
+                        <button
+                          type="button"
+                          className="adm-linkbtn"
+                          disabled={certActionBusy}
+                          onClick={() => unrevokeCertificate(cert.id)}
+                        >
+                          {certActionBusy ? 'Working…' : 'Un-revoke'}
+                        </button>
+                      </>
+                    ) : cert && revokingCertId === cert.id ? (
+                      <RevokeCertificateForm
+                        courseTitle={e.courseTitle}
+                        busy={certActionBusy}
+                        error={revokeError}
+                        onCancel={() => setRevokingCertId(null)}
+                        onSubmit={(reason) => revokeCertificate(cert.id, reason)}
+                      />
+                    ) : cert ? (
+                      <>
+                        <span className="adm-muted"> · Certificate issued ({cert.credentialId})</span>
+                        <button
+                          type="button"
+                          className="adm-linkbtn"
+                          onClick={() => {
+                            setRevokeError(undefined);
+                            setRevokingCertId(cert.id);
+                          }}
+                        >
+                          Revoke
+                        </button>
+                      </>
                     ) : (
                       <button
                         type="button"

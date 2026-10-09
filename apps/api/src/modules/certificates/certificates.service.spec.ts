@@ -2,6 +2,7 @@ import { BadRequestException, ConflictException, NotFoundException } from '@nest
 import { Test } from '@nestjs/testing';
 import type { Certificate } from '@aiit/shared';
 import { PrismaService } from '../../common/prisma/prisma.service';
+import { AuditService } from '../../common/audit/audit.service';
 import { EnrollmentsService } from '../enrollments/enrollments.service';
 import { NotificationsService } from '../notifications/notifications.service';
 import { CertificatesService, toPdfInput } from './certificates.service';
@@ -11,6 +12,8 @@ const CERTIFICATE_ROW = {
   credentialId: 'AIIT-AB12CD34',
   holderName: 'Ada Lovelace',
   issuedAt: new Date('2026-09-13T00:00:00.000Z'),
+  revokedAt: null,
+  revokedReason: null,
   course: {
     id: 'crs-1',
     slug: 'digital-and-tech-literacy-absolute-beginner',
@@ -27,6 +30,8 @@ const CERTIFICATE_SHAPE: Certificate = {
   credentialId: 'AIIT-AB12CD34',
   holderName: 'Ada Lovelace',
   issuedAt: '2026-09-13T00:00:00.000Z',
+  revokedAt: null,
+  revokedReason: null,
   course: {
     id: 'crs-1',
     slug: 'digital-and-tech-literacy-absolute-beginner',
@@ -42,20 +47,22 @@ describe('CertificatesService', () => {
   let service: CertificatesService;
   let prisma: {
     course: { findFirst: jest.Mock };
-    certificate: { findMany: jest.Mock; findUnique: jest.Mock; findFirst: jest.Mock; create: jest.Mock };
+    certificate: { findMany: jest.Mock; findUnique: jest.Mock; findFirst: jest.Mock; create: jest.Mock; update: jest.Mock };
     profile: { findUnique: jest.Mock };
   };
   let enrollments: { markCompleted: jest.Mock };
   let notifications: { create: jest.Mock };
+  let audit: { record: jest.Mock };
 
   beforeEach(async () => {
     prisma = {
       course: { findFirst: jest.fn() },
-      certificate: { findMany: jest.fn(), findUnique: jest.fn(), findFirst: jest.fn(), create: jest.fn() },
+      certificate: { findMany: jest.fn(), findUnique: jest.fn(), findFirst: jest.fn(), create: jest.fn(), update: jest.fn() },
       profile: { findUnique: jest.fn() },
     };
     enrollments = { markCompleted: jest.fn() };
     notifications = { create: jest.fn() };
+    audit = { record: jest.fn() };
 
     const moduleRef = await Test.createTestingModule({
       providers: [
@@ -63,6 +70,7 @@ describe('CertificatesService', () => {
         { provide: PrismaService, useValue: prisma },
         { provide: EnrollmentsService, useValue: enrollments },
         { provide: NotificationsService, useValue: notifications },
+        { provide: AuditService, useValue: audit },
       ],
     }).compile();
 
@@ -152,6 +160,56 @@ describe('CertificatesService', () => {
         '/portal/certificates',
       );
       expect(result.credentialId).toBe('AIIT-AB12CD34');
+    });
+  });
+
+  describe('revoke', () => {
+    it('throws NotFoundException for a missing certificate', async () => {
+      prisma.certificate.findUnique.mockResolvedValueOnce(null);
+      await expect(service.revoke('cert-1', 'Refunded', 'admin-1')).rejects.toBeInstanceOf(NotFoundException);
+    });
+
+    it('throws ConflictException when already revoked', async () => {
+      prisma.certificate.findUnique.mockResolvedValueOnce({ ...CERTIFICATE_ROW, revokedAt: new Date() });
+      await expect(service.revoke('cert-1', 'Refunded', 'admin-1')).rejects.toBeInstanceOf(ConflictException);
+    });
+
+    it('sets revokedAt/revokedReason and records an audit entry', async () => {
+      prisma.certificate.findUnique.mockResolvedValueOnce(CERTIFICATE_ROW);
+      prisma.certificate.update.mockResolvedValueOnce({ ...CERTIFICATE_ROW, revokedAt: new Date('2026-10-09T00:00:00.000Z'), revokedReason: 'Refunded' });
+
+      const result = await service.revoke('cert-1', '  Refunded  ', 'admin-1');
+
+      expect(prisma.certificate.update).toHaveBeenCalledWith(
+        expect.objectContaining({ where: { id: 'cert-1' }, data: { revokedAt: expect.any(Date), revokedReason: 'Refunded' } }),
+      );
+      expect(audit.record).toHaveBeenCalledWith('admin-1', 'certificate.revoke', 'certificate', 'cert-1', { reason: 'Refunded' });
+      expect(result.revokedReason).toBe('Refunded');
+    });
+  });
+
+  describe('unrevoke', () => {
+    it('throws NotFoundException for a missing certificate', async () => {
+      prisma.certificate.findUnique.mockResolvedValueOnce(null);
+      await expect(service.unrevoke('cert-1', 'admin-1')).rejects.toBeInstanceOf(NotFoundException);
+    });
+
+    it('throws ConflictException when not currently revoked', async () => {
+      prisma.certificate.findUnique.mockResolvedValueOnce(CERTIFICATE_ROW);
+      await expect(service.unrevoke('cert-1', 'admin-1')).rejects.toBeInstanceOf(ConflictException);
+    });
+
+    it('clears revokedAt/revokedReason and records an audit entry', async () => {
+      prisma.certificate.findUnique.mockResolvedValueOnce({ ...CERTIFICATE_ROW, revokedAt: new Date(), revokedReason: 'Refunded' });
+      prisma.certificate.update.mockResolvedValueOnce(CERTIFICATE_ROW);
+
+      const result = await service.unrevoke('cert-1', 'admin-1');
+
+      expect(prisma.certificate.update).toHaveBeenCalledWith(
+        expect.objectContaining({ where: { id: 'cert-1' }, data: { revokedAt: null, revokedReason: null } }),
+      );
+      expect(audit.record).toHaveBeenCalledWith('admin-1', 'certificate.unrevoke', 'certificate', 'cert-1', {});
+      expect(result.revokedAt).toBeNull();
     });
   });
 });

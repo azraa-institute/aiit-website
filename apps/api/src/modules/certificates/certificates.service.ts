@@ -3,6 +3,7 @@ import { BadRequestException, ConflictException, Injectable, NotFoundException }
 import type { Prisma } from '@prisma/client';
 import type { Certificate } from '@aiit/shared';
 import { PrismaService } from '../../common/prisma/prisma.service';
+import { AuditService } from '../../common/audit/audit.service';
 import { EnrollmentsService } from '../enrollments/enrollments.service';
 import { NotificationsService } from '../notifications/notifications.service';
 import { mapDomain, mapLevel } from '../courses/catalogue.mappers';
@@ -13,6 +14,8 @@ const CERTIFICATE_SELECT = {
   credentialId: true,
   holderName: true,
   issuedAt: true,
+  revokedAt: true,
+  revokedReason: true,
   course: {
     select: { id: true, slug: true, title: true, image: true, level: true, pricing: true, domain: true },
   },
@@ -26,6 +29,7 @@ export class CertificatesService {
     private readonly prisma: PrismaService,
     private readonly enrollments: EnrollmentsService,
     private readonly notifications: NotificationsService,
+    private readonly audit: AuditService,
   ) {}
 
   async listForUser(userId: string): Promise<Certificate[]> {
@@ -104,6 +108,36 @@ export class CertificatesService {
 
     return toCertificate(row);
   }
+
+  /** @Roles('admin') at the controller. Keeps the row (and its credential id resolvable on the public verify page) rather than deleting it -- see the schema comment on Certificate.revokedAt. */
+  async revoke(id: string, reason: string, adminId: string): Promise<Certificate> {
+    const existing = await this.prisma.certificate.findUnique({ where: { id } });
+    if (!existing) throw new NotFoundException('Certificate not found.');
+    if (existing.revokedAt) throw new ConflictException('This certificate has already been revoked.');
+
+    const row = await this.prisma.certificate.update({
+      where: { id },
+      data: { revokedAt: new Date(), revokedReason: reason.trim() },
+      select: CERTIFICATE_SELECT,
+    });
+    await this.audit.record(adminId, 'certificate.revoke', 'certificate', id, { reason: reason.trim() });
+    return toCertificate(row);
+  }
+
+  /** Reverses an accidental or mistaken revoke -- the certificate goes back to showing as verified. */
+  async unrevoke(id: string, adminId: string): Promise<Certificate> {
+    const existing = await this.prisma.certificate.findUnique({ where: { id } });
+    if (!existing) throw new NotFoundException('Certificate not found.');
+    if (!existing.revokedAt) throw new ConflictException('This certificate is not revoked.');
+
+    const row = await this.prisma.certificate.update({
+      where: { id },
+      data: { revokedAt: null, revokedReason: null },
+      select: CERTIFICATE_SELECT,
+    });
+    await this.audit.record(adminId, 'certificate.unrevoke', 'certificate', id, {});
+    return toCertificate(row);
+  }
 }
 
 /** Shared by both the learner's own PDF endpoint and the public verify page's PDF link. */
@@ -126,6 +160,8 @@ function toCertificate(row: CertificateRow): Certificate {
     credentialId: row.credentialId,
     holderName: row.holderName,
     issuedAt: row.issuedAt.toISOString(),
+    revokedAt: row.revokedAt?.toISOString() ?? null,
+    revokedReason: row.revokedReason,
     course: {
       id: row.course.id,
       slug: row.course.slug,

@@ -156,7 +156,7 @@ export class AdminUsersService {
       this.prisma.liveClassAttendance.count({ where: { userId: id } }),
       this.prisma.certificate.findMany({
         where: { userId: id },
-        select: { courseId: true, credentialId: true, issuedAt: true },
+        select: { id: true, courseId: true, credentialId: true, issuedAt: true, revokedAt: true, revokedReason: true },
       }),
     ]);
     return {
@@ -179,9 +179,12 @@ export class AdminUsersService {
         enrolledAt: e.enrolledAt.toISOString(),
       })),
       certificates: certificates.map((c) => ({
+        id: c.id,
         courseId: c.courseId,
         credentialId: c.credentialId,
         issuedAt: c.issuedAt.toISOString(),
+        revokedAt: c.revokedAt?.toISOString() ?? null,
+        revokedReason: c.revokedReason,
       })),
       attendance: { attended },
     };

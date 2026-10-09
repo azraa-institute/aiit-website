@@ -99,12 +99,14 @@
   color: #2f6b3f;
 }
 .verify-status--invalid,
-.verify-status--error {
+.verify-status--error,
+.verify-status--revoked {
   color: var(--red-deep);
   background: rgba(192, 43, 35, 0.08);
 }
 .verify-status--invalid .verify-status__mark,
-.verify-status--error .verify-status__mark {
+.verify-status--error .verify-status__mark,
+.verify-status--revoked .verify-status__mark {
   color: var(--red);
 }
 .verify-status__mark {

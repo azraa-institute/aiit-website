@@ -7,4 +7,7 @@ export interface Certificate {
   holderName: string;
   issuedAt: string;
   course: EnrolledCourseSummary;
+  /** Set only by an admin's revoke action -- see the schema comment on Certificate.revokedAt. Still a valid, resolvable record when set, just no longer current. */
+  revokedAt: string | null;
+  revokedReason: string | null;
 }

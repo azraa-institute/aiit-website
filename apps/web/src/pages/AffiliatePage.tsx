@@ -11,12 +11,9 @@ import { AFFILIATE } from '@/data/blueprint';
 import { SITE } from '@/data/site';
 import { Section } from '@/components/primitives/Section';
 import { Button } from '@/components/primitives/Button';
-import { TextField, PasswordField, SelectField, TextArea } from '@/components/common/Field';
-import { PASSWORD_HINT, passwordMeetsRequirements } from '@/components/common/PasswordRequirements';
-import { apiFetch } from '@/lib/api';
+import { TextField, SelectField, TextArea } from '@/components/common/Field';
+import { apiFetch, ApiError } from '@/lib/api';
 import { useMe } from '@/lib/me';
-import { supabase } from '@/lib/supabaseClient';
-import { getPendingReferralSlug, clearPendingReferralSlug } from '@/lib/referralAttribution';
 import { COUNTRIES } from '@/data/countries';
 import { combinePhone } from '@/lib/phone';
 import { PhoneCountrySelect } from './portal/PhoneCountrySelect';
@@ -119,11 +116,11 @@ export default function AffiliatePage() {
 
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
   const [phoneCountry, setPhoneCountry] = useState('');
   const [phoneNational, setPhoneNational] = useState('');
   const [handle, setHandle] = useState('');
   const [country, setCountry] = useState('');
+  const [state, setState] = useState('');
   const [city, setCity] = useState('');
   const [source, setSource] = useState('');
   const [motivation, setMotivation] = useState('');
@@ -136,12 +133,6 @@ export default function AffiliatePage() {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string>();
   const [done, setDone] = useState(false);
-  // True once signUp() has sent a confirmation email (not-logged-in path
-  // only) -- the application itself still needs a session to submit, which
-  // this app only ever grants after that email is confirmed (see
-  // RegisterPage.tsx's identical signUp() flow). The visitor finishes
-  // applying by coming back to this page once logged in.
-  const [awaitingConfirmation, setAwaitingConfirmation] = useState(false);
 
   // The agreement's legal text, fetched fresh rather than hardcoded on this
   // page -- apps/api's affiliate-agreement.ts is the one place it's
@@ -182,49 +173,41 @@ export default function AffiliatePage() {
     setError(undefined);
     setSubmitting(true);
     try {
+      const shared = {
+        type,
+        signedName: signedName.trim(),
+        agreedToTerms: agreed,
+        phone: combinePhone(phoneCountry, phoneNational) || undefined,
+        handle: handle || undefined,
+        country: country || undefined,
+        state: state || undefined,
+        city: city || undefined,
+        source: source || undefined,
+        motivation: motivation.trim() || undefined,
+      };
+
       if (!isLoggedIn) {
-        if (!supabase) throw new Error('Sign-up is not configured yet.');
-        const referralSlug = getPendingReferralSlug();
-        const { data, error: signUpError } = await supabase.auth.signUp({
-          email,
-          password,
-          options: {
-            emailRedirectTo: `${window.location.origin}/auth/callback`,
-            data: { full_name: name, ...(referralSlug ? { referral_slug: referralSlug } : {}) },
-          },
+        // No password here -- the account is created server-side with a
+        // one-time password, emailed to them alongside a separate reference
+        // code (see AffiliatesService.applyNew()). They set their own
+        // password the moment they first sign in.
+        await apiFetch('/affiliates/apply-new', {
+          method: 'POST',
+          body: JSON.stringify({ ...shared, name: name.trim(), email: email.trim() }),
         });
-        if (signUpError) {
-          throw new Error(signUpError.message.toLowerCase().includes('already registered') ? ALREADY_REGISTERED_MESSAGE : signUpError.message);
-        }
-        // Same anti-enumeration check RegisterPage.tsx uses: a confirmed
-        // existing account comes back as a fake user with no identities,
-        // not a clear error.
-        if (data.user && data.user.identities && data.user.identities.length === 0) {
-          throw new Error(ALREADY_REGISTERED_MESSAGE);
-        }
-        clearPendingReferralSlug();
-        setAwaitingConfirmation(true);
+        setDone(true);
         return;
       }
 
-      await apiFetch('/affiliates/apply', {
-        method: 'POST',
-        body: JSON.stringify({
-          type,
-          signedName: signedName.trim(),
-          agreedToTerms: agreed,
-          phone: combinePhone(phoneCountry, phoneNational) || undefined,
-          handle: handle || undefined,
-          country: country || undefined,
-          city: city || undefined,
-          source: source || undefined,
-          motivation: motivation.trim() || undefined,
-        }),
-      });
+      await apiFetch('/affiliates/apply', { method: 'POST', body: JSON.stringify(shared) });
       affiliateMe.refetch();
       setDone(true);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Could not submit your application. Please try again.');
+      if (err instanceof ApiError && err.status === 409) {
+        setError(ALREADY_REGISTERED_MESSAGE);
+      } else {
+        setError(err instanceof Error ? err.message : 'Could not submit your application. Please try again.');
+      }
     } finally {
       setSubmitting(false);
     }
@@ -235,7 +218,7 @@ export default function AffiliatePage() {
     country.length > 0 &&
     signedName.trim().length > 1 &&
     agreed &&
-    (isLoggedIn || (name.trim().length > 0 && email.trim().length > 0 && passwordMeetsRequirements(password)));
+    (isLoggedIn || (name.trim().length > 0 && email.trim().length > 0));
 
   return (
     <Layout>
@@ -422,7 +405,7 @@ export default function AffiliatePage() {
             <p className="eyebrow">Affiliate agreement</p>
             <h2 className="affiliate-section-title affiliate-agreement__title">Read the Affiliate Agreement</h2>
             <p className="affiliate-section-intro">
-              This is what you&apos;re agreeing to below -- commission structure, eligibility, obligations,
+              This is what you&apos;re agreeing to below: commission structure, eligibility, obligations,
               payment terms, and the rest. You&apos;ll sign it electronically as part of applying, and can download
               your own signed copy afterwards from your affiliate dashboard.
             </p>
@@ -458,7 +441,7 @@ export default function AffiliatePage() {
             <div>
               <h2>Apply to become an AIIT Affiliate</h2>
               <p>
-                Every application is screened by the AIIT team before it&apos;s approved -- once it is, you get a
+                Every application is screened by the AIIT team before it&apos;s approved. Once it is, you get a
                 personal referral link, not a code to hand out.
               </p>
             </div>
@@ -473,23 +456,27 @@ export default function AffiliatePage() {
                 <h3>You&apos;ve already applied</h3>
                 <p>
                   Your application is on file and the AIIT team reviews every one by hand. Track its progress,
-                  download your signed agreement, and -- once approved -- grab your referral link, all from your
+                  download your signed agreement, and, once approved, grab your referral link, all from your
                   dashboard.
                 </p>
                 <Link to="/affiliate-portal" className="affiliate__status-cta">
                   Go to your affiliate dashboard →
                 </Link>
               </div>
-            ) : awaitingConfirmation ? (
+            ) : done && !isLoggedIn ? (
               <div className="affiliate__status-card affiliate__status-card--pending" data-reveal>
                 <span className="affiliate__status-icon" aria-hidden="true">
                   <MailIcon />
                 </span>
-                <h3>Confirm your email to continue</h3>
+                <h3>Check your email to sign in</h3>
                 <p>
-                  We&apos;ve sent a confirmation link to <strong>{email}</strong>. Open it from this device, then come
-                  back to this page signed in to finish your application -- your signed agreement is saved the moment
-                  you submit, right after that.
+                  Your application is in. We&apos;ve sent your login details to <strong>{email}</strong>: your email
+                  address as your username and a one-time password. Sign in with those, and you&apos;ll be asked to
+                  set your own password right away.
+                </p>
+                <p>
+                  That email also has a separate reference code &mdash; keep it. You&apos;ll use it on your dashboard
+                  to activate your referral link once your application is approved.
                 </p>
                 <p className="affiliate__status-meta">Didn&apos;t get it? Check spam, or call/WhatsApp {SITE.contact.phone}.</p>
               </div>
@@ -500,7 +487,7 @@ export default function AffiliatePage() {
                 </span>
                 <h3>Application submitted</h3>
                 <p>
-                  Thanks -- your signed agreement is on file and the AIIT team reviews every application by hand.
+                  Thanks, your signed agreement is on file and the AIIT team reviews every application by hand.
                   You&apos;ll see your status update in real time on your dashboard, and we&apos;ll email you the
                   moment a decision is made.
                 </p>
@@ -533,18 +520,10 @@ export default function AffiliatePage() {
                       type="email"
                       required
                       autoComplete="email"
+                      hint="We'll email your login details here, no password to set, we'll send you a one-time one."
+                      className="field--wide"
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
-                    />
-                    <PasswordField
-                      label="Password"
-                      name="password"
-                      required
-                      autoComplete="new-password"
-                      hint={PASSWORD_HINT}
-                      className="field--wide"
-                      value={password}
-                      onChange={(e) => setPassword(e.target.value)}
                     />
                   </fieldset>
                 ) : null}
@@ -558,9 +537,9 @@ export default function AffiliatePage() {
                     className="field--wide"
                     options={[
                       { value: '', label: 'Select one' },
-                      { value: 'creator', label: 'Creator -- I introduce content creators to AIIT' },
-                      { value: 'student', label: 'Student referrer -- I refer students directly' },
-                      { value: 'affiliate_to_affiliate', label: 'Affiliate-to-affiliate -- I bring in other affiliates' },
+                      { value: 'creator', label: 'Creator (introduces content creators to AIIT)' },
+                      { value: 'student', label: 'Student referrer (refers students directly)' },
+                      { value: 'affiliate_to_affiliate', label: 'Affiliate-to-affiliate (brings in other affiliates)' },
                     ]}
                     value={type}
                     onChange={(e) => setType(e.target.value as AffiliateType | '')}
@@ -578,7 +557,7 @@ export default function AffiliatePage() {
                   <TextField
                     label="Platform or profile link (optional)"
                     name="handle"
-                    hint="Instagram, YouTube, TikTok, a website -- wherever we can see your work."
+                    hint="Instagram, YouTube, TikTok, a website, wherever we can see your work."
                     value={handle}
                     onChange={(e) => setHandle(e.target.value)}
                   />
@@ -590,6 +569,7 @@ export default function AffiliatePage() {
                     value={country}
                     onChange={(e) => setCountry(e.target.value)}
                   />
+                  <TextField label="State / Province" name="state" value={state} onChange={(e) => setState(e.target.value)} />
                   <TextField label="City" name="city" value={city} onChange={(e) => setCity(e.target.value)} />
                   <SelectField
                     label="How did you hear about us?"
@@ -609,7 +589,7 @@ export default function AffiliatePage() {
                     className="field--wide"
                     rows={4}
                     maxLength={1000}
-                    hint="Your platform, audience size, or why you'd be a great AIIT affiliate -- this is what we actually review you on."
+                    hint="Your platform, audience size, or why you'd be a great AIIT affiliate: this is what we actually review you on."
                     value={motivation}
                     onChange={(e) => setMotivation(e.target.value)}
                   />
@@ -618,7 +598,7 @@ export default function AffiliatePage() {
                 <fieldset className="affiliate__form-section">
                   <legend>Sign the agreement</legend>
                   <p className="affiliate__read-notice">
-                    Please read the Affiliate Agreement above carefully, in full, before you sign below -- it covers
+                    Please read the Affiliate Agreement above carefully, in full, before you sign below. It covers
                     how and when you&apos;re paid, confidentiality, and your obligations as a partner, and typing
                     your name is a legally binding signature under Clause 21.
                   </p>

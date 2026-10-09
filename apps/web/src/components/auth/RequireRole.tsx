@@ -7,8 +7,11 @@ import { roleHome, useMe } from '@/lib/me';
 /**
  * Keeps the three portals apart: each route tree admits only its own role and
  * sends everyone else to their own home (a student who opens /admin lands in
- * /portal, an admin who opens /portal lands in /admin). A staff account still
- * on its temporary password is held at the change-password screen first.
+ * /portal, an admin who opens /portal lands in /admin). Any account still on
+ * a temporary password (a staff account an admin created, or a learner
+ * account an affiliate application created via AffiliatesService.applyNew())
+ * is held at a change-password screen first -- staff go to
+ * /staff/change-password, a learner to /change-password.
  *
  * This is the UX layer only -- every API endpoint enforces the role itself.
  */
@@ -39,8 +42,8 @@ export function RequireRole({
 
   const { me } = state;
   if (!allow.includes(me.role)) return <Navigate to={roleHome(me.role)} replace />;
-  if (me.role !== 'learner' && me.mustChangePassword && !allowMustChangePassword) {
-    return <Navigate to="/staff/change-password" replace />;
+  if (me.mustChangePassword && !allowMustChangePassword) {
+    return <Navigate to={me.role === 'learner' ? '/change-password' : '/staff/change-password'} replace />;
   }
   return <>{children}</>;
 }

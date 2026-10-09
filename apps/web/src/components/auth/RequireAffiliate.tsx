@@ -2,6 +2,7 @@ import type { ReactNode } from 'react';
 import { Navigate } from 'react-router-dom';
 import { RouteFallback } from '@/components/layout/RouteFallback';
 import { useAffiliateMe } from '@/pages/affiliate/affiliateData';
+import { useMe } from '@/lib/me';
 
 /**
  * Gates the affiliate portal on "has an application at all" -- not on
@@ -10,11 +11,21 @@ import { useAffiliateMe } from '@/pages/affiliate/affiliateData';
  * applicationStatus). Mirrors RequireRole.tsx's shape, but checks
  * /affiliates/me rather than Profile.role (affiliate-ness deliberately
  * isn't a role -- see the schema.prisma comment on the Affiliate model).
+ *
+ * Doesn't go through RequireRole, so it needs its own mustChangePassword
+ * check -- an affiliate account AffiliatesService.applyNew() created is
+ * still on its one-time password the first time it ever lands here (e.g.
+ * clicking straight into the dashboard link in that email).
  */
 export function RequireAffiliate({ children }: { children: ReactNode }) {
+  const me = useMe();
   const state = useAffiliateMe();
 
-  if (state.status === 'loading') return <RouteFallback />;
+  if (me.status === 'loading' || state.status === 'loading') return <RouteFallback />;
+
+  if (me.status === 'ready' && me.me.mustChangePassword) {
+    return <Navigate to="/change-password" replace />;
+  }
 
   if (state.status === 'error') {
     return (

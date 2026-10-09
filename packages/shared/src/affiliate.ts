@@ -15,7 +15,9 @@ export interface AffiliateMe {
   type: AffiliateType | null;
   applicationStatus: AffiliateApplicationStatus | null;
   rejectionReason: string | null;
-  /** Only set once applicationStatus is 'approved'. */
+  /** True once the applicant has entered their reference code -- see AffiliatesService.activate(). Meaningless until applicationStatus is 'approved'. */
+  activated: boolean;
+  /** Only set once applicationStatus is 'approved' AND activated is true. */
   referralLink: string | null;
   registrationCount: number | null;
 }
@@ -45,6 +47,7 @@ export interface AdminAffiliateDetail extends AdminAffiliateSummary {
   phone: string | null;
   handle: string | null;
   country: string | null;
+  state: string | null;
   city: string | null;
   source: string | null;
   motivation: string | null;

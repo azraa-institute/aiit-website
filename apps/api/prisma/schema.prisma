@@ -134,6 +134,7 @@ model Affiliate {
   phone             String?
   handle            String?
   country           String?
+  state             String?
   city              String?
   source            String?
   // Free-text "tell us about yourself / your audience" -- the one field
@@ -152,6 +153,16 @@ model Affiliate {
   reviewedAt        DateTime?                  @map("reviewed_at") @db.Timestamptz(6)
   reviewedBy        String?                    @map("reviewed_by") @db.Uuid
   createdAt         DateTime                   @default(now()) @map("created_at") @db.Timestamptz(6)
+  // A second, separate code from the account's login password -- emailed
+  // alongside it at application time, but its only job is unlocking the
+  // referral link after approval (see AffiliatesService.activate()), not
+  // signing in. Nullable only for the handful of rows that predate this
+  // field (the real test application already in production).
+  referenceCode     String?                    @unique @map("reference_code")
+  // Set once the applicant successfully enters referenceCode on their
+  // dashboard -- the referral link itself stays hidden (AffiliatesService.
+  // toMe()) until both this AND applicationStatus = approved are true.
+  activatedAt       DateTime?                  @map("activated_at") @db.Timestamptz(6)
 
   @@map("affiliates")
   @@schema("public")

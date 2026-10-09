@@ -73,6 +73,7 @@ export class AdminAffiliatesService {
       phone: row.phone,
       handle: row.handle,
       country: row.country,
+      state: row.state,
       city: row.city,
       signedName: row.signedName,
       signedAt: row.signedAt?.toISOString() ?? null,

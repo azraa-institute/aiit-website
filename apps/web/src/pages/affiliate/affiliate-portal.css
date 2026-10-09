@@ -247,6 +247,60 @@
 .aff-error {
   color: var(--ink-muted);
 }
+.aff-error[role='alert'] {
+  color: var(--red);
+}
+
+/* ---------- Reference-code activation ---------- */
+.aff-activate {
+  margin-top: var(--space-4);
+}
+.aff-activate__label {
+  display: block;
+  margin-bottom: 6px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--ink-muted);
+}
+.aff-activate__row {
+  display: flex;
+  gap: var(--space-3);
+}
+.aff-activate__input {
+  flex: 1 1 auto;
+  min-width: 0;
+  padding: 0 var(--space-3);
+  min-height: 42px;
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-sm);
+  background: var(--ivory);
+  color: var(--ink);
+  font: inherit;
+  font-family: ui-monospace, Menlo, Consolas, monospace;
+  letter-spacing: 0.02em;
+}
+.aff-activate__input:focus-visible {
+  outline: 2px solid var(--brass);
+  outline-offset: 1px;
+}
+.aff-activate__resend {
+  display: inline-block;
+  margin-top: var(--space-3);
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--brass-deep);
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+.aff-activate__resend:hover:not(:disabled) {
+  text-decoration: underline;
+}
+.aff-activate__resend:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
 
 @media (max-width: 560px) {
   .aff-hero {
@@ -262,6 +316,10 @@
     font-size: 0.72rem;
   }
   .aff-linkbox {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .aff-activate__row {
     flex-direction: column;
     align-items: stretch;
   }

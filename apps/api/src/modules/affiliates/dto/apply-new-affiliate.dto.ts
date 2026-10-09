@@ -1,17 +1,28 @@
-import { Equals, IsBoolean, IsIn, IsOptional, IsString, MaxLength, MinLength } from 'class-validator';
+import { Equals, IsBoolean, IsEmail, IsIn, IsOptional, IsString, MaxLength, MinLength } from 'class-validator';
 import type { AffiliateType } from '@aiit/shared';
+import { AFFILIATE_TYPES } from './apply-affiliate.dto';
 
-export const AFFILIATE_TYPES = ['creator', 'student', 'affiliate_to_affiliate'] as const;
+/**
+ * The public, no-session application -- an anonymous visitor applying for
+ * the first time. Unlike ApplyAffiliateDto (an already-logged-in learner,
+ * who has no password to choose because they already have an account),
+ * this one collects name + email and nothing resembling a password: the
+ * account is created server-side with a one-time password the applicant
+ * never picks themselves (see AffiliatesService.applyNew()).
+ */
+export class ApplyNewAffiliateDto {
+  @IsString()
+  @MinLength(2)
+  @MaxLength(100)
+  name!: string;
 
-export class ApplyAffiliateDto {
+  @IsEmail()
+  @MaxLength(255)
+  email!: string;
+
   @IsIn(AFFILIATE_TYPES)
   type!: AffiliateType;
 
-  // The electronic signature itself -- typed deliberately into its own
-  // field (see AffiliatePage.tsx's comment on why it isn't pre-filled from
-  // `name`), plus an explicit, must-be-true consent checkbox. Together
-  // these are the evidence of consent Clause 21 (Electronic Signature)
-  // describes; see AffiliatesService.apply() for what gets stored.
   @IsString()
   @MinLength(2)
   @MaxLength(200)
@@ -21,9 +32,6 @@ export class ApplyAffiliateDto {
   @Equals(true, { message: 'You must agree to the Affiliate Agreement to apply.' })
   agreedToTerms!: boolean;
 
-  // Only ever sent by the public application form (not by an already-
-  // logged-in learner applying from their dashboard) -- screening context
-  // for the admin, not used by anything else.
   @IsOptional()
   @IsString()
   @MaxLength(40)

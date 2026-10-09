@@ -70,6 +70,7 @@ const RegisterPage = lazy(() => import('@/pages/auth/RegisterPage'));
 const ForgotPasswordPage = lazy(() => import('@/pages/auth/ForgotPasswordPage'));
 const AuthCallbackPage = lazy(() => import('@/pages/auth/AuthCallbackPage'));
 const ResetPasswordPage = lazy(() => import('@/pages/auth/ResetPasswordPage'));
+const ChangePasswordPage = lazy(() => import('@/pages/auth/ChangePasswordPage'));
 const PortalLayout = lazy(() => import('@/pages/portal/PortalLayout'));
 const DashboardPage = lazy(() => import('@/pages/portal/DashboardPage'));
 const MyCoursesPage = lazy(() => import('@/pages/portal/MyCoursesPage'));
@@ -171,6 +172,15 @@ export function App() {
               <Route path="/forgot-password" element={<ForgotPasswordPage />} />
               <Route path="/auth/callback" element={<AuthCallbackPage />} />
               <Route path="/reset-password" element={<ResetPasswordPage />} />
+              {/* First sign-in on a one-time password (today: an affiliate application's own login) -- RequireRole/RequireAffiliate redirect here. */}
+              <Route
+                path="/change-password"
+                element={
+                  <RequireAuth>
+                    <ChangePasswordPage />
+                  </RequireAuth>
+                }
+              />
 
               <Route
                 path="/portal"

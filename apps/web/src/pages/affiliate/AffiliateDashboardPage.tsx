@@ -1,7 +1,8 @@
 import { useState } from 'react';
-import type { AffiliateApplicationStatus, AffiliateType } from '@aiit/shared';
+import type { FormEvent } from 'react';
+import type { AffiliateApplicationStatus, AffiliateMe, AffiliateType } from '@aiit/shared';
 import { cn } from '@/lib/cn';
-import { apiFetchBlob, downloadBlob, ApiError } from '@/lib/api';
+import { apiFetch, apiFetchBlob, downloadBlob, ApiError } from '@/lib/api';
 import { useAffiliateMe } from './affiliateData';
 import './affiliate-portal.css';
 
@@ -40,7 +41,7 @@ function CheckIcon() {
   );
 }
 
-/** Applied -> Under review -> Approved, with the current stage highlighted. Not shown for a rejected application -- that's a terminal state outside this happy path, not "stuck" on a step. */
+/** Applied -> Under review -> Approved, with the current stage highlighted. Not shown for a rejected application, that's a terminal state outside this happy path, not "stuck" on a step. */
 function StatusStepper({ status }: { status: AffiliateApplicationStatus }) {
   const activeIndex = STEPS.findIndex((s) => s.key === status);
   return (
@@ -54,6 +55,76 @@ function StatusStepper({ status }: { status: AffiliateApplicationStatus }) {
         </li>
       ))}
     </ol>
+  );
+}
+
+/** Approved but not yet activated: the referral link stays hidden until the applicant enters the reference code emailed to them at application time (see AffiliatesService.activate()). */
+function ActivationCard({ onActivated }: { onActivated: (me: AffiliateMe) => void }) {
+  const [code, setCode] = useState('');
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState<string>();
+  const [resendState, setResendState] = useState<'idle' | 'sending' | 'sent' | 'error'>('idle');
+
+  async function onSubmit(e: FormEvent) {
+    e.preventDefault();
+    setError(undefined);
+    setSubmitting(true);
+    try {
+      const me = await apiFetch<AffiliateMe>('/affiliates/activate', { method: 'POST', body: JSON.stringify({ referenceCode: code.trim() }) });
+      onActivated(me);
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : 'Could not activate your referral link right now.');
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
+  async function resend() {
+    setResendState('sending');
+    try {
+      await apiFetch('/affiliates/reference-code/resend', { method: 'POST' });
+      setResendState('sent');
+    } catch {
+      setResendState('error');
+    }
+  }
+
+  return (
+    <section className="aff-card aff-card--status">
+      <h2>Activate your referral link</h2>
+      <p>
+        You&apos;re approved. Enter the reference code from the email we sent when you applied to unlock your
+        personal referral link.
+      </p>
+      <form className="aff-activate" onSubmit={onSubmit}>
+        {error ? (
+          <p className="aff-error" role="alert">
+            {error}
+          </p>
+        ) : null}
+        <label className="aff-activate__label" htmlFor="referenceCode">
+          Reference code
+        </label>
+        <div className="aff-activate__row">
+          <input
+            id="referenceCode"
+            className="aff-activate__input"
+            name="referenceCode"
+            placeholder="AIIT-AFF-XXXXXX"
+            autoComplete="off"
+            value={code}
+            onChange={(e) => setCode(e.target.value)}
+            required
+          />
+          <button type="submit" className="adm-btn adm-btn--primary" disabled={submitting || code.trim().length === 0}>
+            {submitting ? 'Activating…' : 'Activate'}
+          </button>
+        </div>
+      </form>
+      <button type="button" className="aff-activate__resend" onClick={resend} disabled={resendState === 'sending'}>
+        {resendState === 'sent' ? 'Reference code resent, check your email' : resendState === 'error' ? 'Could not resend, try again' : 'Lost your code? Resend it'}
+      </button>
+    </section>
   );
 }
 
@@ -87,11 +158,12 @@ export default function AffiliateDashboardPage() {
       setCopied(true);
       window.setTimeout(() => setCopied(false), 2000);
     } catch {
-      /* clipboard unavailable -- the link is still shown as selectable text */
+      /* clipboard unavailable, the link is still shown as selectable text */
     }
   }
 
   const rejected = data.applicationStatus === 'rejected';
+  const approved = data.applicationStatus === 'approved';
 
   async function downloadAgreement() {
     setDownloading(true);
@@ -123,7 +195,7 @@ export default function AffiliateDashboardPage() {
         <section className="aff-card aff-card--status">
           <h2>Your application is being screened</h2>
           <p>
-            The AIIT team reviews every affiliate application by hand. Check back here any time -- this page always
+            The AIIT team reviews every affiliate application by hand. Check back here any time, this page always
             shows your current status, and we&apos;ll email you the moment a decision is made.
           </p>
         </section>
@@ -136,7 +208,9 @@ export default function AffiliateDashboardPage() {
         </section>
       ) : null}
 
-      {data.applicationStatus === 'approved' && data.referralLink ? (
+      {approved && !data.activated ? <ActivationCard onActivated={() => state.refetch()} /> : null}
+
+      {approved && data.activated && data.referralLink ? (
         <>
           <section className="aff-stat">
             <span className="aff-stat__value">{(data.registrationCount ?? 0).toLocaleString()}</span>
@@ -145,7 +219,7 @@ export default function AffiliateDashboardPage() {
 
           <section className="aff-card">
             <h2>Your referral link</h2>
-            <p>Share this instead of a code -- anyone who signs up after clicking it is attributed to you automatically.</p>
+            <p>Share this instead of a code, anyone who signs up after clicking it is attributed to you automatically.</p>
             <div className="aff-linkbox">
               <code>{data.referralLink}</code>
               <button type="button" className={cn('aff-linkbox__copy', copied && 'is-copied')} onClick={copyLink}>
@@ -160,7 +234,7 @@ export default function AffiliateDashboardPage() {
       <section className="aff-card">
         <h2>Your signed agreement</h2>
         <p>
-          A copy of the Affiliate Agreement exactly as you signed it, with your typed signature and the date --
+          A copy of the Affiliate Agreement exactly as you signed it, with your typed signature and the date,
           available regardless of your application&apos;s status.
         </p>
         {downloadError ? (

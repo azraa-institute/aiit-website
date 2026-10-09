@@ -128,10 +128,10 @@ function Detail({ id, onChanged, onClose }: { id: string; onChanged: () => void;
                 <dd>{state.data.handle}</dd>
               </div>
             ) : null}
-            {state.data.country || state.data.city ? (
+            {state.data.country || state.data.state || state.data.city ? (
               <div>
                 <dt>Location</dt>
-                <dd>{[state.data.city, state.data.country].filter(Boolean).join(', ')}</dd>
+                <dd>{[state.data.city, state.data.state, state.data.country].filter(Boolean).join(', ')}</dd>
               </div>
             ) : null}
             {state.data.source ? (

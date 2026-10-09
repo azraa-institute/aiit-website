@@ -7,6 +7,8 @@ export interface BrandedEmailInput {
   ctaLabel: string;
   ctaUrl: string;
   footerNote: string;
+  /** Raw HTML inserted between the intro paragraph and the CTA button -- for the rare email that needs to show more than prose (e.g. a credentials box). Already-styled table markup, not escaped. */
+  bodyHtml?: string;
 }
 
 /**
@@ -17,7 +19,7 @@ export interface BrandedEmailInput {
  * blocks and don't support flexbox/grid, so this stays compatible
  * everywhere rather than looking right only in Gmail/Apple Mail.
  */
-export function brandedEmailHtml({ heading, intro, ctaLabel, ctaUrl, footerNote }: BrandedEmailInput): string {
+export function brandedEmailHtml({ heading, intro, ctaLabel, ctaUrl, footerNote, bodyHtml }: BrandedEmailInput): string {
   return `
     <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color:#f4efe7;padding:40px 16px;">
       <tr>
@@ -43,6 +45,7 @@ export function brandedEmailHtml({ heading, intro, ctaLabel, ctaUrl, footerNote 
                 </p>
               </td>
             </tr>
+            ${bodyHtml ? `<tr><td style="padding:0 40px 24px;">${bodyHtml}</td></tr>` : ''}
             <tr>
               <td style="padding:0 40px 32px;text-align:center;">
                 <table role="presentation" cellpadding="0" cellspacing="0" style="margin:0 auto;">

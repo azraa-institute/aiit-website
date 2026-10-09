@@ -21,7 +21,9 @@ export default function AssignmentsPage() {
       <header className="portal-page__head" data-reveal>
         <p className="portal-eyebrow">Assignments</p>
         <h1 className="portal-page__title">Your work</h1>
-        <p className="portal-page__intro">What&apos;s due, what you&apos;ve submitted, and your feedback.</p>
+        <p className="portal-page__intro">
+          Practical work set by your courses: what&apos;s due, what you&apos;ve submitted and your feedback.
+        </p>
       </header>
 
       {assignments.length === 0 ? (

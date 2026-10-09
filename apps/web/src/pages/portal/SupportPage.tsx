@@ -217,7 +217,8 @@ export default function SupportPage() {
         <p className="portal-eyebrow">Support</p>
         <h1 className="portal-page__title">Help &amp; reports</h1>
         <p className="portal-page__intro">
-          Report a problem with your learning, a course, or an instructor -- private to the AIIT team.
+          Tell the AIIT team about a problem with your learning, a course, a technical issue, or an instructor. Reports are
+          private to the AIIT team.
         </p>
       </header>
 

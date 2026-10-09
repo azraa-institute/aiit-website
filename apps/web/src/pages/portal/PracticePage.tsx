@@ -173,7 +173,9 @@ export default function PracticePage() {
       <header className="portal-page__head" data-reveal>
         <p className="portal-eyebrow">Practice</p>
         <h1 className="portal-page__title">Practice quizzes</h1>
-        <p className="portal-page__intro">Quick self-checks between sessions -- not graded, take them anytime.</p>
+        <p className="portal-page__intro">
+          Low-stakes self-checks between live sessions -- not graded, take them as many times as you like.
+        </p>
       </header>
 
       {quizzes.length === 0 ? (

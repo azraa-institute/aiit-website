@@ -26,11 +26,12 @@ export default function PortalResourcesPage() {
         <p className="portal-eyebrow">Learning resources</p>
         <h1 className="portal-page__title">Your AIIT learning library</h1>
         <p className="portal-page__intro">
-          Guides and resources to keep you progressing, from the{' '}
+          Practical guides, technical explainers and career resources curated to help you keep
+          progressing beyond your courses. It's the same library that sits behind{' '}
           <Link to="/resources" onClick={leavePortal}>
             AIIT Resources
-          </Link>{' '}
-          library.
+          </Link>
+          .
         </p>
       </header>
 

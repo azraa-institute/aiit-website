@@ -916,7 +916,7 @@
   margin-top: var(--space-3);
   max-width: 48rem;
   color: var(--ink-muted);
-  font-size: var(--fs-lead);
+  font-size: var(--fs-sm);
   line-height: 1.55;
 }
 .portal-page__head .portal-page__intro {

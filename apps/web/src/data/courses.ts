@@ -91,7 +91,7 @@ export const COURSES: Course[] = [
     catalogueCategoryName: 'Artificial Intelligence & Intelligent Systems',
     domainId: 'artificial-intelligence',
     summary:
-      'Design, build and deploy autonomous AI agents that plan, use tools and work together -- going beyond prompting to real agentic systems.',
+      'Design, build and deploy autonomous AI agents that plan, use tools and work together, going beyond prompting to real agentic systems.',
     description:
       'This course moves beyond single-turn prompting into agentic AI: systems that reason, call tools, retrieve information and act autonomously toward a goal. Participants build real agents using Claude, Gemini and OpenAI APIs alongside LangChain, working hands-on with tool calling, function calling, Retrieval-Augmented Generation, agent memory and multi-agent coordination, and explore emerging ecosystems such as the Model Context Protocol (MCP).',
     price: 18000,
@@ -541,7 +541,7 @@ export const COURSES: Course[] = [
     catalogueCategoryName: 'Digital Business & Marketing',
     domainId: null,
     summary:
-      'A practical introduction to digital marketing -- SEO, paid advertising, social media, content and email marketing, and the analytics behind them.',
+      'A practical introduction to digital marketing: SEO, paid advertising, social media, content and email marketing, and the analytics behind them.',
     description:
       'This course introduces the core disciplines of digital marketing: search engine optimisation, paid advertising, social media, content and email marketing, and how to measure what is actually working. Participants learn to plan, run and analyse digital marketing activity using real platforms and a shared analytics vocabulary used across the industry.',
     price: 12000,
@@ -605,7 +605,7 @@ export const COURSES: Course[] = [
     catalogueCategoryName: 'Technology Management & Business',
     domainId: null,
     summary:
-      'A technology-focused introduction to IT business management -- governance, service management, project delivery and digital transformation for IT-driven organisations.',
+      'A technology-focused introduction to IT business management: governance, service management, project delivery and digital transformation for IT-driven organisations.',
     description:
       'This course introduces IT business management as it is practised inside technology-driven organisations: governance, IT service management, project and risk management, and the strategic thinking behind digital transformation. It is built for people working at the intersection of technology and business, not a general management or MBA-style programme.',
     price: 12000,

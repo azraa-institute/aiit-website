@@ -358,7 +358,7 @@ export function ProfileCompletionWizard({ open, profile, onClose, onComplete }: 
                   value={university}
                   onChange={(e) => setUniversity(e.target.value)}
                   maxLength={200}
-                  hint="Not in our list -- type it in full."
+                  hint="Not in our list? Type it in full."
                 />
               ) : (
                 <SearchableSelect

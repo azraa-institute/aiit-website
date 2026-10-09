@@ -140,7 +140,7 @@ export default function LoginPage() {
       setSubmitting(false);
       setError(
         signInError.message.toLowerCase().includes('confirm')
-          ? 'Confirm your email address before signing in -- check your inbox for the link we sent.'
+          ? 'Confirm your email address before signing in. Check your inbox for the link we sent.'
           : signInError.message,
       );
       return;

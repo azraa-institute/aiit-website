@@ -106,7 +106,7 @@ export function ResourcesPanel({ join }: { join: LiveClassJoin }) {
       ) : null}
 
       {loaded && resources.length === 0 ? (
-        <p className="resources__empty">Nothing pinned yet{isHost ? ' -- add a link above.' : '.'}</p>
+        <p className="resources__empty">Nothing pinned yet{isHost ? '. Add a link above.' : '.'}</p>
       ) : (
         <ul className="resources__list" role="list">
           {resources.map((r) => (

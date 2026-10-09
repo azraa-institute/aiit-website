@@ -43,7 +43,7 @@ export default function CourseWorkspacePage() {
       <div className="portal-page">
         <PortalEmpty
           title="Course not found"
-          body="This isn't one of your enrolled courses -- it may have been removed, or the link may be wrong."
+          body="This isn't one of your enrolled courses. It may have been removed, or the link may be wrong."
           action={{ label: 'My courses', to: '/portal/courses' }}
         />
       </div>
@@ -88,7 +88,7 @@ export default function CourseWorkspacePage() {
               <h2 className="cwork__class-title">{next.title}</h2>
               {next.hostName ? <p className="cwork__class-host">with {next.hostName}</p> : null}
               {next.joinState === 'waiting_for_host' ? (
-                <p className="cwork__class-note">The window is open -- you can join as soon as your instructor starts.</p>
+                <p className="cwork__class-note">The window is open. You can join as soon as your instructor starts.</p>
               ) : null}
             </div>
             <Link to={`/classroom/${next.id}`} className="cwork__class-cta">

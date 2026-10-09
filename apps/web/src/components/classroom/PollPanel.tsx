@@ -110,7 +110,7 @@ export function PollPanel({ join }: { join: LiveClassJoin }) {
       ) : null}
 
       {loaded && !poll ? (
-        <p className="poll__empty">{isHost ? 'No poll running -- start one below.' : 'The instructor has not started a poll.'}</p>
+        <p className="poll__empty">{isHost ? 'No poll running yet. Start one below.' : 'The instructor has not started a poll.'}</p>
       ) : null}
 
       {poll ? (

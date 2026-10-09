@@ -320,7 +320,7 @@ export default function ProfilePage() {
               value={university}
               onChange={(e) => setUniversity(e.target.value)}
               maxLength={200}
-              hint="Not in our list -- type it in full."
+              hint="Not in our list? Type it in full."
             />
           ) : (
             <SearchableSelect
@@ -331,7 +331,7 @@ export default function ProfilePage() {
               loading={universitiesLoading}
               placeholder="Select or search…"
               searchPlaceholder="Search universities…"
-              hint="The institution you're attending or have attended -- not AIIT itself."
+              hint="The institution you're attending or have attended, not AIIT itself."
             />
           )}
           <button

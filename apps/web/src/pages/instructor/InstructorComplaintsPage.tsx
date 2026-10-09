@@ -192,7 +192,7 @@ export default function InstructorComplaintsPage() {
           <p className="adm-eyebrow">Support</p>
           <h1 className="adm-title">Report a student</h1>
           <p className="adm-intro">
-            Tell the AIIT team about a problem with a student in one of your courses -- attendance, conduct, academic
+            Tell the AIIT team about a problem with a student in one of your courses: attendance, conduct, academic
             integrity, or anything else. Reports are private to the AIIT team; the student is not shown who filed it.
           </p>
         </div>

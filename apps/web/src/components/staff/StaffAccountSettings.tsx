@@ -47,7 +47,7 @@ export function StaffAccountSettings() {
       setEmailError(error.message);
       return;
     }
-    setEmailMessage('Check your new email address for a confirmation link -- the change applies once you confirm it.');
+    setEmailMessage('Check your new email address for a confirmation link. The change applies once you confirm it.');
     setNewEmail('');
   }
 

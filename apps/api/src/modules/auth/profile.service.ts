@@ -92,7 +92,7 @@ export class ProfileService {
         // Second sentence mirrors the in-app welcome toast (PortalLayout.tsx)
         // and the ProfileCompletionBanner's own copy -- same message everywhere.
         intro:
-          'Your account is ready. Head to your learner portal to explore courses and start learning. Please complete your profile first -- course enrollment and the rest of your portal stay locked until you do.',
+          'Your account is ready. Head to your learner portal to explore courses and start learning. Please complete your profile first: course enrollment and the rest of your portal stay locked until you do.',
         ctaLabel: 'Complete your profile',
         ctaUrl: `${portalUrl}/profile`,
         footerNote: "You're receiving this because you created an account on aiit.network.",
@@ -158,13 +158,13 @@ export class ProfileService {
     if (!res.ok) {
       const body = await res.text().catch(() => '');
       this.logger.error(`Failed to fetch Supabase auth user ${userId} (${res.status}): ${body}`);
-      throw new BadRequestException('Could not verify phone number right now -- try again shortly.');
+      throw new BadRequestException('Could not verify phone number right now. Try again shortly.');
     }
     const authUser = (await res.json()) as { phone?: string; phone_confirmed_at?: string | null };
 
     if (!authUser.phone_confirmed_at || authUser.phone !== profile.phone.replace(/^\+/, '')) {
       throw new BadRequestException(
-        'This phone number has not been verified yet -- request and enter the SMS code first.',
+        'This phone number has not been verified yet. Request and enter the SMS code first.',
       );
     }
 

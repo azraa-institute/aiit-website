@@ -76,7 +76,7 @@ export default function AdminPaymentsPage() {
           <p className="adm-eyebrow">Revenue</p>
           <h1 className="adm-title">Payments</h1>
           <p className="adm-intro">
-            Orders across all three providers. Revenue is shown per currency, never summed together -- PayPal
+            Orders across all three providers. Revenue is shown per currency, never summed together: PayPal
             settles in USD, Razorpay in INR, Paystack in NGN.
           </p>
         </div>

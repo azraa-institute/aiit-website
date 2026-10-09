@@ -222,7 +222,7 @@ export default function CourseDetailPage() {
                     {off && <span className="course-detail__off">Save {off}%</span>}
                   </div>
                   <p className="course-detail__checkout-sub">
-                    <CapIcon /> One-time payment -- instant access after checkout
+                    <CapIcon /> One-time payment, instant access after checkout
                   </p>
                 </div>
                 <EnrollmentIllustration className="payment-section__illustration" />
@@ -419,7 +419,7 @@ function EnrollAction({ course, comingSoon }: { course: Course; comingSoon: bool
           {comingSoon ? 'Join the waitlist' : 'Enroll now'}
         </Button>
         <p className="course-detail__note">
-          Online payment isn&apos;t available yet for this course -- use &quot;Ask about this course&quot; below.
+          Online payment isn&apos;t available yet for this course. Use &quot;Ask about this course&quot; below.
         </p>
       </>
     );
@@ -430,7 +430,7 @@ function EnrollAction({ course, comingSoon }: { course: Course; comingSoon: bool
     if (noProviderConfigured) {
       return (
         <p className="course-detail__note">
-          Online payment isn&apos;t available yet for this course -- use &quot;Ask about this course&quot; below.
+          Online payment isn&apos;t available yet for this course. Use &quot;Ask about this course&quot; below.
         </p>
       );
     }

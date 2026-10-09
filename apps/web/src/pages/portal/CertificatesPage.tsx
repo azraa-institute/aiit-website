@@ -40,7 +40,7 @@ export default function CertificatesPage() {
       setCopiedId(id);
       window.setTimeout(() => setCopiedId((current) => (current === id ? undefined : current)), 2000);
     } catch {
-      setError('Could not copy the link -- copy it from the address bar after opening it instead.');
+      setError('Could not copy the link. Copy it from the address bar after opening it instead.');
     }
   }
 

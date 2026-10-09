@@ -330,7 +330,7 @@ function QuizzesTab({ courseId }: { courseId: string }) {
       ) : (
         <form className="adm-form" onSubmit={save}>
           <h2 className="adm-form__title">{form.id ? 'Edit practice quiz' : 'New practice quiz'}</h2>
-          <p className="adm-muted">Not graded -- students can take it as many times as they like.</p>
+          <p className="adm-muted">Not graded. Students can take it as many times as they like.</p>
           <div className="adm-grid">
             <label className="adm-field adm-field--wide">
               <span>Title</span>

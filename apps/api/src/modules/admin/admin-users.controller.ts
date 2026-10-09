@@ -43,7 +43,7 @@ export class AdminUsersController {
   }
 
   @Post('students/:id/enroll')
-  @HttpCode(200)
+  @HttpCode(204)
   adminEnroll(
     @CurrentUser() user: AuthenticatedUser,
     @Param('id', ParseUUIDPipe) id: string,
@@ -53,7 +53,7 @@ export class AdminUsersController {
   }
 
   @Post('students/:id/unenroll')
-  @HttpCode(200)
+  @HttpCode(204)
   adminUnenroll(
     @CurrentUser() user: AuthenticatedUser,
     @Param('id', ParseUUIDPipe) id: string,

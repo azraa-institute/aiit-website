@@ -1521,12 +1521,20 @@
 }
 
 .portal-note {
+  position: relative;
   max-width: 42rem;
-  padding: var(--space-6);
+  padding: var(--space-6) var(--space-6) var(--space-6) calc(var(--space-6) + 2px);
   border: 1px solid var(--line);
-  border-left: 2px solid var(--brass);
-  border-radius: var(--radius-sm);
+  border-radius: var(--radius-md);
   background: rgba(255, 255, 255, 0.5);
+  overflow: hidden;
+}
+.portal-note::before {
+  content: '';
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 2px;
+  background: linear-gradient(180deg, transparent, var(--brass) 50%, transparent);
 }
 .portal-note__title {
   font-family: var(--font-accent);

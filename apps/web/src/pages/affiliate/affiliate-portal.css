@@ -140,10 +140,13 @@
 
 /* ---------- Cards ---------- */
 .aff-card {
+  position: relative;
   padding: var(--space-5) var(--space-6);
   border: 1px solid var(--line);
-  border-radius: var(--radius-sm);
+  border-radius: var(--radius-lg);
   background: var(--surface);
+  box-shadow: var(--shadow-soft);
+  overflow: hidden;
 }
 .aff-card h2 {
   margin: 0 0 var(--space-2);
@@ -157,11 +160,22 @@
   color: var(--ink-muted);
   line-height: 1.6;
 }
-.aff-card--rejected {
-  border-left: 3px solid var(--red);
-}
+.aff-card--rejected,
 .aff-card--status {
-  border-left: 3px solid var(--brass);
+  padding-left: calc(var(--space-6) + 3px);
+}
+.aff-card--rejected::before,
+.aff-card--status::before {
+  content: '';
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 3px;
+}
+.aff-card--rejected::before {
+  background: linear-gradient(180deg, transparent, var(--red) 50%, transparent);
+}
+.aff-card--status::before {
+  background: linear-gradient(180deg, transparent, var(--brass) 50%, transparent);
 }
 
 /* ---------- Registration stat ---------- */
@@ -171,8 +185,9 @@
   gap: var(--space-3);
   padding: var(--space-5) var(--space-6);
   border: 1px solid var(--line);
-  border-radius: var(--radius-sm);
+  border-radius: var(--radius-lg);
   background: linear-gradient(180deg, var(--accent-wash), transparent);
+  box-shadow: var(--shadow-soft);
 }
 .aff-stat__value {
   font-family: var(--font-display);

@@ -8,13 +8,23 @@
   font-size: 0.9rem;
 }
 .support-sent {
+  position: relative;
   margin-bottom: var(--space-5);
-  padding: var(--space-3) var(--space-4);
-  border-left: 3px solid var(--brass);
+  padding: var(--space-3) var(--space-4) var(--space-3) calc(var(--space-4) + 3px);
+  border-radius: var(--radius-sm);
   background: var(--accent-wash);
+  overflow: hidden;
+}
+.support-sent::before {
+  content: '';
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 3px;
+  background: linear-gradient(180deg, transparent, var(--brass) 50%, transparent);
 }
 
 .support-form {
+  position: relative;
   display: flex;
   flex-direction: column;
   gap: var(--space-4);
@@ -22,10 +32,17 @@
   margin-bottom: var(--space-7);
   padding: var(--space-6);
   border: 1px solid var(--line);
-  border-top: 3px solid var(--brass);
   border-radius: var(--radius-lg);
-  background: rgba(255, 255, 255, 0.55);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.8), rgba(255, 255, 255, 0.45));
   box-shadow: var(--shadow-soft);
+  overflow: hidden;
+}
+.support-form::before {
+  content: '';
+  position: absolute;
+  inset: 0 0 auto 0;
+  height: 3px;
+  background: linear-gradient(90deg, transparent, var(--brass) 50%, transparent);
 }
 .support-form__title {
   font-family: var(--font-accent);
@@ -103,16 +120,25 @@
   padding: 0 0 var(--space-5);
 }
 .support-msg {
+  position: relative;
   max-width: 38rem;
   padding: var(--space-3) var(--space-4);
   border: 1px solid var(--line);
   border-radius: var(--radius-md);
   background: rgba(255, 255, 255, 0.55);
   box-shadow: var(--shadow-soft);
+  overflow: hidden;
 }
 .support-msg--admin {
-  border-left: 3px solid var(--brass);
+  padding-left: calc(var(--space-4) + 3px);
   background: var(--accent-wash);
+}
+.support-msg--admin::before {
+  content: '';
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 3px;
+  background: linear-gradient(180deg, transparent, var(--brass) 50%, transparent);
 }
 .support-msg__meta {
   margin-bottom: 4px;
@@ -136,13 +162,21 @@
 
 /* Profile page entry card */
 .profile-support {
+  position: relative;
   margin-top: var(--space-6);
-  padding: var(--space-5);
+  padding: var(--space-5) var(--space-5) var(--space-5) calc(var(--space-5) + 3px);
   border: 1px solid var(--line);
-  border-left: 3px solid var(--brass);
   border-radius: var(--radius-lg);
   background: rgba(255, 255, 255, 0.55);
   box-shadow: var(--shadow-soft);
+  overflow: hidden;
+}
+.profile-support::before {
+  content: '';
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 3px;
+  background: linear-gradient(180deg, transparent, var(--brass) 50%, transparent);
 }
 .profile-support h2 {
   font-family: var(--font-accent);

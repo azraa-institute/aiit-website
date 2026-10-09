@@ -234,10 +234,10 @@ export default function SchedulePage() {
         <h1 className="portal-page__title">Live classes</h1>
         <p className="portal-page__intro">
           {isHost
-            ? 'The classes assigned to you. Start a class when you are ready; learners can join once it is live.'
+            ? 'Classes assigned to you. Start one when ready -- learners join once it is live.'
             : courseCount > 1
-              ? `One timetable for all ${courseCount} of your courses. It updates by itself as classes are scheduled. A class opens shortly before it starts, and you join once your instructor begins.`
-              : 'Your live classes. A class opens shortly before it starts, and you join once your instructor begins.'}
+              ? `One timetable for all ${courseCount} of your courses, updated automatically.`
+              : 'Your live classes. Each opens shortly before it starts.'}
         </p>
         <p className="schedule-zone">
           Times shown in <strong>{zone.replace(/_/g, ' ')}</strong>

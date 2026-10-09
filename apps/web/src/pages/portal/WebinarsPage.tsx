@@ -22,10 +22,7 @@ export default function WebinarsPage() {
       <header className="portal-page__head" data-reveal>
         <p className="portal-eyebrow">Webinar registrations</p>
         <h1 className="portal-page__title">Webinars</h1>
-        <p className="portal-page__intro">
-          Your registered live sessions, workshops and learning events, upcoming first, with a direct link to
-          join.
-        </p>
+        <p className="portal-page__intro">Your registered sessions and events, upcoming first.</p>
         {webinars.length > 0 ? (
           <div className="webinar-summary">
             <span className="webinar-summary__stat">

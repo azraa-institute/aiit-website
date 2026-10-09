@@ -20,9 +20,7 @@ export default function MyCoursesPage() {
       <header className="portal-page__head" data-reveal>
         <p className="portal-eyebrow">My courses</p>
         <h1 className="portal-page__title">Your courses</h1>
-        <p className="portal-page__intro">
-          Everything you are enrolled in: where you are, and the next step in each.
-        </p>
+        <p className="portal-page__intro">Where you are in each course, and what&apos;s next.</p>
       </header>
 
       {enrolled.length === 0 ? (

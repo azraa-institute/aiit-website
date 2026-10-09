@@ -60,8 +60,7 @@ export default function NotificationsPage() {
             <p className="portal-eyebrow">Notifications</p>
             <h1 className="portal-page__title">Notifications</h1>
             <p className="portal-page__intro">
-              Stay up to date with your courses and learning activity
-              {unreadCount > 0 ? ` (${unreadCount} unread)` : ''}.
+              Your courses and learning activity{unreadCount > 0 ? ` (${unreadCount} unread)` : ''}.
             </p>
           </div>
           {unreadCount > 0 ? (

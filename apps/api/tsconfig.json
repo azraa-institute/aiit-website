@@ -1,7 +1,14 @@
 {
   "compilerOptions": {
+    // TS 5.x deprecates classic Node-style resolution ahead of its removal in
+    // TS 7.0 (see https://aka.ms/ts6), pushing projects toward "nodenext" --
+    // but that requires explicit file extensions on every relative import
+    // across the codebase, a large mechanical migration, not something to
+    // take on just to silence an editor warning. Suppressed deliberately
+    // until that migration is actually worth doing; no behavior change here.
+    "ignoreDeprecations": "5.0",
     "module": "commonjs",
-    "moduleResolution": "node",
+    "moduleResolution": "node10",
     "target": "ES2021",
     "lib": ["ES2021"],
     "declaration": false,

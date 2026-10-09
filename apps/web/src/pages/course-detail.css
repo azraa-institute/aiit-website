@@ -182,14 +182,17 @@
 .payment-section__header-text .course-detail__price {
   margin-bottom: 0;
 }
+/* A cut-out (transparent background) product render, not a cropped photo
+   -- no box, radius or aspect-ratio forcing it into a card, so it sits
+   directly on the header's own gradient instead of reading as a pasted
+   sticker. The drop-shadow is cast directly onto that gradient for a touch
+   of grounding, in place of a photo's own baked-in shadow/background. */
 .payment-section__illustration {
   flex-shrink: 0;
-  width: clamp(110px, 10vw + 60px, 170px);
+  width: clamp(130px, 11vw + 70px, 195px);
   height: auto;
-  aspect-ratio: 1 / 1;
-  object-fit: cover;
-  border-radius: var(--radius-md);
   align-self: center;
+  filter: drop-shadow(0 10px 16px rgba(20, 17, 15, 0.16));
 }
 .payment-section__heading {
   font-family: var(--font-display);

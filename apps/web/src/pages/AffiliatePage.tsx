@@ -1,7 +1,7 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import type { FormEvent } from 'react';
 import { Link } from 'react-router-dom';
-import type { AffiliateAgreement, AffiliateType } from '@aiit/shared';
+import type { AffiliateAgreement, AffiliateType, GeoCity, GeoState } from '@aiit/shared';
 import { Layout } from '@/components/layout/Layout';
 import { Seo } from '@/lib/Seo';
 import { useScrollReveal } from '@/lib/useScrollReveal';
@@ -12,10 +12,13 @@ import { SITE } from '@/data/site';
 import { Section } from '@/components/primitives/Section';
 import { Button } from '@/components/primitives/Button';
 import { TextField, SelectField, TextArea } from '@/components/common/Field';
+import { SearchableSelect } from '@/components/common/SearchableSelect';
 import { apiFetch, ApiError } from '@/lib/api';
 import { useMe } from '@/lib/me';
 import { COUNTRIES } from '@/data/countries';
+import { fetchStates, fetchCities } from '@/lib/geo';
 import { combinePhone } from '@/lib/phone';
+import { getPendingReferralSlug, clearPendingReferralSlug } from '@/lib/referralAttribution';
 import { PhoneCountrySelect } from './portal/PhoneCountrySelect';
 import { useAffiliateMe } from './affiliate/affiliateData';
 import { AffiliateNetwork } from './AffiliateNetwork';
@@ -132,6 +135,52 @@ export default function AffiliatePage() {
   const [agreed, setAgreed] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string>();
+
+  // Country -> State -> City cascade -- same pattern as the student portal's
+  // ProfileCompletionWizard.tsx/ProfilePage.tsx (state/city stay plain text,
+  // the selected state's id is looked up by name rather than tracked
+  // separately). `country` here is deliberately still the country's full
+  // name, not its ISO code (see COUNTRY_OPTIONS's own comment on why), so
+  // the geo lookups go through a derived code rather than `country` itself.
+  const [states, setStates] = useState<GeoState[]>([]);
+  const [statesLoading, setStatesLoading] = useState(false);
+  const [cities, setCities] = useState<GeoCity[]>([]);
+  const [citiesLoading, setCitiesLoading] = useState(false);
+  const countryCode = COUNTRIES.find((c) => c.name === country)?.code;
+
+  const prevCountryCode = useRef(countryCode);
+  useEffect(() => {
+    if (prevCountryCode.current !== countryCode) {
+      setState('');
+      setCity('');
+    }
+    prevCountryCode.current = countryCode;
+    if (!countryCode) {
+      setStates([]);
+      return;
+    }
+    setStatesLoading(true);
+    fetchStates(countryCode)
+      .then(setStates)
+      .catch(() => setStates([]))
+      .finally(() => setStatesLoading(false));
+  }, [countryCode]);
+
+  const prevState = useRef(state);
+  useEffect(() => {
+    if (prevState.current !== state) setCity('');
+    prevState.current = state;
+    const selected = states.find((s) => s.name === state);
+    if (!selected) {
+      setCities([]);
+      return;
+    }
+    setCitiesLoading(true);
+    fetchCities(selected.id)
+      .then(setCities)
+      .catch(() => setCities([]))
+      .finally(() => setCitiesLoading(false));
+  }, [state, states]);
   const [done, setDone] = useState(false);
 
   // The agreement's legal text, fetched fresh rather than hardcoded on this
@@ -191,10 +240,17 @@ export default function AffiliatePage() {
         // one-time password, emailed to them alongside a separate reference
         // code (see AffiliatesService.applyNew()). They set their own
         // password the moment they first sign in.
+        const referralSlug = getPendingReferralSlug();
         await apiFetch('/affiliates/apply-new', {
           method: 'POST',
-          body: JSON.stringify({ ...shared, name: name.trim(), email: email.trim() }),
+          body: JSON.stringify({
+            ...shared,
+            name: name.trim(),
+            email: email.trim(),
+            ...(referralSlug ? { referralSlug } : {}),
+          }),
         });
+        clearPendingReferralSlug();
         setDone(true);
         return;
       }
@@ -569,8 +625,30 @@ export default function AffiliatePage() {
                     value={country}
                     onChange={(e) => setCountry(e.target.value)}
                   />
-                  <TextField label="State / Province" name="state" value={state} onChange={(e) => setState(e.target.value)} />
-                  <TextField label="City" name="city" value={city} onChange={(e) => setCity(e.target.value)} />
+                  <SearchableSelect
+                    label="State / Province"
+                    value={state}
+                    onChange={setState}
+                    options={states.map((s) => ({ value: s.name, label: s.name }))}
+                    loading={statesLoading}
+                    disabled={!country}
+                    disabledHint="Select a country first."
+                    placeholder="Select or search…"
+                    searchPlaceholder="Search states…"
+                    emptyMessage={statesLoading ? undefined : 'No states listed for this country.'}
+                  />
+                  <SearchableSelect
+                    label="City"
+                    value={city}
+                    onChange={setCity}
+                    options={cities.map((c) => ({ value: c.name, label: c.name }))}
+                    loading={citiesLoading}
+                    disabled={!state}
+                    disabledHint="Select a state or province first."
+                    placeholder="Select or search…"
+                    searchPlaceholder="Search cities…"
+                    emptyMessage={citiesLoading ? undefined : 'No cities listed for this state.'}
+                  />
                   <SelectField
                     label="How did you hear about us?"
                     name="source"
@@ -606,7 +684,7 @@ export default function AffiliatePage() {
                     label="Type your full legal name to sign this agreement"
                     name="signedName"
                     required
-                    className="field--wide"
+                    className="field--wide affiliate__signature-field"
                     hint="This is your electronic signature on the Affiliate Agreement above."
                     value={signedName}
                     onChange={(e) => setSignedName(e.target.value)}

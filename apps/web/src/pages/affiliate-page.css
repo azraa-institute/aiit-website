@@ -796,6 +796,22 @@
   --btn-bg: var(--ink);
   --btn-fg: var(--paper);
   --btn-border: var(--ink);
+  /* This card reads as a physical document the applicant signs, not an
+     interface chrome button -- SHOUT-CASE "SUBMIT APPLICATION" undercuts
+     that. Same text-transform/letter-spacing reset button.css's own
+     .btn--link already does for the same reason, just scoped to this one
+     button instead of a whole variant. */
+  text-transform: none;
+  letter-spacing: 0;
+}
+/* field.css's `.field__label` is uppercase site-wide by design (interface
+   chrome), but this form reads as a signed document -- its labels (down to
+   "Type your full legal name to sign this agreement") are sentence-case
+   prose, not interface labels, so they're scoped back to normal case here
+   rather than changing the shared component for every other form. */
+.affiliate__form .field__label {
+  text-transform: none;
+  letter-spacing: normal;
 }
 .affiliate__form-section {
   display: grid;
@@ -828,6 +844,31 @@
     grid-column: 1 / -1;
   }
 }
+/* The typed name here IS the signature, not just another text answer --
+   rendered in the site's one existing "handwritten" treatment (italic
+   Source Serif 4 500, see student-stories.css's .stories-script and
+   legal-book.css's .legalbook__intro-text, both with the same comment)
+   rather than loading Dancing Script a third time: that face is already a
+   deliberate one-off reserved for the course card's "Enroll now" CTA (see
+   index.html's font-load comment), so a second genuine script face here
+   would be one more decorative face than the site's type system wants.
+   Sized up and spaced out a touch, same reasoning as those two rules --
+   italic script reads smaller/lighter than upright text at the same
+   nominal size. */
+.affiliate__signature-field .field__control {
+  font-family: 'Source Serif 4', var(--font-display);
+  font-style: italic;
+  font-weight: 500;
+  font-size: 1.15rem;
+  letter-spacing: 0.01em;
+}
+/* Same handwritten italic Source Serif 4 treatment as .affiliate__signature-field
+   above, extended to the two notices that frame it (the "read this before you
+   sign" notice and the consent checkbox copy) -- these three pieces of text
+   read as one signing ritual, not a form notice plus an unrelated input, so
+   they share one voice. Justified (not ragged-right) for the same "official
+   paperwork" reason .affiliate__form's own comment gives for the fieldset
+   layout: it reads like printed legal copy, not a web form hint. */
 .affiliate__read-notice {
   display: flex;
   align-items: flex-start;
@@ -837,14 +878,23 @@
   border-left: 3px solid var(--brass-tint);
   border-radius: var(--radius-sm);
   background: color-mix(in srgb, var(--brass-tint) 7%, transparent);
-  font-size: var(--fs-sm);
-  color: var(--fg-soft);
+  font-family: 'Source Serif 4', var(--font-display);
+  font-style: italic;
+  font-weight: 500;
+  font-size: 1rem;
   line-height: 1.55;
+  text-align: justify;
+  color: var(--fg-soft);
 }
 .affiliate__agree {
   display: flex;
   gap: var(--space-2);
-  font-size: var(--fs-sm);
+  font-family: 'Source Serif 4', var(--font-display);
+  font-style: italic;
+  font-weight: 500;
+  font-size: 1rem;
+  line-height: 1.5;
+  text-align: justify;
   color: var(--fg-soft);
 }
 .affiliate__disclaimer {

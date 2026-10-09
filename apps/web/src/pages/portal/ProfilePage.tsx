@@ -28,6 +28,8 @@ import { PortalLoader } from './PortalLoader';
 import './support.css';
 
 const AVATARS_BUCKET = 'avatars';
+/** Mirrors the avatars bucket's own file_size_limit/allowed_mime_types (see the storage_bucket_limits migration) -- this is the fast client-side rejection, that migration is the real enforcement. */
+const AVATAR_UPLOAD_CONSTRAINTS = { maxSizeBytes: 2 * 1024 * 1024, allowedMimeTypes: ['image/jpeg', 'image/png', 'image/webp'] };
 const COUNTRY_OPTIONS = [{ value: '', label: 'Select a country' }, ...COUNTRIES.map((c) => ({ value: c.code, label: c.name }))];
 const QUALIFICATION_OPTIONS = [{ value: '', label: 'Select your highest qualification' }, ...QUALIFICATIONS];
 const STATUS_OPTIONS = [{ value: '', label: 'Select one' }, ...CURRENT_STATUSES];
@@ -227,7 +229,7 @@ export default function ProfilePage() {
       // which looked exactly like the old photo being "stuck".
       const ext = file.name.split('.').pop() ?? 'jpg';
       const previousKey = profile.avatarKey;
-      const key = await uploadFile(AVATARS_BUCKET, `${session.user.id}/avatar-${Date.now()}.${ext}`, file);
+      const key = await uploadFile(AVATARS_BUCKET, `${session.user.id}/avatar-${Date.now()}.${ext}`, file, AVATAR_UPLOAD_CONSTRAINTS);
       await apiFetch('/me', { method: 'PATCH', body: JSON.stringify({ avatarKey: key }) });
       if (previousKey && previousKey !== key) {
         // Best-effort cleanup of the file the new photo replaces -- if it

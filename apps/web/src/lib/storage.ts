@@ -8,8 +8,21 @@ import { supabase } from './supabaseClient';
  * infrastructure doc for the exact setup steps.
  */
 
-export async function uploadFile(bucket: string, path: string, file: File): Promise<string> {
+export interface UploadConstraints {
+  /** Rejected client-side with a readable message before ever reaching Supabase -- defense in depth alongside the bucket's own file_size_limit (see the storage_bucket_limits migration), not a substitute for it: a modified/scripted client skips this check entirely. */
+  maxSizeBytes?: number;
+  allowedMimeTypes?: string[];
+}
+
+export async function uploadFile(bucket: string, path: string, file: File, constraints: UploadConstraints = {}): Promise<string> {
   if (!supabase) throw new Error('File storage is not configured yet.');
+  const { maxSizeBytes, allowedMimeTypes } = constraints;
+  if (maxSizeBytes && file.size > maxSizeBytes) {
+    throw new Error(`That file is too large (max ${Math.floor(maxSizeBytes / (1024 * 1024))}MB).`);
+  }
+  if (allowedMimeTypes && !allowedMimeTypes.includes(file.type)) {
+    throw new Error(`That file type isn't supported (allowed: ${allowedMimeTypes.map((t) => t.split('/')[1]).join(', ')}).`);
+  }
   const { error } = await supabase.storage.from(bucket).upload(path, file, { upsert: true });
   if (error) throw error;
   return path;

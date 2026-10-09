@@ -17,6 +17,8 @@ const STATUS_LABEL: Record<Assignment['status'], string> = {
 
 /** Bucket must exist in Supabase Storage (see infra doc) -- learners can only write under their own uid prefix, matching the DB's RLS trust model. */
 const SUBMISSIONS_BUCKET = 'submissions';
+/** No MIME restriction -- a submission can legitimately be any document type. Mirrors the submissions bucket's own file_size_limit (see the storage_bucket_limits migration), which is the real enforcement; this is just the fast client-side rejection. */
+const SUBMISSION_UPLOAD_CONSTRAINTS = { maxSizeBytes: 25 * 1024 * 1024 };
 
 export function AssignmentRow({ assignment, onSubmitted }: { assignment: Assignment; onSubmitted: () => void }) {
   const { session } = useAuth();
@@ -43,7 +45,7 @@ export function AssignmentRow({ assignment, onSubmitted }: { assignment: Assignm
     try {
       let fileKey: string | undefined;
       if (file) {
-        fileKey = await uploadFile(SUBMISSIONS_BUCKET, `${session.user.id}/${assignment.id}/${file.name}`, file);
+        fileKey = await uploadFile(SUBMISSIONS_BUCKET, `${session.user.id}/${assignment.id}/${file.name}`, file, SUBMISSION_UPLOAD_CONSTRAINTS);
       }
       await apiFetch(`/assignments/${assignment.id}/submissions`, {
         method: 'POST',

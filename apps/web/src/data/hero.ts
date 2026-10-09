@@ -25,7 +25,7 @@ export const HERO_SLIDES: HeroSlide[] = [
     subtext: 'Global tech education for a brighter tomorrow.',
     image: '/assets/hero/hero-intro-poster.jpg',
     video: '/assets/hero/hero-intro.mp4',
-    durationMs: 9334,
+    durationMs: 40000,
     motif: 'lattice',
     cta: { label: 'Ready to get started?', to: '/courses' },
   },

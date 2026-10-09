@@ -1,6 +1,8 @@
 import { Body, Controller, Get, Header, HttpCode, Param, ParseUUIDPipe, Post, Query, UseGuards } from '@nestjs/common';
 import { Throttle } from '@nestjs/throttler';
 import type {
+  AdminAccountSummary,
+  AdminCredentials,
   AdminDashboard,
   AuditLogEntry,
   InstructorSummary,
@@ -15,7 +17,7 @@ import { RolesGuard } from '../../common/guards/roles.guard';
 import { Roles } from '../../common/decorators/roles.decorator';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import { AdminUsersService } from './admin-users.service';
-import { CreateInstructorDto, ListAuditQueryDto, ListStudentsQueryDto, SuspendUserDto } from './dto/admin.dto';
+import { AdminEnrollDto, CreateAdminDto, CreateInstructorDto, ListAuditQueryDto, ListStudentsQueryDto, SuspendUserDto } from './dto/admin.dto';
 
 /** Admin-only: dashboard numbers, student directory, instructor accounts, suspension, audit trail. */
 @Controller('admin')
@@ -38,6 +40,38 @@ export class AdminUsersController {
   @Get('students/:id')
   student(@Param('id', ParseUUIDPipe) id: string): Promise<StudentDetail> {
     return this.admin.studentDetail(id);
+  }
+
+  @Post('students/:id/enroll')
+  @HttpCode(200)
+  adminEnroll(
+    @CurrentUser() user: AuthenticatedUser,
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() dto: AdminEnrollDto,
+  ): Promise<void> {
+    return this.admin.adminEnroll(user.userId, id, dto.courseId);
+  }
+
+  @Post('students/:id/unenroll')
+  @HttpCode(200)
+  adminUnenroll(
+    @CurrentUser() user: AuthenticatedUser,
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() dto: AdminEnrollDto,
+  ): Promise<void> {
+    return this.admin.adminUnenroll(user.userId, id, dto.courseId);
+  }
+
+  @Get('admins')
+  admins(): Promise<AdminAccountSummary[]> {
+    return this.admin.listAdmins();
+  }
+
+  /** The response carries the temporary password -- shown to the admin once, never stored, never cached. */
+  @Post('admins')
+  @Header('Cache-Control', 'no-store')
+  createAdmin(@CurrentUser() user: AuthenticatedUser, @Body() dto: CreateAdminDto): Promise<AdminCredentials> {
+    return this.admin.createAdmin(user.userId, dto);
   }
 
   @Get('instructors')
@@ -79,6 +113,16 @@ export class AdminUsersController {
   @HttpCode(200)
   reactivate(@CurrentUser() user: AuthenticatedUser, @Param('id', ParseUUIDPipe) id: string): Promise<SuspendResult> {
     return this.admin.reactivate(user.userId, id);
+  }
+
+  @Post('users/:id/delete')
+  @HttpCode(200)
+  deleteStaff(
+    @CurrentUser() user: AuthenticatedUser,
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() dto: SuspendUserDto,
+  ): Promise<SuspendResult> {
+    return this.admin.deleteStaff(user.userId, id, dto.reason);
   }
 
   @Get('audit-log')

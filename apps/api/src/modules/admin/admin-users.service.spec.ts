@@ -17,6 +17,8 @@ describe('AdminUsersService', () => {
   };
   let supabase: { createUser: jest.Mock; setPassword: jest.Mock; tryBan: jest.Mock };
   let audit: { record: jest.Mock };
+  let enrollments: { adminEnroll: jest.Mock; adminCancel: jest.Mock };
+  let email: { send: jest.Mock };
 
   beforeEach(() => {
     prisma = {
@@ -33,7 +35,9 @@ describe('AdminUsersService', () => {
     };
     supabase = { createUser: jest.fn(), setPassword: jest.fn(), tryBan: jest.fn() };
     audit = { record: jest.fn() };
-    service = new AdminUsersService(prisma as never, supabase as never, audit as never);
+    enrollments = { adminEnroll: jest.fn(), adminCancel: jest.fn() };
+    email = { send: jest.fn() };
+    service = new AdminUsersService(prisma as never, supabase as never, audit as never, enrollments as never, email as never);
   });
 
   describe('suspend / reactivate', () => {
@@ -126,6 +130,98 @@ describe('AdminUsersService', () => {
         service.createInstructor(ADMIN, { name: 'Grace', email: 'grace@aiit.network' }),
       ).rejects.toBeInstanceOf(ConflictException);
       expect(prisma.profile.upsert).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('createAdmin', () => {
+    it('creates the login with a generated password, marks the profile as admin who must change it, and returns the password once', async () => {
+      supabase.createUser.mockResolvedValue(NEW_USER);
+      prisma.profile.upsert.mockResolvedValue({ id: NEW_USER, name: 'Grace Okoro', createdAt: new Date('2026-09-26T10:00:00Z') });
+
+      const res = await service.createAdmin(ADMIN, { name: ' Grace Okoro ', email: 'Grace@AIIT.network' });
+
+      expect(supabase.createUser).toHaveBeenCalledWith('grace@aiit.network', expect.any(String), 'Grace Okoro');
+      expect(prisma.profile.upsert).toHaveBeenCalledWith(
+        expect.objectContaining({ update: expect.objectContaining({ role: 'admin', mustChangePassword: true, createdBy: ADMIN }) }),
+      );
+      expect(res.admin).toMatchObject({ id: NEW_USER, email: 'grace@aiit.network' });
+      expect(audit.record).toHaveBeenCalledWith(ADMIN, 'admin.create', 'user', NEW_USER, { email: 'grace@aiit.network' });
+      expect(JSON.stringify(audit.record.mock.calls)).not.toContain(res.temporaryPassword);
+    });
+  });
+
+  describe('deleteStaff', () => {
+    it('refuses to let an admin delete their own account this way', async () => {
+      await expect(service.deleteStaff(ADMIN, ADMIN, 'Reason')).rejects.toBeInstanceOf(ForbiddenException);
+      expect(prisma.profile.update).not.toHaveBeenCalled();
+    });
+
+    it('404s for a missing account', async () => {
+      prisma.profile.findUnique.mockResolvedValue(null);
+      await expect(service.deleteStaff(ADMIN, STUDENT, 'Reason')).rejects.toBeInstanceOf(NotFoundException);
+    });
+
+    it('refuses a learner target -- only instructor accounts are deletable here', async () => {
+      prisma.profile.findUnique.mockResolvedValue({ role: 'learner', status: 'active' });
+      await expect(service.deleteStaff(ADMIN, STUDENT, 'Reason')).rejects.toBeInstanceOf(BadRequestException);
+    });
+
+    it('refuses an admin target -- same block as suspension', async () => {
+      prisma.profile.findUnique.mockResolvedValue({ role: 'admin', status: 'active' });
+      await expect(service.deleteStaff(ADMIN, STUDENT, 'Reason')).rejects.toBeInstanceOf(BadRequestException);
+    });
+
+    it('refuses an already-pending-deletion account', async () => {
+      prisma.profile.findUnique.mockResolvedValue({ role: 'instructor', status: 'pending_deletion' });
+      await expect(service.deleteStaff(ADMIN, STUDENT, 'Reason')).rejects.toBeInstanceOf(ConflictException);
+    });
+
+    it('soft-deletes the instructor, bans their session, emails them, and records an audit entry', async () => {
+      prisma.profile.findUnique.mockResolvedValue({ role: 'instructor', status: 'active' });
+      prisma.$queryRaw.mockResolvedValueOnce([{ id: STUDENT, email: 'grace@aiit.network' }]);
+
+      const res = await service.deleteStaff(ADMIN, STUDENT, '  No longer with AIIT  ');
+
+      expect(prisma.profile.update).toHaveBeenCalledWith({
+        where: { id: STUDENT },
+        data: { status: 'pending_deletion', deletionRequestedAt: expect.any(Date) },
+      });
+      expect(supabase.tryBan).toHaveBeenCalledWith(STUDENT, true);
+      expect(audit.record).toHaveBeenCalledWith(ADMIN, 'instructor.delete', 'user', STUDENT, { reason: 'No longer with AIIT' });
+      expect(email.send).toHaveBeenCalledWith(expect.objectContaining({ to: 'grace@aiit.network' }));
+      expect(res).toEqual({ id: STUDENT, status: 'pending_deletion', affectedUpcomingClasses: 0 });
+    });
+
+    it('still deletes even when no email is on file -- email is best-effort', async () => {
+      prisma.profile.findUnique.mockResolvedValue({ role: 'instructor', status: 'active' });
+      prisma.$queryRaw.mockResolvedValueOnce([]);
+
+      await service.deleteStaff(ADMIN, STUDENT, 'Reason');
+
+      expect(prisma.profile.update).toHaveBeenCalled();
+      expect(email.send).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('adminEnroll / adminUnenroll', () => {
+    it('404s when the target is not a learner', async () => {
+      prisma.profile.findFirst.mockResolvedValue(null);
+      await expect(service.adminEnroll(ADMIN, STUDENT, 'course-1')).rejects.toBeInstanceOf(NotFoundException);
+      expect(enrollments.adminEnroll).not.toHaveBeenCalled();
+    });
+
+    it('enrolls the student and records an audit entry', async () => {
+      prisma.profile.findFirst.mockResolvedValue({ id: STUDENT, role: 'learner' });
+      await service.adminEnroll(ADMIN, STUDENT, 'course-1');
+      expect(enrollments.adminEnroll).toHaveBeenCalledWith(STUDENT, 'course-1');
+      expect(audit.record).toHaveBeenCalledWith(ADMIN, 'enrollment.admin_enroll', 'user', STUDENT, { courseId: 'course-1' });
+    });
+
+    it('unenrolls the student and records an audit entry', async () => {
+      prisma.profile.findFirst.mockResolvedValue({ id: STUDENT, role: 'learner' });
+      await service.adminUnenroll(ADMIN, STUDENT, 'course-1');
+      expect(enrollments.adminCancel).toHaveBeenCalledWith(STUDENT, 'course-1');
+      expect(audit.record).toHaveBeenCalledWith(ADMIN, 'enrollment.admin_unenroll', 'user', STUDENT, { courseId: 'course-1' });
     });
   });
 

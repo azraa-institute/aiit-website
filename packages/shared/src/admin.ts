@@ -73,6 +73,22 @@ export interface StaffCredentials {
   temporaryPassword: string;
 }
 
+/** Deliberately not an InstructorSummary -- no headline/upcomingClasses, and
+ * admin accounts can't be suspended from this UI (AdminUsersService.suspend
+ * blocks it outright), so there's no `status`/`suspendedReason` either. */
+export interface AdminAccountSummary {
+  id: string;
+  name: string | null;
+  email: string | null;
+  createdAt: string;
+}
+
+/** Same "shown once" contract as StaffCredentials. */
+export interface AdminCredentials {
+  admin: AdminAccountSummary;
+  temporaryPassword: string;
+}
+
 export interface SuspendResult {
   id: string;
   status: AccountStatus;
@@ -140,6 +156,19 @@ export interface PaymentsSummary {
   ordersByProvider: { provider: AdminPaymentProvider; currency: string; amountCents: number; orders: number }[];
   /** Paid revenue per course, each course's figures in its own order currency(ies). */
   topCourses: { courseId: string; courseTitle: string; revenueByCurrency: RevenueByCurrency[] }[];
+}
+
+// ---- Certificates (admin browse-all view) ----
+
+export interface AdminCertificateRow {
+  id: string;
+  credentialId: string;
+  holderName: string;
+  holderEmail: string | null;
+  courseTitle: string;
+  issuedAt: string;
+  revokedAt: string | null;
+  revokedReason: string | null;
 }
 
 export interface AdminOrderRow {

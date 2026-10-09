@@ -1,7 +1,7 @@
 import { randomBytes } from 'node:crypto';
 import { BadRequestException, ConflictException, Injectable, NotFoundException } from '@nestjs/common';
-import type { Prisma } from '@prisma/client';
-import type { Certificate } from '@aiit/shared';
+import { Prisma } from '@prisma/client';
+import type { AdminCertificateRow, Certificate, Paginated } from '@aiit/shared';
 import { PrismaService } from '../../common/prisma/prisma.service';
 import { AuditService } from '../../common/audit/audit.service';
 import { EnrollmentsService } from '../enrollments/enrollments.service';
@@ -109,6 +109,60 @@ export class CertificatesService {
     return toCertificate(row);
   }
 
+  /** @Roles('admin') at the controller. Browse-all view, separate from the per-student issuance in AdminStudentsPage's drawer -- this is where an admin finds a specific certificate without knowing which student it belongs to. */
+  async adminList(query: { q?: string; status?: 'active' | 'revoked'; page?: number; pageSize?: number }): Promise<Paginated<AdminCertificateRow>> {
+    const page = query.page ?? 1;
+    const pageSize = query.pageSize ?? 25;
+    const where: Prisma.CertificateWhereInput = {};
+    if (query.status === 'active') where.revokedAt = null;
+    if (query.status === 'revoked') where.revokedAt = { not: null };
+    if (query.q?.trim()) {
+      const q = query.q.trim();
+      where.OR = [
+        { holderName: { contains: q, mode: 'insensitive' } },
+        { credentialId: { contains: q, mode: 'insensitive' } },
+        { course: { title: { contains: q, mode: 'insensitive' } } },
+      ];
+    }
+
+    const [rows, total] = await Promise.all([
+      this.prisma.certificate.findMany({
+        where,
+        select: {
+          id: true,
+          credentialId: true,
+          holderName: true,
+          userId: true,
+          issuedAt: true,
+          revokedAt: true,
+          revokedReason: true,
+          course: { select: { title: true } },
+        },
+        orderBy: { issuedAt: 'desc' },
+        skip: (page - 1) * pageSize,
+        take: pageSize,
+      }),
+      this.prisma.certificate.count({ where }),
+    ]);
+
+    const emails = await this.emailsFor(rows.map((r) => r.userId));
+    return {
+      items: rows.map((r) => ({
+        id: r.id,
+        credentialId: r.credentialId,
+        holderName: r.holderName,
+        holderEmail: emails.get(r.userId) ?? null,
+        courseTitle: r.course.title,
+        issuedAt: r.issuedAt.toISOString(),
+        revokedAt: r.revokedAt?.toISOString() ?? null,
+        revokedReason: r.revokedReason,
+      })),
+      total,
+      page,
+      pageSize,
+    };
+  }
+
   /** @Roles('admin') at the controller. Keeps the row (and its credential id resolvable on the public verify page) rather than deleting it -- see the schema comment on Certificate.revokedAt. */
   async revoke(id: string, reason: string, adminId: string): Promise<Certificate> {
     const existing = await this.prisma.certificate.findUnique({ where: { id } });
@@ -137,6 +191,15 @@ export class CertificatesService {
     });
     await this.audit.record(adminId, 'certificate.unrevoke', 'certificate', id, {});
     return toCertificate(row);
+  }
+
+  /** Same raw-SQL lookup admin-affiliates.service.ts/affiliates.service.ts use -- auth.users isn't a Prisma model, so email only ever comes from a direct query against it. */
+  private async emailsFor(userIds: string[]): Promise<Map<string, string>> {
+    const unique = [...new Set(userIds)];
+    if (unique.length === 0) return new Map();
+    const rows = await this.prisma.$queryRaw<{ id: string; email: string | null }[]>`
+      SELECT id, email FROM auth.users WHERE id IN (${Prisma.join(unique.map((i) => Prisma.sql`${i}::uuid`))})`;
+    return new Map(rows.filter((r) => r.email).map((r) => [r.id, r.email as string]));
   }
 }
 

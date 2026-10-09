@@ -17,6 +17,22 @@ export class CreateInstructorDto {
   headline?: string;
 }
 
+export class CreateAdminDto {
+  @IsString()
+  @MinLength(2)
+  @MaxLength(120)
+  name!: string;
+
+  @IsEmail()
+  @MaxLength(254)
+  email!: string;
+}
+
+export class AdminEnrollDto {
+  @IsUUID()
+  courseId!: string;
+}
+
 export class SuspendUserDto {
   @IsString()
   @MinLength(3, { message: 'Give a short reason so the record shows why.' })

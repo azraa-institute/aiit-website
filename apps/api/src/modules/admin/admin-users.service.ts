@@ -7,6 +7,8 @@ import {
 } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
 import type {
+  AdminAccountSummary,
+  AdminCredentials,
   AdminDashboard,
   AuditLogEntry,
   InstructorSummary,
@@ -18,8 +20,11 @@ import type {
 } from '@aiit/shared';
 import { PrismaService } from '../../common/prisma/prisma.service';
 import { AuditService } from '../../common/audit/audit.service';
+import { EmailService } from '../../common/email/email.service';
+import { brandedEmailHtml } from '../../common/email/branded-email';
 import { SupabaseAdminService, generateTemporaryPassword } from '../../common/supabase-admin/supabase-admin.service';
-import type { CreateInstructorDto, ListStudentsQueryDto } from './dto/admin.dto';
+import { EnrollmentsService } from '../enrollments/enrollments.service';
+import type { CreateAdminDto, CreateInstructorDto, ListStudentsQueryDto } from './dto/admin.dto';
 
 const DAY = 86_400_000;
 
@@ -50,6 +55,8 @@ export class AdminUsersService {
     private readonly prisma: PrismaService,
     private readonly supabase: SupabaseAdminService,
     private readonly audit: AuditService,
+    private readonly enrollments: EnrollmentsService,
+    private readonly email: EmailService,
   ) {}
 
   // ---- Dashboard ----
@@ -190,6 +197,46 @@ export class AdminUsersService {
     };
   }
 
+  /** Manual override for cases self-service enrollment can't cover -- comped access, a payment settled outside the three providers, fixing a support issue. No pricing gate (EnrollmentsService.adminEnroll), same as a payment-confirmed enrollment. */
+  async adminEnroll(adminId: string, studentId: string, courseId: string): Promise<void> {
+    const student = await this.prisma.profile.findFirst({ where: { id: studentId, role: 'learner' } });
+    if (!student) throw new NotFoundException('Student not found.');
+    await this.enrollments.adminEnroll(studentId, courseId);
+    await this.audit.record(adminId, 'enrollment.admin_enroll', 'user', studentId, { courseId });
+  }
+
+  async adminUnenroll(adminId: string, studentId: string, courseId: string): Promise<void> {
+    const student = await this.prisma.profile.findFirst({ where: { id: studentId, role: 'learner' } });
+    if (!student) throw new NotFoundException('Student not found.');
+    await this.enrollments.adminCancel(studentId, courseId);
+    await this.audit.record(adminId, 'enrollment.admin_unenroll', 'user', studentId, { courseId });
+  }
+
+  // ---- Admin accounts ----
+  // Deliberately separate from Instructors below, not reusing InstructorSummary
+  // -- admin accounts can't be suspended from this UI (suspendableTarget
+  // blocks it outright), so there's no status/suspendedReason, and no
+  // headline/upcomingClasses either. See AdminAccountSummary's own comment.
+
+  async listAdmins(): Promise<AdminAccountSummary[]> {
+    const profiles = await this.prisma.profile.findMany({ where: { role: 'admin' }, orderBy: { name: 'asc' } });
+    const emails = await this.emailsFor(profiles.map((p) => p.id));
+    return profiles.map((p) => ({ id: p.id, name: p.name, email: emails.get(p.id) ?? null, createdAt: p.createdAt.toISOString() }));
+  }
+
+  async createAdmin(adminId: string, dto: CreateAdminDto): Promise<AdminCredentials> {
+    const email = dto.email.trim().toLowerCase();
+    const password = generateTemporaryPassword();
+    const userId = await this.supabase.createUser(email, password, dto.name.trim());
+
+    // The on_auth_user_created trigger has already inserted a 'learner' profile; upsert covers the case where it hasn't.
+    const data = { role: 'admin' as const, name: dto.name.trim(), mustChangePassword: true, createdBy: adminId };
+    const profile = await this.prisma.profile.upsert({ where: { id: userId }, create: { id: userId, ...data }, update: data });
+    await this.audit.record(adminId, 'admin.create', 'user', userId, { email });
+
+    return { admin: { id: profile.id, name: profile.name, email, createdAt: profile.createdAt.toISOString() }, temporaryPassword: password };
+  }
+
   // ---- Instructors ----
 
   async listInstructors(): Promise<InstructorSummary[]> {
@@ -255,6 +302,45 @@ export class AdminUsersService {
     await this.supabase.tryBan(id, false);
     await this.audit.record(adminId, 'user.reactivate', 'user', id, { role: target.role });
     return { id, status: 'active', affectedUpcomingClasses: 0 };
+  }
+
+  /**
+   * Instructor accounts only, admin-initiated -- every other staff-state
+   * change already is (suspend/reactivate are never self-service), and
+   * admin targets stay blocked the same way suspendableTarget already
+   * blocks them for suspension: deleting another admin needs direct DB
+   * access, not a UI button. Soft, same shape as a learner's own
+   * ProfileService.requestDeletion -- a status flag + a Supabase ban, no
+   * purge job exists for either role. Not reversible from this UI, same
+   * as reactivate() already refuses to reverse a learner's pending_deletion.
+   */
+  async deleteStaff(adminId: string, id: string, reason: string): Promise<SuspendResult> {
+    if (id === adminId) throw new ForbiddenException('You cannot delete your own account this way.');
+    const target = await this.prisma.profile.findUnique({ where: { id }, select: { role: true, status: true } });
+    if (!target) throw new NotFoundException('Account not found.');
+    if (target.role !== 'instructor') throw new BadRequestException('Only instructor accounts can be deleted here.');
+    if (target.status === 'pending_deletion') throw new ConflictException('This account is already marked for deletion.');
+
+    await this.prisma.profile.update({ where: { id }, data: { status: 'pending_deletion', deletionRequestedAt: new Date() } });
+    await this.supabase.tryBan(id, true);
+    await this.audit.record(adminId, 'instructor.delete', 'user', id, { reason: reason.trim() });
+
+    const email = (await this.emailsFor([id])).get(id);
+    if (email) {
+      await this.email.send({
+        to: email,
+        subject: 'Your AIIT staff account has been deleted',
+        html: brandedEmailHtml({
+          heading: 'Account deleted',
+          intro: 'Your AIIT staff account has been deleted by an administrator. You will no longer be able to sign in.',
+          ctaLabel: 'Visit AIIT',
+          ctaUrl: process.env.APP_URL ?? 'https://aiit.network',
+          footerNote: 'If you believe this is a mistake, contact the AIIT team.',
+        }),
+      });
+    }
+
+    return { id, status: 'pending_deletion', affectedUpcomingClasses: await this.upcomingClassesFor(id) };
   }
 
   // ---- Audit log ----

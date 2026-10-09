@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 import { EmailModule } from '../../common/email/email.module';
+import { EnrollmentsModule } from '../enrollments/enrollments.module';
 import { AdminUsersController } from './admin-users.controller';
 import { AdminUsersService } from './admin-users.service';
 import { AdminCoursesController } from './admin-courses.controller';
@@ -14,7 +15,7 @@ import { AdminAffiliatesController } from './admin-affiliates.controller';
 import { AdminAffiliatesService } from './admin-affiliates.service';
 
 @Module({
-  imports: [EmailModule],
+  imports: [EmailModule, EnrollmentsModule],
   controllers: [AdminUsersController, AdminCoursesController, AdminSupportController, AdminMessagesController, AdminAffiliatesController],
   providers: [
     AdminUsersService,

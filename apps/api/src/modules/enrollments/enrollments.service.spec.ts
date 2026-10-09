@@ -186,6 +186,44 @@ describe('EnrollmentsService', () => {
     });
   });
 
+  describe('adminEnroll', () => {
+    it('throws NotFoundException for a missing/unpublished course', async () => {
+      prisma.course.findFirst.mockResolvedValueOnce(null);
+      await expect(service.adminEnroll('user-1', 'missing')).rejects.toBeInstanceOf(NotFoundException);
+    });
+
+    it('enrolls with no pricing gate, unlike the self-service enroll() path', async () => {
+      prisma.course.findFirst.mockResolvedValueOnce({ id: 'crs-1', pricing: 'paid' });
+      prisma.enrollment.findUnique.mockResolvedValueOnce(null);
+      prisma.enrollment.create.mockResolvedValueOnce(ENROLLMENT_ROW);
+
+      const result = await service.adminEnroll('user-1', 'crs-1');
+
+      expect(prisma.enrollment.create).toHaveBeenCalledWith(
+        expect.objectContaining({ data: { userId: 'user-1', courseId: 'crs-1' } }),
+      );
+      expect(result.id).toBe('enr-1');
+    });
+  });
+
+  describe('adminCancel', () => {
+    it('throws NotFoundException when no enrollment exists', async () => {
+      prisma.enrollment.findUnique.mockResolvedValueOnce(null);
+      await expect(service.adminCancel('user-1', 'crs-1')).rejects.toBeInstanceOf(NotFoundException);
+    });
+
+    it('throws NotFoundException when already cancelled', async () => {
+      prisma.enrollment.findUnique.mockResolvedValueOnce({ id: 'enr-1', status: 'cancelled' });
+      await expect(service.adminCancel('user-1', 'crs-1')).rejects.toBeInstanceOf(NotFoundException);
+    });
+
+    it('cancels an active enrollment', async () => {
+      prisma.enrollment.findUnique.mockResolvedValueOnce({ id: 'enr-1', status: 'active' });
+      await service.adminCancel('user-1', 'crs-1');
+      expect(prisma.enrollment.update).toHaveBeenCalledWith({ where: { id: 'enr-1' }, data: { status: 'cancelled' } });
+    });
+  });
+
   describe('markCompleted', () => {
     it('sets status completed and a completedAt timestamp', async () => {
       prisma.enrollment.updateMany.mockResolvedValueOnce({ count: 1 });

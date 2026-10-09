@@ -1,4 +1,4 @@
-import type { AdminCourse, AdminLiveClass, CourseListItem, InstructorSummary, Timetable } from '@aiit/shared';
+import type { AdminAccountSummary, AdminCourse, AdminLiveClass, CourseListItem, InstructorSummary, Timetable } from '@aiit/shared';
 
 import { useApiFetch } from '@/lib/useApiFetch';
 export type { FetchState } from '@/lib/useApiFetch';
@@ -10,6 +10,7 @@ export const useAdminCourses = () => useAdminFetch<CourseListItem[]>('/courses')
 /** Published courses with enrolment counts and assigned instructors (admin-only, richer than the public list). */
 export const useAdminCourseList = () => useAdminFetch<AdminCourse[]>('/admin/courses');
 export const useAdminInstructors = () => useAdminFetch<InstructorSummary[]>('/admin/instructors');
+export const useAdminAdmins = () => useAdminFetch<AdminAccountSummary[]>('/admin/admins');
 export const useAdminTimetables = () => useAdminFetch<Timetable[]>('/admin/timetables');
 export const useAdminClasses = (courseId?: string) =>
   useAdminFetch<AdminLiveClass[]>(courseId ? `/admin/live-classes?courseId=${encodeURIComponent(courseId)}` : '/admin/live-classes');

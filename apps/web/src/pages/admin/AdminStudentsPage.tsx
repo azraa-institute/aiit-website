@@ -11,6 +11,7 @@ const PAGE_SIZE = 25;
 
 function StudentPanel({ id, onChanged, onClose }: { id: string; onChanged: () => void; onClose: () => void }) {
   const state = useAdminFetch<StudentDetail>(`/admin/students/${id}`);
+  const courses = useAdminCourses();
   const [suspending, setSuspending] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string>();
@@ -19,6 +20,9 @@ function StudentPanel({ id, onChanged, onClose }: { id: string; onChanged: () =>
   const [revokingCertId, setRevokingCertId] = useState<string | null>(null);
   const [certActionBusy, setCertActionBusy] = useState(false);
   const [revokeError, setRevokeError] = useState<string>();
+  const [enrollCourseId, setEnrollCourseId] = useState('');
+  const [enrollBusy, setEnrollBusy] = useState(false);
+  const [enrollError, setEnrollError] = useState<string>();
 
   async function act(path: string, body?: object) {
     setBusy(true);
@@ -75,6 +79,36 @@ function StudentPanel({ id, onChanged, onClose }: { id: string; onChanged: () =>
     }
   }
 
+  async function enrollInCourse() {
+    if (!enrollCourseId) return;
+    setEnrollBusy(true);
+    setEnrollError(undefined);
+    try {
+      await apiFetch(`/admin/students/${id}/enroll`, { method: 'POST', body: JSON.stringify({ courseId: enrollCourseId }) });
+      setEnrollCourseId('');
+      state.reload();
+      onChanged();
+    } catch (err) {
+      setEnrollError(err instanceof Error ? err.message : 'Could not enroll this student.');
+    } finally {
+      setEnrollBusy(false);
+    }
+  }
+
+  async function unenrollFromCourse(courseId: string) {
+    setEnrollBusy(true);
+    setEnrollError(undefined);
+    try {
+      await apiFetch(`/admin/students/${id}/unenroll`, { method: 'POST', body: JSON.stringify({ courseId }) });
+      state.reload();
+      onChanged();
+    } catch (err) {
+      setEnrollError(err instanceof Error ? err.message : 'Could not unenroll this student.');
+    } finally {
+      setEnrollBusy(false);
+    }
+  }
+
   return (
     <aside className="adm-drawer" aria-label="Student details">
       <div className="adm-drawer__head">
@@ -124,6 +158,16 @@ function StudentPanel({ id, onChanged, onClose }: { id: string; onChanged: () =>
                 return (
                   <li key={e.courseId}>
                     {e.courseTitle} <span className="adm-muted">· {e.status}</span>
+                    {e.status !== 'cancelled' ? (
+                      <button
+                        type="button"
+                        className="adm-linkbtn"
+                        disabled={enrollBusy}
+                        onClick={() => unenrollFromCourse(e.courseId)}
+                      >
+                        Unenroll
+                      </button>
+                    ) : null}
                     {cert?.revokedAt ? (
                       <>
                         <span className="adm-muted">
@@ -177,6 +221,28 @@ function StudentPanel({ id, onChanged, onClose }: { id: string; onChanged: () =>
             </ul>
           )}
           {certError ? <p className="adm-error" role="alert">{certError}</p> : null}
+
+          {courses.status === 'ready' ? (
+            <div className="adm-toolbar">
+              <label className="adm-field">
+                <span>Enroll in another course</span>
+                <select value={enrollCourseId} onChange={(e) => setEnrollCourseId(e.target.value)}>
+                  <option value="">Select a course</option>
+                  {courses.data
+                    .filter((c) => !state.data.enrollments.some((e) => e.courseId === c.id && e.status !== 'cancelled'))
+                    .map((c) => (
+                      <option key={c.id} value={c.id}>
+                        {c.title}
+                      </option>
+                    ))}
+                </select>
+              </label>
+              <button type="button" className="adm-btn adm-btn--ghost" disabled={!enrollCourseId || enrollBusy} onClick={enrollInCourse}>
+                {enrollBusy ? 'Working…' : 'Enroll'}
+              </button>
+            </div>
+          ) : null}
+          {enrollError ? <p className="adm-error" role="alert">{enrollError}</p> : null}
 
           {state.data.status === 'suspended' ? (
             <p className="adm-notice">

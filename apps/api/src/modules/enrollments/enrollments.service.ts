@@ -62,6 +62,25 @@ export class EnrollmentsService {
     return this.upsertActiveEnrollment(userId, courseId);
   }
 
+  /** @Roles('admin') at the controller (AdminUsersService.adminEnroll) -- a manual override for cases a self-service flow can't cover (comped access, a payment settled outside the three providers, fixing a support issue), so no pricing gate either. */
+  async adminEnroll(userId: string, courseId: string): Promise<Enrollment> {
+    const course = await this.prisma.course.findFirst({
+      where: { id: courseId, status: 'published', deletedAt: null },
+      select: { id: true },
+    });
+    if (!course) throw new NotFoundException('Course not found.');
+    return this.upsertActiveEnrollment(userId, courseId);
+  }
+
+  /** @Roles('admin') at the controller -- cancels rather than deletes, same as a learner's own cancellation would, so the row (and any certificate/attendance history tied to it) stays intact. */
+  async adminCancel(userId: string, courseId: string): Promise<void> {
+    const existing = await this.prisma.enrollment.findUnique({ where: { userId_courseId: { userId, courseId } } });
+    if (!existing || existing.status === 'cancelled') {
+      throw new NotFoundException('No active enrollment found for this learner and course.');
+    }
+    await this.prisma.enrollment.update({ where: { id: existing.id }, data: { status: 'cancelled' } });
+  }
+
   private async upsertActiveEnrollment(userId: string, courseId: string): Promise<Enrollment> {
     const existing = await this.prisma.enrollment.findUnique({
       where: { userId_courseId: { userId, courseId } },

@@ -47,8 +47,9 @@ describe('CertificatesService', () => {
   let service: CertificatesService;
   let prisma: {
     course: { findFirst: jest.Mock };
-    certificate: { findMany: jest.Mock; findUnique: jest.Mock; findFirst: jest.Mock; create: jest.Mock; update: jest.Mock };
+    certificate: { findMany: jest.Mock; findUnique: jest.Mock; findFirst: jest.Mock; create: jest.Mock; update: jest.Mock; count: jest.Mock };
     profile: { findUnique: jest.Mock };
+    $queryRaw: jest.Mock;
   };
   let enrollments: { markCompleted: jest.Mock };
   let notifications: { create: jest.Mock };
@@ -57,8 +58,9 @@ describe('CertificatesService', () => {
   beforeEach(async () => {
     prisma = {
       course: { findFirst: jest.fn() },
-      certificate: { findMany: jest.fn(), findUnique: jest.fn(), findFirst: jest.fn(), create: jest.fn(), update: jest.fn() },
+      certificate: { findMany: jest.fn(), findUnique: jest.fn(), findFirst: jest.fn(), create: jest.fn(), update: jest.fn(), count: jest.fn() },
       profile: { findUnique: jest.fn() },
+      $queryRaw: jest.fn().mockResolvedValue([]),
     };
     enrollments = { markCompleted: jest.fn() };
     notifications = { create: jest.fn() };
@@ -160,6 +162,56 @@ describe('CertificatesService', () => {
         '/portal/certificates',
       );
       expect(result.credentialId).toBe('AIIT-AB12CD34');
+    });
+  });
+
+  describe('adminList', () => {
+    it('maps rows with the holder email looked up from auth.users, paginated', async () => {
+      prisma.certificate.findMany.mockResolvedValueOnce([
+        {
+          id: 'cert-1',
+          credentialId: 'AIIT-AB12CD34',
+          holderName: 'Ada Lovelace',
+          userId: 'user-1',
+          issuedAt: new Date('2026-09-13T00:00:00.000Z'),
+          revokedAt: null,
+          revokedReason: null,
+          course: { title: 'Digital & Tech Literacy (Absolute Beginner)' },
+        },
+      ]);
+      prisma.certificate.count.mockResolvedValueOnce(1);
+      prisma.$queryRaw.mockResolvedValueOnce([{ id: 'user-1', email: 'ada@example.com' }]);
+
+      const result = await service.adminList({ q: 'Ada', page: 1, pageSize: 25 });
+
+      expect(result).toEqual({
+        items: [
+          {
+            id: 'cert-1',
+            credentialId: 'AIIT-AB12CD34',
+            holderName: 'Ada Lovelace',
+            holderEmail: 'ada@example.com',
+            courseTitle: 'Digital & Tech Literacy (Absolute Beginner)',
+            issuedAt: '2026-09-13T00:00:00.000Z',
+            revokedAt: null,
+            revokedReason: null,
+          },
+        ],
+        total: 1,
+        page: 1,
+        pageSize: 25,
+      });
+    });
+
+    it('filters to revoked certificates only when asked', async () => {
+      prisma.certificate.findMany.mockResolvedValueOnce([]);
+      prisma.certificate.count.mockResolvedValueOnce(0);
+
+      await service.adminList({ status: 'revoked' });
+
+      expect(prisma.certificate.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({ where: { revokedAt: { not: null } } }),
+      );
     });
   });
 

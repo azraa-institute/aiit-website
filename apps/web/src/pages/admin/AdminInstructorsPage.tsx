@@ -5,6 +5,7 @@ import { apiFetch } from '@/lib/api';
 import { cn } from '@/lib/cn';
 import { useAdminInstructors } from './adminData';
 import { SuspendForm } from './SuspendForm';
+import { DeleteStaffForm } from './DeleteStaffForm';
 
 /** The one moment the temporary password exists in the UI. It is not stored anywhere and can't be shown again. */
 function CredentialsPanel({ creds, onDone }: { creds: StaffCredentials; onDone: () => void }) {
@@ -67,6 +68,7 @@ export default function AdminInstructorsPage() {
   const [busyId, setBusyId] = useState<string | null>(null);
   const [suspendingId, setSuspendingId] = useState<string | null>(null);
   const [confirmResetId, setConfirmResetId] = useState<string | null>(null);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
 
   async function handleCreate(e: FormEvent) {
     e.preventDefault();
@@ -129,6 +131,21 @@ export default function AdminInstructorsPage() {
       instructors.reload();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Could not reactivate the account.');
+    } finally {
+      setBusyId(null);
+    }
+  }
+
+  async function deleteStaff(id: string, reason: string) {
+    setBusyId(id);
+    setError(undefined);
+    try {
+      await apiFetch<SuspendResult>(`/admin/users/${id}/delete`, { method: 'POST', body: JSON.stringify({ reason }) });
+      setDeletingId(null);
+      setNotice('Account deleted.');
+      instructors.reload();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Could not delete the account.');
     } finally {
       setBusyId(null);
     }
@@ -214,8 +231,17 @@ export default function AdminInstructorsPage() {
                     onSubmit={(reason) => suspend(i.id, reason)}
                   />
                 ) : null}
+                {deletingId === i.id ? (
+                  <DeleteStaffForm
+                    name={i.name ?? 'this instructor'}
+                    busy={busyId === i.id}
+                    error={error}
+                    onCancel={() => setDeletingId(null)}
+                    onSubmit={(reason) => deleteStaff(i.id, reason)}
+                  />
+                ) : null}
               </div>
-              {suspendingId !== i.id ? (
+              {suspendingId !== i.id && deletingId !== i.id ? (
                 <div className="adm-card__actions">
                   {confirmResetId === i.id ? (
                     <>
@@ -242,6 +268,11 @@ export default function AdminInstructorsPage() {
                       {i.status === 'suspended' ? (
                         <button type="button" className="adm-btn adm-btn--primary" disabled={busyId === i.id} onClick={() => reactivate(i.id)}>
                           Reactivate
+                        </button>
+                      ) : null}
+                      {i.status === 'active' || i.status === 'suspended' ? (
+                        <button type="button" className="adm-btn adm-btn--ghost" onClick={() => { setError(undefined); setDeletingId(i.id); }}>
+                          Delete account
                         </button>
                       ) : null}
                     </>

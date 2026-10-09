@@ -4,6 +4,7 @@ import helmet from 'helmet';
 import { raw } from 'express';
 import { NestFactory } from '@nestjs/core';
 import { RequestMethod, ValidationPipe } from '@nestjs/common';
+import type { NestExpressApplication } from '@nestjs/platform-express';
 import { Logger } from 'nestjs-pino';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { AppModule } from './app.module';
@@ -15,7 +16,20 @@ if (process.env.SENTRY_DSN) {
 }
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule, { bufferLogs: true });
+  const app = await NestFactory.create<NestExpressApplication>(AppModule, { bufferLogs: true });
+
+  // Render terminates TLS and proxies every request through exactly one hop
+  // in front of this app. Without this, Express (and therefore
+  // ThrottlerGuard's default IP-keyed rate limiting, and `request.ip`
+  // anywhere else it's read -- e.g. Affiliate.signedIp) sees every request
+  // as coming from Render's own internal address instead of the real
+  // client, so every throttled route shares one global budget across all
+  // callers rather than limiting each one individually. `1` trusts exactly
+  // one hop (Render's proxy) and reads the real client IP from the
+  // left-most entry it adds to X-Forwarded-For -- not `true`, which would
+  // trust the whole chain and let a client spoof its own IP by sending a
+  // fake X-Forwarded-For header.
+  app.set('trust proxy', 1);
 
   app.useLogger(app.get(Logger));
   app.use(helmet());

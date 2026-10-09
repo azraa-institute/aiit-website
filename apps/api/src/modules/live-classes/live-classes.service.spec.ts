@@ -204,6 +204,28 @@ describe('LiveClassesService', () => {
       expect(mute).not.toHaveBeenCalled();
       expect(setAllowed).toHaveBeenCalledWith('class-cls-1', LEARNER_ID, true);
     });
+
+    it('targets the breakout room a learner is actually assigned to, not the main room', async () => {
+      prisma.liveClass.findUnique
+        .mockResolvedValueOnce(classRow()) // getClass()
+        .mockResolvedValueOnce({ breakoutState: { rooms: [{ id: 'room-1', name: 'Room 1' }], assignments: { [LEARNER_ID]: 'room-1' }, startedAt: new Date().toISOString() } }); // currentBreakouts()
+      const remove = jest.spyOn(livekit, 'removeParticipant').mockResolvedValue(undefined);
+
+      await service.moderate(instructor, 'cls-1', LEARNER_ID, 'remove');
+
+      expect(remove).toHaveBeenCalledWith('class-cls-1-bo-room-1', LEARNER_ID);
+    });
+
+    it('falls back to the main room when breakouts are active but this learner has no assignment', async () => {
+      prisma.liveClass.findUnique
+        .mockResolvedValueOnce(classRow())
+        .mockResolvedValueOnce({ breakoutState: { rooms: [{ id: 'room-1', name: 'Room 1' }], assignments: {}, startedAt: new Date().toISOString() } });
+      const remove = jest.spyOn(livekit, 'removeParticipant').mockResolvedValue(undefined);
+
+      await service.moderate(instructor, 'cls-1', LEARNER_ID, 'remove');
+
+      expect(remove).toHaveBeenCalledWith('class-cls-1', LEARNER_ID);
+    });
   });
 
   describe('whiteboard', () => {

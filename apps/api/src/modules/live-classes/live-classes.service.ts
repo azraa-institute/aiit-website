@@ -175,6 +175,15 @@ export class LiveClassesService {
    * permission to publish a new one, so it actually sticks -- they cannot
    * unmute themselves until the instructor calls 'unmute', which only
    * restores that permission (it doesn't itself turn their mic back on).
+   *
+   * Resolves which actual LiveKit room the target is connected to before
+   * acting -- a breakout-assigned learner has fully disconnected from
+   * cls.roomName and reconnected to its own `<main>-bo-<roomId>` room (see
+   * joinBreakout/breakoutRoomName), so a moderation call aimed at
+   * cls.roomName unconditionally would silently no-op against a room the
+   * target isn't in anymore. The host is never a key in a breakout's
+   * assignments map (see RawBreakouts' own comment), so this only ever
+   * redirects for a learner target, same scope moderation already had.
    */
   async moderate(user: AuthenticatedUser, id: string, identity: string, action: 'mute' | 'unmute' | 'remove'): Promise<void> {
     const cls = await this.getClass(id);
@@ -186,13 +195,18 @@ export class LiveClassesService {
     if (target?.role === 'admin' && user.role !== 'admin') {
       throw new ForbiddenException('You cannot moderate an administrator.');
     }
+
+    const breakouts = await this.currentBreakouts(id);
+    const assignedRoomId = breakouts?.assignments[identity];
+    const roomName = assignedRoomId ? this.breakoutRoomName(cls.roomName, assignedRoomId) : cls.roomName;
+
     if (action === 'mute') {
-      await this.livekit.muteParticipant(cls.roomName, identity);
-      await this.livekit.setMicrophonePublishAllowed(cls.roomName, identity, false);
+      await this.livekit.muteParticipant(roomName, identity);
+      await this.livekit.setMicrophonePublishAllowed(roomName, identity, false);
     } else if (action === 'unmute') {
-      await this.livekit.setMicrophonePublishAllowed(cls.roomName, identity, true);
+      await this.livekit.setMicrophonePublishAllowed(roomName, identity, true);
     } else {
-      await this.livekit.removeParticipant(cls.roomName, identity);
+      await this.livekit.removeParticipant(roomName, identity);
     }
   }
 

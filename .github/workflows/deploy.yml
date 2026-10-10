@@ -88,6 +88,18 @@ jobs:
       #   npx prisma migrate resolve --applied 20260913015000_auth_users_meta_column --schema apps/api/prisma/schema.prisma
       # with no SQL run by hand first. Once resolved, no future
       # `migrate deploy` run touches this migration again.
+      #
+      # FIFTH one-time step, CONFIRMED NEEDED on
+      # 20261009235959_stub_storage_schema: same shape as the FOURTH case
+      # above, just storage.buckets instead of auth.users -- CREATE SCHEMA/
+      # TABLE IF NOT EXISTS against a Supabase-owned schema still needs
+      # CREATE privilege to even attempt, which the pooler role doesn't
+      # have, regardless of IF NOT EXISTS meaning it would've no-op'd
+      # anyway. storage.buckets already has its real structure in
+      # production (confirmed: 20261010000000_storage_bucket_limits, which
+      # UPDATEs it, already applied successfully in an earlier deploy) --
+      # there is nothing to actually apply, so again no SQL by hand, just:
+      #   npx prisma migrate resolve --applied 20261009235959_stub_storage_schema --schema apps/api/prisma/schema.prisma
       - name: Apply pending migrations
         run: npm exec -w apps/api -- prisma migrate deploy
         env:

@@ -5,9 +5,14 @@
   flex-wrap: wrap;
   gap: var(--space-4);
   padding: var(--space-3) var(--space-5);
-  background: var(--ink);
-  color: var(--ivory);
-  border-bottom: 1px solid var(--line-invert);
+  /* Red, not the site's default ink -- this is a blocked-action state (no
+     enrollment, no certificates) same as the red alert on the course
+     page's "complete your profile" note, not a neutral status update, so
+     it gets the same reserved "needs your attention" colour rather than
+     reading as just another dark banner. */
+  background: var(--red-deep);
+  color: #fff;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.14);
   /* .portal becomes a 2-column grid (rail + main) at >=1024px (portal.css);
      without this, the banner is an uninvited 3rd in-flow grid item, which
      pushes .portal-rail into column 2 and .portal__main into a narrow
@@ -48,21 +53,44 @@
   pointer-events: none;
 }
 .pcb__copy {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-3);
   min-width: 0;
+}
+.pcb__icon {
+  flex-shrink: 0;
+  margin-top: 0.15em;
+  color: #fff;
 }
 .pcb__eyebrow {
   margin: 0 0 0.2rem;
   font-family: var(--font-ui);
-  font-size: var(--fs-xs);
+  font-size: var(--fs-sm);
   font-weight: 700;
-  letter-spacing: var(--tracking-eyebrow);
-  text-transform: uppercase;
-  color: var(--brass-tint);
+  /* Sentence case, not the uppercase/tracked eyebrow style used elsewhere
+     -- this reads as a direct sentence to the learner ("Complete your
+     profile"), not a section label. */
+  color: #fff;
 }
 .pcb__message {
   margin: 0;
   font-size: var(--fs-sm);
-  color: var(--fg-muted);
+  color: rgba(255, 255, 255, 0.82);
+}
+/* Inverted on the red background -- white pill, red label -- rather than
+   the site's standard ink button, and sentence case to match the copy
+   beside it. */
+.pcb .pcb__cta {
+  text-transform: none;
+  letter-spacing: normal;
+  --btn-bg: #fff;
+  --btn-fg: var(--red-deep);
+  --btn-border: #fff;
+}
+.pcb .pcb__cta:hover {
+  --btn-bg: var(--paper);
+  --btn-border: var(--paper);
 }
 
 @media (max-width: 640px) {

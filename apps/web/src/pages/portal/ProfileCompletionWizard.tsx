@@ -656,14 +656,42 @@ function ReviewRow({ label, value }: { label: string; value?: string | null }) {
   );
 }
 
-const VISUAL_COPY: Record<Phase, { eyebrow: string; title: string }> = {
-  welcome: { eyebrow: 'AIIT.NETWORK', title: "Let's build your learning profile." },
-  1: { eyebrow: 'Step 01', title: 'Who you are.' },
-  2: { eyebrow: 'Step 02', title: 'Where you’ve studied.' },
-  3: { eyebrow: 'Step 03', title: 'What you’re here to do.' },
-  4: { eyebrow: 'Step 04', title: 'Where you learn from.' },
-  5: { eyebrow: 'Step 05', title: 'Your profile, reviewed.' },
-  completion: { eyebrow: 'AIIT.NETWORK', title: 'Identity established.' },
+const VISUAL_COPY: Record<Phase, { eyebrow: string; title: string; body: string }> = {
+  welcome: {
+    eyebrow: 'AIIT.NETWORK',
+    title: "Let's build your learning profile.",
+    body: 'A few quick steps to personalize your AIIT experience from day one.',
+  },
+  1: {
+    eyebrow: 'Step 01 / 05',
+    title: 'Who you are.',
+    body: 'Tell us a bit about yourself so we can personalize your learning experience.',
+  },
+  2: {
+    eyebrow: 'Step 02 / 05',
+    title: 'Where you’ve studied.',
+    body: 'Your academic background helps us recommend the right courses and certifications.',
+  },
+  3: {
+    eyebrow: 'Step 03 / 05',
+    title: 'What you’re here to do.',
+    body: "Tell us what you're working towards so we can tailor your path.",
+  },
+  4: {
+    eyebrow: 'Step 04 / 05',
+    title: 'Where you learn from.',
+    body: 'Your location helps us schedule classes and events at the right time for you.',
+  },
+  5: {
+    eyebrow: 'Step 05 / 05',
+    title: 'Your profile, reviewed.',
+    body: 'One last look before we put it all together.',
+  },
+  completion: {
+    eyebrow: 'AIIT.NETWORK',
+    title: 'Identity established.',
+    body: "Your learner profile is ready. Let's show you around.",
+  },
 };
 
 /**
@@ -673,6 +701,10 @@ const VISUAL_COPY: Record<Phase, { eyebrow: string; title: string }> = {
  * drawn -- see profile-wizard-globe.webp) instead of the hand-drawn
  * contour+node SVG this used to be; static across steps, since the art
  * itself (not a per-step node highlight) is what carries the panel now.
+ *
+ * Three fixed zones: a header (logo + "Learn. Build. Grow." tagline) and a
+ * footer ("Global tech talent...") that never change, bracketing the one
+ * zone that does -- the step's own eyebrow/title/body, swapped per phase.
  */
 function WizardVisual({ phase }: { phase: Phase }) {
   const copy = VISUAL_COPY[phase];
@@ -683,13 +715,22 @@ function WizardVisual({ phase }: { phase: Phase }) {
 
       <div className="pcw-visual__brand">
         <Logo variant="light" className="pcw-visual__logo" />
-        <span className="pcw-visual__brand-sub">Learner profile</span>
       </div>
+      <p className="pcw-visual__tagline">Learn. Build. Grow.</p>
 
       <div className="pcw-visual__copy">
         <p className="pcw-visual__eyebrow">{copy.eyebrow}</p>
         <h2 className="pcw-visual__title">{copy.title}</h2>
+        <p className="pcw-visual__body">{copy.body}</p>
       </div>
+
+      <p className="pcw-visual__footer">
+        Global
+        <br />
+        Tech talent
+        <br />
+        For a brighter tomorrow
+      </p>
     </div>
   );
 }

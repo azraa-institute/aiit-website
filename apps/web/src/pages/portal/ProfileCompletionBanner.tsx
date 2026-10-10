@@ -7,6 +7,18 @@ interface ProfileCompletionBannerProps {
   onComplete: () => void;
 }
 
+/** Same mark as CourseDetailPage's AlertIcon -- a deliberately shared glyph
+    for "your profile is blocking something" wherever that message shows up. */
+function AlertIcon() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true">
+      <circle cx="12" cy="12" r="8.2" fill="none" stroke="currentColor" strokeWidth="1.6" />
+      <path d="M12 8v5" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+      <circle cx="12" cy="16" r="0.9" fill="currentColor" />
+    </svg>
+  );
+}
+
 /**
  * Persistent (not auto-dismissing, unlike components/common/Toast.tsx)
  * reminder shown on every portal page while the profile is incomplete --
@@ -27,14 +39,26 @@ interface ProfileCompletionBannerProps {
  */
 export function ProfileCompletionBanner({ visible, onComplete }: ProfileCompletionBannerProps) {
   return (
-    <div className={cn('pcb', 'on-ink', !visible && 'pcb--collapsed')} role="status" aria-hidden={!visible}>
+    <div className={cn('pcb', !visible && 'pcb--collapsed')} role="status" aria-hidden={!visible}>
       <div className="pcb__copy">
-        <p className="pcb__eyebrow">Complete your profile</p>
-        <p className="pcb__message">
-          Finish your learner profile to unlock course enrollment, certificates and your learning activities.
-        </p>
+        <span className="pcb__icon" aria-hidden="true">
+          <AlertIcon />
+        </span>
+        <div>
+          <p className="pcb__eyebrow">Complete your profile</p>
+          <p className="pcb__message">
+            Finish your learner profile to unlock course enrollment, certificates and your learning activities.
+          </p>
+        </div>
       </div>
-      <Button as="button" type="button" size="sm" onClick={onComplete} tabIndex={visible ? undefined : -1}>
+      <Button
+        as="button"
+        type="button"
+        size="sm"
+        onClick={onComplete}
+        tabIndex={visible ? undefined : -1}
+        className="pcb__cta"
+      >
         Continue profile
       </Button>
     </div>

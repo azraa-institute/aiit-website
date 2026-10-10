@@ -299,7 +299,7 @@ export default function ProfilePage() {
           </div>
           <p className="profile-identity__hint">JPG or PNG, up to a few MB.</p>
           {photoError ? (
-            <p className="auth__alert" role="alert">
+            <p className="profile-page__alert" role="alert">
               {photoError}
             </p>
           ) : null}
@@ -311,7 +311,7 @@ export default function ProfilePage() {
 
         <form className="profile-details__form" onSubmit={handleSave}>
           {error ? (
-            <p className="auth__alert" role="alert">
+            <p className="profile-page__alert" role="alert">
               {error}
             </p>
           ) : null}

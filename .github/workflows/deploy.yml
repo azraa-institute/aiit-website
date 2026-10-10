@@ -132,8 +132,12 @@ jobs:
       # the policies genuinely need to be created by hand via Supabase
       # Dashboard -> SQL Editor (the same four statements), then only the
       # migrate resolve line above, through this workflow.
+      # --schema alone (not --url too -- this Prisma version refuses both
+      # at once: "--url and --schema cannot be used at the same time").
+      # schema.prisma's datasource already reads DATABASE_URL via env(),
+      # which this step's own env: block sets, so --schema is sufficient.
       - name: ONE-TIME -- apply storage.objects write policies by hand
-        run: npx prisma db execute --file apps/api/prisma/migrations/20261010180000_storage_write_policies/apply_policies_only.sql --schema apps/api/prisma/schema.prisma --url "$DATABASE_URL"
+        run: npx prisma db execute --file apps/api/prisma/migrations/20261010180000_storage_write_policies/apply_policies_only.sql --schema apps/api/prisma/schema.prisma
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
 

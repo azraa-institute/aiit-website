@@ -104,6 +104,44 @@ jobs:
       # itself as a one-time step, reusing its existing DATABASE_URL secret
       # rather than asking for the production connection string to be
       # typed into a local terminal. Removed again once it succeeded.)
+      #
+      # SIXTH one-time step, 20261010180000_storage_write_policies:
+      # CREATE POLICY on storage.objects, unlike the prior cases, isn't
+      # obviously in the same bucket as "pooler role can't touch a
+      # Supabase-owned schema at all" (case 5/CREATE TABLE) or "blocked for
+      # everyone, even the SQL Editor" (case 4/ALTER auth.users) -- Storage
+      # RLS policies are a first-class, Supabase-documented customization
+      # point project owners are expected to manage (via Dashboard SQL
+      # Editor, which runs with real owner privilege, not this pooler
+      # role's limited grants), so unlike case 4 this one plausibly DOES
+      # succeed through the Dashboard even if it fails here. Trying the
+      # same safe reuse-the-secret approach as case 1/5 first anyway,
+      # rather than assuming -- this codebase's own practice throughout
+      # has been to confirm these empirically, not theorize. A dedicated
+      # apply_policies_only.sql sits next to this migration's real
+      # migration.sql specifically because migration.sql's own CREATE
+      # TABLE IF NOT EXISTS stub (CI-only) would hit the same
+      # schema-level permission error case 5 did if run against
+      # production, before ever reaching the four CREATE POLICY
+      # statements that actually matter here.
+      #   npx prisma db execute --file apps/api/prisma/migrations/20261010180000_storage_write_policies/apply_policies_only.sql --schema apps/api/prisma/schema.prisma --url "$DATABASE_URL"
+      #   npx prisma migrate resolve --applied 20261010180000_storage_write_policies --schema apps/api/prisma/schema.prisma
+      # then re-run this workflow. If the db execute step itself fails
+      # (permission/ownership error on CREATE POLICY), that disproves the
+      # "Dashboard SQL Editor only" theory above being avoidable here --
+      # the policies genuinely need to be created by hand via Supabase
+      # Dashboard -> SQL Editor (the same four statements), then only the
+      # migrate resolve line above, through this workflow.
+      - name: ONE-TIME -- apply storage.objects write policies by hand
+        run: npx prisma db execute --file apps/api/prisma/migrations/20261010180000_storage_write_policies/apply_policies_only.sql --schema apps/api/prisma/schema.prisma --url "$DATABASE_URL"
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+
+      - name: ONE-TIME -- resolve the storage_write_policies migration
+        run: npx prisma migrate resolve --applied 20261010180000_storage_write_policies --schema apps/api/prisma/schema.prisma
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+
       - name: Apply pending migrations
         run: npm exec -w apps/api -- prisma migrate deploy
         env:

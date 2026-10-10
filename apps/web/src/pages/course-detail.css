@@ -146,31 +146,79 @@
   font-size: var(--fs-sm);
   color: var(--fg-muted);
 }
-.course-detail__ask {
+/* A confirmed-status badge, not a disabled button -- the old markup reused
+   <Button disabled>, which .btn:disabled fades to 45% opacity site-wide
+   (the correct treatment for "can't do this right now"). "You're enrolled"
+   isn't that: it's a fact, not a blocked action, so it gets its own solid,
+   confident treatment (same dark weight a primary button would carry) plus
+   a check mark, rather than reading as broken/greyed-out. */
+.course-detail__status {
   display: flex;
   align-items: center;
-  gap: var(--space-3);
+  justify-content: center;
+  gap: var(--space-2);
+  padding: 1.1rem 2rem;
+  border-radius: var(--radius-md);
+  font-family: var(--font-ui);
+  font-weight: 700;
+  font-size: var(--fs-sm);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+.course-detail__status--enrolled {
+  background: var(--ink);
+  color: var(--paper);
+  border: 1px solid var(--ink);
+}
+.course-detail__status--enrolled svg {
+  flex-shrink: 0;
+  color: var(--brass-tint);
+}
+.course-detail__secondary-btn {
+  border-radius: var(--radius-md);
+}
+
+.course-detail__ask {
+  position: relative;
+}
+.course-detail__ask-btn {
+  border-radius: var(--radius-md);
+  justify-content: flex-start;
+  padding-left: 54px;
+  /* Extra vertical room for Alex Brush's tall capital ascenders (the A, Q)
+     at this font-size -- .btn's standard padding + line-height: 1 is tuned
+     for Google Sans's much shorter cap-height and would clip them. */
+  padding-top: 1.15rem;
+  padding-bottom: 1.15rem;
 }
 .course-detail__ask-avatar {
-  flex-shrink: 0;
+  position: absolute;
+  left: 10px;
+  top: 50%;
+  transform: translateY(-50%);
   display: flex;
   border-radius: 50%;
   box-shadow: var(--shadow-soft);
-}
-.course-detail__ask .btn {
-  flex: 1;
+  pointer-events: none;
 }
 /* Quill's own CTA -- deliberately not the site's standard uppercase/tracked
    button label (overrides .btn's text-transform + letter-spacing below).
-   Second use of the animated gradient-clip Dancing Script technique (the
-   first is .course-card__enroll in course-card.css) -- same mechanism, its
-   own gradient (brass through slate rather than brass through the card's
-   per-domain accent) so it reads as Quill's own voice, not a copy of the
-   enroll flourish. */
+   Second use of the animated gradient-clip script technique (the first is
+   .course-card__enroll in course-card.css) -- same mechanism, its own face
+   (Alex Brush, a bolder single-weight brush script, rather than Dancing
+   Script) and its own gradient (brass through slate rather than brass
+   through the card's per-domain accent) so it reads as Quill's own voice,
+   not a copy of the enroll flourish. Sized up from a typical script-font
+   scale -- Alex Brush's strokes are thinner than Dancing Script's at the
+   same pixel height, and this is a CTA that needs to stay legible, not a
+   decorative flourish. font-weight stays 400 (Alex Brush's only real
+   weight -- see index.html's font-loading comment for why 700 here would
+   synthesize a fake bold instead). */
 .course-detail__ask-btn .btn__label {
-  font-family: 'Dancing Script', cursive;
-  font-size: clamp(1.2rem, 1.1rem + 0.4vw, 1.4rem);
-  font-weight: 700;
+  font-family: 'Alex Brush', cursive;
+  font-size: clamp(1.5rem, 1.35rem + 0.6vw, 1.75rem);
+  font-weight: 400;
+  line-height: 1.3;
   text-transform: none;
   letter-spacing: normal;
   background: linear-gradient(

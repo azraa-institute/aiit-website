@@ -53,6 +53,15 @@ function InfoIcon() {
   );
 }
 
+function CheckIcon() {
+  return (
+    <svg width="15" height="15" viewBox="0 0 24 24" aria-hidden="true">
+      <circle cx="12" cy="12" r="9.5" fill="none" stroke="currentColor" strokeWidth="1.6" />
+      <path d="M7.5 12.5 10.3 15.3 16.5 9" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
 export default function CourseDetailPage() {
   const { slug } = useParams();
   const courseState = useCourseDetail(slug);
@@ -427,10 +436,11 @@ function EnrollAction({ course, comingSoon }: { course: Course; comingSoon: bool
   ) {
     return (
       <>
-        <Button as="button" type="button" fullWidth size="lg" disabled>
+        <div className="course-detail__status course-detail__status--enrolled">
+          <CheckIcon />
           You&apos;re enrolled
-        </Button>
-        <Button as="link" to="/portal/courses" variant="secondary" fullWidth>
+        </div>
+        <Button as="link" to="/portal/courses" variant="secondary" fullWidth arrow className="course-detail__secondary-btn">
           Go to my courses
         </Button>
       </>

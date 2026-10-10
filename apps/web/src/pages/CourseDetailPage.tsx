@@ -223,7 +223,14 @@ export default function CourseDetailPage() {
                     <span className="course-detail__ask-avatar" aria-hidden="true">
                       <QuillAvatar />
                     </span>
-                    <Button as="button" type="button" variant="secondary" fullWidth onClick={() => setQuillOpen(true)}>
+                    <Button
+                      as="button"
+                      type="button"
+                      variant="secondary"
+                      fullWidth
+                      className="course-detail__ask-btn"
+                      onClick={() => setQuillOpen(true)}
+                    >
                       Ask Quill about this course
                     </Button>
                   </div>

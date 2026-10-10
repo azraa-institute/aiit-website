@@ -160,6 +160,49 @@
 .course-detail__ask .btn {
   flex: 1;
 }
+/* Quill's own CTA -- deliberately not the site's standard uppercase/tracked
+   button label (overrides .btn's text-transform + letter-spacing below).
+   Second use of the animated gradient-clip Dancing Script technique (the
+   first is .course-card__enroll in course-card.css) -- same mechanism, its
+   own gradient (brass through slate rather than brass through the card's
+   per-domain accent) so it reads as Quill's own voice, not a copy of the
+   enroll flourish. */
+.course-detail__ask-btn .btn__label {
+  font-family: 'Dancing Script', cursive;
+  font-size: clamp(1.2rem, 1.1rem + 0.4vw, 1.4rem);
+  font-weight: 700;
+  text-transform: none;
+  letter-spacing: normal;
+  background: linear-gradient(
+    100deg,
+    var(--brass-deep) 0%,
+    var(--brass) 25%,
+    var(--slate) 50%,
+    var(--brass-tint) 75%,
+    var(--brass-deep) 100%
+  );
+  background-size: 300% 100%;
+  background-position: 0% 50%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  animation: course-detail-ask-wave 7s ease-in-out infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+  .course-detail__ask-btn .btn__label {
+    animation: none;
+    background-position: 30% 50%;
+  }
+}
+@keyframes course-detail-ask-wave {
+  0%,
+  100% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+}
 .course-detail__cert-note {
   margin-top: var(--space-2);
   font-size: var(--fs-xs);

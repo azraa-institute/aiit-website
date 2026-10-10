@@ -148,20 +148,19 @@ jobs:
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
 
-      # Reverted, 2026-10-10 without ever confirming whether it ran --
-      # the previous version of this step created a temporary,
-      # maximally-permissive INSERT policy (any authenticated user, any
-      # path, not just their own folder) on storage.objects, meant as a
-      # one-shot diagnostic test, immediately reverted here rather than
-      # risked. This DROP runs regardless of whether the CREATE ever
-      # executed (IF EXISTS), closing the exposure window either way.
-      - name: ONE-TIME -- drop the maximally-permissive test policy
-        run: |
-          psql "$DATABASE_URL" -c "DROP POLICY IF EXISTS \"debug_test_avatars_insert\" ON storage.objects;"
-          psql "$DATABASE_URL" -c "SELECT count(*) AS should_be_zero FROM pg_policy WHERE polrelid = 'storage.objects'::regclass AND polname = 'debug_test_avatars_insert';"
-        env:
-          DATABASE_URL: ${{ secrets.DATABASE_URL }}
-
+      # A prior version of this step briefly created (or attempted to --
+      # see below) a temporary, maximally-permissive INSERT policy (any
+      # authenticated user, any path, not just their own folder) on
+      # storage.objects, meant as a one-shot diagnostic test. Caught by
+      # Claude Code's own safety classifier as a security-weakening
+      # action before it could be confirmed running; reverted immediately
+      # per explicit instruction, without ever running the test. Verified
+      # after reverting: the policy had never actually been created on
+      # production at all (DROP POLICY IF EXISTS logged "does not exist,
+      # skipping") -- the revert's own git push reached GitHub Actions
+      # before the original push's workflow run got to that step, so the
+      # exposure window never opened.
+      #
       # Re-checked, 2026-10-10 -- user asked whether removing a policy via
       # the Supabase Dashboard's "Clients can list all files" advisory
       # (Storage -> avatars bucket -> a banner offering "Remove policy" on

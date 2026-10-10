@@ -60,6 +60,12 @@ export default function ProfilePage() {
   const [postalCode, setPostalCode] = useState('');
   const [saving, setSaving] = useState(false);
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
+  // Separate from `error` below (which renders inside the "Personal
+  // information" form) -- a failed upload otherwise set `error` but showed
+  // the message nowhere near the photo control itself, so it rendered off
+  // whatever part of the page the learner happened to be looking at.
+  // From their side, that reads as the upload just silently doing nothing.
+  const [photoError, setPhotoError] = useState<string>();
   const [error, setError] = useState<string>();
   const [saved, setSaved] = useState(false);
 
@@ -219,7 +225,7 @@ export default function ProfilePage() {
     e.target.value = '';
     if (!file || !session) return;
 
-    setError(undefined);
+    setPhotoError(undefined);
     setUploadingPhoto(true);
     try {
       // A unique key per upload (not a stable `avatar.<ext>`) -- reusing the
@@ -239,7 +245,7 @@ export default function ProfilePage() {
       }
       state.refetch();
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Could not upload your photo.');
+      setPhotoError(err instanceof Error ? err.message : 'Could not upload your photo.');
     } finally {
       setUploadingPhoto(false);
     }
@@ -247,14 +253,14 @@ export default function ProfilePage() {
 
   async function handleRemovePhoto() {
     if (!profile.avatarKey) return;
-    setError(undefined);
+    setPhotoError(undefined);
     setUploadingPhoto(true);
     try {
       await removeFile(AVATARS_BUCKET, profile.avatarKey);
       await apiFetch('/me', { method: 'PATCH', body: JSON.stringify({ avatarKey: '' }) });
       state.refetch();
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Could not remove your photo.');
+      setPhotoError(err instanceof Error ? err.message : 'Could not remove your photo.');
     } finally {
       setUploadingPhoto(false);
     }
@@ -292,6 +298,11 @@ export default function ProfilePage() {
             ) : null}
           </div>
           <p className="profile-identity__hint">JPG or PNG, up to a few MB.</p>
+          {photoError ? (
+            <p className="auth__alert" role="alert">
+              {photoError}
+            </p>
+          ) : null}
         </div>
       </div>
 

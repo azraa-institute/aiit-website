@@ -34,8 +34,11 @@ const PROFILE_COMPLETION_FIELDS = [
 import { PrismaService } from '../../common/prisma/prisma.service';
 import { EmailService } from '../../common/email/email.service';
 import { brandedEmailHtml } from '../../common/email/branded-email';
+import { SupabaseAdminService } from '../../common/supabase-admin/supabase-admin.service';
 import type { UpdateProfileDto } from './dto/update-profile.dto';
 import type { UpdatePreferencesDto } from './dto/update-preferences.dto';
+
+const AVATARS_BUCKET = 'avatars';
 
 @Injectable()
 export class ProfileService {
@@ -44,6 +47,7 @@ export class ProfileService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly email: EmailService,
+    private readonly supabaseAdmin: SupabaseAdminService,
   ) {}
 
   async getMe(userId: string, email?: string): Promise<Me> {
@@ -124,10 +128,61 @@ export class ProfileService {
         ...(dto.city !== undefined && { city: dto.city }),
         ...(dto.address !== undefined && { address: dto.address }),
         ...(dto.postalCode !== undefined && { postalCode: dto.postalCode }),
-        ...(dto.avatarKey !== undefined && { avatarKey: dto.avatarKey }),
       },
     });
     return toMe(profile, false);
+  }
+
+  /**
+   * `file.buffer` requires FileInterceptor to be configured with
+   * multer's memoryStorage (see ProfileController) -- the default
+   * diskStorage would give a `.path` into a local temp file instead,
+   * which we don't want (no disk I/O for a file we're about to forward
+   * straight to Storage, no cleanup to worry about).
+   *
+   * Goes through SupabaseAdminService's service-role client rather than
+   * the learner's own Supabase session -- see that method's own doc
+   * comment for why direct browser uploads don't work for this project.
+   */
+  async uploadAvatar(userId: string, file: Express.Multer.File): Promise<Me> {
+    const existing = await this.prisma.profile.findUnique({ where: { id: userId }, select: { avatarKey: true } });
+    if (!existing) throw new NotFoundException('Profile not found.');
+
+    // A unique key per upload (not a stable `avatar.<ext>`) -- reusing the
+    // same key meant the public URL never changed between uploads, so the
+    // browser (and Supabase's storage CDN) kept serving the previously
+    // cached image bytes at that URL instead of the newly uploaded photo.
+    const ext = (file.originalname.split('.').pop() || 'jpg').toLowerCase();
+    const key = `${userId}/avatar-${Date.now()}.${ext}`;
+    await this.supabaseAdmin.uploadToStorage(AVATARS_BUCKET, key, file.buffer, file.mimetype);
+
+    const updated = await this.prisma.profile.update({ where: { id: userId }, data: { avatarKey: key } });
+
+    const previousKey = existing.avatarKey;
+    if (previousKey && previousKey !== key) {
+      // Best-effort cleanup of the file the new photo replaces -- the new
+      // photo is already saved and showing, so a failure here shouldn't
+      // surface as an error to the caller.
+      this.supabaseAdmin.removeFromStorage(AVATARS_BUCKET, previousKey).catch((err) => {
+        this.logger.warn(
+          `Could not clean up previous avatar ${previousKey} for ${userId}.`,
+          err instanceof Error ? err.stack : String(err),
+        );
+      });
+    }
+
+    return toMe(updated, false);
+  }
+
+  async removeAvatar(userId: string): Promise<Me> {
+    const existing = await this.prisma.profile.findUnique({ where: { id: userId }, select: { avatarKey: true } });
+    if (!existing) throw new NotFoundException('Profile not found.');
+
+    if (existing.avatarKey) {
+      await this.supabaseAdmin.removeFromStorage(AVATARS_BUCKET, existing.avatarKey);
+    }
+    const updated = await this.prisma.profile.update({ where: { id: userId }, data: { avatarKey: null } });
+    return toMe(updated, false);
   }
 
   /**

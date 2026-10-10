@@ -5,8 +5,6 @@ import { formatDate } from '@/lib/format';
 import { Button } from '@/components/primitives/Button';
 import { TextArea } from '@/components/common/Field';
 import { apiFetch } from '@/lib/api';
-import { uploadFile } from '@/lib/storage';
-import { useAuth } from '@/lib/AuthContext';
 
 const STATUS_LABEL: Record<Assignment['status'], string> = {
   upcoming: 'Upcoming',
@@ -15,13 +13,10 @@ const STATUS_LABEL: Record<Assignment['status'], string> = {
   graded: 'Graded',
 };
 
-/** Bucket must exist in Supabase Storage (see infra doc) -- learners can only write under their own uid prefix, matching the DB's RLS trust model. */
-const SUBMISSIONS_BUCKET = 'submissions';
-/** No MIME restriction -- a submission can legitimately be any document type. Mirrors the submissions bucket's own file_size_limit (see the storage_bucket_limits migration), which is the real enforcement; this is just the fast client-side rejection. */
-const SUBMISSION_UPLOAD_CONSTRAINTS = { maxSizeBytes: 25 * 1024 * 1024 };
+/** No MIME restriction -- a submission can legitimately be any document type. Mirrors the submissions bucket's own file_size_limit (see the storage_bucket_limits migration) and POST /assignments/:id/submissions's own server-side limit -- this is just the fast client-side rejection, both of those are the real enforcement. */
+const SUBMISSION_MAX_BYTES = 25 * 1024 * 1024;
 
 export function AssignmentRow({ assignment, onSubmitted }: { assignment: Assignment; onSubmitted: () => void }) {
-  const { session } = useAuth();
   const [note, setNote] = useState('');
   const [file, setFile] = useState<File | null>(null);
   const [submitting, setSubmitting] = useState(false);
@@ -31,26 +26,22 @@ export function AssignmentRow({ assignment, onSubmitted }: { assignment: Assignm
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
-    if (!session) {
-      setError('Sign in again to submit this assignment.');
-      return;
-    }
     if (!note.trim() && !file) {
       setError('Add a note or attach a file before submitting.');
+      return;
+    }
+    if (file && file.size > SUBMISSION_MAX_BYTES) {
+      setError('That file is too large (max 25MB).');
       return;
     }
 
     setError(undefined);
     setSubmitting(true);
     try {
-      let fileKey: string | undefined;
-      if (file) {
-        fileKey = await uploadFile(SUBMISSIONS_BUCKET, `${session.user.id}/${assignment.id}/${file.name}`, file, SUBMISSION_UPLOAD_CONSTRAINTS);
-      }
-      await apiFetch(`/assignments/${assignment.id}/submissions`, {
-        method: 'POST',
-        body: JSON.stringify({ fileKey, note: note.trim() || undefined }),
-      });
+      const body = new FormData();
+      if (file) body.append('file', file);
+      if (note.trim()) body.append('note', note.trim());
+      await apiFetch(`/assignments/${assignment.id}/submissions`, { method: 'POST', body });
       setNote('');
       setFile(null);
       onSubmitted();

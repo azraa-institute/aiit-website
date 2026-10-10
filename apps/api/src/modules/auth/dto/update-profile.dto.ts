@@ -28,11 +28,6 @@ export class UpdateProfileDto {
   @IsISO31661Alpha2()
   country?: string;
 
-  @IsOptional()
-  @IsString()
-  @MaxLength(500)
-  avatarKey?: string;
-
   /** Highest qualification -- UI offers a fixed picklist plus "Other", stored as free text. */
   @IsOptional()
   @IsString()

@@ -2,11 +2,14 @@ import { ForbiddenException, Injectable, NotFoundException } from '@nestjs/commo
 import type { Prisma } from '@prisma/client';
 import type { Assignment, AssignmentStatus } from '@aiit/shared';
 import { PrismaService } from '../../common/prisma/prisma.service';
+import { SupabaseAdminService } from '../../common/supabase-admin/supabase-admin.service';
 import { EnrollmentsService } from '../enrollments/enrollments.service';
 import { NotificationsService } from '../notifications/notifications.service';
 import { mapDomain, mapLevel } from '../courses/catalogue.mappers';
 import type { SubmitAssignmentDto } from './dto/submit-assignment.dto';
 import type { GradeSubmissionDto } from './dto/grade-submission.dto';
+
+const SUBMISSIONS_BUCKET = 'submissions';
 
 const ASSIGNMENT_COURSE_SELECT = {
   id: true,
@@ -42,6 +45,7 @@ type AssignmentRow = Prisma.AssignmentGetPayload<{ select: typeof ASSIGNMENT_SEL
 export class AssignmentsService {
   constructor(
     private readonly prisma: PrismaService,
+    private readonly supabaseAdmin: SupabaseAdminService,
     private readonly enrollments: EnrollmentsService,
     private readonly notifications: NotificationsService,
   ) {}
@@ -63,7 +67,12 @@ export class AssignmentsService {
     return rows.map(toAssignment);
   }
 
-  async submit(userId: string, assignmentId: string, dto: SubmitAssignmentDto): Promise<Assignment> {
+  async submit(
+    userId: string,
+    assignmentId: string,
+    dto: SubmitAssignmentDto,
+    file?: Express.Multer.File,
+  ): Promise<Assignment> {
     const assignment = await this.prisma.assignment.findUnique({
       where: { id: assignmentId },
       select: { courseId: true },
@@ -75,12 +84,18 @@ export class AssignmentsService {
       throw new ForbiddenException('You must be enrolled in this course to submit this assignment.');
     }
 
+    let fileKey: string | undefined;
+    if (file) {
+      fileKey = `${userId}/${assignmentId}/${file.originalname}`;
+      await this.supabaseAdmin.uploadToStorage(SUBMISSIONS_BUCKET, fileKey, file.buffer, file.mimetype);
+    }
+
     // A resubmission clears any prior grade -- it hasn't been graded yet.
     await this.prisma.assignmentSubmission.upsert({
       where: { assignmentId_userId: { assignmentId, userId } },
-      create: { assignmentId, userId, fileKey: dto.fileKey, note: dto.note, submittedAt: new Date() },
+      create: { assignmentId, userId, fileKey, note: dto.note, submittedAt: new Date() },
       update: {
-        fileKey: dto.fileKey ?? null,
+        fileKey: fileKey ?? null,
         note: dto.note ?? null,
         submittedAt: new Date(),
         grade: null,

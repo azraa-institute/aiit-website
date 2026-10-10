@@ -124,6 +124,79 @@ export class SupabaseAdminService {
     return new URL(`/storage/v1${signedURL}`, base).toString();
   }
 
+  /**
+   * Uploads a file to Storage with the service-role key, bypassing RLS
+   * entirely -- used where the caller has already been authenticated by
+   * JwtGuard and `key` is built server-side from that caller's own
+   * userId, never from client input (see ProfileService.uploadAvatar),
+   * so the same per-user path isolation RLS would normally enforce is
+   * enforced in application code instead, not weakened.
+   *
+   * Exists because direct browser-to-Storage uploads (the Supabase JS
+   * client, using the user's own session) are broken for this project:
+   * confirmed over an extensive live debugging session that the RLS
+   * policy, the bucket config, and the JWT's own claims are all
+   * correct -- even a raw SQL test with `SET LOCAL request.jwt.claims`
+   * set to the exact failing request's claims resolves auth.uid()
+   * correctly -- yet Storage's own POST /object/... endpoint still
+   * denies the insert. That points at Storage's own service failing to
+   * bridge the request's JWT into the Postgres session it evaluates
+   * RLS against, which isn't something fixable from this codebase.
+   * Routing through the service-role key sidesteps the broken path
+   * entirely rather than waiting on Supabase to resolve it.
+   */
+  async uploadToStorage(bucket: string, key: string, file: Buffer, contentType: string): Promise<void> {
+    const base = process.env.SUPABASE_URL;
+    const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+    if (!base || !serviceKey) {
+      throw new ServiceUnavailableException('File storage is not configured on this server.');
+    }
+    const path = key.split('/').map(encodeURIComponent).join('/');
+    const res = await fetch(new URL(`/storage/v1/object/${bucket}/${path}`, base), {
+      method: 'POST',
+      headers: {
+        apikey: serviceKey,
+        Authorization: `Bearer ${serviceKey}`,
+        'Content-Type': contentType,
+        // Each upload already uses a unique timestamped key (see
+        // ProfileService.uploadAvatar), so this never actually
+        // overwrites anything in practice -- set anyway so a retried
+        // request (e.g. a flaky connection) can't fail on a conflict.
+        'x-upsert': 'true',
+      },
+      body: file,
+    });
+    if (!res.ok) {
+      const text = await res.text().catch(() => '');
+      this.logger.error(`Could not upload to ${bucket}/${key} (${res.status}): ${text.slice(0, 300)}`);
+      throw new ServiceUnavailableException('Could not upload that file right now -- try again shortly.');
+    }
+  }
+
+  /**
+   * Deletes a file from Storage with the service-role key. Supabase's
+   * batch-delete endpoint (DELETE /object/{bucket} with a `prefixes`
+   * body) is used even for a single key -- there's no single-object
+   * DELETE verb on this endpoint shape.
+   */
+  async removeFromStorage(bucket: string, key: string): Promise<void> {
+    const base = process.env.SUPABASE_URL;
+    const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+    if (!base || !serviceKey) {
+      throw new ServiceUnavailableException('File storage is not configured on this server.');
+    }
+    const res = await fetch(new URL(`/storage/v1/object/${bucket}`, base), {
+      method: 'DELETE',
+      headers: { apikey: serviceKey, Authorization: `Bearer ${serviceKey}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ prefixes: [key] }),
+    });
+    if (!res.ok) {
+      const text = await res.text().catch(() => '');
+      this.logger.error(`Could not delete ${bucket}/${key} (${res.status}): ${text.slice(0, 300)}`);
+      throw new ServiceUnavailableException('Could not remove that file right now -- try again shortly.');
+    }
+  }
+
   /** Blocks all sign-ins and token refreshes for the account until unbanned. */
   async ban(userId: string): Promise<void> {
     await this.update(userId, { ban_duration: '876000h' });

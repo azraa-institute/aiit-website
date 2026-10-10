@@ -2,6 +2,7 @@ import { BadRequestException, NotFoundException } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
 import { PrismaService } from '../../common/prisma/prisma.service';
 import { EmailService } from '../../common/email/email.service';
+import { SupabaseAdminService } from '../../common/supabase-admin/supabase-admin.service';
 import { ProfileService } from './profile.service';
 
 const PROFILE = {
@@ -41,6 +42,7 @@ describe('ProfileService', () => {
     $queryRaw: jest.Mock;
   };
   let email: { send: jest.Mock };
+  let supabaseAdmin: { uploadToStorage: jest.Mock; removeFromStorage: jest.Mock };
   let fetchSpy: jest.SpiedFunction<typeof fetch>;
 
   afterAll(() => {
@@ -58,12 +60,14 @@ describe('ProfileService', () => {
       $queryRaw: jest.fn(),
     };
     email = { send: jest.fn() };
+    supabaseAdmin = { uploadToStorage: jest.fn().mockResolvedValue(undefined), removeFromStorage: jest.fn().mockResolvedValue(undefined) };
 
     const moduleRef = await Test.createTestingModule({
       providers: [
         ProfileService,
         { provide: PrismaService, useValue: prisma },
         { provide: EmailService, useValue: email },
+        { provide: SupabaseAdminService, useValue: supabaseAdmin },
       ],
     }).compile();
 
@@ -402,6 +406,88 @@ describe('ProfileService', () => {
     it('reports not_found when no account matches that email', async () => {
       prisma.$queryRaw.mockResolvedValueOnce([]);
       await expect(service.accountStatus('nobody@example.com')).resolves.toBe('not_found');
+    });
+  });
+
+  describe('uploadAvatar', () => {
+    const file = {
+      originalname: 'photo.JPG',
+      mimetype: 'image/jpeg',
+      buffer: Buffer.from('fake-image-bytes'),
+    } as Express.Multer.File;
+
+    it('throws NotFoundException when the profile does not exist', async () => {
+      prisma.profile.findUnique.mockResolvedValueOnce(null);
+      await expect(service.uploadAvatar('user-1', file)).rejects.toBeInstanceOf(NotFoundException);
+      expect(supabaseAdmin.uploadToStorage).not.toHaveBeenCalled();
+    });
+
+    it('uploads via the service-role client with a unique key, lower-cased extension, and persists it', async () => {
+      prisma.profile.findUnique.mockResolvedValueOnce({ avatarKey: null });
+      prisma.profile.update.mockResolvedValueOnce({ ...PROFILE, avatarKey: 'user-1/avatar-123.jpg' });
+      jest.spyOn(Date, 'now').mockReturnValueOnce(123);
+
+      const me = await service.uploadAvatar('user-1', file);
+
+      expect(supabaseAdmin.uploadToStorage).toHaveBeenCalledWith(
+        'avatars',
+        'user-1/avatar-123.jpg',
+        file.buffer,
+        'image/jpeg',
+      );
+      expect(prisma.profile.update).toHaveBeenCalledWith({
+        where: { id: 'user-1' },
+        data: { avatarKey: 'user-1/avatar-123.jpg' },
+      });
+      expect(me.avatarKey).toBe('user-1/avatar-123.jpg');
+    });
+
+    it('best-effort cleans up the previous avatar without failing the request if cleanup fails', async () => {
+      prisma.profile.findUnique.mockResolvedValueOnce({ avatarKey: 'user-1/avatar-old.jpg' });
+      prisma.profile.update.mockResolvedValueOnce({ ...PROFILE, avatarKey: 'user-1/avatar-456.jpg' });
+      jest.spyOn(Date, 'now').mockReturnValueOnce(456);
+      supabaseAdmin.removeFromStorage.mockRejectedValueOnce(new Error('cleanup failed'));
+
+      await expect(service.uploadAvatar('user-1', file)).resolves.toMatchObject({ avatarKey: 'user-1/avatar-456.jpg' });
+      // Cleanup is fire-and-forget -- give its rejection a tick to settle before asserting.
+      await Promise.resolve();
+      expect(supabaseAdmin.removeFromStorage).toHaveBeenCalledWith('avatars', 'user-1/avatar-old.jpg');
+    });
+
+    it('does not attempt cleanup when there was no previous avatar', async () => {
+      prisma.profile.findUnique.mockResolvedValueOnce({ avatarKey: null });
+      prisma.profile.update.mockResolvedValueOnce({ ...PROFILE, avatarKey: 'user-1/avatar-789.jpg' });
+
+      await service.uploadAvatar('user-1', file);
+
+      expect(supabaseAdmin.removeFromStorage).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('removeAvatar', () => {
+    it('throws NotFoundException when the profile does not exist', async () => {
+      prisma.profile.findUnique.mockResolvedValueOnce(null);
+      await expect(service.removeAvatar('user-1')).rejects.toBeInstanceOf(NotFoundException);
+    });
+
+    it('removes the stored file and clears avatarKey when one is set', async () => {
+      prisma.profile.findUnique.mockResolvedValueOnce({ avatarKey: 'user-1/avatar-old.jpg' });
+      prisma.profile.update.mockResolvedValueOnce({ ...PROFILE, avatarKey: null });
+
+      const me = await service.removeAvatar('user-1');
+
+      expect(supabaseAdmin.removeFromStorage).toHaveBeenCalledWith('avatars', 'user-1/avatar-old.jpg');
+      expect(prisma.profile.update).toHaveBeenCalledWith({ where: { id: 'user-1' }, data: { avatarKey: null } });
+      expect(me.avatarKey).toBeNull();
+    });
+
+    it('skips the Storage call (not an error) when there was nothing to remove', async () => {
+      prisma.profile.findUnique.mockResolvedValueOnce({ avatarKey: null });
+      prisma.profile.update.mockResolvedValueOnce({ ...PROFILE, avatarKey: null });
+
+      await service.removeAvatar('user-1');
+
+      expect(supabaseAdmin.removeFromStorage).not.toHaveBeenCalled();
     });
   });
 

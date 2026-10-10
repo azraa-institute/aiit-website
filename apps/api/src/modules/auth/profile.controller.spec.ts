@@ -1,3 +1,4 @@
+import { BadRequestException, UnsupportedMediaTypeException } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
 import type { Me } from '@aiit/shared';
 import { PrismaService } from '../../common/prisma/prisma.service';
@@ -42,6 +43,8 @@ describe('ProfileController', () => {
     updatePreferences: jest.Mock;
     requestDeletion: jest.Mock;
     confirmPhoneVerification: jest.Mock;
+    uploadAvatar: jest.Mock;
+    removeAvatar: jest.Mock;
   };
 
   beforeEach(async () => {
@@ -50,6 +53,8 @@ describe('ProfileController', () => {
       updatePreferences: jest.fn(),
       requestDeletion: jest.fn(),
       confirmPhoneVerification: jest.fn(),
+      uploadAvatar: jest.fn(),
+      removeAvatar: jest.fn(),
     };
 
     const moduleRef = await Test.createTestingModule({
@@ -89,5 +94,33 @@ describe('ProfileController', () => {
     profiles.requestDeletion.mockResolvedValueOnce(undefined);
     await controller.requestDeletion(USER);
     expect(profiles.requestDeletion).toHaveBeenCalledWith('user-1', 'ada@example.com');
+  });
+
+  describe('uploadAvatar', () => {
+    const file = { originalname: 'photo.jpg', mimetype: 'image/jpeg', buffer: Buffer.from('x') } as Express.Multer.File;
+
+    it('throws BadRequestException when no file was uploaded', async () => {
+      await expect(controller.uploadAvatar(USER, undefined)).rejects.toBeInstanceOf(BadRequestException);
+      expect(profiles.uploadAvatar).not.toHaveBeenCalled();
+    });
+
+    it('throws UnsupportedMediaTypeException for a disallowed mime type', async () => {
+      await expect(
+        controller.uploadAvatar(USER, { ...file, mimetype: 'application/pdf' }),
+      ).rejects.toBeInstanceOf(UnsupportedMediaTypeException);
+      expect(profiles.uploadAvatar).not.toHaveBeenCalled();
+    });
+
+    it('delegates to ProfileService.uploadAvatar for an allowed image type', async () => {
+      profiles.uploadAvatar.mockResolvedValueOnce(ME);
+      await expect(controller.uploadAvatar(USER, file)).resolves.toEqual(ME);
+      expect(profiles.uploadAvatar).toHaveBeenCalledWith('user-1', file);
+    });
+  });
+
+  it('delegates DELETE /avatar to ProfileService.removeAvatar', async () => {
+    profiles.removeAvatar.mockResolvedValueOnce(ME);
+    await expect(controller.removeAvatar(USER)).resolves.toEqual(ME);
+    expect(profiles.removeAvatar).toHaveBeenCalledWith('user-1');
   });
 });

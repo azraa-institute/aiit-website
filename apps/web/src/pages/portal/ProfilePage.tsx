@@ -7,7 +7,7 @@ import { formatDate } from '@/lib/format';
 import { useAuth } from '@/lib/AuthContext';
 import { apiFetch } from '@/lib/api';
 import { fetchStates, fetchCities } from '@/lib/geo';
-import { uploadFile, publicFileUrl, removeFile } from '@/lib/storage';
+import { publicFileUrl } from '@/lib/storage';
 import { Avatar } from '@/components/common/Avatar';
 import { TextField, SelectField } from '@/components/common/Field';
 import { SearchableSelect } from '@/components/common/SearchableSelect';
@@ -27,9 +27,11 @@ import { PhoneCountrySelect } from './PhoneCountrySelect';
 import { PortalLoader } from './PortalLoader';
 import './support.css';
 
+/** Still needed for publicFileUrl (display only -- that's an unauthenticated public-bucket read, unaffected by the upload fix below). */
 const AVATARS_BUCKET = 'avatars';
-/** Mirrors the avatars bucket's own file_size_limit/allowed_mime_types (see the storage_bucket_limits migration) -- this is the fast client-side rejection, that migration is the real enforcement. */
-const AVATAR_UPLOAD_CONSTRAINTS = { maxSizeBytes: 2 * 1024 * 1024, allowedMimeTypes: ['image/jpeg', 'image/png', 'image/webp'] };
+/** Mirrors the avatars bucket's own file_size_limit/allowed_mime_types (see the storage_bucket_limits migration) and POST /me/avatar's own server-side check -- this is just the fast client-side rejection, both of those are the real enforcement. */
+const AVATAR_MAX_BYTES = 2 * 1024 * 1024;
+const AVATAR_MIME_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
 const COUNTRY_OPTIONS = [{ value: '', label: 'Select a country' }, ...COUNTRIES.map((c) => ({ value: c.code, label: c.name }))];
 const QUALIFICATION_OPTIONS = [{ value: '', label: 'Select your highest qualification' }, ...QUALIFICATIONS];
 const STATUS_OPTIONS = [{ value: '', label: 'Select one' }, ...CURRENT_STATUSES];
@@ -223,56 +225,35 @@ export default function ProfilePage() {
   async function handlePhotoChange(e: ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     e.target.value = '';
-    if (!file || !session) return;
+    if (!file) return;
+
+    if (file.size > AVATAR_MAX_BYTES) {
+      setPhotoError('That file is too large (max 2MB).');
+      return;
+    }
+    if (!AVATAR_MIME_TYPES.includes(file.type)) {
+      setPhotoError("That file type isn't supported (allowed: jpeg, png, webp).");
+      return;
+    }
 
     setPhotoError(undefined);
     setUploadingPhoto(true);
     try {
-      // A unique key per upload (not a stable `avatar.<ext>`) -- reusing the
-      // same key meant the public URL never changed between uploads, so the
-      // browser (and Supabase's storage CDN) kept serving the previously
-      // cached image bytes at that URL instead of the newly uploaded photo,
-      // which looked exactly like the old photo being "stuck".
-      const ext = file.name.split('.').pop() ?? 'jpg';
-      const previousKey = profile.avatarKey;
-      const path = `${session.user.id}/avatar-${Date.now()}.${ext}`;
-      // TEMP DEBUG -- remove once the RLS mismatch is found. Decodes the
-      // JWT's own payload (no verification, just reading claims) so we
-      // can compare what Postgres's auth.uid() actually sees against the
-      // session.user.id the upload path is built from -- if these two
-      // disagree, that's the RLS policy's real failure mode.
-      try {
-        const jwtPayload = JSON.parse(atob(session.access_token.split('.')[1]));
-        console.log('[avatar-upload-debug]', {
-          uploadPath: path,
-          sessionUserId: session.user.id,
-          jwtSub: jwtPayload.sub,
-          jwtRole: jwtPayload.role,
-          jwtAud: jwtPayload.aud,
-          jwtExpiresAt: new Date(jwtPayload.exp * 1000).toISOString(),
-          nowIsAfterExpiry: Date.now() > jwtPayload.exp * 1000,
-        });
-      } catch (debugErr) {
-        console.log('[avatar-upload-debug] could not decode JWT', debugErr);
-      }
-      const key = await uploadFile(AVATARS_BUCKET, path, file, AVATAR_UPLOAD_CONSTRAINTS);
-      await apiFetch('/me', { method: 'PATCH', body: JSON.stringify({ avatarKey: key }) });
-      if (previousKey && previousKey !== key) {
-        // Best-effort cleanup of the file the new photo replaces -- if it
-        // fails, the new photo is already saved and showing, so it
-        // shouldn't surface as an error to the user.
-        removeFile(AVATARS_BUCKET, previousKey).catch(() => {});
-      }
+      // Uploaded through the API (service-role Storage write) rather than
+      // this client calling Supabase Storage directly -- direct browser
+      // uploads are broken for this project (confirmed over an extensive
+      // live debugging session: correct RLS policy, correct bucket,
+      // correct JWT claims, auth.uid() itself resolves correctly in a raw
+      // SQL test -- Storage's own service isn't bridging the request's
+      // JWT into Postgres's RLS evaluation correctly, which isn't
+      // something fixable from this codebase). See
+      // apps/api/src/common/supabase-admin/supabase-admin.service.ts's
+      // uploadToStorage for the server-side half of this.
+      const body = new FormData();
+      body.append('file', file);
+      await apiFetch('/me/avatar', { method: 'POST', body });
       state.refetch();
     } catch (err) {
-      // TEMP DEBUG -- remove once the 400 cause is found. err.message
-      // alone (what the red box already shows) hasn't been enough to
-      // pin down the real cause -- logging every own-enumerable
-      // property of the caught error (Supabase's StorageError classes
-      // carry statusCode/error/name alongside message, none of which
-      // the UI currently surfaces) in one place, right next to the
-      // upload-path debug log above, so there's only one spot to check.
-      console.log('[avatar-upload-error-debug]', JSON.stringify(err, Object.getOwnPropertyNames(err instanceof Object ? err : {})));
       setPhotoError(err instanceof Error ? err.message : 'Could not upload your photo.');
     } finally {
       setUploadingPhoto(false);
@@ -284,8 +265,7 @@ export default function ProfilePage() {
     setPhotoError(undefined);
     setUploadingPhoto(true);
     try {
-      await removeFile(AVATARS_BUCKET, profile.avatarKey);
-      await apiFetch('/me', { method: 'PATCH', body: JSON.stringify({ avatarKey: '' }) });
+      await apiFetch('/me/avatar', { method: 'DELETE' });
       state.refetch();
     } catch (err) {
       setPhotoError(err instanceof Error ? err.message : 'Could not remove your photo.');

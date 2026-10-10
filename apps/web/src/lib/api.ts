@@ -62,7 +62,14 @@ async function authHeaders(extra?: HeadersInit): Promise<Headers> {
 /** Thin fetch wrapper for the AIIT API -- attaches the Supabase session (if any) and parses AllExceptionsFilter's error envelope. */
 export async function apiFetch<T>(path: string, init: RequestInit = {}): Promise<T> {
   const headers = await authHeaders(init.headers);
-  headers.set('Content-Type', 'application/json');
+  // A FormData body (a file upload) must NOT get this header set manually --
+  // the browser sets its own `multipart/form-data; boundary=...` value when
+  // it serializes the body, and a fetch call can't supply that boundary
+  // itself. Forcing application/json here would send the wrong Content-Type
+  // entirely, and the server would fail to parse the multipart body at all.
+  if (!(init.body instanceof FormData)) {
+    headers.set('Content-Type', 'application/json');
+  }
 
   const res = await fetch(`${API_BASE}${path}`, { ...init, headers });
   if (!res.ok) await handleErrorResponse(res);

@@ -23,8 +23,15 @@ describe('AssignmentSubmissionsController', () => {
 
   it('delegates POST :id/submissions to AssignmentsService.submit', async () => {
     assignments.submit.mockResolvedValueOnce({});
-    await controller.submit('asg-1', { note: 'My answer' }, { userId: 'user-1', role: 'learner' });
-    expect(assignments.submit).toHaveBeenCalledWith('user-1', 'asg-1', { note: 'My answer' });
+    await controller.submit('asg-1', { note: 'My answer' }, { userId: 'user-1', role: 'learner' }, undefined);
+    expect(assignments.submit).toHaveBeenCalledWith('user-1', 'asg-1', { note: 'My answer' }, undefined);
+  });
+
+  it('forwards an attached file to AssignmentsService.submit', async () => {
+    assignments.submit.mockResolvedValueOnce({});
+    const file = { originalname: 'answer.pdf', mimetype: 'application/pdf', buffer: Buffer.from('x') } as Express.Multer.File;
+    await controller.submit('asg-1', { note: 'My answer' }, { userId: 'user-1', role: 'learner' }, file);
+    expect(assignments.submit).toHaveBeenCalledWith('user-1', 'asg-1', { note: 'My answer' }, file);
   });
 
   it('delegates PATCH :id/submissions/:submissionId to AssignmentsService.grade', async () => {

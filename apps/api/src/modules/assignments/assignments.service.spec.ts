@@ -1,6 +1,7 @@
 import { ForbiddenException, NotFoundException } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
 import { PrismaService } from '../../common/prisma/prisma.service';
+import { SupabaseAdminService } from '../../common/supabase-admin/supabase-admin.service';
 import { EnrollmentsService } from '../enrollments/enrollments.service';
 import { NotificationsService } from '../notifications/notifications.service';
 import { AssignmentsService } from './assignments.service';
@@ -34,6 +35,7 @@ describe('AssignmentsService', () => {
     assignment: { findMany: jest.Mock; findUnique: jest.Mock; findUniqueOrThrow: jest.Mock };
     assignmentSubmission: { upsert: jest.Mock; update: jest.Mock };
   };
+  let supabaseAdmin: { uploadToStorage: jest.Mock };
   let enrollments: { isEnrolled: jest.Mock };
   let notifications: { create: jest.Mock };
 
@@ -43,6 +45,7 @@ describe('AssignmentsService', () => {
       assignment: { findMany: jest.fn(), findUnique: jest.fn(), findUniqueOrThrow: jest.fn() },
       assignmentSubmission: { upsert: jest.fn(), update: jest.fn() },
     };
+    supabaseAdmin = { uploadToStorage: jest.fn().mockResolvedValue(undefined) };
     enrollments = { isEnrolled: jest.fn() };
     notifications = { create: jest.fn() };
 
@@ -50,6 +53,7 @@ describe('AssignmentsService', () => {
       providers: [
         AssignmentsService,
         { provide: PrismaService, useValue: prisma },
+        { provide: SupabaseAdminService, useValue: supabaseAdmin },
         { provide: EnrollmentsService, useValue: enrollments },
         { provide: NotificationsService, useValue: notifications },
       ],
@@ -149,6 +153,49 @@ describe('AssignmentsService', () => {
         expect.objectContaining({
           where: { assignmentId_userId: { assignmentId: 'asg-1', userId: 'user-1' } },
           update: expect.objectContaining({ grade: null, feedback: null, gradedAt: null }),
+        }),
+      );
+    });
+
+    it('uploads an attached file to Storage and derives its key server-side', async () => {
+      prisma.assignment.findUnique.mockResolvedValueOnce({ courseId: 'crs-1' });
+      enrollments.isEnrolled.mockResolvedValueOnce(true);
+      prisma.assignmentSubmission.upsert.mockResolvedValueOnce({});
+      prisma.assignment.findUniqueOrThrow.mockResolvedValueOnce(assignmentRow());
+      const file = {
+        originalname: 'answer.pdf',
+        mimetype: 'application/pdf',
+        buffer: Buffer.from('x'),
+      } as Express.Multer.File;
+
+      await service.submit('user-1', 'asg-1', { note: 'My answer' }, file);
+
+      expect(supabaseAdmin.uploadToStorage).toHaveBeenCalledWith(
+        'submissions',
+        'user-1/asg-1/answer.pdf',
+        file.buffer,
+        'application/pdf',
+      );
+      expect(prisma.assignmentSubmission.upsert).toHaveBeenCalledWith(
+        expect.objectContaining({
+          create: expect.objectContaining({ fileKey: 'user-1/asg-1/answer.pdf' }),
+          update: expect.objectContaining({ fileKey: 'user-1/asg-1/answer.pdf' }),
+        }),
+      );
+    });
+
+    it('leaves fileKey unset when no file is attached', async () => {
+      prisma.assignment.findUnique.mockResolvedValueOnce({ courseId: 'crs-1' });
+      enrollments.isEnrolled.mockResolvedValueOnce(true);
+      prisma.assignmentSubmission.upsert.mockResolvedValueOnce({});
+      prisma.assignment.findUniqueOrThrow.mockResolvedValueOnce(assignmentRow());
+
+      await service.submit('user-1', 'asg-1', { note: 'My answer' });
+
+      expect(supabaseAdmin.uploadToStorage).not.toHaveBeenCalled();
+      expect(prisma.assignmentSubmission.upsert).toHaveBeenCalledWith(
+        expect.objectContaining({
+          update: expect.objectContaining({ fileKey: null }),
         }),
       );
     });

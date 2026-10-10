@@ -148,18 +148,15 @@ jobs:
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
 
-      # TEMP, re-checking live state -- the user removed a policy via the
-      # Supabase Dashboard's own "Clients can list all files" advisory
+      # Re-checked, 2026-10-10 -- user asked whether removing a policy via
+      # the Supabase Dashboard's "Clients can list all files" advisory
       # (Storage -> avatars bucket -> a banner offering "Remove policy" on
-      # an overly-broad SELECT policy) after the last check below, and is
-      # asking whether that's what broke the upload. Re-listing now rather
-      # than reasoning from stale data.
-      - name: TEMP -- recheck storage.objects policies after user's removal
-        run: |
-          psql "$DATABASE_URL" -c "SELECT polname, polcmd, CASE WHEN polpermissive THEN 'PERMISSIVE' ELSE 'RESTRICTIVE' END AS kind, pg_get_expr(polqual, polrelid) AS using_expr, pg_get_expr(polwithcheck, polrelid) AS with_check_expr FROM pg_policy WHERE polrelid = 'storage.objects'::regclass ORDER BY polname;"
-        env:
-          DATABASE_URL: ${{ secrets.DATABASE_URL }}
-
+      # an overly-broad SELECT policy) was what broke the upload. It
+      # wasn't: the policy list came back byte-for-byte identical to the
+      # check below, taken before that removal -- whatever that banner was
+      # about, it isn't a storage.objects row policy, or it was already
+      # gone before the first check. No relation to the upload failure.
+      #
       # Diagnostic run and removed, 2026-10-10 -- confirmed storage.objects
       # has RLS enabled, two independent structurally-correct permissive
       # policy sets for 'avatars' INSERT/UPDATE/DELETE (one pre-existing

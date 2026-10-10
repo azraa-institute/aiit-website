@@ -1,5 +1,6 @@
-import { Body, Controller, Get, Header, HttpCode, Param, ParseUUIDPipe, Post, Query, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, Header, HttpCode, Param, ParseUUIDPipe, Post, Query, Req, UseGuards } from '@nestjs/common';
 import { Throttle } from '@nestjs/throttler';
+import type { Request } from 'express';
 import type {
   AdminAccountSummary,
   AdminCredentials,
@@ -70,8 +71,8 @@ export class AdminUsersController {
   /** The response carries the temporary password -- shown to the admin once, never stored, never cached. */
   @Post('admins')
   @Header('Cache-Control', 'no-store')
-  createAdmin(@CurrentUser() user: AuthenticatedUser, @Body() dto: CreateAdminDto): Promise<AdminCredentials> {
-    return this.admin.createAdmin(user.userId, dto);
+  createAdmin(@CurrentUser() user: AuthenticatedUser, @Body() dto: CreateAdminDto, @Req() request: Request): Promise<AdminCredentials> {
+    return this.admin.createAdmin(user.userId, dto, request.ip);
   }
 
   @Get('instructors')
@@ -85,8 +86,9 @@ export class AdminUsersController {
   createInstructor(
     @CurrentUser() user: AuthenticatedUser,
     @Body() dto: CreateInstructorDto,
+    @Req() request: Request,
   ): Promise<StaffCredentials> {
-    return this.admin.createInstructor(user.userId, dto);
+    return this.admin.createInstructor(user.userId, dto, request.ip);
   }
 
   @Post('instructors/:id/reset-password')

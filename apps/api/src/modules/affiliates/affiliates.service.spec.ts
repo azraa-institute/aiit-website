@@ -162,7 +162,7 @@ describe('AffiliatesService', () => {
 
       await service.applyNew(dto, IP);
 
-      expect(supabase.createUser).toHaveBeenCalledWith('ada@example.com', expect.any(String), 'Ada Lovelace', undefined);
+      expect(supabase.createUser).toHaveBeenCalledWith('ada@example.com', expect.any(String), 'Ada Lovelace', undefined, IP);
       expect(prisma.profile.upsert).toHaveBeenCalledWith({
         where: { id: USER },
         create: { id: USER, name: 'Ada Lovelace', mustChangePassword: true },
@@ -192,7 +192,7 @@ describe('AffiliatesService', () => {
 
       expect(supabase.createUser).toHaveBeenCalledWith('ada@example.com', expect.any(String), 'Ada Lovelace', {
         referral_slug: 'abc123',
-      });
+      }, IP);
     });
   });
 

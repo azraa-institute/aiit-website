@@ -84,6 +84,7 @@ export class AffiliatesService {
       password,
       name,
       referralSlug ? { referral_slug: referralSlug } : undefined,
+      signedIp,
     );
 
     await this.prisma.profile.upsert({

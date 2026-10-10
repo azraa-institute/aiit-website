@@ -107,7 +107,7 @@ describe('AdminUsersService', () => {
         suspendedReason: null,
       });
 
-      const res = await service.createInstructor(ADMIN, { name: ' Grace Okoro ', email: 'Grace@AIIT.network' });
+      const res = await service.createInstructor(ADMIN, { name: ' Grace Okoro ', email: 'Grace@AIIT.network' }, '203.0.113.4');
 
       const [email, password, name] = supabase.createUser.mock.calls[0];
       expect(email).toBe('grace@aiit.network');
@@ -127,7 +127,7 @@ describe('AdminUsersService', () => {
     it('does not touch the database when the login already exists', async () => {
       supabase.createUser.mockRejectedValue(new ConflictException('exists'));
       await expect(
-        service.createInstructor(ADMIN, { name: 'Grace', email: 'grace@aiit.network' }),
+        service.createInstructor(ADMIN, { name: 'Grace', email: 'grace@aiit.network' }, undefined),
       ).rejects.toBeInstanceOf(ConflictException);
       expect(prisma.profile.upsert).not.toHaveBeenCalled();
     });
@@ -138,9 +138,9 @@ describe('AdminUsersService', () => {
       supabase.createUser.mockResolvedValue(NEW_USER);
       prisma.profile.upsert.mockResolvedValue({ id: NEW_USER, name: 'Grace Okoro', createdAt: new Date('2026-09-26T10:00:00Z') });
 
-      const res = await service.createAdmin(ADMIN, { name: ' Grace Okoro ', email: 'Grace@AIIT.network' });
+      const res = await service.createAdmin(ADMIN, { name: ' Grace Okoro ', email: 'Grace@AIIT.network' }, '203.0.113.4');
 
-      expect(supabase.createUser).toHaveBeenCalledWith('grace@aiit.network', expect.any(String), 'Grace Okoro');
+      expect(supabase.createUser).toHaveBeenCalledWith('grace@aiit.network', expect.any(String), 'Grace Okoro', undefined, '203.0.113.4');
       expect(prisma.profile.upsert).toHaveBeenCalledWith(
         expect.objectContaining({ update: expect.objectContaining({ role: 'admin', mustChangePassword: true, createdBy: ADMIN }) }),
       );

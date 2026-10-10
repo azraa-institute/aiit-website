@@ -28,7 +28,19 @@ export class SupabaseAdminService {
     return Boolean(process.env.SUPABASE_URL && process.env.SUPABASE_SERVICE_ROLE_KEY);
   }
 
-  private request(path: string, init: RequestInit = {}): Promise<Response> {
+  /**
+   * `forwardedIp` -- the real end-user IP (req.ip, correct since
+   * main.ts's `trust proxy` fix) -- is forwarded as X-Forwarded-For so
+   * Supabase Auth's own rate limiting can key on the actual caller
+   * instead of this server's address, same reasoning as that trust-proxy
+   * fix and the ThrottlerGuard it restored. Only takes effect once
+   * "Enable IP address forwarding" is turned on for secret-key requests
+   * in Supabase Dashboard -> Authentication -> Rate Limits -- the header
+   * alone does nothing until that's flipped on; omit it where no caller
+   * IP is naturally in scope (e.g. a background/internal call) rather
+   * than send a misleading one.
+   */
+  private request(path: string, init: RequestInit = {}, forwardedIp?: string): Promise<Response> {
     const url = process.env.SUPABASE_URL;
     const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
     if (!url || !key) {
@@ -42,6 +54,7 @@ export class SupabaseAdminService {
         apikey: key,
         Authorization: `Bearer ${key}`,
         'Content-Type': 'application/json',
+        ...(forwardedIp ? { 'X-Forwarded-For': forwardedIp } : {}),
         ...(init.headers ?? {}),
       },
     });
@@ -54,13 +67,23 @@ export class SupabaseAdminService {
    * 20261002010000_affiliate_referral_trigger/migration.sql), so passing
    * `{ referral_slug }` here attributes the new profile exactly the way a
    * client-side `supabase.auth.signUp()` call already does, even though
-   * this goes through the admin API instead.
+   * this goes through the admin API instead. `callerIp` is the real
+   * requester's IP (the applicant for a self-service signup, the admin
+   * for an admin-created account) -- see the `request()` method's own
+   * comment on what this does and doesn't do on its own.
    */
-  async createUser(email: string, password: string, name: string, extraMetadata?: Record<string, unknown>): Promise<string> {
-    const res = await this.request('/users', {
-      method: 'POST',
-      body: JSON.stringify({ email, password, email_confirm: true, user_metadata: { name, ...extraMetadata } }),
-    });
+  async createUser(
+    email: string,
+    password: string,
+    name: string,
+    extraMetadata?: Record<string, unknown>,
+    callerIp?: string,
+  ): Promise<string> {
+    const res = await this.request(
+      '/users',
+      { method: 'POST', body: JSON.stringify({ email, password, email_confirm: true, user_metadata: { name, ...extraMetadata } }) },
+      callerIp,
+    );
     if (res.ok) return ((await res.json()) as { id: string }).id;
 
     const body = await res.text().catch(() => '');

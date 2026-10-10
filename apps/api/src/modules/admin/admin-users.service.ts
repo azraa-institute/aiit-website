@@ -224,10 +224,10 @@ export class AdminUsersService {
     return profiles.map((p) => ({ id: p.id, name: p.name, email: emails.get(p.id) ?? null, createdAt: p.createdAt.toISOString() }));
   }
 
-  async createAdmin(adminId: string, dto: CreateAdminDto): Promise<AdminCredentials> {
+  async createAdmin(adminId: string, dto: CreateAdminDto, adminIp: string | undefined): Promise<AdminCredentials> {
     const email = dto.email.trim().toLowerCase();
     const password = generateTemporaryPassword();
-    const userId = await this.supabase.createUser(email, password, dto.name.trim());
+    const userId = await this.supabase.createUser(email, password, dto.name.trim(), undefined, adminIp);
 
     // The on_auth_user_created trigger has already inserted a 'learner' profile; upsert covers the case where it hasn't.
     const data = { role: 'admin' as const, name: dto.name.trim(), mustChangePassword: true, createdBy: adminId };
@@ -244,10 +244,10 @@ export class AdminUsersService {
     return this.toInstructorSummaries(profiles);
   }
 
-  async createInstructor(adminId: string, dto: CreateInstructorDto): Promise<StaffCredentials> {
+  async createInstructor(adminId: string, dto: CreateInstructorDto, adminIp: string | undefined): Promise<StaffCredentials> {
     const email = dto.email.trim().toLowerCase();
     const password = generateTemporaryPassword();
-    const userId = await this.supabase.createUser(email, password, dto.name.trim());
+    const userId = await this.supabase.createUser(email, password, dto.name.trim(), undefined, adminIp);
 
     // The on_auth_user_created trigger has already inserted a 'learner' profile; upsert covers the case where it hasn't.
     const data = {

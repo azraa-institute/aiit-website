@@ -158,6 +158,7 @@ jobs:
       - name: ONE-TIME -- drop the maximally-permissive test policy
         run: |
           psql "$DATABASE_URL" -c "DROP POLICY IF EXISTS \"debug_test_avatars_insert\" ON storage.objects;"
+          psql "$DATABASE_URL" -c "SELECT count(*) AS should_be_zero FROM pg_policy WHERE polrelid = 'storage.objects'::regclass AND polname = 'debug_test_avatars_insert';"
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
 

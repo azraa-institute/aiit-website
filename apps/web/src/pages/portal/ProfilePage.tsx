@@ -235,7 +235,27 @@ export default function ProfilePage() {
       // which looked exactly like the old photo being "stuck".
       const ext = file.name.split('.').pop() ?? 'jpg';
       const previousKey = profile.avatarKey;
-      const key = await uploadFile(AVATARS_BUCKET, `${session.user.id}/avatar-${Date.now()}.${ext}`, file, AVATAR_UPLOAD_CONSTRAINTS);
+      const path = `${session.user.id}/avatar-${Date.now()}.${ext}`;
+      // TEMP DEBUG -- remove once the RLS mismatch is found. Decodes the
+      // JWT's own payload (no verification, just reading claims) so we
+      // can compare what Postgres's auth.uid() actually sees against the
+      // session.user.id the upload path is built from -- if these two
+      // disagree, that's the RLS policy's real failure mode.
+      try {
+        const jwtPayload = JSON.parse(atob(session.access_token.split('.')[1]));
+        console.log('[avatar-upload-debug]', {
+          uploadPath: path,
+          sessionUserId: session.user.id,
+          jwtSub: jwtPayload.sub,
+          jwtRole: jwtPayload.role,
+          jwtAud: jwtPayload.aud,
+          jwtExpiresAt: new Date(jwtPayload.exp * 1000).toISOString(),
+          nowIsAfterExpiry: Date.now() > jwtPayload.exp * 1000,
+        });
+      } catch (debugErr) {
+        console.log('[avatar-upload-debug] could not decode JWT', debugErr);
+      }
+      const key = await uploadFile(AVATARS_BUCKET, path, file, AVATAR_UPLOAD_CONSTRAINTS);
       await apiFetch('/me', { method: 'PATCH', body: JSON.stringify({ avatarKey: key }) });
       if (previousKey && previousKey !== key) {
         // Best-effort cleanup of the file the new photo replaces -- if it

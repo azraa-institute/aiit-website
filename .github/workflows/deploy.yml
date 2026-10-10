@@ -163,6 +163,7 @@ jobs:
         run: |
           psql "$DATABASE_URL" -c "SELECT polname, polcmd, CASE WHEN polpermissive THEN 'PERMISSIVE' ELSE 'RESTRICTIVE' END AS kind, pg_get_expr(polqual, polrelid) AS using_expr, pg_get_expr(polwithcheck, polrelid) AS with_check_expr FROM pg_policy WHERE polrelid = 'storage.objects'::regclass ORDER BY polname;"
           psql "$DATABASE_URL" -c "SELECT relrowsecurity, relforcerowsecurity FROM pg_class WHERE oid = 'storage.objects'::regclass;"
+          psql "$DATABASE_URL" -c "SELECT id, name, public, file_size_limit, allowed_mime_types, owner FROM storage.buckets;"
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
 

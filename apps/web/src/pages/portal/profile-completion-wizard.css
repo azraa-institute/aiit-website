@@ -133,6 +133,21 @@
   object-position: left bottom;
   pointer-events: none;
 }
+/* Heavier toward the bottom (where the footer sits over the globe's own
+   brightest lit edge) and a flat wash elsewhere -- enough to guarantee
+   contrast without flattening the image into a silhouette. */
+.pcw-visual__scrim {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    180deg,
+    rgba(20, 17, 15, 0.35) 0%,
+    rgba(20, 17, 15, 0.3) 40%,
+    rgba(20, 17, 15, 0.55) 70%,
+    rgba(20, 17, 15, 0.75) 100%
+  );
+  pointer-events: none;
+}
 
 /* The one zone that changes per step -- a vertical brass rule on the left
    (a blockquote-like accent, not just a colour change) sets it apart from
@@ -157,22 +172,29 @@
   margin: 0;
   font-family: var(--font-display);
   font-weight: 700;
-  font-size: var(--fs-subhead);
+  /* Fixed, not --fs-subhead -- that token is a clamp() tuned against
+     viewport width for full-width page headings; in this ~32%-wide
+     column the same viewport-relative scaling read far too large on
+     wide desktop screens, where it was clamping near its own max
+     regardless of how narrow the actual column is. */
+  font-size: 1.3rem;
   line-height: var(--lh-snug);
   color: #fff;
+  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.4);
 }
 .pcw-visual__body {
   margin: var(--space-2) 0 0;
   font-size: var(--fs-sm);
   line-height: 1.5;
   color: var(--fg-muted);
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.5);
 }
 @media (max-width: 859px) {
   .pcw-visual__copy {
     margin-top: var(--space-2);
   }
   .pcw-visual__title {
-    font-size: var(--fs-lead);
+    font-size: 1.2rem;
   }
 }
 
@@ -190,6 +212,7 @@
   letter-spacing: var(--tracking-wide);
   text-transform: uppercase;
   color: var(--fg-faint);
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.5);
 }
 
 /* ---- Right column — the actual form ---- */

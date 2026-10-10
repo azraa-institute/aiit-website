@@ -712,6 +712,12 @@ function WizardVisual({ phase }: { phase: Phase }) {
   return (
     <div className="pcw-visual on-ink">
       <img className="pcw-visual__motif" src="/assets/portal/profile-wizard-globe.webp" alt="" aria-hidden="true" />
+      {/* Darkens the image under the text -- the globe art's brightness
+          varies a lot (the lit edge, the node glow), so plain-coloured
+          text can't reliably read against all of it on its own. A real
+          DOM layer (not a ::before, which would paint under the image,
+          not over it) between the img and the text content below. */}
+      <div className="pcw-visual__scrim" aria-hidden="true" />
 
       <div className="pcw-visual__brand">
         <Logo variant="light" className="pcw-visual__logo" />

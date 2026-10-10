@@ -146,6 +146,20 @@
   font-size: var(--fs-sm);
   color: var(--fg-muted);
 }
+.course-detail__ask {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+.course-detail__ask-avatar {
+  flex-shrink: 0;
+  display: flex;
+  border-radius: 50%;
+  box-shadow: var(--shadow-soft);
+}
+.course-detail__ask .btn {
+  flex: 1;
+}
 .course-detail__cert-note {
   margin-top: var(--space-2);
   font-size: var(--fs-xs);

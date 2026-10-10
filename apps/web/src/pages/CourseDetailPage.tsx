@@ -20,6 +20,8 @@ import { TrustBar } from '@/components/common/TrustBar';
 import { EnrollmentIllustration } from '@/components/common/EnrollmentIllustration';
 import { CourseCard } from '@/components/course/CourseCard';
 import { RouteFallback } from '@/components/layout/RouteFallback';
+import { QuillAvatar } from '@/components/course/QuillAvatar';
+import { QuillChatPanel } from '@/components/course/QuillChatPanel';
 import { invalidateLearner, useLearner } from './portal/learnerData';
 import './course-detail.css';
 
@@ -55,6 +57,7 @@ export default function CourseDetailPage() {
   const { slug } = useParams();
   const courseState = useCourseDetail(slug);
   const courseListState = useCourseList();
+  const [quillOpen, setQuillOpen] = useState(false);
   useScrollReveal([slug, courseState.status]);
 
   if (courseState.status === 'loading') {
@@ -216,10 +219,21 @@ export default function CourseDetailPage() {
                   ) : (
                     <EnrollAction course={course} comingSoon={comingSoon} />
                   )}
-                  <Button as="link" to="/webinar" variant="secondary" fullWidth>
-                    Ask about this course
-                  </Button>
+                  <div className="course-detail__ask">
+                    <span className="course-detail__ask-avatar" aria-hidden="true">
+                      <QuillAvatar />
+                    </span>
+                    <Button as="button" type="button" variant="secondary" fullWidth onClick={() => setQuillOpen(true)}>
+                      Ask Quill about this course
+                    </Button>
+                  </div>
                   <p className="course-detail__cert-note">{course.certification}</p>
+                  <QuillChatPanel
+                    courseSlug={course.slug}
+                    courseTitle={course.title}
+                    open={quillOpen}
+                    onClose={() => setQuillOpen(false)}
+                  />
                 </div>
               </aside>
             </div>
@@ -437,7 +451,7 @@ function EnrollAction({ course, comingSoon }: { course: Course; comingSoon: bool
           {comingSoon ? 'Join the waitlist' : 'Enroll now'}
         </Button>
         <p className="course-detail__note">
-          Online payment isn&apos;t available yet for this course. Use &quot;Ask about this course&quot; below.
+          Online payment isn&apos;t available yet for this course. Use &quot;Ask Quill&quot; below.
         </p>
       </>
     );
@@ -448,7 +462,7 @@ function EnrollAction({ course, comingSoon }: { course: Course; comingSoon: bool
     if (noProviderConfigured) {
       return (
         <p className="course-detail__note">
-          Online payment isn&apos;t available yet for this course. Use &quot;Ask about this course&quot; below.
+          Online payment isn&apos;t available yet for this course. Use &quot;Ask Quill&quot; below.
         </p>
       );
     }

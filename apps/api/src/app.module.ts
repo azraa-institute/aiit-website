@@ -21,6 +21,7 @@ import { LiveClassesModule } from './modules/live-classes/live-classes.module';
 import { AdminModule } from './modules/admin/admin.module';
 import { InstructorModule } from './modules/instructor/instructor.module';
 import { SupportModule } from './modules/support/support.module';
+import { QuillModule } from './modules/quill/quill.module';
 import { AuditModule } from './common/audit/audit.service';
 import { SupabaseAdminModule } from './common/supabase-admin/supabase-admin.service';
 import { MemoryCacheModule } from './common/cache/memory-cache.service';
@@ -62,6 +63,7 @@ import { MemoryCacheModule } from './common/cache/memory-cache.service';
     AdminModule,
     InstructorModule,
     SupportModule,
+    QuillModule,
   ],
   providers: [{ provide: APP_GUARD, useClass: ThrottlerGuard }],
 })

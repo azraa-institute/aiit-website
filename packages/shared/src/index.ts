@@ -26,3 +26,4 @@ export * from './instructor';
 export * from './support';
 export * from './affiliate';
 export * from './payment';
+export * from './quill';

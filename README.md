@@ -176,6 +176,20 @@ it in production. Live modules:
   in the schema but aren't wired to any UI yet — the learner experience today
   is entirely live-class + assignments + practice quizzes, not a self-paced
   lesson browser.
+- **Quill** — the course-advisor assistant on every course page ("Ask Quill
+  about this course"). Public, unauthenticated (`POST /quill/chat`,
+  `apps/api/src/modules/quill`), rate-limited tighter than most public
+  endpoints (12 messages/min/IP) since it's designed to bound cost once a
+  real model is attached, not just abuse. Today it's a rule-based engine —
+  every reply is built from the same public course data the course page
+  itself renders (outcomes, pricing, duration, certification) plus a small
+  curated set of AIIT blog articles — no LLM call involved yet. Set
+  `XAI_API_KEY` to upgrade it to a real model (x.ai's Grok) without any
+  other change; see the env var's own comment and `QuillService`'s doc
+  comment for where that plugs in. It escalates to a live WhatsApp/email/
+  phone handoff only when explicitly asked for a human or after two
+  consecutive replies it couldn't match to anything — not on the first
+  question it can't parse.
 - **Payments** — three live, real-money providers, one provider-agnostic
   `Order` table (not a table per provider): **PayPal**, **Razorpay** (India/
   INR), **Paystack** (Nigeria/NGN). Each provider gets its own

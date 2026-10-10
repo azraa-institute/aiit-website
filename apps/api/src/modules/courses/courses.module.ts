@@ -8,5 +8,8 @@ import { CoursesService } from './courses.service';
   imports: [CurrencyModule],
   controllers: [CoursesController, DomainsController],
   providers: [CoursesService],
+  // Exported so QuillModule can reuse the same catalogue reads (course detail
+  // + curriculum) rather than duplicating Prisma queries.
+  exports: [CoursesService],
 })
 export class CoursesModule {}

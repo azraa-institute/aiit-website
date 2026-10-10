@@ -148,6 +148,24 @@ jobs:
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
 
+      # TEMP, read-only diagnostic -- the four policies applied in the
+      # SIXTH one-time step above were confirmed created, but a user retry
+      # still hit the identical "new row violates row-level security
+      # policy" error. Lists every policy actually on storage.objects
+      # right now (name/command/restrictive-or-permissive/the expressions
+      # themselves) rather than guessing further -- e.g. a pre-existing
+      # RESTRICTIVE policy from an earlier manual setup attempt would
+      # block every insert regardless of the new permissive ones passing,
+      # since restrictive policies AND together with permissive ones
+      # rather than OR. ubuntu-latest ships psql preinstalled. Removed
+      # once the real cause is found.
+      - name: TEMP -- list storage.objects policies
+        run: |
+          psql "$DATABASE_URL" -c "SELECT polname, polcmd, CASE WHEN polpermissive THEN 'PERMISSIVE' ELSE 'RESTRICTIVE' END AS kind, pg_get_expr(polqual, polrelid) AS using_expr, pg_get_expr(polwithcheck, polrelid) AS with_check_expr FROM pg_policy WHERE polrelid = 'storage.objects'::regclass ORDER BY polname;"
+          psql "$DATABASE_URL" -c "SELECT relrowsecurity, relforcerowsecurity FROM pg_class WHERE oid = 'storage.objects'::regclass;"
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+
   deploy-api:
     needs: migrate
     runs-on: ubuntu-latest

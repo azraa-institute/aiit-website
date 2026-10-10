@@ -100,17 +100,10 @@ jobs:
       # UPDATEs it, already applied successfully in an earlier deploy) --
       # there is nothing to actually apply, so again no SQL by hand, just:
       #   npx prisma migrate resolve --applied 20261009235959_stub_storage_schema --schema apps/api/prisma/schema.prisma
-      #
-      # TEMPORARY, remove after this run succeeds once: runs that exact
-      # resolve command through this same workflow (reusing its existing
-      # DATABASE_URL secret) rather than asking for the production
-      # connection string to be run by hand -- one less path for that
-      # value to end up somewhere it shouldn't.
-      - name: ONE-TIME -- resolve the stub_storage_schema migration
-        run: npm exec -w apps/api -- prisma migrate resolve --applied 20261009235959_stub_storage_schema
-        env:
-          DATABASE_URL: ${{ secrets.DATABASE_URL }}
-
+      # (CONFIRMED NEEDED and done, 2026-10-10 -- run through this workflow
+      # itself as a one-time step, reusing its existing DATABASE_URL secret
+      # rather than asking for the production connection string to be
+      # typed into a local terminal. Removed again once it succeeded.)
       - name: Apply pending migrations
         run: npm exec -w apps/api -- prisma migrate deploy
         env:

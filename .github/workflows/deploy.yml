@@ -148,6 +148,23 @@ jobs:
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
 
+      # TEMP, decisive test -- every individually-verified piece (two
+      # independent correct policies, correct JWT sub/role matching
+      # session.user.id exactly, correct bucket, correct path) still adds
+      # up to a denied INSERT. Before assuming the policy *condition*
+      # itself is somehow wrong despite all that, testing with NO
+      # condition at all beyond bucket_id -- if this maximally permissive
+      # policy still gets denied, that proves auth.uid()/role evaluation
+      # itself isn't working for Storage requests on this project, not
+      # that the foldername comparison is subtly off. Removed immediately
+      # after the result either way -- this is strictly broader than what
+      # should ever ship.
+      - name: TEMP -- maximally permissive test policy, no folder check
+        run: |
+          psql "$DATABASE_URL" -c "DROP POLICY IF EXISTS \"debug_test_avatars_insert\" ON storage.objects; CREATE POLICY \"debug_test_avatars_insert\" ON storage.objects FOR INSERT TO authenticated WITH CHECK (bucket_id = 'avatars');"
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+
       # Re-checked, 2026-10-10 -- user asked whether removing a policy via
       # the Supabase Dashboard's "Clients can list all files" advisory
       # (Storage -> avatars bucket -> a banner offering "Remove policy" on

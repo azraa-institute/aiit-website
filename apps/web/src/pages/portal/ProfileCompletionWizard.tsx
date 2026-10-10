@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import type { ReactNode } from 'react';
 import { createPortal } from 'react-dom';
 import type { GeoCity, GeoState } from '@aiit/shared';
+import { cn } from '@/lib/cn';
 import { apiFetch } from '@/lib/api';
 import { fetchStates, fetchCities } from '@/lib/geo';
 import { splitPhone, combinePhone } from '@/lib/phone';
@@ -31,7 +32,7 @@ type Step = 1 | 2 | 3 | 4 | 5;
 type Phase = 'welcome' | Step | 'completion';
 const STEP_COUNT = 5;
 const STEP_LABELS: Record<Step, string> = {
-  1: 'About you',
+  1: 'About You',
   2: 'Education',
   3: 'Goals',
   4: 'Location',
@@ -265,9 +266,10 @@ export function ProfileCompletionWizard({ open, profile, onClose, onComplete }: 
           {typeof phase === 'number' && (
             <div className="pcw-steps" aria-hidden="true">
               {(Object.keys(STEP_LABELS) as unknown as Step[]).map((s) => (
-                <span key={s} className={s <= phase ? 'is-done' : undefined}>
-                  {STEP_LABELS[s]}
-                </span>
+                <div key={s} className={cn('pcw-steps__item', Number(s) === phase && 'is-active', Number(s) < phase && 'is-done')}>
+                  <span className="pcw-steps__dot" />
+                  <span className="pcw-steps__label">{STEP_LABELS[s]}</span>
+                </div>
               ))}
             </div>
           )}
@@ -294,11 +296,11 @@ export function ProfileCompletionWizard({ open, profile, onClose, onComplete }: 
                 <li>Better course recommendations</li>
               </ul>
               <div className="pcw-step__actions">
-                <Button as="button" onClick={next}>
-                  Get started
-                </Button>
                 <Button as="button" variant="ghost" onClick={onClose}>
                   Skip for now
+                </Button>
+                <Button as="button" arrow onClick={next} className="pcw-step__continue">
+                  Get started
                 </Button>
               </div>
             </div>
@@ -337,11 +339,17 @@ export function ProfileCompletionWizard({ open, profile, onClose, onComplete }: 
                 />
               </div>
               <div className="pcw-step__actions">
-                <Button as="button" onClick={next} disabled={!name.trim() || !phoneCountry || !phoneNational.trim()}>
-                  Continue
-                </Button>
                 <Button as="button" variant="ghost" onClick={onClose}>
                   Skip for now
+                </Button>
+                <Button
+                  as="button"
+                  arrow
+                  onClick={next}
+                  disabled={!name.trim() || !phoneCountry || !phoneNational.trim()}
+                  className="pcw-step__continue"
+                >
+                  Continue
                 </Button>
               </div>
             </div>
@@ -407,11 +415,11 @@ export function ProfileCompletionWizard({ open, profile, onClose, onComplete }: 
                 />
               </div>
               <div className="pcw-step__actions">
-                <Button as="button" onClick={next} disabled={!qualification}>
-                  Continue
-                </Button>
                 <Button as="button" variant="ghost" onClick={back}>
                   Back
+                </Button>
+                <Button as="button" arrow onClick={next} disabled={!qualification} className="pcw-step__continue">
+                  Continue
                 </Button>
               </div>
             </div>
@@ -452,11 +460,11 @@ export function ProfileCompletionWizard({ open, profile, onClose, onComplete }: 
                 </div>
               </div>
               <div className="pcw-step__actions">
-                <Button as="button" onClick={next}>
-                  Continue
-                </Button>
                 <Button as="button" variant="ghost" onClick={back}>
                   Back
+                </Button>
+                <Button as="button" arrow onClick={next} className="pcw-step__continue">
+                  Continue
                 </Button>
               </div>
             </div>
@@ -523,11 +531,17 @@ export function ProfileCompletionWizard({ open, profile, onClose, onComplete }: 
                 options={timeZoneOptions(timeZone)}
               />
               <div className="pcw-step__actions">
-                <Button as="button" onClick={next} disabled={!country || !!postalCodeError}>
-                  Continue
-                </Button>
                 <Button as="button" variant="ghost" onClick={back}>
                   Back
+                </Button>
+                <Button
+                  as="button"
+                  arrow
+                  onClick={next}
+                  disabled={!country || !!postalCodeError}
+                  className="pcw-step__continue"
+                >
+                  Continue
                 </Button>
               </div>
             </div>
@@ -578,11 +592,11 @@ export function ProfileCompletionWizard({ open, profile, onClose, onComplete }: 
                 </ReviewSection>
               </div>
               <div className="pcw-step__actions">
-                <Button as="button" onClick={handleFinish} loading={saving}>
-                  Complete my profile
-                </Button>
                 <Button as="button" variant="ghost" onClick={back}>
                   Back
+                </Button>
+                <Button as="button" arrow onClick={handleFinish} loading={saving} className="pcw-step__continue">
+                  Complete my profile
                 </Button>
               </div>
             </div>
@@ -595,11 +609,11 @@ export function ProfileCompletionWizard({ open, profile, onClose, onComplete }: 
               </h2>
               <p className="pcw-step__body">Now let&apos;s show you around.</p>
               <div className="pcw-step__actions">
-                <Button as="button" onClick={() => onComplete('tour')}>
-                  Take the tour
-                </Button>
                 <Button as="button" variant="ghost" onClick={() => onComplete('skip')}>
                   Skip tour
+                </Button>
+                <Button as="button" arrow onClick={() => onComplete('tour')} className="pcw-step__continue">
+                  Take the tour
                 </Button>
               </div>
             </div>

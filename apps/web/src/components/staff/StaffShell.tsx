@@ -56,7 +56,7 @@ export function StaffShell({
 
   return (
     <div className={cn('shell', `shell--${tone}`, open && 'is-open', collapsed && 'is-collapsed')}>
-      <Seo title={portal} path={tone === 'admin' ? '/admin' : '/instructor'} noindex />
+      <Seo title={portal} path={tone === 'admin' ? '/admin' : tone === 'affiliate' ? '/affiliate-portal' : '/instructor'} noindex />
 
       <header className="shell__topbar">
         <button type="button" className="shell__menu" aria-expanded={open} aria-controls="shell-side" onClick={() => setOpen((o) => !o)}>

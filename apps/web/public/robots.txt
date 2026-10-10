@@ -4,5 +4,14 @@ Disallow: /portal
 Disallow: /login
 Disallow: /register
 Disallow: /forgot-password
+Disallow: /reset-password
+Disallow: /change-password
+Disallow: /auth/callback
+Disallow: /staff
+Disallow: /admin
+Disallow: /instructor
+Disallow: /affiliate-portal
+Disallow: /classroom
+Disallow: /r/
 
 Sitemap: https://aiit.network/sitemap.xml

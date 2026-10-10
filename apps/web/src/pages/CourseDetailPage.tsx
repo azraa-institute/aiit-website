@@ -22,6 +22,8 @@ import { CourseCard } from '@/components/course/CourseCard';
 import { RouteFallback } from '@/components/layout/RouteFallback';
 import { QuillAvatar } from '@/components/course/QuillAvatar';
 import { QuillChatPanel } from '@/components/course/QuillChatPanel';
+import { ProfileCompletionWizard } from './portal/ProfileCompletionWizard';
+import { useLockBodyScroll } from '@/lib/useLockBodyScroll';
 import { invalidateLearner, useLearner } from './portal/learnerData';
 import './course-detail.css';
 
@@ -58,6 +60,16 @@ function CheckIcon() {
     <svg width="15" height="15" viewBox="0 0 24 24" aria-hidden="true">
       <circle cx="12" cy="12" r="9.5" fill="none" stroke="currentColor" strokeWidth="1.6" />
       <path d="M7.5 12.5 10.3 15.3 16.5 9" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
+function AlertIcon() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 24 24" aria-hidden="true">
+      <circle cx="12" cy="12" r="8.2" fill="none" stroke="currentColor" strokeWidth="1.6" />
+      <path d="M12 8v5" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+      <circle cx="12" cy="16" r="0.9" fill="currentColor" />
     </svg>
   );
 }
@@ -407,10 +419,12 @@ function EnrollAction({ course, comingSoon }: { course: Course; comingSoon: bool
   const navigate = useNavigate();
   const [enrolling, setEnrolling] = useState(false);
   const [error, setError] = useState<string>();
+  const [profileWizardOpen, setProfileWizardOpen] = useState(false);
   // Called unconditionally (hooks can't be conditional) -- `enabled` skips
   // the actual fetch for anonymous/loading visitors, same pattern already
   // used by the public header's account widget (see learnerData.ts).
   const learnerState = useLearner({ enabled: status === 'authenticated' });
+  useLockBodyScroll(profileWizardOpen);
 
   if (status === 'loading') {
     return (
@@ -453,10 +467,29 @@ function EnrollAction({ course, comingSoon }: { course: Course; comingSoon: bool
         <Button as="button" type="button" fullWidth size="lg" disabled>
           {comingSoon ? 'Join the waitlist' : 'Enroll now'}
         </Button>
-        <p className="course-detail__note">
-          Complete your profile before enrolling.{' '}
-          <Link to="/portal/profile">Finish your profile</Link>
+        <p className="course-detail__profile-alert" role="alert">
+          <AlertIcon />
+          <span>
+            Please complete your profile to enroll.{' '}
+            <button
+              type="button"
+              className="course-detail__profile-alert-link"
+              onClick={() => setProfileWizardOpen(true)}
+            >
+              Click here
+            </button>{' '}
+            to finish it.
+          </span>
         </p>
+        <ProfileCompletionWizard
+          open={profileWizardOpen}
+          profile={learnerState.learner.profile}
+          onClose={() => setProfileWizardOpen(false)}
+          onComplete={() => {
+            learnerState.refetch();
+            setProfileWizardOpen(false);
+          }}
+        />
       </>
     );
   }

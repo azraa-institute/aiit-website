@@ -146,6 +146,47 @@
   font-size: var(--fs-sm);
   color: var(--fg-muted);
 }
+/* Blocking-state alert, not a passive note -- a learner can't enroll until
+   this is resolved, so it gets the same red treatment as a form validation
+   error (var(--red)/--red-tint, the site's one reserved "something needs
+   your attention" colour) rather than reading as optional, easy-to-miss
+   fine print. The link opens ProfileCompletionWizard in place (the same
+   wizard the portal's own banner reopens, see ProfileCompletionBanner.tsx)
+   instead of navigating away to a separate page. */
+.course-detail__profile-alert {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-2);
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-md);
+  background: rgba(192, 43, 35, 0.07);
+  border: 1px solid var(--red-tint);
+  color: var(--red-deep);
+  font-size: var(--fs-sm);
+  line-height: 1.5;
+}
+.course-detail__profile-alert svg {
+  flex-shrink: 0;
+  margin-top: 0.15em;
+  color: var(--red);
+}
+.course-detail__profile-alert-link {
+  display: inline;
+  padding: 0;
+  margin: 0;
+  border: none;
+  background: none;
+  font: inherit;
+  font-weight: 700;
+  color: var(--red-deep);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  cursor: pointer;
+}
+.course-detail__profile-alert-link:hover,
+.course-detail__profile-alert-link:focus-visible {
+  color: var(--red);
+}
 /* A confirmed-status badge, not a disabled button -- the old markup reused
    <Button disabled>, which .btn:disabled fades to 45% opacity site-wide
    (the correct treatment for "can't do this right now"). "You're enrolled"
@@ -205,7 +246,7 @@
    enroll flourish. */
 .course-detail__ask-btn .btn__label {
   font-family: 'Dancing Script', cursive;
-  font-size: clamp(1.2rem, 1.1rem + 0.4vw, 1.4rem);
+  font-size: clamp(1.05rem, 1rem + 0.3vw, 1.2rem);
   font-weight: 700;
   text-transform: none;
   letter-spacing: normal;

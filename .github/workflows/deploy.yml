@@ -99,7 +99,7 @@ jobs:
       # production (confirmed: 20261010000000_storage_bucket_limits, which
       # UPDATEs it, already applied successfully in an earlier deploy) --
       # there is nothing to actually apply, so again no SQL by hand, just:
-      #   npx prisma migrate resolve --applied 20261009235959_stub_storage_schema --schema apps/api/prisma/schema.prisma
+      # npx prisma migrate resolve --applied 20261009235959_stub_storage_schema --schema apps/api/prisma/schema.prisma
       # (CONFIRMED NEEDED and done, 2026-10-10 -- run through this workflow
       # itself as a one-time step, reusing its existing DATABASE_URL secret
       # rather than asking for the production connection string to be
@@ -145,6 +145,18 @@ jobs:
       # typed into a local terminal. Removed again once it succeeded.)
       - name: Apply pending migrations
         run: npm exec -w apps/api -- prisma migrate deploy
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+
+      # TEMP, re-checking live state -- the user removed a policy via the
+      # Supabase Dashboard's own "Clients can list all files" advisory
+      # (Storage -> avatars bucket -> a banner offering "Remove policy" on
+      # an overly-broad SELECT policy) after the last check below, and is
+      # asking whether that's what broke the upload. Re-listing now rather
+      # than reasoning from stale data.
+      - name: TEMP -- recheck storage.objects policies after user's removal
+        run: |
+          psql "$DATABASE_URL" -c "SELECT polname, polcmd, CASE WHEN polpermissive THEN 'PERMISSIVE' ELSE 'RESTRICTIVE' END AS kind, pg_get_expr(polqual, polrelid) AS using_expr, pg_get_expr(polwithcheck, polrelid) AS with_check_expr FROM pg_policy WHERE polrelid = 'storage.objects'::regclass ORDER BY polname;"
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
 

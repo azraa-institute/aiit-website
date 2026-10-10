@@ -148,24 +148,16 @@ jobs:
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
 
-      # TEMP, read-only diagnostic -- the four policies applied in the
-      # SIXTH one-time step above were confirmed created, but a user retry
-      # still hit the identical "new row violates row-level security
-      # policy" error. Lists every policy actually on storage.objects
-      # right now (name/command/restrictive-or-permissive/the expressions
-      # themselves) rather than guessing further -- e.g. a pre-existing
-      # RESTRICTIVE policy from an earlier manual setup attempt would
-      # block every insert regardless of the new permissive ones passing,
-      # since restrictive policies AND together with permissive ones
-      # rather than OR. ubuntu-latest ships psql preinstalled. Removed
-      # once the real cause is found.
-      - name: TEMP -- list storage.objects policies
-        run: |
-          psql "$DATABASE_URL" -c "SELECT polname, polcmd, CASE WHEN polpermissive THEN 'PERMISSIVE' ELSE 'RESTRICTIVE' END AS kind, pg_get_expr(polqual, polrelid) AS using_expr, pg_get_expr(polwithcheck, polrelid) AS with_check_expr FROM pg_policy WHERE polrelid = 'storage.objects'::regclass ORDER BY polname;"
-          psql "$DATABASE_URL" -c "SELECT relrowsecurity, relforcerowsecurity FROM pg_class WHERE oid = 'storage.objects'::regclass;"
-          psql "$DATABASE_URL" -c "SELECT id, name, public, file_size_limit, allowed_mime_types, owner FROM storage.buckets;"
-        env:
-          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+      # Diagnostic run and removed, 2026-10-10 -- confirmed storage.objects
+      # has RLS enabled, two independent structurally-correct permissive
+      # policy sets for 'avatars' INSERT/UPDATE/DELETE (one pre-existing
+      # under different names, one from the SIXTH one-time step above),
+      # and the avatars bucket row itself is correct (public, 2MiB limit,
+      # right MIME allowlist). None of that explains the still-failing
+      # upload -- rules out "missing/wrong policy" and "bucket
+      # misconfigured" as the cause. Next suspect is the actual request
+      # (JWT/path) the browser sends, which needs the browser's own
+      # Network tab, not anything queryable from here.
 
   deploy-api:
     needs: migrate

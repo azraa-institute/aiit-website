@@ -95,29 +95,9 @@
   inset: 0;
   width: 100%;
   height: 100%;
-  opacity: 0.55;
+  object-fit: cover;
+  object-position: left bottom;
   pointer-events: none;
-}
-@media (max-width: 859px) {
-  .pcw-visual__motif {
-    opacity: 0.3;
-  }
-}
-.pcwv-contour {
-  fill: none;
-  stroke: var(--line-invert);
-  stroke-width: 1;
-}
-.pcwv-link {
-  stroke: rgba(216, 201, 176, 0.3);
-  stroke-width: 1;
-}
-.pcwv-node {
-  fill: rgba(216, 201, 176, 0.5);
-  transition: r var(--dur-base) var(--ease-out), fill var(--dur-base) var(--ease-out);
-}
-.pcwv-node.is-active {
-  fill: var(--brass-tint);
 }
 
 .pcw-visual__copy {
@@ -227,6 +207,19 @@
   display: grid;
   gap: var(--space-4);
   margin-top: var(--space-5);
+}
+.pcw-step__head {
+  display: grid;
+  gap: var(--space-2);
+}
+.pcw-step__eyebrow {
+  margin: 0;
+  font-family: var(--font-ui);
+  font-size: var(--fs-eyebrow);
+  font-weight: 700;
+  letter-spacing: var(--tracking-eyebrow);
+  text-transform: uppercase;
+  color: var(--brass-deep);
 }
 .pcw-step__title {
   margin: 0;
@@ -424,8 +417,5 @@
   .pcw-scrim,
   .pcw-shell {
     animation: none;
-  }
-  .pcwv-node {
-    transition: none;
   }
 }

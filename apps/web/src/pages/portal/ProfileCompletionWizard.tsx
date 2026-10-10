@@ -306,9 +306,16 @@ export function ProfileCompletionWizard({ open, profile, onClose, onComplete }: 
 
           {phase === 1 && (
             <div className="pcw-step">
-              <h2 id="pcw-title" className="pcw-step__title">
-                About you
-              </h2>
+              <div className="pcw-step__head">
+                <p className="pcw-step__eyebrow">{STEP_LABELS[1]}</p>
+                <h2 id="pcw-title" className="pcw-step__title">
+                  Let&apos;s start with the basics.
+                </h2>
+              </div>
+              <p className="pcw-step__body">
+                Please provide your personal details as you would like them to appear on your profile and
+                certificates.
+              </p>
               <TextField
                 label="Full name"
                 value={name}
@@ -342,9 +349,12 @@ export function ProfileCompletionWizard({ open, profile, onClose, onComplete }: 
 
           {phase === 2 && (
             <div className="pcw-step">
-              <h2 id="pcw-title" className="pcw-step__title">
-                Your education
-              </h2>
+              <div className="pcw-step__head">
+                <p className="pcw-step__eyebrow">{STEP_LABELS[2]}</p>
+                <h2 id="pcw-title" className="pcw-step__title">
+                  Your education
+                </h2>
+              </div>
               <SelectField
                 label="Highest qualification"
                 value={qualification}
@@ -409,9 +419,12 @@ export function ProfileCompletionWizard({ open, profile, onClose, onComplete }: 
 
           {phase === 3 && (
             <div className="pcw-step">
-              <h2 id="pcw-title" className="pcw-step__title">
-                Your learning goals
-              </h2>
+              <div className="pcw-step__head">
+                <p className="pcw-step__eyebrow">{STEP_LABELS[3]}</p>
+                <h2 id="pcw-title" className="pcw-step__title">
+                  Your learning goals
+                </h2>
+              </div>
               <SelectField
                 label="Primary learning goal"
                 value={learningGoal}
@@ -451,9 +464,12 @@ export function ProfileCompletionWizard({ open, profile, onClose, onComplete }: 
 
           {phase === 4 && (
             <div className="pcw-step">
-              <h2 id="pcw-title" className="pcw-step__title">
-                Where you&apos;re based
-              </h2>
+              <div className="pcw-step__head">
+                <p className="pcw-step__eyebrow">{STEP_LABELS[4]}</p>
+                <h2 id="pcw-title" className="pcw-step__title">
+                  Where you&apos;re based
+                </h2>
+              </div>
               <p className="pcw-step__body">
                 Your location helps us present dates, webinars and learning activities in the right local time.
               </p>
@@ -519,9 +535,12 @@ export function ProfileCompletionWizard({ open, profile, onClose, onComplete }: 
 
           {phase === 5 && (
             <div className="pcw-step">
-              <h2 id="pcw-title" className="pcw-step__title">
-                Review your profile
-              </h2>
+              <div className="pcw-step__head">
+                <p className="pcw-step__eyebrow">{STEP_LABELS[5]}</p>
+                <h2 id="pcw-title" className="pcw-step__title">
+                  Review your profile
+                </h2>
+              </div>
               <div className="pcw-passport">
                 <div className="pcw-passport__head">
                   <p className="pcw-passport__brand">AIIT.NETWORK</p>
@@ -635,42 +654,23 @@ const VISUAL_COPY: Record<Phase, { eyebrow: string; title: string }> = {
 
 /**
  * The wizard's left editorial panel -- a compact header on mobile (see
- * profile-completion-wizard.css). One shared contour+node motif (adapted
- * from PortalAtmosphere.tsx's "learning network" art), evolving subtly per
- * step by which node is lit rather than six separate illustrations.
+ * profile-completion-wizard.css). Backed by one real illustration (a
+ * lit-globe-and-constellation render, supplied as an asset rather than
+ * drawn -- see profile-wizard-globe.webp) instead of the hand-drawn
+ * contour+node SVG this used to be; static across steps, since the art
+ * itself (not a per-step node highlight) is what carries the panel now.
  */
 function WizardVisual({ phase }: { phase: Phase }) {
-  const activeNode = typeof phase === 'number' ? phase - 1 : phase === 'completion' ? 4 : -1;
-  const nodes = [
-    { cx: 60, cy: 96 },
-    { cx: 132, cy: 150 },
-    { cx: 96, cy: 232 },
-    { cx: 180, cy: 268 },
-    { cx: 150, cy: 340 },
-  ];
   const copy = VISUAL_COPY[phase];
 
   return (
     <div className="pcw-visual on-ink">
+      <img className="pcw-visual__motif" src="/assets/portal/profile-wizard-globe.webp" alt="" aria-hidden="true" />
+
       <div className="pcw-visual__brand">
         <Logo variant="light" className="pcw-visual__logo" />
         <span className="pcw-visual__brand-sub">Learner profile</span>
       </div>
-
-      <svg className="pcw-visual__motif" viewBox="0 0 240 400" preserveAspectRatio="xMidYMid meet" aria-hidden="true">
-        <path className="pcwv-contour" d="M10 60 C 70 30, 140 70, 220 40" />
-        <path className="pcwv-contour" d="M0 200 C 60 170, 150 220, 230 190" />
-        <path className="pcwv-contour" d="M20 340 C 90 310, 160 360, 230 330" />
-        <g className="pcwv-net">
-          {nodes.slice(0, -1).map((n, i) => {
-            const next = nodes[i + 1];
-            return <path key={i} className="pcwv-link" d={`M${n.cx} ${n.cy} L ${next.cx} ${next.cy}`} />;
-          })}
-          {nodes.map((n, i) => (
-            <circle key={i} className={i === activeNode ? 'pcwv-node is-active' : 'pcwv-node'} cx={n.cx} cy={n.cy} r={i === activeNode ? 5 : 3} />
-          ))}
-        </g>
-      </svg>
 
       <div className="pcw-visual__copy">
         <p className="pcw-visual__eyebrow">{copy.eyebrow}</p>

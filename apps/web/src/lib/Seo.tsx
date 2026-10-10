@@ -12,11 +12,28 @@ interface SeoProps {
   jsonLd?: Record<string, unknown> | Record<string, unknown>[];
 }
 
+/**
+ * The homepage's own hero poster -- already the first thing every visitor
+ * sees, so it doubles as the site's default social-share card rather than
+ * a separate purpose-built OG asset. Every page used to pass no image at
+ * all (confirmed: zero callers set the `image` prop), so every shared
+ * link -- Facebook, LinkedIn, X, WhatsApp, Slack, iMessage -- showed no
+ * preview image whatsoever. A real 1280x720 photo beats nothing even
+ * where a page-specific image would be better.
+ */
+const DEFAULT_OG_IMAGE = '/assets/hero/hero-intro-poster.jpg';
+
 export function Seo({ title, description, path = '', image, type = 'website', noindex, jsonLd }: SeoProps) {
   const fullTitle = title ? `${title} | ${SITE.shortName}` : SITE.title;
   const desc = description ?? SITE.description;
   const url = `${SITE.url}${path}`;
   const blocks = jsonLd ? (Array.isArray(jsonLd) ? jsonLd : [jsonLd]) : [];
+  // OG/Twitter crawlers don't resolve relative URLs against the page, so
+  // this always needs to be absolute -- every image prop passed in this
+  // codebase (course.image, a blog post's frontmatter image) is a
+  // site-relative path, same convention as DEFAULT_OG_IMAGE above.
+  const resolvedImage = image ?? DEFAULT_OG_IMAGE;
+  const absoluteImage = resolvedImage.startsWith('http') ? resolvedImage : `${SITE.url}${resolvedImage}`;
 
   return (
     <Helmet>
@@ -30,12 +47,12 @@ export function Seo({ title, description, path = '', image, type = 'website', no
       <meta property="og:description" content={desc} />
       <meta property="og:type" content={type} />
       <meta property="og:url" content={url} />
-      {image && <meta property="og:image" content={image} />}
+      <meta property="og:image" content={absoluteImage} />
 
-      <meta name="twitter:card" content={image ? 'summary_large_image' : 'summary'} />
+      <meta name="twitter:card" content="summary_large_image" />
       <meta name="twitter:title" content={fullTitle} />
       <meta name="twitter:description" content={desc} />
-      {image && <meta name="twitter:image" content={image} />}
+      <meta name="twitter:image" content={absoluteImage} />
 
       {blocks.map((block, i) => (
         <script key={i} type="application/ld+json">

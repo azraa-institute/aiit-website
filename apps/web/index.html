@@ -117,19 +117,21 @@
         }
       }
     </style>
+    <!-- Deliberately no static description/og:*/twitter:* tags here -- every
+         route already renders its own via <Seo> (src/lib/Seo.tsx),
+         react-helmet-async on the client. A static duplicate here isn't a
+         "fallback": react-helmet-async only manages tags it rendered itself,
+         so it never removes a pre-existing static one -- it just inserts
+         its own alongside it, leaving two <meta name="description"> tags
+         per page. Browsers use the first; so does every social-media
+         link-preview bot (Facebook, Slack, Discord, WhatsApp, iMessage) --
+         none of them execute JS, so they only ever see this static block,
+         meaning every shared link showed the homepage's own generic
+         preview regardless of which page was actually shared. <title> is
+         the one exception worth keeping static: document.title is a single
+         property, not an inserted element, so Helmet genuinely replaces it
+         in place rather than duplicating it. -->
     <title>AIIT — Azraa Institute of Information Technology</title>
-    <meta
-      name="description"
-      content="AIIT is an international online technology learning platform. Learn Artificial Intelligence, Data Science, Cloud, Quantum and Edge Computing, earn certificates and prepare for a global tech career."
-    />
-    <meta property="og:title" content="AIIT — Azraa Institute of Information Technology" />
-    <meta
-      property="og:description"
-      content="From Learning Today to Leading Tomorrow. Your Future Has a Source Code."
-    />
-    <meta property="og:type" content="website" />
-    <meta property="og:url" content="https://aiit.network/" />
-    <meta name="twitter:card" content="summary_large_image" />
   </head>
   <body>
     <div id="root"></div>

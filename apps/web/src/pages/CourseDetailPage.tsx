@@ -103,6 +103,7 @@ export default function CourseDetailPage() {
         title={course.title}
         description={course.summary}
         path={`/courses/${course.slug}`}
+        image={course.image}
         type="article"
         jsonLd={{
           '@context': 'https://schema.org',

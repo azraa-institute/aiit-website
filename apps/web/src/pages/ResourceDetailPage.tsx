@@ -225,6 +225,7 @@ export default function ResourceDetailPage() {
         title={resource.title}
         description={resource.excerpt}
         path={`/resources/${resource.slug}`}
+        image={resource.image}
         type="article"
         jsonLd={{
           '@context': 'https://schema.org',

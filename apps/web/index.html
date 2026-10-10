@@ -132,6 +132,14 @@
          property, not an inserted element, so Helmet genuinely replaces it
          in place rather than duplicating it. -->
     <title>AIIT — Azraa Institute of Information Technology</title>
+    <!-- Google Search Console's second ownership-verification method
+         (Settings -> Ownership verification), alongside the standalone
+         /googleadefb798b5f3ca8c.html file -- having two independent
+         methods means verification survives either one breaking on its
+         own. Not managed by <Seo>/react-helmet-async, so no duplicate-tag
+         risk the way a static description/og:* tag would have; this one
+         has to stay here permanently either way. -->
+    <meta name="google-site-verification" content="jHYril7l4HA_3GkDxvdVhxtnZfWP-6FDyFLTITrTBZI" />
   </head>
   <body>
     <div id="root"></div>

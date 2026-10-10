@@ -265,6 +265,14 @@ export default function ProfilePage() {
       }
       state.refetch();
     } catch (err) {
+      // TEMP DEBUG -- remove once the 400 cause is found. err.message
+      // alone (what the red box already shows) hasn't been enough to
+      // pin down the real cause -- logging every own-enumerable
+      // property of the caught error (Supabase's StorageError classes
+      // carry statusCode/error/name alongside message, none of which
+      // the UI currently surfaces) in one place, right next to the
+      // upload-path debug log above, so there's only one spot to check.
+      console.log('[avatar-upload-error-debug]', JSON.stringify(err, Object.getOwnPropertyNames(err instanceof Object ? err : {})));
       setPhotoError(err instanceof Error ? err.message : 'Could not upload your photo.');
     } finally {
       setUploadingPhoto(false);

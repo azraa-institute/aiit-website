@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useParams, Navigate, Link } from 'react-router-dom';
 import { Layout } from '@/components/layout/Layout';
 import { Seo } from '@/lib/Seo';
+import { SITE } from '@/data/site';
 import { useScrollReveal } from '@/lib/useScrollReveal';
 import { getProduct, PRODUCTS } from '@/data/products';
 import { formatPrice, discountPercent } from '@/lib/format';
@@ -31,7 +32,42 @@ export default function ProductDetailPage() {
 
   return (
     <Layout>
-      <Seo title={product.name} description={product.summary} path={`/shop/${product.slug}`} type="website" />
+      <Seo
+        title={product.name}
+        description={product.summary}
+        path={`/shop/${product.slug}`}
+        image={product.images[0]}
+        type="website"
+        jsonLd={[
+          {
+            '@context': 'https://schema.org',
+            '@type': 'Product',
+            name: product.name,
+            description: product.summary,
+            category: product.category,
+            image: product.images.map((img) => `${SITE.url}${img}`),
+            ...(product.price != null
+              ? {
+                  offers: {
+                    '@type': 'Offer',
+                    price: (product.price / 100).toFixed(2),
+                    priceCurrency: 'USD',
+                    availability: 'https://schema.org/InStock',
+                  },
+                }
+              : {}),
+          },
+          {
+            '@context': 'https://schema.org',
+            '@type': 'BreadcrumbList',
+            itemListElement: [
+              { '@type': 'ListItem', position: 1, name: 'Shop', item: `${SITE.url}/shop` },
+              { '@type': 'ListItem', position: 2, name: product.category, item: `${SITE.url}/shop` },
+              { '@type': 'ListItem', position: 3, name: product.name, item: `${SITE.url}/shop/${product.slug}` },
+            ],
+          },
+        ]}
+      />
       <div className="section container container--wide">
         <nav className="product-detail__crumbs" aria-label="Breadcrumb">
           <Link to="/shop">Shop</Link>

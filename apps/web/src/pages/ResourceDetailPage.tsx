@@ -3,6 +3,7 @@ import type { CSSProperties } from 'react';
 import { useParams, Link, Navigate } from 'react-router-dom';
 import { Layout } from '@/components/layout/Layout';
 import { Seo, organizationLd } from '@/lib/Seo';
+import { SITE } from '@/data/site';
 import { useScrollReveal } from '@/lib/useScrollReveal';
 import { useScrollProgress } from '@/lib/useScrollProgress';
 import { getResource, loadResourceBody } from '@/data/resources';
@@ -227,15 +228,25 @@ export default function ResourceDetailPage() {
         path={`/resources/${resource.slug}`}
         image={resource.image}
         type="article"
-        jsonLd={{
-          '@context': 'https://schema.org',
-          '@type': 'Article',
-          headline: resource.title,
-          description: resource.excerpt,
-          datePublished: resource.publishedAt,
-          author: { '@type': 'Organization', name: resource.author },
-          publisher: organizationLd(),
-        }}
+        jsonLd={[
+          {
+            '@context': 'https://schema.org',
+            '@type': 'Article',
+            headline: resource.title,
+            description: resource.excerpt,
+            datePublished: resource.publishedAt,
+            author: { '@type': 'Organization', name: resource.author },
+            publisher: organizationLd(),
+          },
+          {
+            '@context': 'https://schema.org',
+            '@type': 'BreadcrumbList',
+            itemListElement: [
+              { '@type': 'ListItem', position: 1, name: 'Resources', item: `${SITE.url}/resources` },
+              { '@type': 'ListItem', position: 2, name: resource.title, item: `${SITE.url}/resources/${resource.slug}` },
+            ],
+          },
+        ]}
       />
 
       <div className="article-shell" ref={shellRef}>

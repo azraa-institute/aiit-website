@@ -3,6 +3,7 @@ import { useParams, useNavigate, Link, Navigate } from 'react-router-dom';
 import type { Course } from '@/data/types';
 import { Layout } from '@/components/layout/Layout';
 import { Seo, organizationLd } from '@/lib/Seo';
+import { SITE } from '@/data/site';
 import { useScrollReveal } from '@/lib/useScrollReveal';
 import { useAuth } from '@/lib/AuthContext';
 import { apiFetch, ApiError } from '@/lib/api';
@@ -105,23 +106,39 @@ export default function CourseDetailPage() {
         path={`/courses/${course.slug}`}
         image={course.image}
         type="article"
-        jsonLd={{
-          '@context': 'https://schema.org',
-          '@type': 'Course',
-          name: course.title,
-          description: course.summary,
-          provider: organizationLd(),
-          educationalLevel: course.level,
-          ...(course.price != null && course.price > 0
-            ? {
-                offers: {
-                  '@type': 'Offer',
-                  price: (course.price / 100).toFixed(2),
-                  priceCurrency: course.currency ?? 'USD',
-                },
-              }
-            : {}),
-        }}
+        jsonLd={[
+          {
+            '@context': 'https://schema.org',
+            '@type': 'Course',
+            name: course.title,
+            description: course.summary,
+            provider: organizationLd(),
+            educationalLevel: course.level,
+            ...(course.price != null && course.price > 0
+              ? {
+                  offers: {
+                    '@type': 'Offer',
+                    price: (course.price / 100).toFixed(2),
+                    priceCurrency: course.currency ?? 'USD',
+                  },
+                }
+              : {}),
+          },
+          {
+            '@context': 'https://schema.org',
+            '@type': 'BreadcrumbList',
+            itemListElement: [
+              { '@type': 'ListItem', position: 1, name: 'Courses', item: `${SITE.url}/courses` },
+              {
+                '@type': 'ListItem',
+                position: 2,
+                name: course.catalogueCategoryName,
+                item: `${SITE.url}/courses?category=${course.catalogueCategorySlug}`,
+              },
+              { '@type': 'ListItem', position: 3, name: course.title, item: `${SITE.url}/courses/${course.slug}` },
+            ],
+          },
+        ]}
       />
 
       <article className="course-detail">

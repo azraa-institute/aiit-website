@@ -178,6 +178,15 @@ export type LearnerState =
  * saves a new photo, even though PortalLayout is the layout underneath it
  * (always mounted, not a sibling route) rather than the component that
  * called refetch().
+ *
+ * Stale-while-revalidate, deliberately: a refetch does NOT flip `status`
+ * back to 'loading' -- every caller already has real data on screen at
+ * that point (a profile form mid-edit, a notification list), and most
+ * gate their whole render on `status === 'loading'`, so flipping back
+ * would blank the entire page behind a full-page spinner just to re-fetch
+ * data the user is already looking at. `status` only reaches 'loading'
+ * once, for the very first fetch; a refetch keeps serving the last-known
+ * `learner` until the new one resolves, then swaps it in directly.
  */
 /**
  * `enabled` (default true) lets a caller outside the portal shell -- the
@@ -204,7 +213,6 @@ export function useLearner(options?: { enabled?: boolean }): LearnerState & { re
   useEffect(() => {
     if (!enabled) return;
     let alive = true;
-    if (reloadToken > 0) setState({ status: 'loading', learner: null, error: null });
     loadLearner()
       .then((learner) => {
         if (alive) setState({ status: 'ready', learner, error: null });

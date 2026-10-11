@@ -1,10 +1,11 @@
 /**
- * Quill -- the course-advisor assistant on every course detail page (see
- * apps/web's CourseDetailPage -> "Ask Quill about this course" and
- * apps/api/src/modules/quill). Answers today come from a rule-based engine
- * over real course + article data (no LLM wired up yet) -- see
- * QuillService's own doc comment for how a real model plugs in later
- * without this contract changing.
+ * Quill -- AIIT's site-wide assistant (a persistent floating launcher on
+ * every public page, see apps/web's QuillContext/FloatingActions) that
+ * also answers course-specific questions when opened from a course page's
+ * own "Ask Quill about this course" button (apps/web's CourseDetailPage).
+ * Answers come from a rule-based engine over real course + article data
+ * (no LLM wired up yet) -- see apps/api's QuillService doc comment for how
+ * a real model plugs in later without this contract changing.
  */
 
 export type QuillTurnRole = 'visitor' | 'quill';
@@ -24,7 +25,8 @@ export interface QuillLink {
 
 export interface QuillChatRequest {
   message: string;
-  courseSlug: string;
+  /** Omitted when Quill was opened from the site-wide floating launcher rather than a course page -- the server answers in general-assistant mode instead of anchoring every reply to one course. */
+  courseSlug?: string;
   /**
    * A short rolling window of the conversation so far, oldest first -- Quill
    * keeps no server-side session, so this is what gives it any continuity

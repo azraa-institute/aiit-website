@@ -4,26 +4,56 @@ import { Link } from 'react-router-dom';
 import type { QuillLink, QuillTurn } from '@aiit/shared';
 import { useLockBodyScroll } from '@/lib/useLockBodyScroll';
 import { sendQuillMessage } from '@/lib/quillChat';
+import { formatDate } from '@/lib/format';
+import { cn } from '@/lib/cn';
+import {
+  conversationTitle,
+  deleteConversation,
+  loadConversations,
+  upsertConversation,
+  type QuillChatMessage,
+  type QuillConversation,
+} from '@/lib/quillHistory';
 import { QuillAvatar } from './QuillAvatar';
 import './quill-chat.css';
 
-interface ChatMessage {
-  id: string;
-  role: QuillTurn['role'];
-  text: string;
-  links?: QuillLink[];
-  escalate?: boolean;
-}
+/** Mirrors QuillOpenContext in lib/QuillContext.tsx -- kept as a separate, structurally-matching type here (not imported from there) to avoid a circular import, since QuillContext mounts this component. */
+type QuillPanelContext = { courseSlug: string; courseTitle: string } | null;
 
-const OPENING_SUGGESTIONS = [
+const COURSE_OPENING_SUGGESTIONS = [
   'What will I learn?',
   'How will this help my career?',
   'How much does it cost?',
   'How do I enroll?',
 ];
+const GENERAL_OPENING_SUGGESTIONS = [
+  'What courses do you offer?',
+  'How do I get started?',
+  'Is there a certificate?',
+  'Talk to a human',
+];
 
-function openingLine(courseTitle: string): string {
-  return `Hi there \u{1F44B} I'm Quill. Ask me anything about ${courseTitle} — curriculum, price, how long it takes, or what you'll walk away with.`;
+function openingLine(courseTitle?: string): string {
+  return courseTitle
+    ? `Hi there \u{1F44B} I'm Quill. Ask me anything about ${courseTitle} — curriculum, price, how long it takes, or what you'll walk away with.`
+    : `Hi there \u{1F44B} I'm Quill, AIIT's guide. Ask me about any of our courses, how enrollment works, certificates, or anything else about AIIT.`;
+}
+
+function scopeKey(ctx: QuillPanelContext): string {
+  return ctx ? `course:${ctx.courseSlug}` : 'general';
+}
+
+function newConversation(ctx: QuillPanelContext): QuillConversation {
+  const now = new Date().toISOString();
+  return {
+    id: crypto.randomUUID(),
+    courseSlug: ctx?.courseSlug,
+    courseTitle: ctx?.courseTitle,
+    messages: [{ id: 'opening', role: 'quill', text: openingLine(ctx?.courseTitle) }],
+    missCount: 0,
+    createdAt: now,
+    updatedAt: now,
+  };
 }
 
 const WhatsAppGlyph = () => (
@@ -35,6 +65,25 @@ const WhatsAppGlyph = () => (
 const SendIcon = () => (
   <svg width="16" height="16" viewBox="0 0 24 24" aria-hidden="true">
     <path d="M4 12h16M14 6l6 6-6 6" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+  </svg>
+);
+
+const NewChatIcon = () => (
+  <svg width="16" height="16" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M12 5v14M5 12h14" />
+  </svg>
+);
+
+const HistoryIcon = () => (
+  <svg width="16" height="16" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+    <circle cx="12" cy="12" r="9" />
+    <path d="M12 7v5l3.5 2" />
+  </svg>
+);
+
+const DeleteIcon = () => (
+  <svg width="13" height="13" viewBox="0 0 15 15" aria-hidden="true">
+    <path d="M3 3l9 9M12 3 3 12" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
   </svg>
 );
 
@@ -63,20 +112,22 @@ function LinkChip({ link }: { link: QuillLink }) {
 }
 
 interface QuillChatPanelProps {
-  courseSlug: string;
-  courseTitle: string;
+  context: QuillPanelContext;
   open: boolean;
   onClose: () => void;
 }
 
-export function QuillChatPanel({ courseSlug, courseTitle, open, onClose }: QuillChatPanelProps) {
-  const [messages, setMessages] = useState<ChatMessage[]>([]);
-  const [suggestions, setSuggestions] = useState<string[]>(OPENING_SUGGESTIONS);
+export function QuillChatPanel({ context, open, onClose }: QuillChatPanelProps) {
+  const [conversation, setConversationState] = useState<QuillConversation | null>(null);
+  const [view, setView] = useState<'chat' | 'history'>('chat');
+  const [historyList, setHistoryList] = useState<QuillConversation[]>([]);
+  const [suggestions, setSuggestions] = useState<string[]>(GENERAL_OPENING_SUGGESTIONS);
   const [input, setInput] = useState('');
   const [sending, setSending] = useState(false);
   const [error, setError] = useState(false);
   const missCountRef = useRef(0);
-  const seededRef = useRef(false);
+  const activeScopeKeyRef = useRef<string | null>(null);
+  const conversationRef = useRef<QuillConversation | null>(null);
   const panelRef = useRef<HTMLDivElement>(null);
   const closeRef = useRef<HTMLButtonElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -84,11 +135,34 @@ export function QuillChatPanel({ courseSlug, courseTitle, open, onClose }: Quill
 
   useLockBodyScroll(open);
 
+  function setConversation(c: QuillConversation) {
+    conversationRef.current = c;
+    setConversationState(c);
+  }
+
+  function persistIfReal(c: QuillConversation | null) {
+    if (c && c.messages.some((m) => m.role === 'visitor')) upsertConversation(c);
+  }
+
+  // Starts a fresh thread whenever the panel opens into a genuinely
+  // different scope (general <-> a specific course, or a different course
+  // than the one already active) -- the opening-with-a-course case
+  // specifically guards against silently overwriting an in-progress
+  // general conversation just because the visitor clicked a course page's
+  // own "Ask Quill" button. Re-opening into the SAME scope (clicking "Ask
+  // Quill" again on the same course page) is a no-op, same conversation.
   useEffect(() => {
-    if (!open || seededRef.current) return;
-    seededRef.current = true;
-    setMessages([{ id: 'opening', role: 'quill', text: openingLine(courseTitle) }]);
-  }, [open, courseTitle]);
+    if (!open) return;
+    const key = scopeKey(context);
+    if (activeScopeKeyRef.current === key && conversationRef.current) return;
+    persistIfReal(conversationRef.current);
+    activeScopeKeyRef.current = key;
+    setConversation(newConversation(context));
+    setView('chat');
+    setSuggestions(context ? COURSE_OPENING_SUGGESTIONS : GENERAL_OPENING_SUGGESTIONS);
+    missCountRef.current = 0;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open, context]);
 
   useEffect(() => {
     if (!open) return;
@@ -101,30 +175,42 @@ export function QuillChatPanel({ courseSlug, courseTitle, open, onClose }: Quill
   }, [open, onClose]);
 
   useEffect(() => {
-    scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: 'smooth' });
-  }, [messages]);
+    if (view === 'chat') scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: 'smooth' });
+  }, [conversation, view]);
 
-  if (!open) return null;
+  if (!open || !conversation) return null;
 
   async function send(text: string) {
     const trimmed = text.trim();
-    if (!trimmed || sending) return;
+    if (!trimmed || sending || !conversation) return;
 
-    const visitorMsg: ChatMessage = { id: `v-${Date.now()}`, role: 'visitor', text: trimmed };
-    const history: QuillTurn[] = [...messages, visitorMsg].map((m) => ({ role: m.role, text: m.text }));
-    setMessages((prev) => [...prev, visitorMsg]);
+    const visitorMsg: QuillChatMessage = { id: `v-${Date.now()}`, role: 'visitor', text: trimmed };
+    const historyTurns: QuillTurn[] = [...conversation.messages, visitorMsg].map((m) => ({ role: m.role, text: m.text }));
+    const withVisitor: QuillConversation = {
+      ...conversation,
+      messages: [...conversation.messages, visitorMsg],
+      updatedAt: new Date().toISOString(),
+    };
+    setConversation(withVisitor);
     setInput('');
     setSuggestions([]);
     setSending(true);
     setError(false);
 
     try {
-      const res = await sendQuillMessage(trimmed, courseSlug, history, missCountRef.current);
+      const res = await sendQuillMessage(trimmed, conversation.courseSlug, historyTurns, missCountRef.current);
       missCountRef.current = res.matched ? 0 : missCountRef.current + 1;
-      setMessages((prev) => [
-        ...prev,
-        { id: `q-${Date.now()}`, role: 'quill', text: res.reply, links: res.links, escalate: res.escalate },
-      ]);
+      const withReply: QuillConversation = {
+        ...withVisitor,
+        messages: [
+          ...withVisitor.messages,
+          { id: `q-${Date.now()}`, role: 'quill', text: res.reply, links: res.links, escalate: res.escalate },
+        ],
+        missCount: missCountRef.current,
+        updatedAt: new Date().toISOString(),
+      };
+      setConversation(withReply);
+      upsertConversation(withReply);
       setSuggestions(res.suggestions);
     } catch {
       setError(true);
@@ -134,18 +220,55 @@ export function QuillChatPanel({ courseSlug, courseTitle, open, onClose }: Quill
     }
   }
 
-  // Portaled to <body> -- rendered from deep inside the sidebar's
-  // [data-reveal] ancestor, which carries `will-change: transform`
-  // permanently (see global.css) and so creates a containing block for any
-  // `position: fixed` descendant; without the portal this panel would be
-  // "fixed" relative to that card instead of the viewport.
+  function handleNewChat() {
+    persistIfReal(conversationRef.current);
+    activeScopeKeyRef.current = scopeKey(context);
+    setConversation(newConversation(context));
+    setView('chat');
+    setSuggestions(context ? COURSE_OPENING_SUGGESTIONS : GENERAL_OPENING_SUGGESTIONS);
+    setError(false);
+    missCountRef.current = 0;
+  }
+
+  function toggleHistory() {
+    if (view === 'history') {
+      setView('chat');
+      return;
+    }
+    setHistoryList(loadConversations());
+    setView('history');
+  }
+
+  function openHistoryConversation(c: QuillConversation) {
+    persistIfReal(conversationRef.current);
+    activeScopeKeyRef.current = c.courseSlug ? `course:${c.courseSlug}` : 'general';
+    setConversation(c);
+    missCountRef.current = c.missCount;
+    setSuggestions([]);
+    setError(false);
+    setView('chat');
+  }
+
+  function handleDeleteHistory(id: string) {
+    deleteConversation(id);
+    setHistoryList(loadConversations());
+  }
+
+  const headerSubtitle = conversation.courseTitle ?? 'AIIT guide';
+  const inputPlaceholder = conversation.courseTitle ? `Ask about ${conversation.courseTitle}...` : 'Ask Quill anything...';
+
+  // Portaled to <body> -- rendered from deep inside layout chrome that may
+  // carry `will-change: transform` (see global.css), which creates a
+  // containing block for any `position: fixed` descendant; without the
+  // portal this panel would be "fixed" relative to that ancestor instead
+  // of the viewport.
   return createPortal(
     <div className="quill-chat__backdrop" onClick={onClose}>
       <div
         className="quill-chat__panel"
         role="dialog"
         aria-modal="true"
-        aria-label={`Ask Quill about ${courseTitle}`}
+        aria-label={`Ask Quill${conversation.courseTitle ? ` about ${conversation.courseTitle}` : ''}`}
         ref={panelRef}
         onClick={(e) => e.stopPropagation()}
       >
@@ -153,82 +276,128 @@ export function QuillChatPanel({ courseSlug, courseTitle, open, onClose }: Quill
           <QuillAvatar size={32} />
           <div className="quill-chat__header-text">
             <strong>Quill</strong>
-            <span>AIIT course guide</span>
+            <span>{headerSubtitle}</span>
           </div>
-          <button type="button" className="quill-chat__close" aria-label="Close" ref={closeRef} onClick={onClose}>
-            <svg width="15" height="15" viewBox="0 0 15 15" aria-hidden="true">
-              <path d="M3 3l9 9M12 3 3 12" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
-            </svg>
-          </button>
+          <div className="quill-chat__header-actions">
+            <button type="button" className="quill-chat__icon-btn" aria-label="New chat" onClick={handleNewChat}>
+              <NewChatIcon />
+            </button>
+            <button
+              type="button"
+              className={cn('quill-chat__icon-btn', view === 'history' && 'is-active')}
+              aria-label={view === 'history' ? 'Back to chat' : 'Chat history'}
+              aria-pressed={view === 'history'}
+              onClick={toggleHistory}
+            >
+              <HistoryIcon />
+            </button>
+            <button type="button" className="quill-chat__close" aria-label="Close" ref={closeRef} onClick={onClose}>
+              <svg width="15" height="15" viewBox="0 0 15 15" aria-hidden="true">
+                <path d="M3 3l9 9M12 3 3 12" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+              </svg>
+            </button>
+          </div>
         </header>
 
-        <div className="quill-chat__body" ref={scrollRef}>
-          {messages.map((m) => (
-            <div key={m.id} className={`quill-chat__row quill-chat__row--${m.role}`}>
-              {m.role === 'quill' && <QuillAvatar size={24} />}
-              <div className={`quill-chat__bubble quill-chat__bubble--${m.role}${m.escalate ? ' quill-chat__bubble--escalate' : ''}`}>
-                {m.text}
-                {m.links && m.links.length > 0 && (
-                  <div className="quill-chat__chips">
-                    {m.links.map((l) => (
-                      <LinkChip key={l.url} link={l} />
-                    ))}
-                  </div>
-                )}
-              </div>
-            </div>
-          ))}
-          {sending && (
-            <div className="quill-chat__row quill-chat__row--quill">
-              <QuillAvatar size={24} />
-              <div className="quill-chat__bubble quill-chat__bubble--quill quill-chat__bubble--typing">
-                <span />
-                <span />
-                <span />
-              </div>
-            </div>
-          )}
-          {error && (
-            <p className="quill-chat__error">
-              Something went wrong reaching Quill. You can also reach us directly on{' '}
-              <a href="https://wa.me/919342295383" target="_blank" rel="noreferrer">
-                WhatsApp
-              </a>
-              .
-            </p>
-          )}
-        </div>
-
-        {suggestions.length > 0 && (
-          <div className="quill-chat__suggestions">
-            {suggestions.map((s) => (
-              <button key={s} type="button" className="quill-chat__suggestion" onClick={() => send(s)} disabled={sending}>
-                {s}
-              </button>
-            ))}
+        {view === 'history' ? (
+          <div className="quill-chat__history">
+            {historyList.length === 0 ? (
+              <p className="quill-chat__history-empty">No past conversations yet.</p>
+            ) : (
+              <ul className="quill-chat__history-list">
+                {historyList.map((c) => (
+                  <li key={c.id} className="quill-chat__history-row">
+                    <button type="button" className="quill-chat__history-open" onClick={() => openHistoryConversation(c)}>
+                      <span className="quill-chat__history-title">{conversationTitle(c)}</span>
+                      <span className="quill-chat__history-meta">
+                        {c.courseTitle ? `${c.courseTitle} · ` : ''}
+                        {formatDate(c.updatedAt, { day: 'numeric', month: 'short' })}
+                      </span>
+                    </button>
+                    <button
+                      type="button"
+                      className="quill-chat__history-delete"
+                      aria-label={`Delete conversation: ${conversationTitle(c)}`}
+                      onClick={() => handleDeleteHistory(c.id)}
+                    >
+                      <DeleteIcon />
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            )}
           </div>
-        )}
+        ) : (
+          <>
+            <div className="quill-chat__body" ref={scrollRef}>
+              {conversation.messages.map((m) => (
+                <div key={m.id} className={`quill-chat__row quill-chat__row--${m.role}`}>
+                  {m.role === 'quill' && <QuillAvatar size={24} />}
+                  <div className={`quill-chat__bubble quill-chat__bubble--${m.role}${m.escalate ? ' quill-chat__bubble--escalate' : ''}`}>
+                    {m.text}
+                    {m.links && m.links.length > 0 && (
+                      <div className="quill-chat__chips">
+                        {m.links.map((l) => (
+                          <LinkChip key={l.url} link={l} />
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              ))}
+              {sending && (
+                <div className="quill-chat__row quill-chat__row--quill">
+                  <QuillAvatar size={24} />
+                  <div className="quill-chat__bubble quill-chat__bubble--quill quill-chat__bubble--typing">
+                    <span />
+                    <span />
+                    <span />
+                  </div>
+                </div>
+              )}
+              {error && (
+                <p className="quill-chat__error">
+                  Something went wrong reaching Quill. You can also reach us directly on{' '}
+                  <a href="https://wa.me/919342295383" target="_blank" rel="noreferrer">
+                    WhatsApp
+                  </a>
+                  .
+                </p>
+              )}
+            </div>
 
-        <form
-          className="quill-chat__input-row"
-          onSubmit={(e) => {
-            e.preventDefault();
-            void send(input);
-          }}
-        >
-          <input
-            ref={inputRef}
-            type="text"
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            placeholder={`Ask about ${courseTitle}...`}
-            maxLength={500}
-            aria-label="Message Quill"
-          />
-          <button type="submit" aria-label="Send" disabled={sending || !input.trim()}>
-            <SendIcon />
-          </button>
-        </form>
+            {suggestions.length > 0 && (
+              <div className="quill-chat__suggestions">
+                {suggestions.map((s) => (
+                  <button key={s} type="button" className="quill-chat__suggestion" onClick={() => send(s)} disabled={sending}>
+                    {s}
+                  </button>
+                ))}
+              </div>
+            )}
+
+            <form
+              className="quill-chat__input-row"
+              onSubmit={(e) => {
+                e.preventDefault();
+                void send(input);
+              }}
+            >
+              <input
+                ref={inputRef}
+                type="text"
+                value={input}
+                onChange={(e) => setInput(e.target.value)}
+                placeholder={inputPlaceholder}
+                maxLength={500}
+                aria-label="Message Quill"
+              />
+              <button type="submit" aria-label="Send" disabled={sending || !input.trim()}>
+                <SendIcon />
+              </button>
+            </form>
+          </>
+        )}
       </div>
     </div>,
     document.body,

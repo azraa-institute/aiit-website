@@ -3,10 +3,10 @@ import { apiFetch } from './api';
 
 const MAX_HISTORY_TURNS = 8;
 
-/** Sends one visitor message to Quill -- stateless on the server, so the recent turns + miss streak are resent each time (see QuillChatRequest's own doc comments for why). */
+/** Sends one visitor message to Quill -- stateless on the server, so the recent turns + miss streak are resent each time (see QuillChatRequest's own doc comments for why). courseSlug omitted puts the server in general-assistant mode (see QuillService.respondGeneral). */
 export function sendQuillMessage(
   message: string,
-  courseSlug: string,
+  courseSlug: string | undefined,
   history: QuillTurn[],
   missCount: number,
 ): Promise<QuillChatResponse> {

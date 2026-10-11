@@ -1,6 +1,6 @@
 import { NotFoundException } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
-import type { CourseDetail } from '@aiit/shared';
+import type { CourseDetail, CourseListItem } from '@aiit/shared';
 import { CoursesService } from '../courses/courses.service';
 import { QuillService } from './quill.service';
 import { QuillChatDto } from './dto/quill-chat.dto';
@@ -34,6 +34,8 @@ const COURSE: CourseDetail = {
   certification: 'A verifiable AIIT certificate on completion.',
 };
 
+const COURSE_LIST: CourseListItem[] = [COURSE, { ...COURSE, id: 'crs-2', slug: 'data-science', title: 'Data Science & Analytics' }];
+
 function dto(message: string, overrides: Partial<QuillChatDto> = {}): QuillChatDto {
   const d = new QuillChatDto();
   d.message = message;
@@ -42,12 +44,20 @@ function dto(message: string, overrides: Partial<QuillChatDto> = {}): QuillChatD
   return d;
 }
 
+/** No courseSlug -- the site-wide floating-launcher path (see respondGeneral). */
+function generalDto(message: string, overrides: Partial<QuillChatDto> = {}): QuillChatDto {
+  const d = new QuillChatDto();
+  d.message = message;
+  Object.assign(d, overrides);
+  return d;
+}
+
 describe('QuillService', () => {
   let service: QuillService;
-  let courses: { detail: jest.Mock; curriculum: jest.Mock };
+  let courses: { detail: jest.Mock; list: jest.Mock; curriculum: jest.Mock };
 
   beforeEach(async () => {
-    courses = { detail: jest.fn().mockResolvedValue(COURSE), curriculum: jest.fn() };
+    courses = { detail: jest.fn().mockResolvedValue(COURSE), list: jest.fn().mockResolvedValue(COURSE_LIST), curriculum: jest.fn() };
 
     const moduleRef = await Test.createTestingModule({
       providers: [QuillService, { provide: CoursesService, useValue: courses }],
@@ -118,5 +128,41 @@ describe('QuillService', () => {
   it('prioritises a substantive topic over a greeting in a compound message', async () => {
     const result = await service.respond(dto('hi, how much does it cost?'), {});
     expect(result.reply).toContain('$180');
+  });
+
+  describe('general mode (no courseSlug)', () => {
+    it('lists real courses from the catalogue without fetching a single course', async () => {
+      const result = await service.respond(generalDto('what courses do you offer?'), {});
+      expect(courses.detail).not.toHaveBeenCalled();
+      expect(courses.list).toHaveBeenCalled();
+      expect(result.reply).toContain('AI Engineering');
+      expect(result.reply).toContain('Data Science & Analytics');
+      expect(result.links.some((l) => l.kind === 'courses')).toBe(true);
+    });
+
+    it('answers a curated general fact without hitting the catalogue', async () => {
+      const result = await service.respond(generalDto('what is AIIT?'), {});
+      expect(courses.list).not.toHaveBeenCalled();
+      expect(result.reply).toContain('Azraa Institute');
+      expect(result.matched).toBe(true);
+    });
+
+    it('escalates an explicit human request with no course to reference', async () => {
+      const result = await service.respond(generalDto('can I talk to a human'), {});
+      expect(result.escalate).toBe(true);
+      expect(result.links.some((l) => l.kind === 'whatsapp')).toBe(true);
+    });
+
+    it('gives a general pricing answer grounded in the catalogue, not one course', async () => {
+      const result = await service.respond(generalDto('how much do your courses cost?'), {});
+      expect(result.reply).toContain('Pricing varies');
+      expect(result.links.some((l) => l.kind === 'courses')).toBe(true);
+    });
+
+    it('escalates an unmatched general message after a second consecutive miss', async () => {
+      const result = await service.respond(generalDto('asdkjasdkj random gibberish', { missCount: 1 }), {});
+      expect(result.matched).toBe(true);
+      expect(result.escalate).toBe(true);
+    });
   });
 });

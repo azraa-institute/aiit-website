@@ -12,6 +12,13 @@ interface LayoutProps {
   heroPage?: boolean;
 }
 
+/**
+ * Every public page mounts its own `<Layout>` (there's no shared parent
+ * route wrapping them), so anything that must survive client-side
+ * navigation between pages -- like Quill's conversation state -- can't
+ * live in here; it'd unmount every time. See App.tsx's `<QuillProvider>`,
+ * mounted once above the whole route tree, for that instead.
+ */
 export function Layout({ children, heroPage = false }: LayoutProps) {
   return (
     <div className={`layout ${heroPage ? 'layout--hero' : ''}`}>

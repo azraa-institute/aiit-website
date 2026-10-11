@@ -11,6 +11,7 @@ import { RequireAffiliate } from '@/components/auth/RequireAffiliate';
 import { CookieConsentProvider } from '@/lib/CookieConsentContext';
 import { CookieConsent } from '@/components/common/CookieConsent';
 import { setPendingReferralSlug } from '@/lib/referralAttribution';
+import { QuillProvider } from '@/lib/QuillContext';
 
 /**
  * Fades out and removes the static #splash overlay (defined in index.html)
@@ -139,12 +140,17 @@ export function App() {
   return (
     <AuthProvider>
       <CookieConsentProvider>
-        <ScrollToTop />
-        <CookieConsent />
-        <ChunkErrorBoundary>
-          <Suspense fallback={<RouteFallback />}>
-            <SplashGate />
-            <Routes>
+        {/* Mounted once above the whole route tree, not inside Layout --
+            every public page renders its own <Layout>, so a provider in
+            there would reset (and drop Quill's in-progress conversation)
+            on every navigation between pages. */}
+        <QuillProvider>
+          <ScrollToTop />
+          <CookieConsent />
+          <ChunkErrorBoundary>
+            <Suspense fallback={<RouteFallback />}>
+              <SplashGate />
+              <Routes>
               <Route path="/" element={<HomePage />} />
               <Route path="/about" element={<AboutPage />} />
               <Route path="/courses" element={<CoursesPage />} />
@@ -363,6 +369,7 @@ export function App() {
             </Routes>
           </Suspense>
         </ChunkErrorBoundary>
+        </QuillProvider>
       </CookieConsentProvider>
     </AuthProvider>
   );

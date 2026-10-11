@@ -1,7 +1,8 @@
 import { Injectable } from '@nestjs/common';
-import type { CatalogueCategorySlug, CourseDetail, QuillChatResponse, QuillLink } from '@aiit/shared';
+import type { CatalogueCategorySlug, CourseDetail, CourseListItem, QuillChatResponse, QuillLink } from '@aiit/shared';
 import { CoursesService } from '../courses/courses.service';
 import { QUILL_ARTICLES, QUILL_CAREER_ARTICLES, articlesForCategory, type QuillArticle } from './quill-content.data';
+import { QUILL_GENERAL_FACTS } from './quill-general-facts.data';
 import { QuillChatDto } from './dto/quill-chat.dto';
 
 const EMAIL = 'info@aiit.network';
@@ -15,6 +16,16 @@ const COMMON_SUGGESTIONS = [
   'How much does it cost?',
   'How do I enroll?',
 ];
+
+const GENERAL_SUGGESTIONS = [
+  'What courses do you offer?',
+  'How do I get started?',
+  'Is there a certificate?',
+  'Talk to a human',
+];
+
+/** Checked before the per-course Intent classifier in general mode -- "which course should I take" has no equivalent in a single-course conversation. */
+const COURSES_LIST_PATTERN = /\b(what courses|which course|courses? (do|you) (offer|have|teach)|recommend(ed)? (a )?course|catalog(ue)?|list of courses)\b/i;
 
 type Intent =
   | 'human'
@@ -74,7 +85,7 @@ function truncate(text: string, max: number): string {
   return `${cut.slice(0, lastSpace > 0 ? lastSpace : max)}…`;
 }
 
-function courseLink(course: CourseDetail): QuillLink {
+function courseLink(course: Pick<CourseListItem, 'slug' | 'title'>): QuillLink {
   return { label: `View ${course.title}`, url: `/courses/${course.slug}`, kind: 'course' };
 }
 
@@ -94,8 +105,12 @@ function videoLink(): QuillLink {
   return { label: 'AIIT on YouTube', url: YOUTUBE_URL, kind: 'video' };
 }
 
-function whatsappLink(courseTitle: string): QuillLink {
-  const text = encodeURIComponent(`Hello AIIT, I have a question about "${courseTitle}" that Quill couldn't answer.`);
+function whatsappLink(courseTitle?: string): QuillLink {
+  const text = encodeURIComponent(
+    courseTitle
+      ? `Hello AIIT, I have a question about "${courseTitle}" that Quill couldn't answer.`
+      : "Hello AIIT, I have a question that Quill couldn't answer.",
+  );
   return { label: 'Chat with our team on WhatsApp', url: `https://wa.me/${WHATSAPP_DIGITS}?text=${text}`, kind: 'whatsapp' };
 }
 
@@ -129,6 +144,12 @@ export class QuillService {
   constructor(private readonly courses: CoursesService) {}
 
   async respond(dto: QuillChatDto, headers: Record<string, string | string[] | undefined>): Promise<QuillChatResponse> {
+    // No courseSlug -- opened from the site-wide floating launcher (see
+    // apps/web's FloatingActions) rather than a course page's own "Ask
+    // Quill about this course" button. Answer from the catalogue + general
+    // AIIT facts instead of one specific course.
+    if (!dto.courseSlug) return this.respondGeneral(dto, headers);
+
     // Same currency resolution as the course page itself (cf-ipcountry
     // header) -- otherwise Quill could quote a price in a different
     // currency than the page the visitor is already looking at.
@@ -187,13 +208,160 @@ export class QuillService {
     }
   }
 
-  private escalate(course: CourseDetail, explicit: boolean): QuillChatResponse {
+  /**
+   * General-assistant mode -- no single course in context (see `respond`'s
+   * branch above). Answers from the real course catalogue
+   * (CoursesService.list, the same data /courses itself renders) plus a
+   * small curated fact list (quill-general-facts.data.ts) for "what is
+   * AIIT"-style questions the per-course Intent taxonomy doesn't cover.
+   * Reuses the same Intent classifier as the per-course engine for
+   * everything else (price, duration, certificate, career, ...) so the two
+   * modes stay behaviourally consistent, just without one course to anchor
+   * the wording to.
+   */
+  private async respondGeneral(
+    dto: QuillChatDto,
+    headers: Record<string, string | string[] | undefined>,
+  ): Promise<QuillChatResponse> {
+    const missCount = dto.missCount ?? 0;
+
+    if (COURSES_LIST_PATTERN.test(dto.message)) {
+      return this.answerCoursesList(await this.courses.list({ headers }));
+    }
+
+    const fact = QUILL_GENERAL_FACTS.find((f) => f.pattern.test(dto.message));
+    if (fact) {
+      return { reply: fact.reply, suggestions: GENERAL_SUGGESTIONS, links: [coursesLink()], matched: true, escalate: false };
+    }
+
+    const intent = classify(dto.message);
+    if (intent === null) {
+      if (missCount >= 1) return this.escalate(null, true);
+      return {
+        reply: pick([
+          "Hmm, I'm not totally sure I caught that 🤔 I can help with what AIIT offers, pricing, certification, or picking the right course. Try one of these, or rephrase?",
+          "I didn't quite follow that one — I can help most with what AIIT teaches, cost, certification, or how to enroll. What would help?",
+        ]),
+        suggestions: GENERAL_SUGGESTIONS,
+        links: [coursesLink()],
+        matched: false,
+        escalate: false,
+      };
+    }
+
+    switch (intent) {
+      case 'human':
+        return this.escalate(null, true);
+      case 'price':
+        return {
+          reply:
+            'Pricing varies by course -- plenty are completely free, others are a one-time fee or included with membership. Browse the catalogue to see exact pricing for each.',
+          suggestions: GENERAL_SUGGESTIONS,
+          links: [coursesLink()],
+          matched: true,
+          escalate: false,
+        };
+      case 'duration_level':
+        return {
+          reply:
+            "Course length depends on what you pick -- anywhere from a few weeks to several months, at levels from absolute-beginner through advanced.",
+          suggestions: GENERAL_SUGGESTIONS,
+          links: [coursesLink()],
+          matched: true,
+          escalate: false,
+        };
+      case 'certificate':
+        return {
+          reply:
+            'Every AIIT course ends in a certificate, and every certificate is independently verifiable -- anyone (an employer, a university) can confirm it from its credential ID.',
+          suggestions: GENERAL_SUGGESTIONS,
+          links: [coursesLink()],
+          matched: true,
+          escalate: false,
+        };
+      case 'enroll':
+        return {
+          reply: 'Browse the courses below, pick one that fits your goals, and tap Enroll on its page -- most are available to start right away.',
+          suggestions: GENERAL_SUGGESTIONS,
+          links: [coursesLink()],
+          matched: true,
+          escalate: false,
+        };
+      case 'career':
+        return {
+          reply:
+            "AIIT's programs are built around skills employers are actively hiring for right now across AI, cloud, cybersecurity, data, and more. Picking a course that matches your goals is the best place to start.",
+          suggestions: GENERAL_SUGGESTIONS,
+          links: [coursesLink(), ...QUILL_CAREER_ARTICLES.slice(0, 1).map(articleLink)],
+          matched: true,
+          escalate: false,
+        };
+      case 'curriculum':
+      case 'overview':
+        return this.answerCoursesList(await this.courses.list({ headers }));
+      case 'articles':
+        return {
+          reply: `A couple of reads worth a look: ${QUILL_CAREER_ARTICLES.slice(0, 2).map((a) => `"${a.title}"`).join(' and ')}. Both are on the AIIT blog, free to read.`,
+          suggestions: GENERAL_SUGGESTIONS,
+          links: QUILL_CAREER_ARTICLES.slice(0, 2).map(articleLink),
+          matched: true,
+          escalate: false,
+        };
+      case 'video':
+        return {
+          reply: "AIIT's YouTube channel has walkthroughs and explainers across our course categories.",
+          suggestions: GENERAL_SUGGESTIONS,
+          links: [videoLink()],
+          matched: true,
+          escalate: false,
+        };
+      case 'greeting':
+        return {
+          reply: pick([
+            "Hi there 👋 I'm Quill, AIIT's guide. Ask me about any of our courses, how enrollment works, certificates, or anything else about AIIT.",
+            "Hey! I'm Quill. I can help you find the right course, explain pricing or certification, or just answer questions about AIIT. What would you like to know?",
+          ]),
+          suggestions: GENERAL_SUGGESTIONS,
+          links: [],
+          matched: true,
+          escalate: false,
+        };
+      case 'thanks':
+        return {
+          reply: pick([
+            'Anytime! Let me know if anything else comes up.',
+            "Happy to help. I'm right here if more questions come up.",
+          ]),
+          suggestions: GENERAL_SUGGESTIONS,
+          links: [],
+          matched: true,
+          escalate: false,
+        };
+    }
+  }
+
+  private answerCoursesList(courses: CourseListItem[]): QuillChatResponse {
+    const picks = courses.slice(0, 4);
+    const titles = picks.map((c) => c.title).join(', ');
+    return {
+      reply:
+        picks.length > 0
+          ? `AIIT's catalogue covers a lot of ground -- a few to start with: ${titles}. Browse the full list to see everything, filterable by level and category.`
+          : "I can't load the course list right now -- the full catalogue is always up to date on the Courses page.",
+      suggestions: GENERAL_SUGGESTIONS,
+      links: [...picks.map(courseLink), coursesLink()],
+      matched: true,
+      escalate: false,
+    };
+  }
+
+  private escalate(course: CourseDetail | null, explicit: boolean): QuillChatResponse {
     return {
       reply: explicit
         ? `Good call — let's get you a real person rather than me guessing. Our team is fastest on WhatsApp, or you can email ${EMAIL} or call ${PHONE_DISPLAY} (Mon–Sat, 8am–6pm IST).`
         : `I don't want to keep guessing on this one — let's get you a real person. Our team is fastest on WhatsApp, or email ${EMAIL} / call ${PHONE_DISPLAY} (Mon–Sat, 8am–6pm IST).`,
       suggestions: [],
-      links: [whatsappLink(course.title), emailLink(), phoneLink()],
+      links: [whatsappLink(course?.title), emailLink(), phoneLink()],
       matched: true,
       escalate: true,
     };

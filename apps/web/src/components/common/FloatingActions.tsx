@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { SITE } from '@/data/site';
 import { useReducedMotion } from '@/lib/useReducedMotion';
+import { useQuill } from '@/lib/QuillContext';
+import { QuillAvatar } from '@/components/course/QuillAvatar';
 import { cn } from '@/lib/cn';
 import './floating-actions.css';
 
@@ -30,6 +32,7 @@ export function FloatingActions() {
   const reduced = useReducedMotion();
   const rafRef = useRef<number | null>(null);
   const scrollAnimRef = useRef<number | null>(null);
+  const { open: openQuill } = useQuill();
 
   useEffect(() => {
     const measure = () => {
@@ -130,6 +133,15 @@ export function FloatingActions() {
               strokeLinejoin="round"
             />
           </svg>
+        </span>
+      </button>
+
+      <button type="button" className="quill-orb" aria-label="Ask Quill" onClick={() => openQuill()}>
+        <span className="quill-orb__panel" aria-hidden="true">
+          <span className="quill-orb__word">Ask Quill</span>
+        </span>
+        <span className="quill-orb__disc">
+          <QuillAvatar size={25} />
         </span>
       </button>
 

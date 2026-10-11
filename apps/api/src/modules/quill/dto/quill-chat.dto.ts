@@ -15,8 +15,10 @@ export class QuillChatDto {
   @MaxLength(500)
   message!: string;
 
+  /** Omitted when Quill is opened from the site-wide floating launcher rather than a course page -- see QuillService.respondGeneral. */
+  @IsOptional()
   @IsString()
-  courseSlug!: string;
+  courseSlug?: string;
 
   // Capped at 8 turns -- plenty for short-term context ("and the price?"
   // right after asking about duration), without trusting an unbounded body

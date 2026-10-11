@@ -6,8 +6,9 @@ import { QuillService } from './quill.service';
 import { QuillChatDto } from './dto/quill-chat.dto';
 
 // Public, no JwtGuard -- Quill answers prospective students who aren't
-// signed in yet, the whole point of it sitting on the public course page.
-// The throttle is deliberately tighter than most public endpoints: today
+// signed in yet, the whole point of it being reachable from anywhere on
+// the public site, not just a course page. The throttle is deliberately
+// tighter than most public endpoints: today
 // it only bounds abuse of a free rule-based engine, but it's the same
 // limit that will cap real per-message LLM cost once XAI_API_KEY is wired
 // in (see QuillService's doc comment) -- worth revisiting that number

@@ -219,6 +219,127 @@
     0 18px 38px -12px rgba(20, 17, 15, 0.6);
 }
 
+/* ============================================================
+   ASK QUILL ORB — sits between the back-to-top orb and the
+   WhatsApp orb in the same stack, same disc-and-unfurl-panel
+   language as WhatsApp below, just in Quill's own ink/brass
+   palette (QuillAvatar supplies the disc's face directly, no
+   separate background here) and without WhatsApp's attention
+   bounce -- Quill is a secondary, always-available assistant,
+   not the primary conversion action.
+   ============================================================ */
+.quill-orb {
+  position: relative;
+  display: block;
+  width: 52px;
+  height: 52px;
+  padding: 0;
+  border: none;
+  background: none;
+  cursor: pointer;
+  pointer-events: auto;
+  border-radius: 50%;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.quill-orb__panel {
+  position: absolute;
+  top: 50%;
+  right: 0;
+  z-index: 1;
+  width: 150px;
+  height: 38px;
+  transform: translateY(-50%);
+  overflow: hidden;
+  border-radius: 19px 5px 5px 19px;
+  background: linear-gradient(180deg, #221e1a, #141110);
+  box-shadow:
+    inset 0 1px 0 rgba(150, 34, 32, 0.6),
+    0 2px 8px rgba(20, 17, 15, 0.2),
+    0 14px 30px -12px rgba(20, 17, 15, 0.5);
+  /* 150 (panel) − 52 (disc) = 98px stays clipped behind the disc */
+  clip-path: inset(0 0 0 98px round 19px);
+  transition: clip-path 440ms var(--ease-out);
+}
+
+.quill-orb__word {
+  position: absolute;
+  top: 50%;
+  right: 60px;
+  white-space: nowrap;
+  font-family: var(--font-ui);
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  color: var(--paper);
+  opacity: 0;
+  transform: translateY(-50%) translateX(9px);
+  transition:
+    opacity 300ms var(--ease-out) 90ms,
+    transform 400ms var(--ease-out) 90ms;
+}
+.quill-orb__word::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -5px;
+  height: 2px;
+  border-radius: 2px;
+  background: var(--brass);
+  transform: scaleX(0);
+  transform-origin: right;
+  transition: transform 360ms var(--ease-out) 150ms;
+}
+
+.quill-orb__disc {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  transition:
+    transform 300ms var(--ease-out),
+    box-shadow 300ms var(--ease-out);
+}
+.quill-orb:hover .quill-orb__disc,
+.quill-orb:focus-visible .quill-orb__disc {
+  transform: scale(1.06);
+}
+.quill-orb:active .quill-orb__disc {
+  transform: scale(0.98);
+}
+
+.quill-orb:hover .quill-orb__panel,
+.quill-orb:focus-visible .quill-orb__panel {
+  clip-path: inset(0 0 0 0 round 19px);
+}
+.quill-orb:hover .quill-orb__word,
+.quill-orb:focus-visible .quill-orb__word {
+  opacity: 1;
+  transform: translateY(-50%) translateX(0);
+}
+.quill-orb:hover .quill-orb__word::after,
+.quill-orb:focus-visible .quill-orb__word::after {
+  transform: scaleX(1);
+}
+
+.quill-orb:focus-visible {
+  outline: none;
+}
+.quill-orb:focus-visible .quill-orb__disc {
+  box-shadow:
+    0 0 0 3px var(--paper),
+    0 0 0 5px var(--brass);
+}
+
+@media (hover: none) {
+  .quill-orb__panel {
+    display: none;
+  }
+}
+
 /* "BACK TO TOP" tooltip on the scroll orb, to its left, hover/focus only */
 .floating-actions__tip {
   position: absolute;
@@ -357,7 +478,8 @@
 }
 
 @media (max-width: 560px) {
-  .wa-orb {
+  .wa-orb,
+  .quill-orb {
     width: 48px;
     height: 48px;
   }
@@ -389,6 +511,12 @@
   }
   .wa-orb__disc::after {
     animation: none;
+  }
+  .quill-orb__panel,
+  .quill-orb__word,
+  .quill-orb__word::after,
+  .quill-orb__disc {
+    transition: none;
   }
   .scroll-orb,
   .scroll-orb__core,

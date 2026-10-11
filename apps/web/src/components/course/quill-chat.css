@@ -66,8 +66,14 @@
   font-size: var(--fs-xs);
   color: var(--fg-faint);
 }
-.quill-chat__close {
+.quill-chat__header-actions {
   margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+}
+.quill-chat__close,
+.quill-chat__icon-btn {
   display: grid;
   place-items: center;
   width: 32px;
@@ -76,9 +82,84 @@
   color: var(--fg-muted);
   transition: background var(--dur-fast) var(--ease-out), color var(--dur-fast) var(--ease-out);
 }
-.quill-chat__close:hover {
+.quill-chat__close:hover,
+.quill-chat__icon-btn:hover {
   background: var(--accent-wash);
   color: var(--brass-deep);
+}
+.quill-chat__icon-btn.is-active {
+  background: var(--accent-wash-strong);
+  color: var(--brass-deep);
+}
+
+.quill-chat__history {
+  flex: 1;
+  overflow-y: auto;
+  padding: var(--space-3) var(--space-3);
+}
+.quill-chat__history-empty {
+  padding: var(--space-6) var(--space-4);
+  text-align: center;
+  font-size: var(--fs-sm);
+  color: var(--fg-faint);
+}
+.quill-chat__history-list {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.quill-chat__history-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  border-radius: var(--radius-md);
+  transition: background var(--dur-fast) var(--ease-out);
+}
+.quill-chat__history-row:hover {
+  background: var(--ivory);
+}
+.quill-chat__history-open {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  padding: var(--space-3) var(--space-3);
+  text-align: left;
+}
+.quill-chat__history-title {
+  font-size: var(--fs-sm);
+  font-weight: 600;
+  color: var(--fg);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+}
+.quill-chat__history-meta {
+  font-size: var(--fs-xs);
+  color: var(--fg-faint);
+}
+.quill-chat__history-delete {
+  flex-shrink: 0;
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  margin-right: var(--space-2);
+  border-radius: 50%;
+  color: var(--fg-faint);
+  opacity: 0;
+  transition: opacity var(--dur-fast) var(--ease-out), background var(--dur-fast) var(--ease-out), color var(--dur-fast) var(--ease-out);
+}
+.quill-chat__history-row:hover .quill-chat__history-delete,
+.quill-chat__history-delete:focus-visible {
+  opacity: 1;
+}
+.quill-chat__history-delete:hover {
+  background: var(--accent-wash-strong);
+  color: var(--red);
 }
 
 .quill-chat__body {

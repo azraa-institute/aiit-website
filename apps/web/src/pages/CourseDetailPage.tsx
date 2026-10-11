@@ -21,7 +21,7 @@ import { EnrollmentIllustration } from '@/components/common/EnrollmentIllustrati
 import { CourseCard } from '@/components/course/CourseCard';
 import { RouteFallback } from '@/components/layout/RouteFallback';
 import { QuillAvatar } from '@/components/course/QuillAvatar';
-import { QuillChatPanel } from '@/components/course/QuillChatPanel';
+import { useQuill } from '@/lib/QuillContext';
 import { ProfileCompletionWizard } from './portal/ProfileCompletionWizard';
 import { useLockBodyScroll } from '@/lib/useLockBodyScroll';
 import { invalidateLearner, useLearner } from './portal/learnerData';
@@ -78,7 +78,7 @@ export default function CourseDetailPage() {
   const { slug } = useParams();
   const courseState = useCourseDetail(slug);
   const courseListState = useCourseList();
-  const [quillOpen, setQuillOpen] = useState(false);
+  const { open: openQuill } = useQuill();
   useScrollReveal([slug, courseState.status]);
 
   if (courseState.status === 'loading') {
@@ -250,18 +250,12 @@ export default function CourseDetailPage() {
                       variant="secondary"
                       fullWidth
                       className="course-detail__ask-btn"
-                      onClick={() => setQuillOpen(true)}
+                      onClick={() => openQuill({ courseSlug: course.slug, courseTitle: course.title })}
                     >
                       Ask Quill about this course
                     </Button>
                   </div>
                   <p className="course-detail__cert-note">{course.certification}</p>
-                  <QuillChatPanel
-                    courseSlug={course.slug}
-                    courseTitle={course.title}
-                    open={quillOpen}
-                    onClose={() => setQuillOpen(false)}
-                  />
                 </div>
               </aside>
             </div>

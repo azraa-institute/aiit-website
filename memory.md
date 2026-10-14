@@ -195,7 +195,9 @@ wrapper chain from `apps/web/src/components/auth/`.
 payment-method picker, and the Quill "Ask about this course" entry point) · `/resources`
 · `/resources/:slug` · `/webinar` · `/faqs` · `/contact` · `/newsletter/confirm` ·
 `/newsletter/unsubscribe` · `/verify/:credentialId` (public certificate verification) ·
-`/shop` · `/shop/:slug` (plus one legacy-slug redirect) · `/instructors` · `/why-join`
+`/shop` · `/shop/:slug` (plus one legacy-slug redirect) · `/instructors` (route/page
+still live, **nav entry hidden** 2026-10-15 at the project owner's request — see §15;
+only reachable by direct URL now) · `/why-join`
 · `/aiit-blueprint` · `/affiliate` (public application form) · `/r/:slug` (referral
 redirect → `/register`, changed 2026-10-14 from `/` so the click is visibly attributed
 on the registration page, not just silently stored — see §15) · `/privacy-policy` ·
@@ -275,10 +277,10 @@ session · ⚠️ partial/known gap · ❌ not built.
 | **Catalogue / course discovery** | 🟡 | `apps/api/src/modules/courses/` | Location-based currency pricing. Curriculum tables (`CourseModule`/`Lesson`/`LessonResource`) exist in schema and are soft-deletable, but **seeded empty, not wired to any learner UI** — the real learner experience is live-class + assignments + quizzes, not a self-paced lesson browser. |
 | **Quill** (AI course-advisor chat assistant) | ✅ verified live this session | `apps/api/src/modules/quill/`, `apps/web/src/components/course/QuillChatPanel.tsx`, `apps/web/src/lib/QuillContext.tsx`, `quillHistory.ts` | **Just promoted to site-wide** (2026-10-11, commit `ec6db33`) — a persistent floating launcher button on every public page (not just the course page), with client-side (localStorage) multi-conversation history and a "New chat" action. `courseSlug` is now optional on the request; absent → general-assistant mode answering from the live course catalogue + a small curated fact file. Rule-based today (no LLM call); `XAI_API_KEY` is the documented seam to plug in a real model (x.ai Grok) later without changing the contract. **README.md's "Backend" section describing Quill is now stale** — still describes it as course-page-only; not yet updated to reflect the site-wide launcher/history work (see §9, §12). |
 | **Payments** (PayPal, Razorpay, Paystack) | 🟡 | `apps/api/src/modules/payments/{paypal,razorpay,paystack}/` | One provider-agnostic `Order` table. Every webhook verifies its signature. Charge amount always resolved server-side from `Course.priceUsdCents`, never trusted from the client. **No refund tooling** — `refunded` is a tracked `OrderStatus` but nothing calls a provider's refund API. Whether each provider is on Live vs. Test credentials in the actual deployed env is **not verifiable from code** — check Render's env vars directly if this matters. |
-| **Live classroom** (LiveKit) | 🟡 | `apps/api/src/modules/live-classes/`, `apps/web/src/pages/portal/LiveClassroomPage.tsx`, `apps/web/src/components/classroom/` | Mic-lock, raise-hand queue, real-time whiteboard, live reactions, pinned resources, polls, breakout rooms, instructor-reports-student flow, attendance tracking + CSV/XLSX export. **Gaps:** session recording not built (blocked on an S3/R2-equivalent storage-bucket decision for LiveKit egress output); breakout-room instructor moderation currently reaches the main room only, not into individual breakout rooms. |
+| **Live classroom** (LiveKit) | 🟡 | `apps/api/src/modules/live-classes/`, `apps/web/src/pages/portal/LiveClassroomPage.tsx`, `apps/web/src/components/classroom/` | Mic-lock, raise-hand queue, real-time whiteboard, live reactions, pinned resources, polls, breakout rooms, instructor-reports-student flow, attendance tracking + CSV/XLSX export. **Gaps:** session recording still not built — the storage-bucket decision this was blocked on is now resolved (Cloudflare R2 is live, see the new R2 row below), but no LiveKit Egress API wiring/`Recording` model exists yet, so this is now a scoped build task, not a decision-blocked one; breakout-room instructor moderation currently reaches the main room only, not into individual breakout rooms. |
 | **Instructor portal** | 🟡 | `apps/api/src/modules/instructor/`, `apps/web/src/pages/instructor/` | Roster, grading (signed, ownership-checked private submission file links), practice-quiz authoring, announcements — all scoped server-side to `CourseInstructor` assignments, not just hidden in the UI. |
-| **Admin portal** | 🟡 | `apps/api/src/modules/admin/`, `apps/web/src/pages/admin/` | Student directory w/ manual enroll/unenroll, staff account management, course/instructor assignment, timetables, classes, complaints inbox, affiliate screening, announcements, payments/orders browse, certificate browse+revoke, attendance reports, internal messages, full audit log. |
-| **Affiliate program** | ✅ verified live this session | `apps/api/src/modules/affiliates/`, `apps/web/src/pages/AffiliatePage.tsx`, `apps/web/src/pages/affiliate/` | Public no-session application (server-creates the account with a one-time password), real e-signature flow (typed legal name + consent checkbox + versioned agreement text + IP/timestamp), admin approve/reject + reason, referral-link attribution (`/r/:slug` → `/register`, 30-day last-click, changed 2026-10-14 to show a visible "Referral applied: ⟨slug⟩" banner on `RegisterPage.tsx` instead of silently storing it). Commission: $5/creator-introduced student, $7/direct referral (→$10 after 500 direct referrals), `null` (count-only, no rate) for the undocumented affiliate-to-affiliate type — computed server-side once via `computeEarnings()`, shared by both the affiliate's own view and the admin view so the numbers can't drift. Manual-payout ledger (Phase 1, no live payout API): affiliate sets PayPal email or bank details (`PUT /affiliates/me/payout`, tightly throttled + IP-audited), admin pays by hand and records it (`POST /admin/affiliates/:id/payouts`), both sides see the same `AffiliatePayout` history. Affiliate can also self-edit the contact/context fields given at application time (`PUT /affiliates/me/contact`). **Portal split into 4 pages 2026-10-14** (Dashboard/Link/Payout/Settings — see §4) with a region-aware (India/Nigeria/generic) bank-transfer form, masked account number, and a confirm-before-overwrite step on an existing payout method. |
+| **Admin portal** | 🟡 | `apps/api/src/modules/admin/`, `apps/web/src/pages/admin/` | Student directory w/ manual enroll/unenroll, staff account management, course/instructor assignment, timetables, classes, complaints inbox, affiliate screening, announcements, payments/orders browse, certificate browse+revoke, attendance reports, internal messages, full audit log. **2026-10-15:** Students list/detail and Affiliates detail now cross-link each other (an affiliate is *never* a separate role — see the Affiliate program row below — so this was previously invisible); `GET /admin/students` also gained `includeAffiliates` (default false), which hides an affiliate-only account (never enrolled in anything) from the default Students view — an affiliate who *has* enrolled always still shows. `GET /admin/affiliates` gained a `q` (name/email) search param it never had, needed to make the cross-link's deep-link actually useful. |
+| **Affiliate program** | ✅ verified live this session | `apps/api/src/modules/affiliates/`, `apps/web/src/pages/AffiliatePage.tsx`, `apps/web/src/pages/affiliate/` | Public no-session application (server-creates the account with a one-time password), real e-signature flow (typed legal name + consent checkbox + versioned agreement text + IP/timestamp), admin approve/reject + reason, referral-link attribution (`/r/:slug` → `/register`, 30-day last-click, changed 2026-10-14 to show a visible "Referral applied: ⟨slug⟩" banner on `RegisterPage.tsx` instead of silently storing it). Commission: $5/creator-introduced student, $7/direct referral (→$10 after 500 direct referrals), `null` (count-only, no rate) for the undocumented affiliate-to-affiliate type — computed server-side once via `computeEarnings()`, shared by both the affiliate's own view and the admin view so the numbers can't drift. Manual-payout ledger (Phase 1, no live payout API): affiliate sets PayPal email or bank details (`PUT /affiliates/me/payout`, tightly throttled + IP-audited), admin pays by hand and records it (`POST /admin/affiliates/:id/payouts`), both sides see the same `AffiliatePayout` history. Affiliate can also self-edit the contact/context fields given at application time (`PUT /affiliates/me/contact`). **Portal split into 4 pages 2026-10-14** (Dashboard/Link/Payout/Settings — see §4) with a region-aware (India/Nigeria/generic) bank-transfer form, masked account number, and a confirm-before-overwrite step on an existing payout method. **2026-10-15 investigation (not a bug, confirmed):** the project owner flagged an affiliate's email showing up under admin Students as "overlap" — traced end to end and confirmed this is the deliberate, documented architecture (`Role` enum has no `affiliate` value; affiliate-ness is tracked purely by whether an `Affiliate` row exists for a `Profile`, never by role — see the schema comment on the `Affiliate` model and `AffiliatesService`'s own doc comment). No duplicate-account path exists either: `SupabaseAdminService.createUser()` surfaces Supabase's own "already registered" error as a clean `ConflictException` rather than ever creating a second account for one email. The real gap was the admin UI having zero visibility into this — fixed, see the Admin portal row above. |
 | **Certificates** | 🟡 | `apps/api/src/modules/certificates/` | Real server-rendered PDF (`pdf-lib`, no headless browser), public verification page/endpoint. Holder name **snapshotted at issuance** (`Certificate.holderName`), not joined live — stays accurate even if the learner later renames themselves. Admin can revoke without deleting the row (`revokedAt`/`revokedReason`); verify page shows "revoked, as of ⟨date⟩: ⟨reason⟩" instead of a bare 404. |
 | **Profile / avatar / assignment file uploads** | ✅ verified live this session | `apps/api/src/common/supabase-admin/supabase-admin.service.ts`, `apps/api/src/modules/auth/profile.{controller,service}.ts`, `apps/api/src/modules/assignments/`, `apps/web/src/pages/portal/ProfilePage.tsx`, `apps/web/src/pages/portal/AssignmentRow.tsx` | **Architecture changed this session** (2026-10-10/11, commits `854752c`+): uploads now go browser → NestJS API (multipart, `JwtGuard`-authenticated) → Supabase Storage via the service-role admin client — **not** direct browser-to-Storage. Root cause: Supabase Storage's RLS evaluation was failing to bridge the request JWT into the Postgres session context for this project (confirmed via extensive live debugging — a platform-level issue, not fixable from app code or migrations). Upload key is always derived server-side from the authenticated user's ID, never from client input — this is what replaces RLS's per-user isolation guarantee. `publicFileUrl()` (unauthenticated public-bucket read, for *displaying* an avatar) is unaffected and still goes direct to Storage. The since-unused `uploadFile()`/`removeFile()` in `apps/web/src/lib/storage.ts` were deleted 2026-10-13 (`publicFileUrl()` is now the file's only export). |
 | **Public forms** (contact, newsletter, webinar reg, affiliate application) | 🟡 | `apps/api/src/modules/forms/` (4 submodules) | All Turnstile-gated (`TurnstileService` fails **closed** if `TURNSTILE_SECRET_KEY` unset — refuses the request rather than silently accepting unprotected submissions), all send real email via Resend once `RESEND_API_KEY` set (fails **open** if unset — submission still saves, email just doesn't send). |
@@ -286,8 +288,10 @@ session · ⚠️ partial/known gap · ❌ not built.
 | **Apple sign-in** | ❌ not built | — | Needs a paid Apple Developer Program membership ($99/yr) + Services ID/private key/JWT client secret setup that hasn't started. The button was removed from the UI rather than left showing a permanent error. Google sign-in **is** real and configured (Google Cloud project `aiit-auth`). |
 | **Error monitoring (Sentry)** | 🟡 | `main.ts`, `apps/web/vite.config.ts` | API: `SENTRY_DSN`. Web: `VITE_SENTRY_DSN` (statically eliminated from the bundle if unset — zero cost until configured), `VITE_VERCEL_ENV` tags events with the real Vercel environment. Source maps uploaded via `@sentry/vite-plugin` when `SENTRY_AUTH_TOKEN` is set, then deleted locally (never shipped alongside the built JS). |
 | **Portal "refetch" behavior** | ✅ verified live this session | `apps/web/src/pages/portal/learnerData.ts` | Fixed this session (commit `8418550`) — see §13. |
-| **Site-wide UI polish** (2026-10-14) | ✅ verified live | `FloatingActions.tsx`/`floating-actions.css`, `Footer.tsx`/`footer.css`, `Layout.tsx`, `WebinarPage.tsx`/`webinar-page.css` | Committed and pushed same day. Floating buttons reordered so Quill is bottom-most/most prominent, WhatsApp next, scroll-to-top topmost with extra margin; Footer's "Learning now" column lost its course thumbnails + "By AIIT Network" byline and the whole `<Footer>` is now hidden for an authenticated learner browsing a public page (portal/instructor/admin/affiliate areas never rendered it anyway — they use their own layouts); `/webinar` got a "register" CTA button under each content section (feature/agenda/both audience blocks), all pointing at the existing `#register` anchor, ahead of a video embed that will need visitors to register first. |
-| **Blog admin CMS** (2026-10-14) | ✅ verified live, manual setup done | `apps/api/src/modules/admin/admin-blog.{controller,service}.ts`, `github-publisher.service.ts`, `dto/admin-blog.dto.ts`; `apps/web/src/pages/admin/AdminBlogPage.tsx`, `AdminBlogEditorPage.tsx`; `packages/shared/src/blog.ts`; `BlogPost` Prisma model + migration `20261014000000_blog_posts` | Admin can create/edit/preview a post in the DB (draft/scheduled/published/archived pipeline), then **Publish** commits a real `.md` file straight into `apps/web/src/content/posts/` via a hand-rolled GitHub Contents-API client (`GithubPublisherService` — no Octokit dependency, matching this codebase's "thin REST client, no SDK" house style). DB row is the authoring source of truth; the GitHub folder is still the *only* thing the live site actually renders from (`vite.config.ts`'s `buildPostsList()`, untouched). **Unpublish** deletes the live file via the same API before archiving the row. Cover images + a general image/audio/video media library go through the backend-mediated Supabase Storage upload pattern (`blog-media` bucket, service-role write). 10 curated "layout preset" CSS modifiers now exist (editorial/tutorial/news-brief/spotlight/data-deep-dive + listicle/case-study/visual-essay/magazine/video-feature) via a `preset` frontmatter key — engineer-authored CSS only, never admin-authored/free-form CSS. `GITHUB_TOKEN`/`GITHUB_REPO` set on Render and the `blog-media` bucket created (project owner confirmed). `ci.yml`/`deploy.yml` both got `paths-ignore` for the content/blog-asset folders. Scheduled publishing and draft autosave remain deliberate fast-follows, not gaps. |
+| **Site-wide UI polish** (2026-10-14) | ✅ verified live | `FloatingActions.tsx`/`floating-actions.css`, `Footer.tsx`/`footer.css`, `Layout.tsx` | Floating buttons reordered so Quill is bottom-most/most prominent, WhatsApp next, scroll-to-top topmost with extra margin; Footer's "Learning now" column lost its course thumbnails + "By AIIT Network" byline and the whole `<Footer>` is now hidden for an authenticated learner browsing a public page (portal/instructor/admin/affiliate areas never rendered it anyway — they use their own layouts). The original webinar-page CTA-button pass this same day was superseded hours later by the full redesign below — see that row instead of this one for `/webinar`'s current state. |
+| **Webinar page redesign** (2026-10-14/15, new) | ✅ verified live | `apps/web/src/pages/WebinarPage.tsx`, `webinar-page.css`, `apps/web/src/data/webinars.ts`/`types.ts` | Rebuilt from a detailed premium-editorial spec, several iterations based on live feedback against the deployed page (not a one-shot). Order: `PageBanner` (title/eyebrow/intro) → a compact one-line meta strip (`MetaRow`) → a dedicated, independent full-width video section (capped at 920px on desktop so it doesn't dominate a laptop screen, full-width on mobile; **not** forced side-by-side with the flyer) → a primary "Reserve My Free Seat" CTA banner → the three-field agenda grid (unchanged content, restyled) → "Who should attend" / "What you'll gain" as plain hairline-divided lists (no pill badges — explicitly asked to avoid a "SaaS template" look) → the actual registration form (`#register`, unchanged backend/logic) with the event-details `dl`, countdown, and the flyer (a *separate*, properly-sized 300px image, own label — not squeezed into a 180px thumbnail, which is what prompted removing it once before re-adding it properly). Video hosted on R2 (see that row); has its own dedicated 16:9 `videoThumbnail` poster image, deliberately **not** the portrait flyer (wrong aspect, looked messy stretched). Title deliberately avoids implying AIIT only covers "three technologies" (it covers far more per `/courses` — the number describes this one session's agenda, not AIIT's scope). No autoplay (deliberate — browsers block autoplay-with-sound anyway, and the stated audience is explicitly bandwidth-conscious — "Africa & Asia friendly" per the webinar's own data). **Also fixed in the same round:** Quill's mobile chat panel was a true `100dvh` overlay with no way to see the page behind it short of closing it — capped at `min(80dvh, 100dvh - 6rem)` as a bottom sheet instead (site-wide fix, `quill-chat.css`, not webinar-specific); the public "Instructors" nav entry was hidden (`data/navigation.ts`, one commented-out array line) at the project owner's explicit request — the page/route/data are untouched, trivially reversible. |
+| **Blog admin CMS** (2026-10-14) | ✅ verified live, manual setup done | `apps/api/src/modules/admin/admin-blog.{controller,service}.ts`, `github-publisher.service.ts`, `dto/admin-blog.dto.ts`; `apps/web/src/pages/admin/AdminBlogPage.tsx`, `AdminBlogEditorPage.tsx`; `packages/shared/src/blog.ts`; `BlogPost` Prisma model + migration `20261014000000_blog_posts` | Admin can create/edit/preview a post in the DB (draft/scheduled/published/archived pipeline), then **Publish** commits a real `.md` file straight into `apps/web/src/content/posts/` via a hand-rolled GitHub Contents-API client (`GithubPublisherService` — no Octokit dependency, matching this codebase's "thin REST client, no SDK" house style). DB row is the authoring source of truth; the GitHub folder is still the *only* thing the live site actually renders from (`vite.config.ts`'s `buildPostsList()`, untouched). **Unpublish** deletes the live file via the same API before archiving the row. Cover images + the image/audio half of the media library still go through the backend-mediated Supabase Storage upload pattern (`blog-media` bucket, service-role write) — **video moved to Cloudflare R2, 2026-10-14/15** (see the new R2 row below): `POST /admin/blog/media/presign-video` returns a short-lived signed PUT URL, the browser uploads the file straight to R2 (never through this server — sidesteps the old flat 80MB multer ceiling), and `BlogMediaUploadResult`'s `kind: 'video'` case is now filled by that path instead. 10 curated "layout preset" CSS modifiers now exist (editorial/tutorial/news-brief/spotlight/data-deep-dive + listicle/case-study/visual-essay/magazine/video-feature) via a `preset` frontmatter key — engineer-authored CSS only, never admin-authored/free-form CSS. `GITHUB_TOKEN`/`GITHUB_REPO` set on Render and the `blog-media` bucket created (project owner confirmed). `ci.yml`/`deploy.yml` both got `paths-ignore` for the content/blog-asset folders. Scheduled publishing and draft autosave remain deliberate fast-follows, not gaps. |
+| **Cloudflare R2 (video storage)** (2026-10-14/15, new) | ✅ verified live | `apps/api/src/common/r2/r2.service.ts`, `apps/web/src/pages/admin/AdminBlogEditorPage.tsx`, `apps/web/src/pages/WebinarPage.tsx` | `R2Service` wraps `@aws-sdk/client-s3`/`@aws-sdk/s3-request-presigner` — the one deliberate exception to this codebase's "no SDK" house style, since SigV4 presigned-URL signing is cryptographic, not a simple bearer header. **`forcePathStyle: true` is required** — R2 doesn't support virtual-hosted-style bucket addressing (`bucket.account.r2.cloudflarestorage.com` isn't a real host), and the SDK's v3 default produces exactly that broken hostname otherwise; this was live-debugged and fixed this session. Env vars: `R2_ACCOUNT_ID`, `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY` (high-privilege), `R2_BUCKET_NAME` (`aiit-media`), `R2_PUBLIC_URL` (`https://media.aiit.network`, a Cloudflare custom domain, since this account's DNS is on Cloudflare — the alternative `pub-*.r2.dev` dev subdomain is explicitly not for production use). Two more layers had to be opened for this to actually work end-to-end, both easy to re-break by accident: the **R2 bucket's own CORS policy** (`AllowedOrigins` for `https://aiit.network`/`https://www.aiit.network`/local dev, `AllowedMethods: PUT`, `AllowedHeaders: content-type`) and **`apps/web/vercel.json`'s CSP** (`connect-src` needed `https://*.r2.cloudflarestorage.com` for the presigned PUT itself; a separate `media-src` directive — which didn't exist before — was needed for `<video>`/`<audio>` playback of anything hosted on R2 *or* the pre-existing Supabase-hosted audio/video, which was quietly broken by the same CSP gap and nobody had noticed yet since video embedding is brand new). First real file hosted: the webinar page's video, see the row below. |
 
 ---
 
@@ -454,15 +458,22 @@ join only).
 **AI (Quill):** `XAI_API_KEY` (optional — Quill is fully functional rule-based
 without it; the documented seam for a real model later).
 
-**Blog admin CMS (NEW, 2026-10-14):** `GITHUB_TOKEN` (fine-grained PAT, Contents
-read/write scoped to this one repo only — high-privilege secret; **not yet
-generated/set as of this writing**, see §11), `GITHUB_REPO` (`owner/repo`),
+**Blog admin CMS:** `GITHUB_TOKEN` (fine-grained PAT, Contents read/write scoped to
+this one repo only — high-privilege secret), `GITHUB_REPO` (`owner/repo`),
 `GITHUB_BRANCH` (optional, defaults `main`), `GITHUB_POSTS_PATH` (optional, defaults
 `apps/web/src/content/posts`). Left unset, drafts (create/edit/preview) still work
-fully — only Publish/Unpublish fail with a clear, non-silent error. Also needs a new
-public Supabase Storage bucket, `blog-media` (for cover images — same
-`uploadToStorage`/service-role pattern as the existing `avatars`/`submissions`
-buckets), **not yet created in Supabase as of this writing**.
+fully — only Publish/Unpublish fail with a clear, non-silent error. Also needs the
+public Supabase Storage bucket `blog-media` (cover images + image/audio media
+library — same `uploadToStorage`/service-role pattern as `avatars`/`submissions`).
+**Both confirmed set/created and verified live as of 2026-10-14.**
+
+**Cloudflare R2 (video storage, NEW 2026-10-14/15):** `R2_ACCOUNT_ID`,
+`R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY` (high-privilege), `R2_BUCKET_NAME`
+(`aiit-media`), `R2_PUBLIC_URL` (`https://media.aiit.network`). Left unset, the
+presign-video endpoint 503s with a clear "not configured yet" error — image/audio
+blog uploads and everything else keep working. **Confirmed set and verified live.**
+See the R2 row in §5 for the CORS-policy and CSP gotchas that also had to be opened
+for this to actually work end-to-end — the env vars alone aren't sufficient.
 
 **Web app (`apps/web/.env.example`):** `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`,
 `VITE_API_URL` (default `http://localhost:3000`), `VITE_TURNSTILE_SITE_KEY`
@@ -473,9 +484,12 @@ only, source-map upload), `VITE_PAYPAL_CLIENT_ID`/`VITE_RAZORPAY_KEY_ID`/
 `PaymentMethodPicker` hides itself if its var is unset).
 
 **Deployment config files:** `apps/web/vercel.json` (SPA rewrites + asset caching +
-security headers). No `render.yaml` in-repo — Render is configured via its own
+security headers, including the CSP — `connect-src`/`media-src` updated 2026-10-14/15
+for R2, see §5's R2 row). No `render.yaml` in-repo — Render is configured via its own
 dashboard, not a blueprint file; `deploy.yml` triggers it via a deploy-hook URL
-(`RENDER_DEPLOY_HOOK_URL` GitHub secret).
+(`RENDER_DEPLOY_HOOK_URL` GitHub secret — this briefly went stale 2026-10-15,
+re-pasting the same value from the Render dashboard into the GitHub secret fixed it;
+no regeneration was needed, cause unconfirmed).
 
 ---
 
@@ -565,78 +579,78 @@ round's commits.
 
 ## 11. Current development position
 
-**Last completed objective (this session, 2026-10-14, final round):** the affiliate
-program got a major Phase 1 build-out across several rounds in one long session —
-see §15 for the full chronological detail. Net result, all **committed, pushed to
-`main`, and live-verified** (CI+Deploy green, plus direct `curl` content-fetch of the
-deployed JS chunks — see the method note in §9's addendum):
-1. Manual-only earnings + payout ledger (`AffiliatePayout` table, `computeEarnings()`
-   shared by affiliate/admin views, admin "record a payout" form).
-2. Self-service payout-details editing (PayPal email or bank details) and
-   contact-details editing (`PUT /affiliates/me/contact`), both IP-audited.
-3. The affiliate portal split from one page into four:
-   `/affiliate-portal` (Dashboard), `/link`, `/payout`, `/settings` — see §4/§5.
-4. The Payout page redesigned with a region-aware bank-transfer form (dedicated
-   India/IFSC and Nigeria/NUBAN+bank-dropdown layouts, generic fallback elsewhere),
-   original non-trademarked PayPal/bank icons, a masked-account-number show/hide
-   toggle, and a confirm-before-overwrite step when changing an already-saved method.
-5. `/r/:slug` now redirects straight into `/register` (was `/`) and `RegisterPage.tsx`
-   shows a visible "Referral applied: ⟨slug⟩" banner — previously fully silent.
-6. Verified (by reading, not just trusting) that the `handle_new_user()` Postgres
-   trigger chain genuinely attributes a referred signup: the referral-attribution
-   version in `20261002010000_affiliate_referral_trigger/migration.sql` is the latest
-   of the only 3 migrations that ever touch that function (by filename timestamp), so
-   nothing later clobbers it; `registrationCount` is
-   `prisma.profile.count({ where: { referredByAffiliateId: affiliate.id } })`,
-   consistent with the column the trigger sets. **This was a read-through audit, not
-   a live signup test** (no working browser automation all session — see below) —
-   if the project owner wants it proven beyond code-reading, the only way left is an
-   actual test signup through a real `/r/:slug` link.
+**Last completed objective (this session, 2026-10-14→15, latest round):** starting
+from "where are blog videos stored, and should they go to R2 instead," this grew into
+a full Cloudflare R2 integration plus a complete webinar-page redesign, with several
+real bugs found and fixed live against production as the project owner actually used
+each feature. Net result, all **committed, pushed to `main`, and live-verified**
+(direct `curl` content-fetch of the actual deployed JS/CSS — see §9's addendum; CI
+and Deploy both green on every push except two Deploy runs that failed purely on the
+Render deploy-hook step, re-run successfully afterward with no code change):
 
-Also still true from earlier in the session and unaffected by the above: the 5
-original product asks (floating buttons, footer, webinar CTAs, staff auth fixes,
-Blog CMS) and the first affiliate bug-fix round (§15) — all committed, pushed, and
-live-verified in earlier rounds of this same session.
+1. **Direct-to-R2 presigned video upload** for the blog admin's media library
+   (`POST /admin/blog/media/presign-video`) — replacing the old 80MB
+   memory-buffered-through-this-server path for video specifically (image/audio
+   unchanged, still Supabase-backed). Took three real rounds to get fully working,
+   each a genuine bug found via the project owner's own live testing, not
+   hypothetical: (1) `forcePathStyle: true` missing on the S3 client — R2 doesn't
+   support virtual-hosted-style bucket addressing, (2) the R2 bucket's own CORS
+   policy (none existed), (3) `apps/web/vercel.json`'s CSP `connect-src` never
+   allowed R2's domain, and a `media-src` directive didn't exist at all (which
+   also means the *existing* Supabase-hosted audio/video embed feature was quietly
+   broken for playback this whole time — nobody had noticed because video embedding
+   in a published post is brand new). See §5's R2 row for full detail.
+2. **Affiliate/Student "overlap" investigated and resolved** — confirmed not a bug
+   (affiliate-ness has never been a `Profile.role`), but the admin UI genuinely had
+   no visibility into it. Added cross-links between the Students and Affiliates
+   admin views, an `includeAffiliates` filter (default: hide affiliate-only
+   accounts from Students), and a `q` search param on `GET /admin/affiliates` that
+   didn't exist before. See §5's Admin portal / Affiliate program rows.
+3. **Webinar page fully redesigned**, then iterated on live feedback several times
+   in the same session: video embed → full editorial restructure → poster-image
+   fix → flyer removed then re-added properly sized → Instructors nav hidden →
+   Quill's mobile full-screen overlay fixed → video width capped on desktop →
+   two rounds of excess-whitespace fixes (stacking `Section` paddings). See §5's
+   Webinar page redesign row for the complete current structure.
+4. The Render deploy-hook secret went stale partway through (`Trigger Render
+   deploy` failing with an HTTP error on the `deploy-api` job, migrations
+   themselves were fine) — the project owner re-pasted the same value from Render's
+   dashboard into the GitHub secret (no regeneration), and a `gh run rerun --failed`
+   on the last failed Deploy run confirmed it fixed. Root cause of *why* it went
+   stale was never determined — worth a note if it recurs.
 
-**Verification performed this final round:** both workspaces `tsc --noEmit` clean,
-`eslint` clean; `apps/api` full Jest suite 61 suites / 482 tests green; `apps/web`
-production build succeeds (confirmed `AffiliateLinkPage`/`AffiliatePayoutPage`/
-`AffiliateSettingsPage` each produce their own lazy chunk); pushed as 3 commits
-(`9ff9769`, `3ef6db4`, `2e73c34`); both `CI` and `Deploy` GitHub Actions runs
-completed `success`; live chunk-content check confirmed the new pages, the
-IFSC/NUBAN strings, and the "Referral applied" banner are actually present in the
-deployed bundle (not just that a same-named chunk exists).
+Also still true from earlier in the session and unaffected by the above: the
+affiliate Phase 1 build-out (payouts, portal split, referral-redirect fix), the 5
+original product asks (floating buttons, footer, staff auth fixes), and the Blog CMS
+build — all committed, pushed, and live-verified in earlier rounds of this same
+session (see §15's older entries for that detail, not repeated here).
+
+**Verification performed this round:** both workspaces `tsc --noEmit` clean, `eslint`
+clean on every touched file, after every single commit in this round (small,
+frequent commits rather than one large one, since several rounds were direct fixes
+to live-reported bugs); `apps/api` full Jest suite 61 suites / 483 tests green;
+`apps/web` production build succeeds every time. **No Claude-in-Chrome browser
+automation was available at any point this session** ("Browser extension is not
+connected" every attempt) — every live-verification claim above and in §5 is from
+direct `curl` fetches of the actual deployed bundle/CSS/API responses (confirming
+real content, not just that a same-named file/route exists), not from visually
+viewing the rendered page. The project owner was the one actually looking at the
+rendered page and screenshotting issues back — that's how the webinar-page iteration
+loop actually worked this round.
 
 **Not done this session, flagged for whoever picks this up next:**
 - No live browser test of the referral→register→signup→`registrationCount`
-  end-to-end path — Claude-in-Chrome never connected this entire session
-  ("Browser extension is not connected" on every attempt). The code-level audit
-  above is solid but isn't a substitute for one real test click-through.
-- The admin side of the payout/earnings UI (`AdminAffiliatesPage.tsx`'s
-  `RecordPayoutForm` + earnings/payout-details display) was built and typechecked in
-  an earlier round of this session but has not been re-opened or re-verified live
-  since the portal-split round — worth a quick live sanity check (open
-  `/admin/affiliates`, a detail drawer, confirm the Payouts section still renders).
+  end-to-end path (carried over from the affiliate round, still unresolved — see
+  §15's older entry for detail).
+- *Why* the Render deploy-hook secret went stale was never root-caused (point 4
+  above) — if it recurs, worth checking Render's own deploy-hook rotation
+  behavior/logs, which this session had no access to.
+- LiveKit session recording is still not built — the storage-bucket *decision* that
+  blocked it is now resolved (R2 exists, is wired up, and works), but no Egress
+  API/`Recording` model work has started. This is now a scoped build task.
 - The retired legacy `affiliate_applications` table / admin-list-filter theory from
-  the very first affiliate investigation (below) was never confirmed either way with
-  the project owner — still an open question if "application not showing up" recurs.
-
-**Earlier investigation (no code change needed): "application not updating."**
-Traced the full application → `Affiliate` table → admin-list path; the write, the
-`pending` default status, and the admin list's unfiltered default query are all
-consistent — a new application should already show up. Likely explanations worth the
-project owner checking directly: the admin Affiliates page's status filter parked on
-a non-"All" value from a previous session (it's a URL query param), the list only
-fetching once per page load, or someone having checked the **retired** legacy
-`affiliate_applications` table instead of the live `Affiliate` table.
-
-**Next concrete actions available** (see §12 for the fuller backlog):
-1. Get the project owner to actually click a `/r/:affiliate-slug` link and register,
-   to close out the one remaining "not live-tested" gap above.
-2. Live sanity-check the admin Payouts UI (bullet above).
-3. Older backlog carried over unresolved: README's two stale bullets (Quill, File
-   storage), `docs/production-readiness.html` refresh, Apple sign-in, webinar
-   registration backend (§12).
+  the original affiliate investigation was never confirmed either way with the
+  project owner — still an open question if "application not showing up" recurs.
 
 **Next verification step for whatever is picked up next:** the standard loop already
 established in this project — `npx tsc --noEmit` + `npx eslint` + relevant Jest suite
@@ -646,7 +660,7 @@ for anything user-facing, live-verify via Claude-in-Chrome against aiit.network 
 if it's connected this time (it has not been, all session) — otherwise fall back to
 the `curl`-based deployed-chunk content check described in §9's addendum (browser
 automation is scoped to aiit.network only, never third-party dashboards like
-Supabase/Render/GCP, which the project owner drives themselves).
+Supabase/Render/GCP/Cloudflare, which the project owner drives themselves).
 
 ---
 
@@ -665,8 +679,10 @@ not "no outstanding work."
   endpoint populating `LearnerRecord.webinars`, replacing the hardcoded `[]`.
 - Apple sign-in. Blocked on a paid Apple Developer Program membership + Services
   ID/key setup — an external/account dependency, not a code task alone.
-- Live-class session recording. Blocked on an S3/R2-equivalent storage-bucket
-  decision for LiveKit egress output — a decision dependency, not purely code.
+- Live-class session recording. The storage-bucket *decision* this was blocked on
+  is now resolved (Cloudflare R2 is live and working, 2026-10-14/15 — see §5) — this
+  is now a scoped code task (LiveKit Egress API wiring + a `Recording` model),
+  not a decision dependency.
 - Payment refund tooling. `OrderStatus.refunded` exists but nothing calls a
   provider's refund API yet.
 
@@ -696,6 +712,13 @@ not "no outstanding work."
   commits an update) — not a gap, just not separately highlighted in the UI as
   "republish" vs. "publish."
 - RSS feed generation from the existing post list.
+
+**P3 — minor, from the 2026-10-14/15 R2/webinar round**
+- Root-cause *why* the Render deploy-hook secret went stale (§11, point 4) — fixed
+  by re-pasting the same value, cause unconfirmed. Low priority unless it recurs.
+- `/instructors` nav entry is intentionally hidden (`data/navigation.ts`, one
+  commented-out line, project owner's explicit request 2026-10-15) — not a bug,
+  don't "fix" it back without being asked; the page/route/data are untouched.
 
 **P3 / needs a fresh audit, not fabricated here**
 - Everything in `docs/production-readiness.html` (content completeness, a11y, SEO,
@@ -813,6 +836,76 @@ export and is still live and correct.
 ---
 
 ## 15. Session handover log
+
+### 2026-10-14 to 2026-10-15 — R2 video storage + affiliate/student admin visibility + webinar page redesign
+
+**Objective:** started from a simple question ("where are blog images/videos
+stored, and should R2 hold video?"), which the project owner then asked to actually
+build. Along the way: a reported "affiliate showing up as a student" issue, a
+ground-up webinar-page redesign (detailed premium-editorial spec), and several
+rounds of direct live-feedback fixes against the deployed site as the project owner
+actually used each thing.
+
+**What shipped (10 commits, `dd34739`..`f70d62d`, each individually
+`tsc`/`eslint`-clean and pushed after full verification):**
+1. `R2Service` (`apps/api/src/common/r2/r2.service.ts`) — presigned-URL direct
+   browser→R2 upload for blog video, replacing the old 80MB memory-buffered path
+   for video only. Uses `@aws-sdk/client-s3`/`-presigner`, the one deliberate
+   exception to this codebase's no-SDK house style (SigV4 signing isn't a simple
+   bearer header). **Three real bugs found via the project owner's own live
+   testing, not hypothesized:** missing `forcePathStyle: true` (R2 doesn't support
+   virtual-hosted-style addressing — the SDK's default produced a non-existent
+   hostname), no CORS policy on the R2 bucket, and `vercel.json`'s CSP never
+   allowing R2's domain in `connect-src` — plus a `media-src` directive that didn't
+   exist at all, which turned out to *also* have been silently breaking the
+   pre-existing Supabase-hosted audio/video embed feature (nobody had noticed since
+   video embedding in a published post is brand new).
+2. Affiliate/Student admin visibility: confirmed via full code trace that an
+   affiliate showing up under Students is **not a bug** — `Role` has no `affiliate`
+   value, affiliate-ness is tracked only by whether an `Affiliate` row exists (see
+   the schema comment). The real gap was the admin UI having zero way to see both
+   halves of a person — added cross-links (Students↔Affiliates), an
+   `includeAffiliates` filter (hides affiliate-only/never-enrolled accounts from
+   Students by default), and a `q` search param on `GET /admin/affiliates` that
+   didn't exist before.
+3. Webinar page: full redesign (PageBanner → compact meta strip → independent
+   full-width video → primary CTA → three-field agenda → who-should-attend/
+   what-you'll-gain as plain hairline lists → event details+flyer+form), then
+   iterated live several times from the project owner's screenshots: video poster
+   needed its own 16:9 asset (not the portrait flyer), the flyer was pulled then
+   re-added at a real size (300px, not a cramped 180px), the title was broadened
+   (AIIT covers far more than "three technologies" per `/courses`), the video was
+   capped at 920px on desktop (read as oversized full-width on a real laptop), and
+   two rounds were needed to actually kill a stacked-`Section`-padding gap between
+   the meta row and the video (each `Section` contributes its own padding; three
+   different paddings were compounding to ~230px of dead space).
+4. Also fixed in the same round, both reported from mobile screenshots: Quill's
+   chat panel was a true `100dvh` overlay on mobile with no way to see the page
+   underneath short of closing it — capped at `min(80dvh, 100dvh - 6rem)` as a
+   bottom sheet (site-wide fix, not webinar-specific); the public "Instructors" nav
+   link was hidden at the project owner's explicit request (page/route/data
+   untouched, one commented-out array line, trivially reversible).
+5. Mid-round, the `RENDER_DEPLOY_HOOK_URL` GitHub secret went stale (two Deploy
+   runs failed on just the `Trigger Render deploy` step, migrations fine) — fixed
+   by the project owner re-pasting the same value from Render's dashboard (no
+   regeneration), confirmed via `gh run rerun --failed` on the last failed run.
+
+**Verification methodology, worth noting for next time:** Claude-in-Chrome never
+connected this entire session (as with the rest of this project's history so far).
+Every "verified live" claim above comes from direct `curl` fetches of the actual
+deployed JS bundles/CSS/API responses — tracing the real asset-manifest chain
+(index.js → its dependency map → the specific named chunk) rather than trusting a
+same-named file's mere existence, which caught at least one false-positive during
+this round (an old local-build hash that coincidentally still 200'd via Vercel's
+SPA-rewrite fallback, serving `index.html` instead of the expected JS). The project
+owner did the actual visual verification by using the live site and screenshotting
+problems back — that's what actually drove the webinar-page iteration loop, not
+anything this session could see directly.
+
+**Unresolved/handed back:** see §11's "Not done this session" list — the referral
+end-to-end live test still needs a real browser or a project-owner test click; why
+the Render hook secret went stale was never root-caused; LiveKit recording is now
+a scoped, unblocked build task but still not started.
 
 ### 2026-10-14 (same day, third/fourth round) — Affiliate earnings/payout Phase 1 + portal split + referral-redirect fix
 

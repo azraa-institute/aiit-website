@@ -30,6 +30,9 @@ export default function RegisterPage() {
   const [error, setError] = useState<string>();
   const [submitting, setSubmitting] = useState(false);
   const [sent, setSent] = useState(false);
+  // Read once on mount -- cleared only after a successful signup (below), so this stays
+  // visible across re-renders while the visitor fills in the form.
+  const [referralSlug] = useState(() => getPendingReferralSlug());
 
   const emailValid = EMAIL_RE.test(email.trim());
   const passwordValid = passwordMeetsRequirements(password);
@@ -57,7 +60,6 @@ export default function RegisterPage() {
 
     setError(undefined);
     setSubmitting(true);
-    const referralSlug = getPendingReferralSlug();
     const { data, error: signUpError } = await supabase.auth.signUp({
       email,
       password,
@@ -129,6 +131,11 @@ export default function RegisterPage() {
           </p>
         ) : (
           <form className="auth__form" onSubmit={onSubmit} noValidate>
+            {referralSlug && (
+              <p className="auth__referral-chip" role="status">
+                Referral applied: <strong>{referralSlug}</strong>
+              </p>
+            )}
             {error && (
               <p className="auth__alert" role="alert">
                 <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true">

@@ -383,6 +383,24 @@
   margin-top: 0.15em;
 }
 
+/* A visible confirmation that a /r/:slug referral click carried through to this
+   signup -- previously silent (see RegisterPage.tsx), which made it impossible for
+   a visitor to tell whether their click was actually attributed. */
+.auth__referral-chip {
+  margin: 0;
+  padding: 0.6rem 0.85rem;
+  border-radius: var(--radius-sm);
+  background: var(--accent-wash);
+  border: 1px solid var(--brass);
+  color: var(--ink);
+  font-size: var(--fs-sm);
+  line-height: 1.45;
+}
+.auth__referral-chip strong {
+  color: var(--brass-deep);
+  font-family: ui-monospace, Menlo, Consolas, monospace;
+}
+
 .auth__aux {
   display: flex;
   justify-content: space-between;

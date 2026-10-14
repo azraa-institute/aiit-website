@@ -767,8 +767,30 @@
   border: 1px solid var(--line);
   background: var(--paper);
 }
+/* This page never imports auth/auth.css (the error banner's real home) --
+   without this, `.auth__alert` carried no color/background at all here and
+   fell back to the ambient .on-ink text tint this card resets everywhere
+   else, rendering the message as near-invisible pale text on the cream
+   card (reported as "a blank space" after submitting). Same visual
+   treatment as auth.css's own .auth__alert, just redeclared for this page. */
 .affiliate__form > .auth__alert {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-2);
   margin: 0;
+  padding: 0.7rem 0.85rem;
+  border-radius: var(--radius-sm);
+  background: #fdf1ef;
+  border: 1px solid #e6b4ad;
+  color: #8a1c15;
+  font-size: var(--fs-sm);
+  line-height: 1.45;
+}
+.affiliate__form > .auth__alert a {
+  color: inherit;
+  font-weight: 600;
+  text-decoration: underline;
+  text-underline-offset: 2px;
 }
 /* field.css's `.on-ink .field__control` dark-translucent override still
    matches here (its ancestor .on-ink section is still there -- only the

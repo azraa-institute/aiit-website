@@ -557,6 +557,14 @@ export default function AffiliatePage() {
                 {error ? (
                   <p className="auth__alert" role="alert">
                     {error}
+                    {error === ALREADY_REGISTERED_MESSAGE ? (
+                      <>
+                        {' '}
+                        <Link to="/login" state={{ from: { pathname: '/affiliate' } }}>
+                          Sign in →
+                        </Link>
+                      </>
+                    ) : null}
                   </p>
                 ) : null}
                 {!isLoggedIn ? (

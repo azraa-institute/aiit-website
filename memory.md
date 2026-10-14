@@ -149,7 +149,7 @@ src/
 │   │                        certificates, profile, settings, live classroom
 │   ├── instructor/          Instructor portal
 │   ├── admin/                Admin portal
-│   └── affiliate/            Affiliate dashboard (AffiliateLayout + DashboardPage)
+│   └── affiliate/            Affiliate portal — Dashboard/Link/Payout/Settings pages
 └── styles/tokens.css       Design system — see §7
 ```
 
@@ -197,7 +197,9 @@ payment-method picker, and the Quill "Ask about this course" entry point) · `/r
 `/newsletter/unsubscribe` · `/verify/:credentialId` (public certificate verification) ·
 `/shop` · `/shop/:slug` (plus one legacy-slug redirect) · `/instructors` · `/why-join`
 · `/aiit-blueprint` · `/affiliate` (public application form) · `/r/:slug` (referral
-redirect → `/`) · `/privacy-policy` · `/terms` · `*` → `NotFoundPage`.
+redirect → `/register`, changed 2026-10-14 from `/` so the click is visibly attributed
+on the registration page, not just silently stored — see §15) · `/privacy-policy` ·
+`/terms` · `*` → `NotFoundPage`.
 
 ### Auth
 `/login` · `/register` · `/forgot-password` · `/auth/callback` · `/reset-password` ·
@@ -241,6 +243,14 @@ itself."* `(index)` Dashboard · `students` · `instructors` · `admins` · `cer
 → AffiliateLayout]` — `RequireAffiliate` gates on *having an Affiliate record at
 all* (not role, not approval status); redirects to `/change-password` if a password
 change is required, or back to `/affiliate` if the account has no application on file.
+Split into 4 pages 2026-10-14 (was one page): `(index)` Dashboard (status/stepper,
+stats row, agreement download, quick-link cards into the two below) ·
+`link` (`AffiliateLinkPage.tsx`, the referral-link reveal box) ·
+`payout` (`AffiliatePayoutPage.tsx`, region-aware PayPal/bank form — India (IFSC) /
+Nigeria (NUBAN + bank-name dropdown) / generic-other, masked account number with a
+show/hide toggle, confirm-before-overwrite on an existing saved method, own payout
+history) · `settings` (`AffiliateSettingsPage.tsx`, change password + edit the
+contact/context fields given at application time via `PUT /affiliates/me/contact`).
 
 ### Portal data dependency
 The whole learner-portal shell hangs off one hook, `useLearner()` in
@@ -268,7 +278,7 @@ session · ⚠️ partial/known gap · ❌ not built.
 | **Live classroom** (LiveKit) | 🟡 | `apps/api/src/modules/live-classes/`, `apps/web/src/pages/portal/LiveClassroomPage.tsx`, `apps/web/src/components/classroom/` | Mic-lock, raise-hand queue, real-time whiteboard, live reactions, pinned resources, polls, breakout rooms, instructor-reports-student flow, attendance tracking + CSV/XLSX export. **Gaps:** session recording not built (blocked on an S3/R2-equivalent storage-bucket decision for LiveKit egress output); breakout-room instructor moderation currently reaches the main room only, not into individual breakout rooms. |
 | **Instructor portal** | 🟡 | `apps/api/src/modules/instructor/`, `apps/web/src/pages/instructor/` | Roster, grading (signed, ownership-checked private submission file links), practice-quiz authoring, announcements — all scoped server-side to `CourseInstructor` assignments, not just hidden in the UI. |
 | **Admin portal** | 🟡 | `apps/api/src/modules/admin/`, `apps/web/src/pages/admin/` | Student directory w/ manual enroll/unenroll, staff account management, course/instructor assignment, timetables, classes, complaints inbox, affiliate screening, announcements, payments/orders browse, certificate browse+revoke, attendance reports, internal messages, full audit log. |
-| **Affiliate program** | 🟡 | `apps/api/src/modules/affiliates/`, `apps/web/src/pages/AffiliatePage.tsx`, `apps/web/src/pages/affiliate/` | Public no-session application (server-creates the account with a one-time password), real e-signature flow (typed legal name + consent checkbox + versioned agreement text + IP/timestamp), admin approve/reject + reason, referral-link attribution (`/r/:slug`, 30-day last-click). Commission: $5/creator-introduced student, $7/direct referral (→$10 after 500 direct referrals). |
+| **Affiliate program** | ✅ verified live this session | `apps/api/src/modules/affiliates/`, `apps/web/src/pages/AffiliatePage.tsx`, `apps/web/src/pages/affiliate/` | Public no-session application (server-creates the account with a one-time password), real e-signature flow (typed legal name + consent checkbox + versioned agreement text + IP/timestamp), admin approve/reject + reason, referral-link attribution (`/r/:slug` → `/register`, 30-day last-click, changed 2026-10-14 to show a visible "Referral applied: ⟨slug⟩" banner on `RegisterPage.tsx` instead of silently storing it). Commission: $5/creator-introduced student, $7/direct referral (→$10 after 500 direct referrals), `null` (count-only, no rate) for the undocumented affiliate-to-affiliate type — computed server-side once via `computeEarnings()`, shared by both the affiliate's own view and the admin view so the numbers can't drift. Manual-payout ledger (Phase 1, no live payout API): affiliate sets PayPal email or bank details (`PUT /affiliates/me/payout`, tightly throttled + IP-audited), admin pays by hand and records it (`POST /admin/affiliates/:id/payouts`), both sides see the same `AffiliatePayout` history. Affiliate can also self-edit the contact/context fields given at application time (`PUT /affiliates/me/contact`). **Portal split into 4 pages 2026-10-14** (Dashboard/Link/Payout/Settings — see §4) with a region-aware (India/Nigeria/generic) bank-transfer form, masked account number, and a confirm-before-overwrite step on an existing payout method. |
 | **Certificates** | 🟡 | `apps/api/src/modules/certificates/` | Real server-rendered PDF (`pdf-lib`, no headless browser), public verification page/endpoint. Holder name **snapshotted at issuance** (`Certificate.holderName`), not joined live — stays accurate even if the learner later renames themselves. Admin can revoke without deleting the row (`revokedAt`/`revokedReason`); verify page shows "revoked, as of ⟨date⟩: ⟨reason⟩" instead of a bare 404. |
 | **Profile / avatar / assignment file uploads** | ✅ verified live this session | `apps/api/src/common/supabase-admin/supabase-admin.service.ts`, `apps/api/src/modules/auth/profile.{controller,service}.ts`, `apps/api/src/modules/assignments/`, `apps/web/src/pages/portal/ProfilePage.tsx`, `apps/web/src/pages/portal/AssignmentRow.tsx` | **Architecture changed this session** (2026-10-10/11, commits `854752c`+): uploads now go browser → NestJS API (multipart, `JwtGuard`-authenticated) → Supabase Storage via the service-role admin client — **not** direct browser-to-Storage. Root cause: Supabase Storage's RLS evaluation was failing to bridge the request JWT into the Postgres session context for this project (confirmed via extensive live debugging — a platform-level issue, not fixable from app code or migrations). Upload key is always derived server-side from the authenticated user's ID, never from client input — this is what replaces RLS's per-user isolation guarantee. `publicFileUrl()` (unauthenticated public-bucket read, for *displaying* an avatar) is unaffected and still goes direct to Storage. The since-unused `uploadFile()`/`removeFile()` in `apps/web/src/lib/storage.ts` were deleted 2026-10-13 (`publicFileUrl()` is now the file's only export). |
 | **Public forms** (contact, newsletter, webinar reg, affiliate application) | 🟡 | `apps/api/src/modules/forms/` (4 submodules) | All Turnstile-gated (`TurnstileService` fails **closed** if `TURNSTILE_SECRET_KEY` unset — refuses the request rather than silently accepting unprotected submissions), all send real email via Resend once `RESEND_API_KEY` set (fails **open** if unset — submission still saves, email just doesn't send). |
@@ -276,8 +286,8 @@ session · ⚠️ partial/known gap · ❌ not built.
 | **Apple sign-in** | ❌ not built | — | Needs a paid Apple Developer Program membership ($99/yr) + Services ID/private key/JWT client secret setup that hasn't started. The button was removed from the UI rather than left showing a permanent error. Google sign-in **is** real and configured (Google Cloud project `aiit-auth`). |
 | **Error monitoring (Sentry)** | 🟡 | `main.ts`, `apps/web/vite.config.ts` | API: `SENTRY_DSN`. Web: `VITE_SENTRY_DSN` (statically eliminated from the bundle if unset — zero cost until configured), `VITE_VERCEL_ENV` tags events with the real Vercel environment. Source maps uploaded via `@sentry/vite-plugin` when `SENTRY_AUTH_TOKEN` is set, then deleted locally (never shipped alongside the built JS). |
 | **Portal "refetch" behavior** | ✅ verified live this session | `apps/web/src/pages/portal/learnerData.ts` | Fixed this session (commit `8418550`) — see §13. |
-| **Site-wide UI polish** (2026-10-14, uncommitted) | 🟡 code-complete, not yet live-verified | `FloatingActions.tsx`/`floating-actions.css`, `Footer.tsx`/`footer.css`, `Layout.tsx`, `WebinarPage.tsx`/`webinar-page.css` | Floating buttons reordered so Quill is bottom-most/most prominent, WhatsApp next, scroll-to-top topmost with extra margin; Footer's "Learning now" column lost its course thumbnails + "By AIIT Network" byline and the whole `<Footer>` is now hidden for an authenticated learner browsing a public page (portal/instructor/admin/affiliate areas never rendered it anyway — they use their own layouts); `/webinar` got a "register" CTA button under each content section (feature/agenda/both audience blocks), all pointing at the existing `#register` anchor, ahead of a video embed that will need visitors to register first. |
-| **Blog admin CMS** (NEW, 2026-10-14) | 🟡 code-complete, **not yet deployed** | `apps/api/src/modules/admin/admin-blog.{controller,service}.ts`, `github-publisher.service.ts`, `dto/admin-blog.dto.ts`; `apps/web/src/pages/admin/AdminBlogPage.tsx`, `AdminBlogEditorPage.tsx`; `packages/shared/src/blog.ts`; new `BlogPost` Prisma model + migration `20261014000000_blog_posts` | Admin can create/edit/preview a post in the DB (draft/scheduled/published/archived pipeline), then **Publish** commits a real `.md` file straight into `apps/web/src/content/posts/` via a hand-rolled GitHub Contents-API client (`GithubPublisherService` — no Octokit dependency, matching this codebase's "thin REST client, no SDK" house style). DB row is the authoring source of truth; the GitHub folder is still the *only* thing the live site actually renders from (`vite.config.ts`'s `buildPostsList()`, untouched). **Unpublish** deletes the live file via the same API before archiving the row — never leaves a ghost page up. Cover images go through the existing backend-mediated Supabase Storage upload pattern (service-role write, never direct browser-to-Storage) and are referenced by their permanent public Storage URL directly in the committed frontmatter — confirmed this is an already-supported case (`assetUrl()`'s own doc comment: external URLs pass through unchanged), not a workaround, so images are **not** additionally committed into the repo. Five curated "layout preset" CSS modifiers (`editorial`/`tutorial`/`news-brief`/`spotlight`/`data-deep-dive`) give each post a different look via a new `preset` frontmatter key — engineer-authored CSS only, never admin-authored/free-form CSS (would be an injection/governance risk on a public page). `ci.yml`/`deploy.yml` both got `paths-ignore` for the content/blog-asset folders so a publish doesn't trigger a pointless full CI run + API redeploy. **Not yet usable in production** — see §11/§12 for the exact manual steps still needed (a `GITHUB_TOKEN` PAT, a `blog-media` Supabase Storage bucket, and actually pushing this work to `main`). Scheduled publishing and draft autosave were scoped out as deliberate fast-follows, not gaps. |
+| **Site-wide UI polish** (2026-10-14) | ✅ verified live | `FloatingActions.tsx`/`floating-actions.css`, `Footer.tsx`/`footer.css`, `Layout.tsx`, `WebinarPage.tsx`/`webinar-page.css` | Committed and pushed same day. Floating buttons reordered so Quill is bottom-most/most prominent, WhatsApp next, scroll-to-top topmost with extra margin; Footer's "Learning now" column lost its course thumbnails + "By AIIT Network" byline and the whole `<Footer>` is now hidden for an authenticated learner browsing a public page (portal/instructor/admin/affiliate areas never rendered it anyway — they use their own layouts); `/webinar` got a "register" CTA button under each content section (feature/agenda/both audience blocks), all pointing at the existing `#register` anchor, ahead of a video embed that will need visitors to register first. |
+| **Blog admin CMS** (2026-10-14) | ✅ verified live, manual setup done | `apps/api/src/modules/admin/admin-blog.{controller,service}.ts`, `github-publisher.service.ts`, `dto/admin-blog.dto.ts`; `apps/web/src/pages/admin/AdminBlogPage.tsx`, `AdminBlogEditorPage.tsx`; `packages/shared/src/blog.ts`; `BlogPost` Prisma model + migration `20261014000000_blog_posts` | Admin can create/edit/preview a post in the DB (draft/scheduled/published/archived pipeline), then **Publish** commits a real `.md` file straight into `apps/web/src/content/posts/` via a hand-rolled GitHub Contents-API client (`GithubPublisherService` — no Octokit dependency, matching this codebase's "thin REST client, no SDK" house style). DB row is the authoring source of truth; the GitHub folder is still the *only* thing the live site actually renders from (`vite.config.ts`'s `buildPostsList()`, untouched). **Unpublish** deletes the live file via the same API before archiving the row. Cover images + a general image/audio/video media library go through the backend-mediated Supabase Storage upload pattern (`blog-media` bucket, service-role write). 10 curated "layout preset" CSS modifiers now exist (editorial/tutorial/news-brief/spotlight/data-deep-dive + listicle/case-study/visual-essay/magazine/video-feature) via a `preset` frontmatter key — engineer-authored CSS only, never admin-authored/free-form CSS. `GITHUB_TOKEN`/`GITHUB_REPO` set on Render and the `blog-media` bucket created (project owner confirmed). `ci.yml`/`deploy.yml` both got `paths-ignore` for the content/blog-asset folders. Scheduled publishing and draft autosave remain deliberate fast-follows, not gaps. |
 
 ---
 
@@ -521,6 +531,14 @@ plausible-but-not-freshly-verified.
 placeholder string `"AIIT-AFF-XXXXXX"` in `AffiliateDashboardPage.tsx`, is not a
 code marker).
 
+**Addendum, 2026-10-14, later the same day:** the Blog CMS and site-wide UI polish
+rows above (and everything in the §15 entries through "Affiliate portal split +
+region-aware payout + referral-redirect fix") are now committed, pushed, and
+live-verified via direct `curl` content-fetch of the deployed JS chunks (not just
+CI/Deploy green) — see that §15 entry for the exact method and what was checked.
+`npx jest --silent` in `apps/api` was green at 482/482 immediately before that
+round's commits.
+
 ---
 
 ## 10. Decisions and development constraints
@@ -547,67 +565,76 @@ code marker).
 
 ## 11. Current development position
 
-**Last completed objective (this session, 2026-10-14):** five product asks
-implemented in one sitting: (1) floating-action button reorder/spacing, (2) footer
-decluttered + hidden for authenticated learners, (3) `/webinar` per-section
-register CTAs, (4) staff/instructor auth fixes (credentials email on
-create/reset, forced-fresh-login redirect after password change, student-sign-in
-link removed from `/staff/login`), (5) a full admin-authored Blog CMS publishing to
-the GitHub content folder with 5 curated layout presets. A sixth ask (affiliate
-application "not updating") was investigation-only per explicit instruction — **no
-bug found in code**, see the dedicated note right after this paragraph.
+**Last completed objective (this session, 2026-10-14, final round):** the affiliate
+program got a major Phase 1 build-out across several rounds in one long session —
+see §15 for the full chronological detail. Net result, all **committed, pushed to
+`main`, and live-verified** (CI+Deploy green, plus direct `curl` content-fetch of the
+deployed JS chunks — see the method note in §9's addendum):
+1. Manual-only earnings + payout ledger (`AffiliatePayout` table, `computeEarnings()`
+   shared by affiliate/admin views, admin "record a payout" form).
+2. Self-service payout-details editing (PayPal email or bank details) and
+   contact-details editing (`PUT /affiliates/me/contact`), both IP-audited.
+3. The affiliate portal split from one page into four:
+   `/affiliate-portal` (Dashboard), `/link`, `/payout`, `/settings` — see §4/§5.
+4. The Payout page redesigned with a region-aware bank-transfer form (dedicated
+   India/IFSC and Nigeria/NUBAN+bank-dropdown layouts, generic fallback elsewhere),
+   original non-trademarked PayPal/bank icons, a masked-account-number show/hide
+   toggle, and a confirm-before-overwrite step when changing an already-saved method.
+5. `/r/:slug` now redirects straight into `/register` (was `/`) and `RegisterPage.tsx`
+   shows a visible "Referral applied: ⟨slug⟩" banner — previously fully silent.
+6. Verified (by reading, not just trusting) that the `handle_new_user()` Postgres
+   trigger chain genuinely attributes a referred signup: the referral-attribution
+   version in `20261002010000_affiliate_referral_trigger/migration.sql` is the latest
+   of the only 3 migrations that ever touch that function (by filename timestamp), so
+   nothing later clobbers it; `registrationCount` is
+   `prisma.profile.count({ where: { referredByAffiliateId: affiliate.id } })`,
+   consistent with the column the trigger sets. **This was a read-through audit, not
+   a live signup test** (no working browser automation all session — see below) —
+   if the project owner wants it proven beyond code-reading, the only way left is an
+   actual test signup through a real `/r/:slug` link.
 
-**Verification performed this session:** `npx tsc --noEmit` clean and `npx eslint`
-clean on every touched file in both workspaces; full API Jest suite
-(61 suites / 468 tests, including a new 6-test `admin-blog.service.spec.ts`) passing;
-`npm run build` (apps/web) succeeds. **Not done this session:** nothing was
-committed, pushed, or deployed, and nothing was live-verified in a browser — the
-standing convention of watching CI/Deploy + Claude-in-Chrome verification against
-production did not happen yet, because the work is still sitting in the local
-working tree awaiting the project owner's review/commit decision. Don't mark any of
-today's five items "✅ verified live" until that actually happens in a future
-session.
+Also still true from earlier in the session and unaffected by the above: the 5
+original product asks (floating buttons, footer, webinar CTAs, staff auth fixes,
+Blog CMS) and the first affiliate bug-fix round (§15) — all committed, pushed, and
+live-verified in earlier rounds of this same session.
 
-**Affiliate investigation verdict (no code change made):** traced the full
-application → `Affiliate` table → admin-list path; the write, the `pending` default
-status, and the admin list's unfiltered default query are all consistent — a new
-application should already show up. Likely explanations worth the project owner
-checking directly: the admin Affiliates page's status filter parked on a non-"All"
-value from a previous session (it's a URL query param), the list only fetching once
-per page load (needs a manual refresh to see something submitted after), or someone
-having checked the **retired** legacy `affiliate_applications` table instead of the
-live `Affiliate` table. Flag if a specific missing application is identified with an
-email/date — that's a data/ops question, not the logic bug this ruled out.
+**Verification performed this final round:** both workspaces `tsc --noEmit` clean,
+`eslint` clean; `apps/api` full Jest suite 61 suites / 482 tests green; `apps/web`
+production build succeeds (confirmed `AffiliateLinkPage`/`AffiliatePayoutPage`/
+`AffiliateSettingsPage` each produce their own lazy chunk); pushed as 3 commits
+(`9ff9769`, `3ef6db4`, `2e73c34`); both `CI` and `Deploy` GitHub Actions runs
+completed `success`; live chunk-content check confirmed the new pages, the
+IFSC/NUBAN strings, and the "Referral applied" banner are actually present in the
+deployed bundle (not just that a same-named chunk exists).
 
-**Update, same day, second round:** all of the above plus the affiliate bug fix +
-manual-add feature (see §15's second 2026-10-14 entry) are now **committed** as 7
-separate commits on local `main` — **none pushed yet**. Working tree itself is
-clean (`git status` confirmed). Run `git log origin/main..main` (or just
-`git status`/`git log`) to confirm before assuming anything else changed.
+**Not done this session, flagged for whoever picks this up next:**
+- No live browser test of the referral→register→signup→`registrationCount`
+  end-to-end path — Claude-in-Chrome never connected this entire session
+  ("Browser extension is not connected" on every attempt). The code-level audit
+  above is solid but isn't a substitute for one real test click-through.
+- The admin side of the payout/earnings UI (`AdminAffiliatesPage.tsx`'s
+  `RecordPayoutForm` + earnings/payout-details display) was built and typechecked in
+  an earlier round of this session but has not been re-opened or re-verified live
+  since the portal-split round — worth a quick live sanity check (open
+  `/admin/affiliates`, a detail drawer, confirm the Payouts section still renders).
+- The retired legacy `affiliate_applications` table / admin-list-filter theory from
+  the very first affiliate investigation (below) was never confirmed either way with
+  the project owner — still an open question if "application not showing up" recurs.
 
-**Manual steps still needed before the Blog CMS works in production** (none of
-these are code — flagged to the project owner, not yet done):
-1. Generate a GitHub fine-grained PAT (Contents: read/write, scoped to this one
-   repo only) and set it as `GITHUB_TOKEN` in Render's env — plus `GITHUB_REPO`
-   (`owner/repo`). See the new block in `apps/api/.env.example` for exact guidance.
-   Left unset, drafts still work; only Publish/Unpublish fail with a clear error.
-2. Create a new public Supabase Storage bucket named `blog-media` (same shape as
-   the existing `avatars`/`submissions` buckets) for cover-image uploads.
-3. Commit and push this work to `main` — `deploy.yml` will then run
-   `prisma migrate deploy`, picking up the new `BlogPost` table
-   (`20261014000000_blog_posts`) automatically; no manual migration step needed
-   beyond the normal push.
-4. After that, live-verify in the admin portal: create a draft, preview it, publish
-   it, confirm the commit landed in `apps/web/src/content/posts/` and the post
-   renders at `/resources/:slug` with its chosen preset, then test Unpublish.
+**Earlier investigation (no code change needed): "application not updating."**
+Traced the full application → `Affiliate` table → admin-list path; the write, the
+`pending` default status, and the admin list's unfiltered default query are all
+consistent — a new application should already show up. Likely explanations worth the
+project owner checking directly: the admin Affiliates page's status filter parked on
+a non-"All" value from a previous session (it's a URL query param), the list only
+fetching once per page load, or someone having checked the **retired** legacy
+`affiliate_applications` table instead of the live `Affiliate` table.
 
 **Next concrete actions available** (see §12 for the fuller backlog):
-1. Do the 4 manual steps above, then live-verify the Blog CMS end-to-end.
-2. Commit + push the other four fixes (floating icons, footer, webinar CTAs, staff
-   auth) — all independent of the Blog CMS and safe to ship separately if preferred.
-3. Decide on the affiliate investigation's follow-up (re-check the admin UI filter,
-   or get a specific missing-application report to dig further).
-4. Older backlog carried over unresolved: README's two stale bullets (Quill, File
+1. Get the project owner to actually click a `/r/:affiliate-slug` link and register,
+   to close out the one remaining "not live-tested" gap above.
+2. Live sanity-check the admin Payouts UI (bullet above).
+3. Older backlog carried over unresolved: README's two stale bullets (Quill, File
    storage), `docs/production-readiness.html` refresh, Apple sign-in, webinar
    registration backend (§12).
 
@@ -616,9 +643,10 @@ established in this project — `npx tsc --noEmit` + `npx eslint` + relevant Jes
 + `npm run build` in both workspaces, then push to `main` and watch `gh run list`/
 `gh run watch` for both the `CI` and `Deploy` workflows before considering it done;
 for anything user-facing, live-verify via Claude-in-Chrome against aiit.network itself
-(per standing project convention — browser automation is scoped to aiit.network only,
-never third-party dashboards like Supabase/Render/GCP, which the project owner drives
-themselves).
+if it's connected this time (it has not been, all session) — otherwise fall back to
+the `curl`-based deployed-chunk content check described in §9's addendum (browser
+automation is scoped to aiit.network only, never third-party dashboards like
+Supabase/Render/GCP, which the project owner drives themselves).
 
 ---
 
@@ -649,11 +677,15 @@ not "no outstanding work."
 - Breakout-room instructor moderation reaching individual breakout rooms, not just
   the main room.
 
-**P1 — Blog CMS manual setup, blocking (2026-10-14, see §11 for full detail)**
-- Generate `GITHUB_TOKEN` (fine-grained PAT) + set `GITHUB_REPO` on Render.
-- Create the `blog-media` public Supabase Storage bucket.
-- Commit/push the code (currently uncommitted) so `deploy.yml` applies the new
-  `BlogPost` migration and the feature actually reaches production.
+**P1 — affiliate program, confirmed gap, not yet live-tested (2026-10-14, see §11)**
+- No live end-to-end test of a `/r/:slug` click → `/register` → signup →
+  `registrationCount` incrementing. The code chain was audited by reading, not
+  exercised through a real browser flow (no working browser automation all
+  session). Next session: either get the project owner to test a real referral
+  signup, or try Claude-in-Chrome again if it's connected.
+- Admin Payouts UI (`AdminAffiliatesPage.tsx`'s `RecordPayoutForm` + earnings
+  display) hasn't been re-opened live since the portal-split round — quick sanity
+  check worth doing.
 
 **P3 — Blog CMS, deliberate fast-follows (not gaps, scoped out of this round)**
 - Draft autosave (debounced save while editing).
@@ -781,6 +813,71 @@ export and is still live and correct.
 ---
 
 ## 15. Session handover log
+
+### 2026-10-14 (same day, third/fourth round) — Affiliate earnings/payout Phase 1 + portal split + referral-redirect fix
+
+**Objective:** following the second-round affiliate bug-fix/manual-add entry below,
+the project owner asked for a real earnings/payout feature (manual payouts only,
+PayPal-or-bank, region-aware), then — while that was mid-build — three more asks
+arrived in quick succession: split the one-page dashboard into Dashboard/Link/Payout
+pages with real PayPal/bank icons and tighter payout-page security, add a Settings
+page, and fix the referral link so a click visibly carries through to signup with the
+affiliate count "real and counting."
+
+**Shipped, backend (commit `d459335`, then `9ff9769`):**
+- `AffiliatePayout` ledger table + `payout_*` columns on `Affiliate`
+  (migration `20261014150000_affiliate_payouts`, applied via `prisma migrate deploy`
+  on push — confirmed by a green Deploy run).
+- `computeEarnings(prisma, affiliate, count)` — one function, called by both the
+  affiliate's own `GET /affiliates/me` and the admin's detail view, so the two
+  can't show different numbers. Tiered $7/$10 for direct referrals, flat $5 for
+  creator-introduced, `null` (count-only) for affiliate-to-affiliate — matches
+  `apps/web/src/data/blueprint.ts`'s published rates exactly.
+- `PUT /affiliates/me/payout` (tighter 6/60s throttle, IP captured in the audit
+  entry's metadata — no new DB column, reuses `AuditService.record()`'s existing
+  JSON metadata) and `POST /admin/affiliates/:id/payouts` (admin records a payout
+  after sending it manually).
+- `PUT /affiliates/me/contact` — self-service edit of the phone/handle/location/
+  motivation fields given at application time (`update-contact.dto.ts`).
+- All covered by Jest (482/482 passing across 61 suites at the end of this round).
+
+**Shipped, frontend (commits `3ef6db4`, `2e73c34`):**
+- `/affiliate-portal` split into 4 routed pages (was 1) — Dashboard (stats +
+  agreement + quick-link cards), `AffiliateLinkPage.tsx` (referral-link box, moved
+  as-is), `AffiliatePayoutPage.tsx` (new: region-aware India/IFSC + Nigeria/NUBAN+
+  bank-dropdown + generic-other bank form, original non-trademarked wallet/bank
+  SVG icons instead of a plain `<select>`, a masked account-number field with a
+  show/hide toggle, a double-click confirm before overwriting an *already-saved*
+  payout method, and the affiliate's own payout history), `AffiliateSettingsPage.tsx`
+  (new: change password via `supabase.auth.updateUser()` — no current-password
+  re-entry needed, session's already active — plus the contact-details edit form).
+- `ReferralRedirect` in `App.tsx` now sends `/r/:slug` to `/register` instead of `/`
+  (the prior behavior was deliberate — see the old code comment — but left a click
+  with zero visible confirmation it worked). `RegisterPage.tsx` now shows a
+  "Referral applied: ⟨slug⟩" banner whenever `getPendingReferralSlug()` is non-null
+  — privacy-safe by design (shows the code, never the affiliate's identity).
+
+**Verification of the "is the count real" ask — read-through, not a live test:**
+Confirmed by reading `prisma/migrations/*/migration.sql` that exactly 3 migrations
+ever touch `handle_new_user()` (`20260912000001_auth_trigger`,
+`20260913020000_backfill_profile_names`, `20261002010000_affiliate_referral_trigger`)
+and that the Oct-2 one — which reads `raw_user_meta_data->>'referral_slug'`, looks up
+the matching `Affiliate`, and sets `profiles.referred_by_affiliate_id` — is the latest
+by filename timestamp, so nothing clobbers it. `registrationCount` is
+`prisma.profile.count({ where: { referredByAffiliateId: affiliate.id } })`, consistent
+with that column. **This was not exercised through an actual signup** — Claude-in-
+Chrome never connected this entire session, so there was no way to click a real
+`/r/:slug` link and watch a row appear. Flagged as the one open item in §11/§12.
+
+**Live verification method used (no working browser automation):** `curl -sL` the
+deployed homepage → its `index-*.js` → grep for the new lazy-chunk filenames
+(`AffiliateLinkPage-*.js` etc. — confirmed all 4 pages are separate chunks) → fetch
+each chunk and grep for distinctive new strings (`IFSC`, `NUBAN`, `Nigeria`, "Referral
+applied") to confirm the actual new logic shipped, not just a same-named stale chunk.
+
+**Process note for future sessions:** this round arrived as 3 stacked user messages
+while still mid-build on the previous one (earnings/payout) — all were tracked and
+addressed in full by the end of the round rather than only answering the latest one.
 
 ### 2026-10-14 (same day, second round) — Affiliate form bug fix + manual-add feature
 **Objective:** following up the affiliate investigation above, the project owner

@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import type { ChangeEvent, FormEvent } from 'react';
+import type { FormEvent, ReactNode } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import type { AdminBlogPost, BlogLayoutPreset, BlogMediaUploadResult, BlogPostInput } from '@aiit/shared';
 import { apiFetch } from '@/lib/api';
@@ -21,6 +21,53 @@ function mediaSnippet(item: MediaItem, bodyIsHtml: boolean): string {
   return bodyIsHtml
     ? `<figure class="article-media article-media--${item.kind}"><${item.kind} controls src="${item.url}"></${item.kind}></figure>`
     : `[${item.kind}: ${item.url}]`;
+}
+
+/**
+ * A native <input type="file"> can't be restyled into a normal-looking
+ * button -- its internal "Choose File" control + filename text are
+ * browser-native and don't reliably center/align the way author CSS
+ * expects (confirmed: they stayed pinned to the top of the box even with
+ * `display:flex; align-items:center` on the input itself). Standard fix:
+ * keep the real input in the DOM (visually-hidden, so it's still
+ * focusable/accessible) and trigger it from a normal styled button.
+ */
+function FilePickerButton({
+  label,
+  accept,
+  multiple,
+  disabled,
+  onFiles,
+  children,
+}: {
+  label: string;
+  accept: string;
+  multiple?: boolean;
+  disabled?: boolean;
+  onFiles: (files: FileList) => void;
+  children?: ReactNode;
+}) {
+  const ref = useRef<HTMLInputElement>(null);
+  return (
+    <div>
+      <button type="button" className="adm-btn adm-btn--ghost" disabled={disabled} onClick={() => ref.current?.click()}>
+        {label}
+      </button>
+      <input
+        ref={ref}
+        type="file"
+        className="visually-hidden"
+        accept={accept}
+        multiple={multiple}
+        disabled={disabled}
+        onChange={(e) => {
+          if (e.target.files && e.target.files.length > 0) onFiles(e.target.files);
+          e.target.value = '';
+        }}
+      />
+      {children}
+    </div>
+  );
 }
 
 const PRESET_INFO: Record<BlogLayoutPreset, { label: string; description: string }> = {
@@ -208,9 +255,8 @@ export default function AdminBlogEditorPage() {
     }
   }
 
-  async function handleCoverUpload(e: ChangeEvent<HTMLInputElement>, field: 'coverImageUrl' | 'coverImage2Url') {
-    const file = e.target.files?.[0];
-    e.target.value = '';
+  async function handleCoverUpload(files: FileList, field: 'coverImageUrl' | 'coverImage2Url') {
+    const file = files[0];
     if (!file) return;
     setError(undefined);
     try {
@@ -224,9 +270,8 @@ export default function AdminBlogEditorPage() {
   }
 
   /** The media library -- as many files as the admin picks, uploaded one at a time so a failure partway leaves the rest already added. */
-  async function handleMediaFiles(e: ChangeEvent<HTMLInputElement>) {
-    const files = Array.from(e.target.files ?? []);
-    e.target.value = '';
+  async function handleMediaFiles(fileList: FileList) {
+    const files = Array.from(fileList);
     if (files.length === 0) return;
     setMediaError(undefined);
     setMediaUploading(true);
@@ -333,20 +378,33 @@ export default function AdminBlogEditorPage() {
 
         <h2 className="adm-h2">Media</h2>
         <div className="adm-grid">
-          <label className="adm-field">
+          <div className="adm-field">
             <span>Cover image</span>
-            <input type="file" accept="image/jpeg,image/png,image/webp" onChange={(e) => handleCoverUpload(e, 'coverImageUrl')} />
+            <FilePickerButton
+              label={form.coverImageUrl ? 'Replace image' : 'Choose image'}
+              accept="image/jpeg,image/png,image/webp"
+              onFiles={(files) => handleCoverUpload(files, 'coverImageUrl')}
+            />
             {form.coverImageUrl ? <img src={form.coverImageUrl} alt="" style={{ maxWidth: '100%', borderRadius: 8, marginTop: 8 }} /> : null}
-          </label>
-          <label className="adm-field">
+          </div>
+          <div className="adm-field">
             <span>Second image (optional)</span>
-            <input type="file" accept="image/jpeg,image/png,image/webp" onChange={(e) => handleCoverUpload(e, 'coverImage2Url')} />
+            <FilePickerButton
+              label={form.coverImage2Url ? 'Replace image' : 'Choose image'}
+              accept="image/jpeg,image/png,image/webp"
+              onFiles={(files) => handleCoverUpload(files, 'coverImage2Url')}
+            />
             {form.coverImage2Url ? <img src={form.coverImage2Url} alt="" style={{ maxWidth: '100%', borderRadius: 8, marginTop: 8 }} /> : null}
-          </label>
+          </div>
           <div className="adm-field adm-field--wide">
             <span>Media library -- insert into the body at your cursor</span>
-            <input type="file" accept={MEDIA_ACCEPT} multiple disabled={mediaUploading} onChange={handleMediaFiles} />
-            {mediaUploading ? <p className="adm-muted">Uploading…</p> : null}
+            <FilePickerButton
+              label={mediaUploading ? 'Uploading…' : 'Choose images/audio/video'}
+              accept={MEDIA_ACCEPT}
+              multiple
+              disabled={mediaUploading}
+              onFiles={handleMediaFiles}
+            />
             {mediaError ? <p className="adm-error" role="alert">{mediaError}</p> : null}
             {mediaItems.length > 0 ? (
               <ul className="adm-list" role="list">

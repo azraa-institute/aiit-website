@@ -113,7 +113,14 @@ export class AffiliatesService {
     });
     await this.audit.record(userId, 'affiliate.apply_new', 'affiliate', affiliate.id, { type, email });
 
-    const loginUrl = `${webOrigin()}/login`;
+    // Deliberately /affiliate-portal, not /login: that route's own
+    // RequireAuth (default `to="/login"`) bounces an anonymous visit there
+    // to /login with `state.from.pathname` preserved, so LoginPage's own
+    // post-sign-in navigate(state?.from?.pathname ?? '/portal') lands them
+    // back on the affiliate dashboard -- not the learner portal, which is
+    // what a bare /login link here used to do (no `from` state on a fresh
+    // page load from an email, so it always fell through to '/portal').
+    const portalUrl = `${webOrigin()}/affiliate-portal`;
     await this.email.send({
       to: email,
       subject: 'Your AIIT affiliate login',
@@ -127,7 +134,7 @@ export class AffiliatesService {
           { label: 'Reference code', value: affiliate.referenceCode ?? '' },
         ]),
         ctaLabel: 'Log in to AIIT',
-        ctaUrl: loginUrl,
+        ctaUrl: portalUrl,
         footerNote:
           "You're receiving this because you applied to the AIIT affiliate program. Keep your reference code -- you'll use it to activate your referral link once your application is approved.",
       }),
@@ -188,7 +195,10 @@ export class AffiliatesService {
       });
     await this.audit.record(adminId, 'affiliate.create_manual', 'affiliate', affiliate.id, { type: dto.type, email, status });
 
-    const loginUrl = `${webOrigin()}/login`;
+    // See applyNew()'s matching comment -- /affiliate-portal, not /login,
+    // so RequireAuth's `from`-preserving redirect lands them on the
+    // affiliate dashboard after signing in, not the learner portal.
+    const portalUrl = `${webOrigin()}/affiliate-portal`;
     await this.email.send({
       to: email,
       subject: 'Your AIIT affiliate account is ready',
@@ -202,7 +212,7 @@ export class AffiliatesService {
           { label: 'Reference code', value: affiliate.referenceCode ?? '' },
         ]),
         ctaLabel: 'Log in to AIIT',
-        ctaUrl: loginUrl,
+        ctaUrl: portalUrl,
         footerNote:
           "You're receiving this because an AIIT administrator added you to the affiliate program. Keep your reference code -- you'll use it to activate your referral link once your account shows approved.",
       }),

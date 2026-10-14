@@ -10,7 +10,10 @@ export const PRIMARY_NAV: NavItem[] = [
       { label: 'About AIIT', to: '/about', description: 'The institute, the mission, the method.' },
       { label: 'Why Join AIIT', to: '/why-join', description: 'Seven reasons learners choose AIIT.' },
       { label: 'AIIT Blueprint', to: '/aiit-blueprint', description: 'Your gateway to global higher education.' },
-      { label: 'Instructors', to: '/instructors', description: 'The people who teach at AIIT.' },
+      // Instructors nav entry intentionally hidden for now (project owner's
+      // call, 2026-10-15) -- the page, route and data are untouched, only
+      // this link into it is removed. Re-add the entry below to restore it:
+      // { label: 'Instructors', to: '/instructors', description: 'The people who teach at AIIT.' },
       { label: 'Contact Us', to: '/contact', description: "We'd love to hear from you." },
     ],
   },

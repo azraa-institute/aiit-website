@@ -43,6 +43,17 @@
   box-shadow: 0 24px 64px -24px rgba(20, 17, 15, 0.45);
   overflow: hidden;
 }
+/* Full container width (1480px) read as oversized on an actual laptop
+   screen -- this caps it at a still-generous, cinematic size without
+   touching how the video itself crops/fits (object-fit stays `cover`,
+   the aspect-ratio is untouched). Full-width below this breakpoint, where
+   the container itself is already much narrower. */
+@media (min-width: 900px) {
+  .webinar-page__video-frame {
+    max-width: 920px;
+    margin-inline: auto;
+  }
+}
 .webinar-page__video {
   display: block;
   width: 100%;

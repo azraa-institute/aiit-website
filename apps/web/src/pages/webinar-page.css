@@ -39,9 +39,13 @@
 }
 
 /* Section C — the video, a cinematic centerpiece independent of the flyer.
-   No extra top padding here -- `size="tight"` on the Section itself
-   already supplies it; adding more on top of that was the other half of
-   the oversized gap below the meta row. */
+   Zeroed top padding: `size="tight"` on the Section itself still supplies
+   up to 5rem on top of the meta row's own closing padding right above it
+   -- the meta row already provides the right amount of separation, this
+   section doesn't need to add more of its own on that one edge. */
+.webinar-page__video-section {
+  padding-top: 0;
+}
 .webinar-page__video-frame {
   border-radius: var(--radius-lg);
   background: var(--ink);

@@ -133,6 +133,8 @@ export interface Webinar {
   audience: string[];
   registrationUrl: string;
   image: string;
+  /** A hosted (R2) video URL -- shown in place of `image` on the webinar page's hero when set, with `image` as its poster frame. */
+  videoUrl?: string;
   status: 'upcoming' | 'live' | 'past';
   featured: boolean;
 }

@@ -62,6 +62,7 @@ export const WEBINARS: Webinar[] = [
     ],
     registrationUrl: '/webinar#register',
     image: '/assets/webinar/aiit-free-webinar.webp',
+    videoUrl: 'https://media.aiit.network/media/video/4bdca149-d8ea-436b-8591-5cae3e83983f.mp4',
     status: 'upcoming',
     featured: true,
   },

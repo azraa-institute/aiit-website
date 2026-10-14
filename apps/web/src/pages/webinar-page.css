@@ -11,6 +11,13 @@
 .webinar-page__feature-media {
   border-radius: var(--radius-md);
 }
+.webinar-page__feature-video {
+  display: block;
+  width: 100%;
+  aspect-ratio: 3 / 4;
+  object-fit: cover;
+  background: var(--ink);
+}
 
 .webinar-page__desc {
   margin-top: var(--space-5);

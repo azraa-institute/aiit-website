@@ -12,6 +12,7 @@ import { Button } from '@/components/primitives/Button';
 import { TextField, SelectField } from '@/components/common/Field';
 import { Turnstile } from '@/components/common/Turnstile';
 import { apiFetch } from '@/lib/api';
+import { assetUrl } from '@/lib/assetUrl';
 import { cn } from '@/lib/cn';
 import './webinar-page.css';
 
@@ -128,15 +129,26 @@ export default function WebinarPage() {
                 Reserve your seat
               </Button>
             </div>
-            <Plate
-              source={w.image}
-              seed={`webinar-page-${w.id}`}
-              motif="signal"
-              ratio={3 / 4}
-              fit="contain"
-              className="webinar-page__feature-media"
-              alt=""
-            />
+            {w.videoUrl ? (
+              <video
+                className="webinar-page__feature-media webinar-page__feature-video"
+                src={w.videoUrl}
+                poster={assetUrl(w.image)}
+                controls
+                preload="metadata"
+                playsInline
+              />
+            ) : (
+              <Plate
+                source={w.image}
+                seed={`webinar-page-${w.id}`}
+                motif="signal"
+                ratio={3 / 4}
+                fit="contain"
+                className="webinar-page__feature-media"
+                alt=""
+              />
+            )}
           </div>
 
           <div className="webinar-page__agenda" data-reveal>

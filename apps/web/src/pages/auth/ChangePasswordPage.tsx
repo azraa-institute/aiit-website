@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import type { FormEvent } from 'react';
 import { useNavigate } from 'react-router-dom';
+import type { AffiliateMe } from '@aiit/shared';
 import { Seo } from '@/lib/Seo';
 import { Button } from '@/components/primitives/Button';
 import { PasswordField } from '@/components/common/Field';
@@ -8,6 +9,7 @@ import { PASSWORD_HINT, passwordMeetsRequirements, PasswordRequirementsList } fr
 import { supabase } from '@/lib/supabaseClient';
 import { apiFetch } from '@/lib/api';
 import { invalidateMe, roleHome, useMe } from '@/lib/me';
+import { invalidateAffiliateMe } from '@/pages/affiliate/affiliateData';
 import { AuthLayout } from './AuthLayout';
 import { LockIcon } from './StaffFieldIcons';
 
@@ -57,7 +59,21 @@ export default function ChangePasswordPage() {
       return;
     }
     invalidateMe();
-    navigate(state.status === 'ready' ? roleHome(state.me.role) : '/login', { replace: true });
+    invalidateAffiliateMe();
+    // mustChangePassword is only ever set by AffiliatesService.applyNew()/
+    // createManually() today (a self-registered learner already set their
+    // own password at signup) -- so almost every account reaching this
+    // page is actually an affiliate, not a plain learner, and roleHome()
+    // alone would wrongly send them to /portal. Check for a real affiliate
+    // record and prefer that destination.
+    let destination = state.status === 'ready' ? roleHome(state.me.role) : '/login';
+    try {
+      const affiliateMe = await apiFetch<AffiliateMe>('/affiliates/me');
+      if (affiliateMe.hasApplied) destination = '/affiliate-portal';
+    } catch {
+      // Not an affiliate (or a transient hiccup) -- fall back to roleHome above.
+    }
+    navigate(destination, { replace: true });
   }
 
   return (

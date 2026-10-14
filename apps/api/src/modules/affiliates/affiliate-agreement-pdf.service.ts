@@ -9,7 +9,7 @@ import { AFFILIATE_AGREEMENT_SECTIONS, AFFILIATE_AGREEMENT_VERSION } from './aff
 const LOGO_URL =
   'https://www.aiit.network/assets/brand/azraa-institute-of-information-technology-official-logo-black.png';
 const FONTS_DIR = join(__dirname, 'assets', 'fonts');
-const SEAL_PATH = join(__dirname, 'assets', 'seal', 'az-seal-brass.png');
+const SEAL_PATH = join(__dirname, 'assets', 'seal', 'az-seal-gold.png');
 
 const PAGE_W = 612; // US Letter, portrait -- a legal document, unlike the certificate's landscape layout
 const PAGE_H = 792;
@@ -184,14 +184,23 @@ class PageFlow {
     this.y -= HEADING_SIZE + HEADING_GAP_AFTER;
   }
 
+  /** Justified like a real printed contract -- every wrapped line except a
+   *  paragraph's last stretches to fill the column, matching the static
+   *  PDF this replaced. Last line stays left-aligned (standard typographic
+   *  rule: a short closing line shouldn't be stretched to the full width). */
   paragraph(text: string): void {
     const maxWidth = PAGE_W - MARGIN_X * 2;
     const lines = wrapText(this.fonts.serif, text, BODY_SIZE, maxWidth);
-    for (const line of lines) {
+    lines.forEach((line, idx) => {
       this.ensure(BODY_LEADING);
-      this.page.drawText(line, { x: MARGIN_X, y: this.y, font: this.fonts.serif, size: BODY_SIZE, color: INK });
+      const isLastLine = idx === lines.length - 1;
+      if (isLastLine) {
+        this.page.drawText(line, { x: MARGIN_X, y: this.y, font: this.fonts.serif, size: BODY_SIZE, color: INK });
+      } else {
+        drawJustifiedLine(this.page, line, MARGIN_X, this.y, this.fonts.serif, BODY_SIZE, maxWidth, INK);
+      }
       this.y -= BODY_LEADING;
-    }
+    });
     this.y -= PARAGRAPH_GAP;
   }
 
@@ -278,6 +287,36 @@ function center(page: PDFPage, text: string, opts: { y: number; font: PDFFont; s
   const width = page.getSize().width;
   const textWidth = opts.font.widthOfTextAtSize(text, opts.size);
   page.drawText(text, { x: (width - textWidth) / 2, y: opts.y, font: opts.font, size: opts.size, color: opts.color });
+}
+
+/**
+ * Draws one line with its word gaps stretched to fill maxWidth exactly --
+ * pdf-lib's drawText has no native word-spacing option, so each word is
+ * placed by hand at a running x cursor. Falls back to a single natural
+ * space if the stretch would be extreme (a greedy-wrapped line that's only
+ * one or two short words, e.g. just before a long word that didn't fit) --
+ * same reasoning resource-detail.css's own justify rules use: a huge gap
+ * reads as a layout bug, not "justified".
+ */
+function drawJustifiedLine(page: PDFPage, line: string, x: number, y: number, font: PDFFont, size: number, maxWidth: number, color: Color): void {
+  const words = line.split(/\s+/).filter(Boolean);
+  const spaceWidth = font.widthOfTextAtSize(' ', size);
+  if (words.length < 2) {
+    page.drawText(line, { x, y, font, size, color });
+    return;
+  }
+  const wordsWidth = words.reduce((sum, w) => sum + font.widthOfTextAtSize(w, size), 0);
+  const gapCount = words.length - 1;
+  const gap = (maxWidth - wordsWidth) / gapCount;
+  if (gap > spaceWidth * 3) {
+    page.drawText(line, { x, y, font, size, color });
+    return;
+  }
+  let cursor = x;
+  for (const word of words) {
+    page.drawText(word, { x: cursor, y, font, size, color });
+    cursor += font.widthOfTextAtSize(word, size) + gap;
+  }
 }
 
 /** Greedy word-wrap: packs as many words per line as fit maxWidth. */

@@ -59,6 +59,41 @@ export class AdminUsersService {
     private readonly email: EmailService,
   ) {}
 
+  /**
+   * The admin-facing response still returns the temporary password (so the
+   * admin has it on hand as a fallback), but this is the actual delivery
+   * channel -- an admin was previously expected to copy/paste it to the
+   * instructor manually. Fails open, same as every other transactional email
+   * here: EmailService.send() no-ops with a logged warning if RESEND_API_KEY
+   * is unset, it never throws.
+   */
+  private async sendCredentialsEmail(email: string, name: string, password: string, isReset: boolean) {
+    const loginUrl = `${process.env.APP_URL ?? 'https://aiit.network'}/staff/login`;
+    await this.email.send({
+      to: email,
+      subject: isReset ? 'Your AIIT staff password has been reset' : 'Your AIIT staff account is ready',
+      html: brandedEmailHtml({
+        heading: isReset ? 'Your password has been reset' : 'Welcome to the AIIT team',
+        intro: isReset
+          ? `Hi ${name}, an administrator reset your AIIT staff account's password. Use the temporary password below to sign in, then choose your own.`
+          : `Hi ${name}, an AIIT administrator created a staff account for you. Use the temporary credentials below to sign in for the first time, then choose your own password.`,
+        bodyHtml: `
+          <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color:#f4efe7;border-radius:6px;">
+            <tr>
+              <td style="padding:16px 20px;font-family:Arial,Helvetica,sans-serif;font-size:14px;color:#14110f;">
+                <p style="margin:0 0 6px;"><strong>Email:</strong> ${email}</p>
+                <p style="margin:0;"><strong>Temporary password:</strong> <code style="background-color:#fff;padding:2px 6px;border-radius:4px;border:1px solid rgba(20,17,15,0.12);">${password}</code></p>
+              </td>
+            </tr>
+          </table>
+        `,
+        ctaLabel: 'Sign in',
+        ctaUrl: loginUrl,
+        footerNote: "You'll be asked to set your own password the first time you sign in. If you didn't expect this email, contact the AIIT team.",
+      }),
+    });
+  }
+
   // ---- Dashboard ----
 
   async dashboard(): Promise<AdminDashboard> {
@@ -233,6 +268,7 @@ export class AdminUsersService {
     const data = { role: 'admin' as const, name: dto.name.trim(), mustChangePassword: true, createdBy: adminId };
     const profile = await this.prisma.profile.upsert({ where: { id: userId }, create: { id: userId, ...data }, update: data });
     await this.audit.record(adminId, 'admin.create', 'user', userId, { email });
+    await this.sendCredentialsEmail(email, dto.name.trim(), password, false);
 
     return { admin: { id: profile.id, name: profile.name, email, createdAt: profile.createdAt.toISOString() }, temporaryPassword: password };
   }
@@ -259,6 +295,7 @@ export class AdminUsersService {
     };
     const profile = await this.prisma.profile.upsert({ where: { id: userId }, create: { id: userId, ...data }, update: data });
     await this.audit.record(adminId, 'instructor.create', 'user', userId, { email });
+    await this.sendCredentialsEmail(email, dto.name.trim(), password, false);
 
     const [summary] = await this.toInstructorSummaries([profile], new Map([[userId, email]]));
     return { instructor: summary, temporaryPassword: password };
@@ -271,6 +308,8 @@ export class AdminUsersService {
     await this.supabase.setPassword(id, password);
     const updated = await this.prisma.profile.update({ where: { id }, data: { mustChangePassword: true } });
     await this.audit.record(adminId, 'instructor.reset_password', 'user', id);
+    const email = (await this.emailsFor([id])).get(id);
+    if (email) await this.sendCredentialsEmail(email, updated.name ?? 'there', password, true);
     const [summary] = await this.toInstructorSummaries([updated]);
     return { instructor: summary, temporaryPassword: password };
   }

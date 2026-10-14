@@ -113,11 +113,6 @@ export default function StaffLoginPage() {
             ? 'Enter the code from your authenticator app to finish signing in.'
             : 'For AIIT administrators and instructors. Use the credentials the AIIT team gave you.'
         }
-        footer={
-          <>
-            Are you a student? <Link to="/login">Student sign-in</Link>
-          </>
-        }
       >
         {mfaPending ? (
           <MfaChallenge onVerified={finishSignIn} />

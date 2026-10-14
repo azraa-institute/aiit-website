@@ -10,7 +10,7 @@ interface AuthLayoutProps {
   title: string;
   intro: ReactNode;
   children: ReactNode;
-  footer: ReactNode;
+  footer?: ReactNode;
   /** Optional provider button(s), e.g. <GoogleAuthButton />. Renders below a divider. */
   social?: ReactNode;
   /** 'staff' switches the card to the admin/instructor look (purple accent, icon fields) -- see auth.css. */
@@ -57,7 +57,7 @@ export function AuthLayout({ title, intro, children, footer, social, tone = 'def
               <div className="auth__social">{social}</div>
             </>
           )}
-          <div className="auth__footer">{footer}</div>
+          {footer && <div className="auth__footer">{footer}</div>}
         </div>
       </main>
     </div>

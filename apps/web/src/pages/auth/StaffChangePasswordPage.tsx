@@ -7,7 +7,7 @@ import { PasswordField } from '@/components/common/Field';
 import { PASSWORD_HINT, passwordMeetsRequirements, PasswordRequirementsList } from '@/components/common/PasswordRequirements';
 import { supabase } from '@/lib/supabaseClient';
 import { apiFetch } from '@/lib/api';
-import { invalidateMe, roleHome, useMe } from '@/lib/me';
+import { invalidateMe } from '@/lib/me';
 import { AuthLayout } from './AuthLayout';
 import { LockIcon } from './StaffFieldIcons';
 
@@ -16,7 +16,6 @@ const ASIDE_IMAGE = '/assets/auth/aiit-staff-portal.webp';
 /** First sign-in for a staff account: replace the temporary password an administrator issued. */
 export default function StaffChangePasswordPage() {
   const navigate = useNavigate();
-  const state = useMe();
   const [password, setPassword] = useState('');
   const [confirm, setConfirm] = useState('');
   const [error, setError] = useState<string>();
@@ -52,7 +51,12 @@ export default function StaffChangePasswordPage() {
       return;
     }
     invalidateMe();
-    navigate(state.status === 'ready' ? roleHome(state.me.role) : '/staff/login', { replace: true });
+    // Force fresh re-authentication with the password they just set, rather
+    // than letting the still-valid temporary-password session carry them
+    // straight into the portal -- the whole point of this screen is that
+    // only they should now know the password.
+    await supabase.auth.signOut().catch(() => {});
+    navigate('/staff/login', { replace: true });
   }
 
   return (

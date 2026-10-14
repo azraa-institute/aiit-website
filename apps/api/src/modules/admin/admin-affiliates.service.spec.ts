@@ -15,6 +15,7 @@ describe('AdminAffiliatesService', () => {
   };
   let audit: { record: jest.Mock };
   let email: { send: jest.Mock };
+  let affiliatesService: { createManually: jest.Mock };
 
   const row = (status = 'pending') => ({
     id: AFFILIATE,
@@ -37,7 +38,19 @@ describe('AdminAffiliatesService', () => {
     };
     audit = { record: jest.fn() };
     email = { send: jest.fn() };
-    service = new AdminAffiliatesService(prisma as never, audit as never, email as never);
+    affiliatesService = { createManually: jest.fn() };
+    service = new AdminAffiliatesService(prisma as never, audit as never, email as never, affiliatesService as never);
+  });
+
+  it('createManually() delegates to AffiliatesService and returns the resulting detail + temp password', async () => {
+    affiliatesService.createManually.mockResolvedValue({ affiliate: row(), temporaryPassword: 'Abc123!xyz' });
+    prisma.affiliate.findUnique.mockResolvedValue(row());
+
+    const result = await service.createManually(ADMIN, { name: 'Ada', email: 'ada@example.com', type: 'creator' } as never, '203.0.113.1');
+
+    expect(affiliatesService.createManually).toHaveBeenCalledWith(ADMIN, { name: 'Ada', email: 'ada@example.com', type: 'creator' }, '203.0.113.1');
+    expect(result.temporaryPassword).toBe('Abc123!xyz');
+    expect(result.affiliate.id).toBe(AFFILIATE);
   });
 
   it('rejecting without a reason is blocked', async () => {

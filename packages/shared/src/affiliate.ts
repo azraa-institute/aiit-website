@@ -59,6 +59,12 @@ export interface AdminAffiliateDetail extends AdminAffiliateSummary {
   reviewedByName: string | null;
 }
 
+/** Response to POST /admin/affiliates (manually adding someone who already has a relationship with AIIT outside the public application form). */
+export interface AdminAffiliateCredentials {
+  affiliate: AdminAffiliateDetail;
+  temporaryPassword: string;
+}
+
 /** The Affiliate Agreement's legal text, fetched fresh from GET /affiliates/agreement -- see apps/api/src/modules/affiliates/affiliate-agreement.ts for the single source of truth this mirrors. */
 export interface AffiliateAgreementSection {
   heading: string;

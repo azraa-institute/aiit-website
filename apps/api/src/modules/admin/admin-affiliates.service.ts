@@ -1,10 +1,11 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { Prisma, type Affiliate } from '@prisma/client';
-import type { AdminAffiliateDetail, AdminAffiliateStats, AdminAffiliateSummary, AffiliateApplicationStatus, AffiliateType, Paginated } from '@aiit/shared';
+import type { AdminAffiliateCredentials, AdminAffiliateDetail, AdminAffiliateStats, AdminAffiliateSummary, AffiliateApplicationStatus, AffiliateType, Paginated } from '@aiit/shared';
 import { PrismaService } from '../../common/prisma/prisma.service';
 import { AuditService } from '../../common/audit/audit.service';
 import { EmailService } from '../../common/email/email.service';
 import { brandedEmailHtml } from '../../common/email/branded-email';
+import { AffiliatesService, type AdminCreateAffiliateInput } from '../affiliates/affiliates.service';
 
 const PAGE_SIZE = 25;
 
@@ -21,6 +22,7 @@ export class AdminAffiliatesService {
     private readonly prisma: PrismaService,
     private readonly audit: AuditService,
     private readonly email: EmailService,
+    private readonly affiliatesService: AffiliatesService,
   ) {}
 
   async stats(): Promise<AdminAffiliateStats> {
@@ -108,6 +110,12 @@ export class AdminAffiliatesService {
     }
     await this.audit.record(adminId, 'affiliate.status', 'affiliate', id, { from: row.applicationStatus, to: status });
     return this.detail(id);
+  }
+
+  /** For someone AIIT already has a relationship with outside the public form -- see AffiliatesService.createManually()'s own doc comment for what this does and doesn't fabricate. */
+  async createManually(adminId: string, dto: AdminCreateAffiliateInput, adminIp: string | undefined): Promise<AdminAffiliateCredentials> {
+    const { affiliate, temporaryPassword } = await this.affiliatesService.createManually(adminId, dto, adminIp);
+    return { affiliate: await this.detail(affiliate.id), temporaryPassword };
   }
 
   // ---- helpers ----

@@ -1,7 +1,7 @@
 import { randomBytes } from 'node:crypto';
 import { BadRequestException, ConflictException, Injectable, NotFoundException } from '@nestjs/common';
 import { Prisma, type Affiliate } from '@prisma/client';
-import type { AffiliateMe, AffiliateType } from '@aiit/shared';
+import type { AffiliateApplicationStatus, AffiliateMe, AffiliateType } from '@aiit/shared';
 import { PrismaService } from '../../common/prisma/prisma.service';
 import { AuditService } from '../../common/audit/audit.service';
 import { EmailService } from '../../common/email/email.service';
@@ -18,6 +18,14 @@ export interface ApplyContext {
   city?: string;
   source?: string;
   motivation?: string;
+}
+
+/** Duck-typed against AdminCreateAffiliateDto (apps/api/src/modules/admin/admin-affiliates.controller.ts) -- kept as a plain interface here, same precedent as ApplyContext above, so this module doesn't import from the admin module. */
+export interface AdminCreateAffiliateInput extends ApplyContext {
+  name: string;
+  email: string;
+  type: AffiliateType;
+  status?: AffiliateApplicationStatus;
 }
 
 const EMPTY_ME: AffiliateMe = {
@@ -124,6 +132,83 @@ export class AffiliatesService {
           "You're receiving this because you applied to the AIIT affiliate program. Keep your reference code -- you'll use it to activate your referral link once your application is approved.",
       }),
     });
+  }
+
+  /**
+   * Admin-initiated, for someone AIIT already has a relationship with
+   * outside the public application form (an existing partner/creator who
+   * agreed to terms some other way) -- mirrors applyNew()'s account
+   * creation half (temp password, mustChangePassword, emailed credentials),
+   * but deliberately does NOT fabricate e-signature evidence: signedName/
+   * agreementVersion/signedAt/signedIp stay null here, same as the
+   * handful of pre-e-signature rows the schema comment already describes,
+   * since nothing was actually typed/consented-to through this form.
+   * Defaults to 'approved' (not the public flow's 'pending') -- the whole
+   * point of this path is onboarding someone who shouldn't sit in the
+   * review queue; the admin can still set 'pending' explicitly.
+   */
+  async createManually(adminId: string, dto: AdminCreateAffiliateInput, adminIp: string | undefined): Promise<{ affiliate: Affiliate; temporaryPassword: string }> {
+    const email = dto.email.trim().toLowerCase();
+    const name = dto.name.trim();
+    const password = generateTemporaryPassword();
+    const userId = await this.supabase.createUser(email, password, name, undefined, adminIp);
+
+    await this.prisma.profile.upsert({
+      where: { id: userId },
+      create: { id: userId, name, mustChangePassword: true, createdBy: adminId },
+      update: { name, mustChangePassword: true },
+    });
+
+    const status = dto.status ?? 'approved';
+    const terminal = status === 'approved' || status === 'rejected';
+    const affiliate = await this.prisma.affiliate
+      .create({
+        data: {
+          userId,
+          type: dto.type,
+          referralSlug: generateReferralSlug(),
+          referenceCode: generateReferenceCode(),
+          applicationStatus: status,
+          reviewedAt: terminal ? new Date() : null,
+          reviewedBy: terminal ? adminId : null,
+          phone: dto.phone,
+          handle: dto.handle,
+          country: dto.country,
+          state: dto.state,
+          city: dto.city,
+          source: dto.source ?? 'Added manually by an admin',
+          motivation: dto.motivation,
+        },
+      })
+      .catch((err: unknown) => {
+        if ((err as { code?: string }).code === 'P2002') {
+          throw new ConflictException('This person already has an affiliate record.');
+        }
+        throw err;
+      });
+    await this.audit.record(adminId, 'affiliate.create_manual', 'affiliate', affiliate.id, { type: dto.type, email, status });
+
+    const loginUrl = `${webOrigin()}/login`;
+    await this.email.send({
+      to: email,
+      subject: 'Your AIIT affiliate account is ready',
+      html: brandedEmailHtml({
+        heading: 'Your AIIT affiliate account is ready',
+        intro:
+          "An AIIT administrator added you to the affiliate program. Use the temporary password below to sign in -- you'll be asked to set your own password right away.",
+        bodyHtml: credentialsBlockHtml([
+          { label: 'Email', value: email },
+          { label: 'Temporary password', value: password },
+          { label: 'Reference code', value: affiliate.referenceCode ?? '' },
+        ]),
+        ctaLabel: 'Log in to AIIT',
+        ctaUrl: loginUrl,
+        footerNote:
+          "You're receiving this because an AIIT administrator added you to the affiliate program. Keep your reference code -- you'll use it to activate your referral link once your account shows approved.",
+      }),
+    });
+
+    return { affiliate, temporaryPassword: password };
   }
 
   async me(userId: string): Promise<AffiliateMe> {

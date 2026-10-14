@@ -9,5 +9,9 @@ import { AffiliateAgreementPdfService } from './affiliate-agreement-pdf.service'
   imports: [EmailModule],
   controllers: [AffiliatesController, AffiliateAgreementController],
   providers: [AffiliatesService, AffiliateAgreementPdfService],
+  // AdminAffiliatesService calls AffiliatesService.createManually() so the
+  // admin "add affiliate manually" flow reuses the exact same row-creation
+  // logic as the public application form, instead of a second copy of it.
+  exports: [AffiliatesService],
 })
 export class AffiliatesModule {}

@@ -196,6 +196,60 @@ describe('AffiliatesService', () => {
     });
   });
 
+  describe('createManually', () => {
+    const ADMIN = '44444444-4444-4444-8444-444444444444';
+
+    it('creates the account and an approved row (default), without fabricating e-signature evidence', async () => {
+      supabase.createUser.mockResolvedValue(USER);
+      prisma.affiliate.create.mockResolvedValue({ id: AFFILIATE_ID, userId: USER, referenceCode: 'AIIT-AFF-ABC123' });
+
+      const result = await service.createManually(ADMIN, { name: 'Ada Lovelace', email: 'Ada@Example.com', type: 'creator' }, IP);
+
+      expect(supabase.createUser).toHaveBeenCalledWith('ada@example.com', expect.any(String), 'Ada Lovelace', undefined, IP);
+      expect(prisma.profile.upsert).toHaveBeenCalledWith({
+        where: { id: USER },
+        create: { id: USER, name: 'Ada Lovelace', mustChangePassword: true, createdBy: ADMIN },
+        update: { name: 'Ada Lovelace', mustChangePassword: true },
+      });
+      expect(prisma.affiliate.create).toHaveBeenCalledWith({
+        data: expect.objectContaining({
+          userId: USER,
+          type: 'creator',
+          applicationStatus: 'approved',
+          reviewedBy: ADMIN,
+        }),
+      });
+      // Never claim a signature that wasn't actually captured through this form.
+      const created = prisma.affiliate.create.mock.calls[0][0].data;
+      expect(created.signedName).toBeUndefined();
+      expect(created.agreementVersion).toBeUndefined();
+      expect(created.signedAt).toBeUndefined();
+
+      expect(audit.record).toHaveBeenCalledWith(ADMIN, 'affiliate.create_manual', 'affiliate', AFFILIATE_ID, { type: 'creator', email: 'ada@example.com', status: 'approved' });
+      expect(result.temporaryPassword).toEqual(expect.any(String));
+      expect(email.send).toHaveBeenCalledWith(expect.objectContaining({ to: 'ada@example.com' }));
+    });
+
+    it('honors an explicit pending status instead of defaulting to approved', async () => {
+      supabase.createUser.mockResolvedValue(USER);
+      prisma.affiliate.create.mockResolvedValue({ id: AFFILIATE_ID, userId: USER, referenceCode: 'AIIT-AFF-ABC123' });
+
+      await service.createManually(ADMIN, { name: 'Ada', email: 'ada@example.com', type: 'creator', status: 'pending' }, IP);
+
+      expect(prisma.affiliate.create).toHaveBeenCalledWith({
+        data: expect.objectContaining({ applicationStatus: 'pending', reviewedBy: null, reviewedAt: null }),
+      });
+    });
+
+    it('turns a duplicate (this person already has an affiliate row) into a ConflictException', async () => {
+      supabase.createUser.mockResolvedValue(USER);
+      prisma.affiliate.create.mockRejectedValue({ code: 'P2002' });
+      await expect(service.createManually(ADMIN, { name: 'Ada', email: 'ada@example.com', type: 'creator' }, IP)).rejects.toBeInstanceOf(
+        ConflictException,
+      );
+    });
+  });
+
   describe('activate', () => {
     it('404s for an account with no affiliate application', async () => {
       prisma.affiliate.findUnique.mockResolvedValue(null);

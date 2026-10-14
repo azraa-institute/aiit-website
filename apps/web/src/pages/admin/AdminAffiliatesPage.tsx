@@ -1,6 +1,8 @@
 import { useState } from 'react';
+import type { FormEvent } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import type {
+  AdminAffiliateCredentials,
   AdminAffiliateDetail,
   AdminAffiliateStats,
   AdminAffiliateSummary,
@@ -190,9 +192,148 @@ function Detail({ id, onChanged, onClose }: { id: string; onChanged: () => void;
   );
 }
 
+/**
+ * For someone AIIT already has a relationship with outside the public
+ * application form (an existing partner/creator, or someone whose own
+ * application got stuck) -- creates their account + an Affiliate row
+ * directly, no e-signature collected (see AffiliatesService.createManually()
+ * on the backend for why), defaulting to "approved" since the whole point
+ * is skipping the review queue for someone already vetted. They're emailed
+ * a one-time password and asked to set their own on first sign-in, same as
+ * a manually-created instructor/admin account.
+ */
+function AddAffiliateForm({ onDone, onClose }: { onDone: () => void; onClose: () => void }) {
+  const [name, setName] = useState('');
+  const [email, setEmail] = useState('');
+  const [type, setType] = useState<AffiliateType>('creator');
+  const [status, setStatus] = useState<AffiliateApplicationStatus>('approved');
+  const [phone, setPhone] = useState('');
+  const [country, setCountry] = useState('');
+  const [motivation, setMotivation] = useState('');
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string>();
+  const [result, setResult] = useState<AdminAffiliateCredentials>();
+
+  async function onSubmit(e: FormEvent) {
+    e.preventDefault();
+    setBusy(true);
+    setError(undefined);
+    try {
+      const created = await apiFetch<AdminAffiliateCredentials>('/admin/affiliates', {
+        method: 'POST',
+        body: JSON.stringify({
+          name: name.trim(),
+          email: email.trim(),
+          type,
+          status,
+          phone: phone.trim() || undefined,
+          country: country.trim() || undefined,
+          motivation: motivation.trim() || undefined,
+        }),
+      });
+      setResult(created);
+      onDone();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Could not add this affiliate.');
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <aside className="adm-drawer" aria-label="Add an affiliate manually">
+      <div className="adm-drawer__head">
+        <h2>Add affiliate manually</h2>
+        <button type="button" className="adm-btn adm-btn--ghost" onClick={onClose}>
+          Close
+        </button>
+      </div>
+
+      {result ? (
+        <>
+          <p className="adm-notice" role="status">
+            Done. We've emailed <strong>{result.affiliate.email}</strong> their login details and a one-time
+            password -- they'll be asked to set their own the moment they sign in.
+          </p>
+          <dl className="adm-dl">
+            <div>
+              <dt>Email</dt>
+              <dd>{result.affiliate.email}</dd>
+            </div>
+            <div>
+              <dt>Temporary password</dt>
+              <dd>
+                <code>{result.temporaryPassword}</code>
+              </dd>
+            </div>
+          </dl>
+          <p className="adm-muted">This password is shown once -- keep a copy if you need to relay it yourself.</p>
+          <div className="adm-actions">
+            <button type="button" className="adm-btn adm-btn--primary" onClick={onClose}>
+              Done
+            </button>
+          </div>
+        </>
+      ) : (
+        <form className="adm-form" onSubmit={onSubmit}>
+          <div className="adm-grid">
+            <label className="adm-field adm-field--wide">
+              <span>Full name</span>
+              <input required minLength={2} maxLength={100} value={name} onChange={(e) => setName(e.target.value)} />
+            </label>
+            <label className="adm-field adm-field--wide">
+              <span>Email address</span>
+              <input required type="email" maxLength={255} value={email} onChange={(e) => setEmail(e.target.value)} />
+            </label>
+            <label className="adm-field">
+              <span>Type</span>
+              <select value={type} onChange={(e) => setType(e.target.value as AffiliateType)}>
+                {(Object.keys(TYPE_LABEL) as AffiliateType[]).map((t) => (
+                  <option key={t} value={t}>
+                    {TYPE_LABEL[t]}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label className="adm-field">
+              <span>Status</span>
+              <select value={status} onChange={(e) => setStatus(e.target.value as AffiliateApplicationStatus)}>
+                {(Object.keys(STATUS_LABEL) as AffiliateApplicationStatus[]).map((s) => (
+                  <option key={s} value={s}>
+                    {STATUS_LABEL[s]}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label className="adm-field">
+              <span>Phone (optional)</span>
+              <input maxLength={40} value={phone} onChange={(e) => setPhone(e.target.value)} />
+            </label>
+            <label className="adm-field">
+              <span>Country (optional)</span>
+              <input maxLength={100} value={country} onChange={(e) => setCountry(e.target.value)} />
+            </label>
+            <label className="adm-field adm-field--wide">
+              <span>Notes (optional)</span>
+              <textarea rows={3} maxLength={1000} value={motivation} onChange={(e) => setMotivation(e.target.value)} />
+            </label>
+          </div>
+          {error ? <p className="adm-error" role="alert">{error}</p> : null}
+          <div className="adm-actions">
+            <button type="submit" className="adm-btn adm-btn--primary" disabled={busy}>
+              {busy ? 'Adding…' : 'Add affiliate'}
+            </button>
+          </div>
+        </form>
+      )}
+    </aside>
+  );
+}
+
 export default function AdminAffiliatesPage() {
   const [params, setParams] = useSearchParams();
   const [selected, setSelected] = useState<string | null>(null);
+  const [adding, setAdding] = useState(false);
   const status = params.get('status') ?? '';
   const type = params.get('type') ?? '';
   const page = Math.max(1, Number(params.get('page') ?? 1));
@@ -224,6 +365,9 @@ export default function AdminAffiliatesPage() {
             emails the applicant.
           </p>
         </div>
+        <button type="button" className="adm-btn adm-btn--primary" onClick={() => setAdding(true)}>
+          Add affiliate manually
+        </button>
       </div>
 
       {stats.status === 'ready' ? (
@@ -318,6 +462,7 @@ export default function AdminAffiliatesPage() {
       ) : null}
 
       {selected ? <Detail id={selected} onChanged={list.reload} onClose={() => setSelected(null)} /> : null}
+      {adding ? <AddAffiliateForm onDone={list.reload} onClose={() => setAdding(false)} /> : null}
     </div>
   );
 }

@@ -1,8 +1,9 @@
-import { Body, Controller, Get, Param, ParseUUIDPipe, Patch, Query, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, Header, Param, ParseUUIDPipe, Patch, Post, Query, Req, UseGuards } from '@nestjs/common';
+import type { Request } from 'express';
 import { Throttle } from '@nestjs/throttler';
 import { Transform } from 'class-transformer';
-import { IsIn, IsInt, IsOptional, MaxLength, Min, ValidateIf } from 'class-validator';
-import type { AdminAffiliateDetail, AdminAffiliateStats, AdminAffiliateSummary, AffiliateApplicationStatus, AffiliateType, Paginated } from '@aiit/shared';
+import { IsEmail, IsIn, IsInt, IsOptional, IsString, MaxLength, Min, MinLength, ValidateIf } from 'class-validator';
+import type { AdminAffiliateCredentials, AdminAffiliateDetail, AdminAffiliateStats, AdminAffiliateSummary, AffiliateApplicationStatus, AffiliateType, Paginated } from '@aiit/shared';
 import { JwtGuard, type AuthenticatedUser } from '../../common/guards/jwt.guard';
 import { RolesGuard } from '../../common/guards/roles.guard';
 import { Roles } from '../../common/decorators/roles.decorator';
@@ -11,6 +12,60 @@ import { AFFILIATE_TYPES } from '../affiliates/dto/apply-affiliate.dto';
 import { AdminAffiliatesService } from './admin-affiliates.service';
 
 const AFFILIATE_STATUSES = ['pending', 'in_review', 'approved', 'rejected'] as const;
+
+/**
+ * For someone AIIT already has a relationship with outside the public
+ * application form -- no agreedToTerms/signedName here (unlike
+ * ApplyNewAffiliateDto), since nothing is actually being electronically
+ * signed through this screen. See AffiliatesService.createManually().
+ */
+class AdminCreateAffiliateDto {
+  @IsString()
+  @MinLength(2)
+  @MaxLength(100)
+  name!: string;
+
+  @IsEmail()
+  @MaxLength(255)
+  email!: string;
+
+  @IsIn(AFFILIATE_TYPES)
+  type!: AffiliateType;
+
+  @IsOptional()
+  @IsIn(AFFILIATE_STATUSES)
+  status?: AffiliateApplicationStatus;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(40)
+  phone?: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(100)
+  handle?: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(100)
+  country?: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(100)
+  state?: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(100)
+  city?: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(1000)
+  motivation?: string;
+}
 
 class ListAffiliatesQuery {
   @IsOptional()
@@ -59,6 +114,18 @@ export class AdminAffiliatesController {
   @Get(':id')
   detail(@Param('id', ParseUUIDPipe) id: string): Promise<AdminAffiliateDetail> {
     return this.affiliates.detail(id);
+  }
+
+  /** The response carries the temporary password -- shown to the admin once, never stored, never cached. */
+  @Post()
+  @Throttle({ default: { limit: 10, ttl: 60_000 } })
+  @Header('Cache-Control', 'no-store')
+  create(
+    @CurrentUser() user: AuthenticatedUser,
+    @Body() dto: AdminCreateAffiliateDto,
+    @Req() request: Request,
+  ): Promise<AdminAffiliateCredentials> {
+    return this.affiliates.createManually(user.userId, dto, request.ip);
   }
 
   @Patch(':id/status')

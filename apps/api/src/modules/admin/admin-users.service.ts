@@ -156,6 +156,14 @@ export class AdminUsersService {
         Prisma.sql`EXISTS (SELECT 1 FROM enrollments e WHERE e.user_id = p.id AND e.course_id = ${query.courseId}::uuid AND e.status <> 'cancelled')`,
       );
     }
+    // See ListStudentsQueryDto.includeAffiliates's doc comment -- an
+    // affiliate who has actually enrolled in something is never hidden,
+    // this only filters out the affiliate-only case.
+    if (!query.includeAffiliates) {
+      conditions.push(
+        Prisma.sql`NOT (a.id IS NOT NULL AND NOT EXISTS (SELECT 1 FROM enrollments e WHERE e.user_id = p.id AND e.status <> 'cancelled'))`,
+      );
+    }
     const where = Prisma.join(conditions, ' AND ');
 
     const [rows, totals] = await Promise.all([
@@ -170,7 +178,11 @@ export class AdminUsersService {
         ORDER BY p.created_at DESC
         LIMIT ${pageSize} OFFSET ${(page - 1) * pageSize}`,
       this.prisma.$queryRaw<{ total: number }[]>`
-        SELECT count(*)::int AS total FROM profiles p LEFT JOIN auth.users u ON u.id = p.id WHERE ${where}`,
+        SELECT count(*)::int AS total
+        FROM profiles p
+        LEFT JOIN auth.users u ON u.id = p.id
+        LEFT JOIN affiliates a ON a.user_id = p.id
+        WHERE ${where}`,
     ]);
 
     return {

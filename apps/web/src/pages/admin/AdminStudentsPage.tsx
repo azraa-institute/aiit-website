@@ -124,14 +124,6 @@ function StudentPanel({ id, onChanged, onClose }: { id: string; onChanged: () =>
           <h3 className="adm-drawer__name">{state.data.name ?? 'No name yet'}</h3>
           <p className="adm-muted">{state.data.email ?? 'No email on record'}</p>
           <span className={cn('adm-status', `adm-status--${state.data.status}`)}>{state.data.status.replace('_', ' ')}</span>
-          {state.data.affiliateId ? (
-            <p className="adm-notice">
-              Also an affiliate --{' '}
-              <Link to={`/admin/affiliates?q=${encodeURIComponent(state.data.email ?? '')}`} className="adm-linkbtn">
-                view their affiliate record
-              </Link>
-            </p>
-          ) : null}
 
           <dl className="adm-dl">
             <div>
@@ -153,6 +145,18 @@ function StudentPanel({ id, onChanged, onClose }: { id: string; onChanged: () =>
             <div>
               <dt>Live classes attended</dt>
               <dd>{state.data.attendance.attended}</dd>
+            </div>
+            <div>
+              <dt>Affiliate</dt>
+              <dd>
+                {state.data.affiliateId ? (
+                  <Link to={`/admin/affiliates?q=${encodeURIComponent(state.data.email ?? '')}`} className="adm-linkbtn">
+                    View affiliate record
+                  </Link>
+                ) : (
+                  '—'
+                )}
+              </dd>
             </div>
           </dl>
 
@@ -293,12 +297,14 @@ export default function AdminStudentsPage() {
   const q = params.get('q') ?? '';
   const status = params.get('status') ?? '';
   const courseId = params.get('courseId') ?? '';
+  const includeAffiliates = params.get('includeAffiliates') === 'true';
   const page = Math.max(1, Number(params.get('page') ?? 1));
 
   const query = new URLSearchParams({ page: String(page), pageSize: String(PAGE_SIZE) });
   if (q) query.set('q', q);
   if (status) query.set('status', status);
   if (courseId) query.set('courseId', courseId);
+  if (includeAffiliates) query.set('includeAffiliates', 'true');
   const list = useAdminFetch<Paginated<StudentSummary>>(`/admin/students?${query.toString()}`);
 
   function setParam(key: string, value: string) {
@@ -355,6 +361,14 @@ export default function AdminStudentsPage() {
             ))}
           </select>
         </label>
+        <label className="adm-check">
+          <input
+            type="checkbox"
+            checked={includeAffiliates}
+            onChange={(e) => setParam('includeAffiliates', e.target.checked ? 'true' : '')}
+          />
+          <span>Show affiliate-only accounts</span>
+        </label>
       </div>
 
       {list.status === 'loading' ? <p className="adm-muted">Loading students…</p> : null}
@@ -378,6 +392,7 @@ export default function AdminStudentsPage() {
                     <th className="num">Courses</th>
                     <th>Joined</th>
                     <th>Status</th>
+                    <th>Affiliate</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -387,7 +402,6 @@ export default function AdminStudentsPage() {
                         <button type="button" className="adm-linkbtn" onClick={() => setSelected(s.id)}>
                           {s.name ?? 'No name yet'}
                         </button>
-                        {s.affiliateId ? <span className="adm-tag adm-tag--creator"> Affiliate</span> : null}
                       </td>
                       <td>{s.email ?? '—'}</td>
                       <td>{s.country ?? '—'}</td>
@@ -395,6 +409,15 @@ export default function AdminStudentsPage() {
                       <td>{new Date(s.joinedAt).toLocaleDateString()}</td>
                       <td>
                         <span className={cn('adm-status', `adm-status--${s.status}`)}>{s.status.replace('_', ' ')}</span>
+                      </td>
+                      <td>
+                        {s.affiliateId ? (
+                          <Link to={`/admin/affiliates?q=${encodeURIComponent(s.email ?? '')}`} className="adm-linkbtn">
+                            View record
+                          </Link>
+                        ) : (
+                          '—'
+                        )}
                       </td>
                     </tr>
                   ))}

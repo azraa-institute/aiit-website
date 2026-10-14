@@ -1,5 +1,5 @@
 import { Transform } from 'class-transformer';
-import { IsDateString, IsEmail, IsIn, IsInt, IsOptional, IsString, IsUUID, Max, MaxLength, Min, MinLength } from 'class-validator';
+import { IsBoolean, IsDateString, IsEmail, IsIn, IsInt, IsOptional, IsString, IsUUID, Max, MaxLength, Min, MinLength } from 'class-validator';
 
 export class CreateInstructorDto {
   @IsString()
@@ -53,6 +53,20 @@ export class ListStudentsQueryDto {
   @IsOptional()
   @IsUUID()
   courseId?: string;
+
+  /**
+   * Default false: an account that's only ever been an affiliate (never
+   * enrolled in a course) is filtered out of this list -- there's already
+   * a dedicated Affiliates page for them, and showing them here alongside
+   * real students reads as a data mix-up even though it isn't one (see
+   * schema.prisma's comment on the Affiliate model). Pass true to show
+   * them anyway. An affiliate who HAS enrolled in something always shows,
+   * regardless of this flag -- they're a real student too.
+   */
+  @IsOptional()
+  @Transform(({ value }) => value === 'true' || value === true)
+  @IsBoolean()
+  includeAffiliates?: boolean;
 
   @IsOptional()
   @Transform(({ value }) => Number(value))

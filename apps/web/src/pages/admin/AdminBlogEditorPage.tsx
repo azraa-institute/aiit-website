@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import type { FormEvent, ReactNode } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
-import type { AdminBlogPost, BlogLayoutPreset, BlogMediaUploadResult, BlogPostInput } from '@aiit/shared';
+import type { AdminBlogPost, BlogLayoutPreset, BlogMediaUploadResult, BlogPostInput, BlogVideoPresignResult } from '@aiit/shared';
 import { apiFetch } from '@/lib/api';
 import { looksLikeHtml } from '@/lib/markdown';
 import { formatWhen, useAdminFetch } from './adminData';
@@ -269,6 +269,24 @@ export default function AdminBlogEditorPage() {
     }
   }
 
+  /**
+   * Video goes straight to R2 (presigned URL, direct browser PUT) -- it
+   * never passes through our own API, unlike the image/audio path below.
+   * See R2Service's doc comment for why only video gets this treatment.
+   */
+  async function uploadVideoToR2(file: File): Promise<BlogMediaUploadResult> {
+    const { uploadUrl, publicUrl } = await apiFetch<BlogVideoPresignResult>('/admin/blog/media/presign-video', {
+      method: 'POST',
+      body: JSON.stringify({ filename: file.name, contentType: file.type, fileSize: file.size }),
+    });
+    // A plain fetch, not apiFetch -- this URL already carries R2's own
+    // signature in its query string, and must NOT also get our API's
+    // Authorization header or JSON content-type.
+    const res = await fetch(uploadUrl, { method: 'PUT', headers: { 'Content-Type': file.type }, body: file });
+    if (!res.ok) throw new Error(`Could not upload "${file.name}" to storage -- try again.`);
+    return { url: publicUrl, kind: 'video' };
+  }
+
   /** The media library -- as many files as the admin picks, uploaded one at a time so a failure partway leaves the rest already added. */
   async function handleMediaFiles(fileList: FileList) {
     const files = Array.from(fileList);
@@ -277,9 +295,14 @@ export default function AdminBlogEditorPage() {
     setMediaUploading(true);
     try {
       for (const file of files) {
-        const body = new FormData();
-        body.append('file', file);
-        const result = await apiFetch<BlogMediaUploadResult>('/admin/blog/media', { method: 'POST', body });
+        let result: BlogMediaUploadResult;
+        if (file.type.startsWith('video/')) {
+          result = await uploadVideoToR2(file);
+        } else {
+          const body = new FormData();
+          body.append('file', file);
+          result = await apiFetch<BlogMediaUploadResult>('/admin/blog/media', { method: 'POST', body });
+        }
         setMediaItems((cur) => [...cur, { ...result, name: file.name }]);
       }
     } catch (err) {

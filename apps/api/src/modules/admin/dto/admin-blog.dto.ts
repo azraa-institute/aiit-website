@@ -6,6 +6,7 @@ import {
   IsIn,
   IsInt,
   IsOptional,
+  IsPositive,
   IsString,
   Matches,
   Max,
@@ -109,4 +110,24 @@ export class ListBlogPostsQueryDto {
   @IsString()
   @MaxLength(100)
   q?: string;
+}
+
+/** Allowed for the direct-to-R2 presigned video path -- see AdminBlogService.presignVideoUpload. */
+export const VIDEO_MIME_TYPES = ['video/mp4', 'video/webm', 'video/quicktime'] as const;
+
+/** 2GiB -- generous for a blog post's embedded video while still bounding R2 storage/egress cost; raise here (and nowhere else) if that's ever too small. */
+export const VIDEO_MAX_BYTES = 2 * 1024 * 1024 * 1024;
+
+export class PresignBlogVideoDto {
+  @IsString()
+  @MaxLength(260)
+  filename!: string;
+
+  @IsIn(VIDEO_MIME_TYPES)
+  contentType!: (typeof VIDEO_MIME_TYPES)[number];
+
+  @IsInt()
+  @IsPositive()
+  @Max(VIDEO_MAX_BYTES)
+  fileSize!: number;
 }

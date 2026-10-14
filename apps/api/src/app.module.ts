@@ -25,6 +25,7 @@ import { QuillModule } from './modules/quill/quill.module';
 import { AuditModule } from './common/audit/audit.service';
 import { SupabaseAdminModule } from './common/supabase-admin/supabase-admin.service';
 import { MemoryCacheModule } from './common/cache/memory-cache.service';
+import { R2Module } from './common/r2/r2.service';
 
 @Module({
   imports: [
@@ -47,6 +48,7 @@ import { MemoryCacheModule } from './common/cache/memory-cache.service';
     AuditModule,
     SupabaseAdminModule,
     MemoryCacheModule,
+    R2Module,
     HealthModule,
     AuthModule,
     CoursesModule,

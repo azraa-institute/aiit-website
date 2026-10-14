@@ -13,6 +13,7 @@ describe('AdminBlogService', () => {
   };
   let audit: { record: jest.Mock };
   let supabase: { uploadToStorage: jest.Mock };
+  let r2: { buildVideoKey: jest.Mock; createPresignedUploadUrl: jest.Mock };
   let github: { isConfigured: jest.Mock; getFileSha: jest.Mock; listDir: jest.Mock; putFile: jest.Mock; deleteFile: jest.Mock };
 
   const row = (overrides: Record<string, unknown> = {}) => ({
@@ -50,6 +51,10 @@ describe('AdminBlogService', () => {
     };
     audit = { record: jest.fn() };
     supabase = { uploadToStorage: jest.fn() };
+    r2 = {
+      buildVideoKey: jest.fn().mockReturnValue('media/video/fake-uuid.mp4'),
+      createPresignedUploadUrl: jest.fn().mockResolvedValue({ uploadUrl: 'https://r2.example/signed', publicUrl: 'https://media.example/media/video/fake-uuid.mp4' }),
+    };
     github = {
       isConfigured: jest.fn().mockReturnValue(true),
       getFileSha: jest.fn().mockResolvedValue(null),
@@ -57,7 +62,7 @@ describe('AdminBlogService', () => {
       putFile: jest.fn().mockResolvedValue({ fileSha: 'file-sha', commitSha: 'commit-sha', commitUrl: 'https://github.com/x/commit/1' }),
       deleteFile: jest.fn(),
     };
-    service = new AdminBlogService(prisma as never, audit as never, supabase as never, github as never);
+    service = new AdminBlogService(prisma as never, audit as never, supabase as never, r2 as never, github as never);
   });
 
   it('create() rejects a duplicate slug with a 409, not a raw Prisma error', async () => {
@@ -143,6 +148,15 @@ describe('AdminBlogService', () => {
 
     it('rejects a mimetype outside image/audio/video', async () => {
       await expect(service.uploadMedia(file('application/pdf'))).rejects.toThrow();
+    });
+  });
+
+  describe('presignVideoUpload', () => {
+    it('builds an R2 key from the filename and signs a PUT URL for it', async () => {
+      const result = await service.presignVideoUpload({ filename: 'lecture.mp4', contentType: 'video/mp4', fileSize: 1024 } as never);
+      expect(r2.buildVideoKey).toHaveBeenCalledWith('lecture.mp4');
+      expect(r2.createPresignedUploadUrl).toHaveBeenCalledWith('media/video/fake-uuid.mp4', 'video/mp4', 1024);
+      expect(result).toEqual({ uploadUrl: 'https://r2.example/signed', publicUrl: 'https://media.example/media/video/fake-uuid.mp4' });
     });
   });
 });

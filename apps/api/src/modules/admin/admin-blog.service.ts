@@ -1,12 +1,20 @@
 import { randomUUID } from 'crypto';
 import { BadRequestException, ConflictException, Injectable, NotFoundException } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
-import type { AdminBlogPost, AdminBlogPostSummary, BlogMediaUploadResult, BlogPostStatus, BlogPublishResult } from '@aiit/shared';
+import type {
+  AdminBlogPost,
+  AdminBlogPostSummary,
+  BlogMediaUploadResult,
+  BlogPostStatus,
+  BlogPublishResult,
+  BlogVideoPresignResult,
+} from '@aiit/shared';
 import { PrismaService } from '../../common/prisma/prisma.service';
 import { AuditService } from '../../common/audit/audit.service';
 import { SupabaseAdminService } from '../../common/supabase-admin/supabase-admin.service';
+import { R2Service } from '../../common/r2/r2.service';
 import { GithubPublisherService, GithubPublishError } from './github-publisher.service';
-import type { BlogPostInputDto, ListBlogPostsQueryDto } from './dto/admin-blog.dto';
+import type { BlogPostInputDto, ListBlogPostsQueryDto, PresignBlogVideoDto } from './dto/admin-blog.dto';
 
 const POSTS_PATH = process.env.GITHUB_POSTS_PATH || 'apps/web/src/content/posts';
 const BLOG_MEDIA_BUCKET = 'blog-media';
@@ -28,6 +36,7 @@ export class AdminBlogService {
     private readonly prisma: PrismaService,
     private readonly audit: AuditService,
     private readonly supabase: SupabaseAdminService,
+    private readonly r2: R2Service,
     private readonly github: GithubPublisherService,
   ) {}
 
@@ -228,6 +237,19 @@ export class AdminBlogService {
     const kind = mediaKind(file.mimetype);
     const url = await this.uploadToPublicUrl(file, `media/${kind}`);
     return { url, kind };
+  }
+
+  /**
+   * Video goes straight to R2 (direct browser -> R2 PUT), not through this
+   * server -- unlike uploadMedia's image/audio path, which buffers through
+   * Supabase Storage only because of a Supabase-specific RLS/JWT bug (see
+   * SupabaseAdminService's doc comment) that R2 never had. Returns a
+   * short-lived signed URL the editor PUTs the file to directly; this
+   * method itself never sees the file bytes.
+   */
+  async presignVideoUpload(dto: PresignBlogVideoDto): Promise<BlogVideoPresignResult> {
+    const key = this.r2.buildVideoKey(dto.filename);
+    return this.r2.createPresignedUploadUrl(key, dto.contentType, dto.fileSize);
   }
 
   private async uploadToPublicUrl(file: Express.Multer.File, subdir: string): Promise<string> {

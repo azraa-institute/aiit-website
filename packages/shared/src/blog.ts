@@ -102,3 +102,22 @@ export interface BlogMediaUploadResult {
   url: string;
   kind: 'image' | 'audio' | 'video';
 }
+
+/** POST /admin/blog/media/presign-video body -- declares what's about to be uploaded so the server can validate it before signing. */
+export interface BlogVideoPresignRequest {
+  filename: string;
+  contentType: string;
+  fileSize: number;
+}
+
+/**
+ * Response to POST /admin/blog/media/presign-video. `uploadUrl` is a
+ * short-lived R2 presigned PUT URL the browser uploads the video straight
+ * to (never through this API); `publicUrl` is what gets stored once that
+ * PUT succeeds, same role as BlogMediaUploadResult.url for the
+ * Supabase-backed image/audio path.
+ */
+export interface BlogVideoPresignResult {
+  uploadUrl: string;
+  publicUrl: string;
+}

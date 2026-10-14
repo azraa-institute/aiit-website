@@ -1,14 +1,12 @@
 import { useState } from 'react';
 import type { FormEvent } from 'react';
-import type { AffiliateApplicationStatus, AffiliateMe, AffiliatePayoutMethod, AffiliateType } from '@aiit/shared';
+import { Link } from 'react-router-dom';
+import type { AffiliateApplicationStatus, AffiliateMe, AffiliateType } from '@aiit/shared';
 import { cn } from '@/lib/cn';
 import { apiFetch, apiFetchBlob, downloadBlob, ApiError } from '@/lib/api';
 import { useAffiliateMe } from './affiliateData';
+import { formatCents } from './affiliateFormat';
 import './affiliate-portal.css';
-
-function formatCents(cents: number): string {
-  return `$${(cents / 100).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
-}
 
 const TYPE_LABEL: Record<AffiliateType, string> = {
   creator: 'Creator',
@@ -27,15 +25,6 @@ const STEPS = [
   { key: 'in_review', label: 'Under review' },
   { key: 'approved', label: 'Approved' },
 ] satisfies { key: AffiliateApplicationStatus; label: string }[];
-
-function CopyIcon() {
-  return (
-    <svg width="14" height="14" viewBox="0 0 16 16" aria-hidden="true">
-      <rect x="5.5" y="5.5" width="8" height="8" rx="1" fill="none" stroke="currentColor" strokeWidth="1.3" />
-      <path d="M3 10.5V3.5a1 1 0 0 1 1-1h7" fill="none" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" />
-    </svg>
-  );
-}
 
 function CheckIcon() {
   return (
@@ -132,111 +121,8 @@ function ActivationCard({ onActivated }: { onActivated: (me: AffiliateMe) => voi
   );
 }
 
-/**
- * Where to actually send money -- self-reported, admin-visible only. No
- * live payout integration exists (see AffiliatesService.updatePayoutDetails's
- * doc comment): an admin pays manually via whichever method this points at,
- * then records it in the admin portal, which is what moves registrationCount
- * x rate - payout history. Free-text bank fields, not a rigid routing-
- * number/IBAN schema, so one form works regardless of the affiliate's own
- * country's banking conventions.
- */
-function PayoutDetailsCard({ details, onSaved }: { details: AffiliateMe['payoutDetails']; onSaved: (me: AffiliateMe) => void }) {
-  const [method, setMethod] = useState<AffiliatePayoutMethod>(details?.method ?? 'paypal');
-  const [paypalEmail, setPaypalEmail] = useState(details?.paypalEmail ?? '');
-  const [bankCountry, setBankCountry] = useState(details?.bankCountry ?? '');
-  const [bankAccountName, setBankAccountName] = useState(details?.bankAccountName ?? '');
-  const [bankAccountNumber, setBankAccountNumber] = useState(details?.bankAccountNumber ?? '');
-  const [bankName, setBankName] = useState(details?.bankName ?? '');
-  const [bankCode, setBankCode] = useState(details?.bankCode ?? '');
-  const [saving, setSaving] = useState(false);
-  const [error, setError] = useState<string>();
-  const [saved, setSaved] = useState(false);
-
-  async function onSubmit(e: FormEvent) {
-    e.preventDefault();
-    setSaving(true);
-    setError(undefined);
-    setSaved(false);
-    try {
-      const me = await apiFetch<AffiliateMe>('/affiliates/me/payout', {
-        method: 'PUT',
-        body: JSON.stringify(
-          method === 'paypal'
-            ? { method, paypalEmail: paypalEmail.trim() }
-            : { method, bankCountry: bankCountry.trim(), bankAccountName: bankAccountName.trim(), bankAccountNumber: bankAccountNumber.trim(), bankName: bankName.trim(), bankCode: bankCode.trim() },
-        ),
-      });
-      onSaved(me);
-      setSaved(true);
-    } catch (err) {
-      setError(err instanceof ApiError ? err.message : 'Could not save your payout details.');
-    } finally {
-      setSaving(false);
-    }
-  }
-
-  return (
-    <section className="aff-card">
-      <h2>Payout details</h2>
-      <p>
-        Where should AIIT send your earnings? This is reviewed by the AIIT team, who pay out on the agreed schedule --
-        it doesn&apos;t connect to a live payment account automatically.
-      </p>
-      <form className="adm-form" onSubmit={onSubmit}>
-        <div className="adm-grid">
-          <label className="adm-field">
-            <span>Payout method</span>
-            <select value={method} onChange={(e) => setMethod(e.target.value as AffiliatePayoutMethod)}>
-              <option value="paypal">PayPal</option>
-              <option value="bank">Bank transfer</option>
-            </select>
-          </label>
-          {method === 'paypal' ? (
-            <label className="adm-field adm-field--wide">
-              <span>PayPal email</span>
-              <input type="email" required value={paypalEmail} onChange={(e) => setPaypalEmail(e.target.value)} />
-            </label>
-          ) : (
-            <>
-              <label className="adm-field">
-                <span>Country your bank is in</span>
-                <input required value={bankCountry} onChange={(e) => setBankCountry(e.target.value)} />
-              </label>
-              <label className="adm-field">
-                <span>Account holder name</span>
-                <input required value={bankAccountName} onChange={(e) => setBankAccountName(e.target.value)} />
-              </label>
-              <label className="adm-field">
-                <span>Bank name</span>
-                <input required value={bankName} onChange={(e) => setBankName(e.target.value)} />
-              </label>
-              <label className="adm-field">
-                <span>Account number</span>
-                <input required value={bankAccountNumber} onChange={(e) => setBankAccountNumber(e.target.value)} />
-              </label>
-              <label className="adm-field adm-field--wide">
-                <span>IFSC / sort code / routing number / SWIFT (whichever your bank uses)</span>
-                <input value={bankCode} onChange={(e) => setBankCode(e.target.value)} />
-              </label>
-            </>
-          )}
-        </div>
-        {error ? <p className="adm-error" role="alert">{error}</p> : null}
-        {saved ? <p className="adm-notice" role="status">Saved.</p> : null}
-        <div className="adm-actions">
-          <button type="submit" className="adm-btn adm-btn--primary" disabled={saving}>
-            {saving ? 'Saving…' : 'Save payout details'}
-          </button>
-        </div>
-      </form>
-    </section>
-  );
-}
-
 export default function AffiliateDashboardPage() {
   const state = useAffiliateMe();
-  const [copied, setCopied] = useState(false);
   const [downloading, setDownloading] = useState(false);
   const [downloadError, setDownloadError] = useState<string>();
 
@@ -256,17 +142,6 @@ export default function AffiliateDashboardPage() {
 
   const { data } = state;
   if (!data.hasApplied || !data.type || !data.applicationStatus) return null; // RequireAffiliate already redirects this case away
-
-  async function copyLink() {
-    if (!data.referralLink) return;
-    try {
-      await navigator.clipboard.writeText(data.referralLink);
-      setCopied(true);
-      window.setTimeout(() => setCopied(false), 2000);
-    } catch {
-      /* clipboard unavailable, the link is still shown as selectable text */
-    }
-  }
 
   const rejected = data.applicationStatus === 'rejected';
   const approved = data.applicationStatus === 'approved';
@@ -347,21 +222,20 @@ export default function AffiliateDashboardPage() {
             </p>
           ) : null}
 
-          <section className="aff-card">
-            <h2>Your referral link</h2>
-            <p>Share this instead of a code, anyone who signs up after clicking it is attributed to you automatically.</p>
-            <div className="aff-linkbox">
-              <code>{data.referralLink}</code>
-              <button type="button" className={cn('aff-linkbox__copy', copied && 'is-copied')} onClick={copyLink}>
-                {copied ? <CheckIcon /> : <CopyIcon />}
-                {copied ? 'Copied' : 'Copy'}
-              </button>
-            </div>
-          </section>
+          <div className="aff-quicklinks">
+            <Link to="/affiliate-portal/link" className="aff-card aff-card--link">
+              <h2>Your referral link</h2>
+              <p>Get your shareable link and copy it for your audience.</p>
+              <span className="aff-card__cta">Open →</span>
+            </Link>
+            <Link to="/affiliate-portal/payout" className="aff-card aff-card--link">
+              <h2>Payout details</h2>
+              <p>{data.payoutDetails ? 'Review or update where AIIT sends your earnings.' : 'Set up where AIIT should send your earnings.'}</p>
+              <span className="aff-card__cta">Open →</span>
+            </Link>
+          </div>
         </>
       ) : null}
-
-      {approved ? <PayoutDetailsCard details={data.payoutDetails} onSaved={() => state.refetch()} /> : null}
 
       <section className="aff-card">
         <h2>Your signed agreement</h2>

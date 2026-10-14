@@ -107,6 +107,9 @@ const AdminPaymentsPage = lazy(() => import('@/pages/admin/AdminPaymentsPage'));
 const AdminSettingsPage = lazy(() => import('@/pages/admin/AdminSettingsPage'));
 const AffiliateLayout = lazy(() => import('@/pages/affiliate/AffiliateLayout'));
 const AffiliateDashboardPage = lazy(() => import('@/pages/affiliate/AffiliateDashboardPage'));
+const AffiliateLinkPage = lazy(() => import('@/pages/affiliate/AffiliateLinkPage'));
+const AffiliatePayoutPage = lazy(() => import('@/pages/affiliate/AffiliatePayoutPage'));
+const AffiliateSettingsPage = lazy(() => import('@/pages/affiliate/AffiliateSettingsPage'));
 const InstructorLayout = lazy(() => import('@/pages/instructor/InstructorLayout'));
 const InstructorDashboardPage = lazy(() => import('@/pages/instructor/InstructorDashboardPage'));
 const InstructorCoursesPage = lazy(() => import('@/pages/instructor/InstructorCoursesPage'));
@@ -127,15 +130,16 @@ function LegacyClassroomRedirect() {
   return <Navigate to={`/classroom/${id ?? ''}`} replace />;
 }
 
-/** An affiliate's referral link -- captures the slug for RegisterPage to pass through at
- * signup, then sends the visitor on to the homepage (not /affiliate -- they might become
- * a student, not necessarily a new affiliate, so this shouldn't presume which). */
+/** An affiliate's referral link -- captures the slug, then sends the visitor straight into
+ * registration (not /affiliate -- they might become a student, not necessarily a new
+ * affiliate, so this shouldn't presume which) so RegisterPage can both pass the slug
+ * through at signup and show a visible "referral applied" confirmation. */
 function ReferralRedirect() {
   const { slug } = useParams();
   useEffect(() => {
     if (slug) setPendingReferralSlug(slug);
   }, [slug]);
-  return <Navigate to="/" replace />;
+  return <Navigate to="/register" replace />;
 }
 
 export function App() {
@@ -299,6 +303,9 @@ export function App() {
                 }
               >
                 <Route index element={<AffiliateDashboardPage />} />
+                <Route path="link" element={<AffiliateLinkPage />} />
+                <Route path="payout" element={<AffiliatePayoutPage />} />
+                <Route path="settings" element={<AffiliateSettingsPage />} />
               </Route>
 
               {/* Staff sign-in (no sign-up: accounts are created by an admin) */}

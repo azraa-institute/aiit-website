@@ -322,7 +322,123 @@
   cursor: default;
 }
 
+/* ---------- Dashboard quick-link cards ---------- */
+.aff-quicklinks {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-4);
+}
+.aff-quicklinks .aff-card--link {
+  flex: 1 1 220px;
+  display: block;
+  color: inherit;
+  text-decoration: none;
+  transition: border-color var(--dur-fast) var(--ease-out), box-shadow var(--dur-fast) var(--ease-out);
+}
+.aff-quicklinks .aff-card--link:hover {
+  border-color: var(--brass);
+  box-shadow: var(--shadow-soft), 0 0 0 1px var(--brass);
+}
+.aff-card__cta {
+  display: inline-block;
+  margin-top: var(--space-3);
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--brass-deep);
+}
+
+/* ---------- Payout method picker ---------- */
+.aff-method-picker {
+  display: flex;
+  gap: var(--space-3);
+  margin-bottom: var(--space-5);
+}
+.aff-method-card {
+  display: flex;
+  flex: 1 1 160px;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-4);
+  border: 1.5px solid var(--line-strong);
+  border-radius: var(--radius-sm);
+  background: var(--ivory);
+  color: var(--ink-muted);
+  font-weight: 600;
+  cursor: pointer;
+  transition: border-color var(--dur-fast) var(--ease-out), color var(--dur-fast) var(--ease-out);
+}
+.aff-method-card:hover {
+  border-color: var(--brass);
+}
+.aff-method-card.is-selected {
+  border-color: var(--brass-deep);
+  color: var(--brass-deep);
+  box-shadow: 0 0 0 1px var(--brass-deep);
+}
+
+/* ---------- Masked account-number field ---------- */
+.aff-masked-field__row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+.aff-masked-field__row input {
+  flex: 1 1 auto;
+}
+.aff-masked-field__toggle {
+  display: grid;
+  flex-shrink: 0;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-sm);
+  background: var(--ivory);
+  color: var(--ink-muted);
+}
+.aff-masked-field__toggle:hover {
+  color: var(--ink);
+  border-color: var(--brass);
+}
+
+/* ---------- Affiliate's own payout history ---------- */
+.aff-payout-history {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding: 0;
+  margin: 0;
+  list-style: none;
+}
+.aff-payout-history li {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--space-3);
+  padding: var(--space-3) 0;
+  border-top: 1px solid var(--line);
+}
+.aff-payout-history li:first-child {
+  border-top: none;
+}
+.aff-payout-history__amount {
+  font-weight: 700;
+  color: var(--ink);
+}
+.aff-payout-history__date {
+  font-size: 0.85rem;
+  color: var(--ink-faint);
+}
+.aff-payout-history__note {
+  flex-basis: 100%;
+  font-size: 0.85rem;
+  color: var(--ink-muted);
+}
+
 @media (max-width: 560px) {
+  .aff-method-picker {
+    flex-direction: column;
+  }
   .aff-hero {
     padding: var(--space-5);
   }

@@ -1,11 +1,10 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 import type { ChangeEvent, FormEvent } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import type { AdminBlogPost, BlogLayoutPreset, BlogPostInput } from '@aiit/shared';
 import { apiFetch } from '@/lib/api';
-import { articleToHtml } from '@/lib/markdown';
 import { formatWhen, useAdminFetch } from './adminData';
-import '@/pages/resource-detail.css';
+import { BlogPreviewModal } from './BlogPreviewModal';
 
 const PRESET_INFO: Record<BlogLayoutPreset, { label: string; description: string }> = {
   editorial: { label: 'Editorial (default)', description: 'Generous line-length, serif headings, large cover image.' },
@@ -109,8 +108,6 @@ export default function AdminBlogEditorPage() {
       // Non-fatal -- the real uniqueness check still happens server-side on save.
     }
   }
-
-  const previewHtml = useMemo(() => (showPreview ? articleToHtml(form.bodyMarkdown) : ''), [showPreview, form.bodyMarkdown]);
 
   async function handleSave(e: FormEvent) {
     e.preventDefault();
@@ -261,14 +258,9 @@ export default function AdminBlogEditorPage() {
             />
           </label>
           <div className="adm-field adm-field--wide">
-            <button type="button" className="adm-btn adm-btn--ghost" onClick={() => setShowPreview((v) => !v)}>
-              {showPreview ? 'Hide preview' : 'Show preview'}
+            <button type="button" className="adm-btn adm-btn--ghost" onClick={() => setShowPreview(true)}>
+              Preview
             </button>
-            {showPreview ? (
-              <div className={`article-body prose resource-article resource-article--${form.preset}`}>
-                <div className="article-copy" dangerouslySetInnerHTML={{ __html: previewHtml }} />
-              </div>
-            ) : null}
           </div>
           <label className="adm-field adm-field--wide">
             <span>Tags (comma-separated)</span>
@@ -362,6 +354,23 @@ export default function AdminBlogEditorPage() {
           ) : null}
         </div>
       </form>
+
+      {showPreview ? (
+        <BlogPreviewModal
+          data={{
+            title: form.title,
+            category: form.category,
+            excerpt: form.excerpt,
+            bodyMarkdown: form.bodyMarkdown,
+            coverImageUrl: form.coverImageUrl ?? null,
+            coverImage2Url: form.coverImage2Url ?? null,
+            readMinutes: form.readMinutes ?? null,
+            preset: form.preset,
+            authorName: post?.authorName ?? 'AIIT Network',
+          }}
+          onClose={() => setShowPreview(false)}
+        />
+      ) : null}
     </div>
   );
 }

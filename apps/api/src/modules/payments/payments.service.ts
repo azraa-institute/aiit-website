@@ -5,6 +5,9 @@ import { AuditService } from '../../common/audit/audit.service';
 import { CurrencyService } from '../../common/currency/currency.service';
 import { NotificationsService } from '../notifications/notifications.service';
 import { EnrollmentsService } from '../enrollments/enrollments.service';
+import { PayPalClientService } from './paypal/paypal-client.service';
+import { RazorpayClientService } from './razorpay/razorpay-client.service';
+import { PaystackClientService } from './paystack/paystack-client.service';
 
 /**
  * Provider-agnostic order bookkeeping. A provider-specific client (e.g.
@@ -22,6 +25,9 @@ export class PaymentsService {
     private readonly notifications: NotificationsService,
     private readonly audit: AuditService,
     private readonly currency: CurrencyService,
+    private readonly paypal: PayPalClientService,
+    private readonly razorpay: RazorpayClientService,
+    private readonly paystack: PaystackClientService,
   ) {}
 
   /**
@@ -117,5 +123,50 @@ export class PaymentsService {
       currency: order.currency,
     });
     return order;
+  }
+
+  /**
+   * Full refund only (Phase 1), admin-triggered -- no self-service
+   * refunds, no partial amounts. Each provider needs a different id to
+   * refund against (PayPal/Razorpay: a capture/payment id looked up fresh
+   * from providerRef, which only ever stored the order id; Paystack: the
+   * transaction reference, which already *is* providerRef) -- see each
+   * client service's own refund method for why. `refundedAt`/`refundRef`
+   * are only ever written after the provider's refund call actually
+   * succeeds, same "never optimistic" convention as Certificate.revokedAt.
+   */
+  async refundOrder(adminId: string, orderId: string): Promise<Order> {
+    const order = await this.prisma.order.findUnique({ where: { id: orderId } });
+    if (!order) throw new NotFoundException('Order not found.');
+    if (order.status !== 'paid') throw new ConflictException('Only a paid order can be refunded.');
+    if (!order.providerRef) throw new ConflictException('This order has no provider reference to refund against.');
+
+    const refundRef = await this.callProviderRefund(order.provider, order.providerRef);
+
+    const refunded = await this.prisma.order.update({
+      where: { id: orderId },
+      data: { status: 'refunded', refundedAt: new Date(), refundRef },
+    });
+    await this.audit.record(adminId, 'order.refund', 'order', orderId, {
+      provider: order.provider,
+      amountCents: order.amountCents,
+      currency: order.currency,
+      refundRef,
+    });
+    return refunded;
+  }
+
+  private async callProviderRefund(provider: PaymentProvider, providerRef: string): Promise<string> {
+    if (provider === 'paypal') {
+      const captureId = await this.paypal.getCaptureId(providerRef);
+      if (!captureId) throw new ConflictException('Could not find a PayPal capture to refund for this order.');
+      return (await this.paypal.refundCapture(captureId)).refundId;
+    }
+    if (provider === 'razorpay') {
+      const paymentId = await this.razorpay.findCapturedPaymentId(providerRef);
+      if (!paymentId) throw new ConflictException('Could not find a captured Razorpay payment to refund for this order.');
+      return (await this.razorpay.refundPayment(paymentId)).refundId;
+    }
+    return (await this.paystack.refundTransaction(providerRef)).refundId;
   }
 }

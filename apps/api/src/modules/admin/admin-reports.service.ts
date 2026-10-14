@@ -1,8 +1,18 @@
 import { Injectable } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
-import type { AdminOrderRow, AdminOrderStatus, AdminPaymentProvider, AttendanceReportRow, Paginated, PaymentsSummary, RevenueByCurrency } from '@aiit/shared';
+import type {
+  AdminOrderRow,
+  AdminOrderStatus,
+  AdminPaymentProvider,
+  AttendanceReportRow,
+  Paginated,
+  PaymentsSummary,
+  RefundResult,
+  RevenueByCurrency,
+} from '@aiit/shared';
 import { PrismaService } from '../../common/prisma/prisma.service';
 import { buildXlsx } from '../../common/xlsx';
+import { PaymentsService } from '../payments/payments.service';
 
 export interface ListOrdersQuery {
   page?: number;
@@ -14,7 +24,10 @@ export interface ListOrdersQuery {
 /** Attendance figures and .xlsx exports for the admin portal. */
 @Injectable()
 export class AdminReportsService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly paymentsService: PaymentsService,
+  ) {}
 
   /** Every class that has started (or is over), newest first, with how many enrolled students actually joined. */
   async attendance(courseId?: string): Promise<AttendanceReportRow[]> {
@@ -139,23 +152,24 @@ export class AdminReportsService {
     return {
       items: rows.map((r) => {
         const u = users.get(r.userId);
-        return {
-          id: r.id,
-          userName: u?.name ?? null,
-          userEmail: u?.email ?? null,
-          courseId: r.courseId,
-          courseTitle: r.course.title,
-          provider: r.provider as AdminPaymentProvider,
-          currency: r.currency,
-          amountCents: r.amountCents,
-          status: r.status as AdminOrderStatus,
-          createdAt: r.createdAt.toISOString(),
-          paidAt: r.paidAt ? r.paidAt.toISOString() : null,
-        };
+        return toOrderRow(r, r.course.title, u?.name ?? null, u?.email ?? null);
       }),
       total,
       page,
       pageSize,
+    };
+  }
+
+  /** Full refund only, admin-triggered -- see PaymentsService.refundOrder's own doc comment for the per-provider detail. */
+  async refund(adminId: string, orderId: string): Promise<RefundResult> {
+    const refunded = await this.paymentsService.refundOrder(adminId, orderId);
+    const [course, user] = await Promise.all([
+      this.prisma.course.findUniqueOrThrow({ where: { id: refunded.courseId }, select: { title: true } }),
+      this.userNamesAndEmails([refunded.userId]).then((m) => m.get(refunded.userId)),
+    ]);
+    return {
+      order: toOrderRow(refunded, course.title, user?.name ?? null, user?.email ?? null),
+      refundRef: refunded.refundRef ?? '',
     };
   }
 
@@ -254,4 +268,36 @@ export class AdminReportsService {
     const rows = await this.prisma.profile.findMany({ where: { id: { in: unique } }, select: { id: true, name: true } });
     return new Map(rows.map((r) => [r.id, r.name]));
   }
+}
+
+function toOrderRow(
+  r: {
+    id: string;
+    courseId: string;
+    provider: string;
+    currency: string;
+    amountCents: number;
+    status: string;
+    createdAt: Date;
+    paidAt: Date | null;
+    refundedAt: Date | null;
+  },
+  courseTitle: string,
+  userName: string | null,
+  userEmail: string | null,
+): AdminOrderRow {
+  return {
+    id: r.id,
+    userName,
+    userEmail,
+    courseId: r.courseId,
+    courseTitle,
+    provider: r.provider as AdminPaymentProvider,
+    currency: r.currency,
+    amountCents: r.amountCents,
+    status: r.status as AdminOrderStatus,
+    createdAt: r.createdAt.toISOString(),
+    paidAt: r.paidAt ? r.paidAt.toISOString() : null,
+    refundedAt: r.refundedAt ? r.refundedAt.toISOString() : null,
+  };
 }

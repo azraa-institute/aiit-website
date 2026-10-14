@@ -5,6 +5,9 @@ import { AuditService } from '../../common/audit/audit.service';
 import { CurrencyService } from '../../common/currency/currency.service';
 import { NotificationsService } from '../notifications/notifications.service';
 import { EnrollmentsService } from '../enrollments/enrollments.service';
+import { PayPalClientService } from './paypal/paypal-client.service';
+import { RazorpayClientService } from './razorpay/razorpay-client.service';
+import { PaystackClientService } from './paystack/paystack-client.service';
 import { PaymentsService } from './payments.service';
 
 const COURSE = { id: 'course-1', title: 'Full Stack Development', pricing: 'paid', priceUsdCents: 4900 };
@@ -42,6 +45,9 @@ describe('PaymentsService', () => {
   let notifications: { create: jest.Mock };
   let audit: { record: jest.Mock };
   let currency: { convert: jest.Mock };
+  let paypal: { getCaptureId: jest.Mock; refundCapture: jest.Mock };
+  let razorpay: { findCapturedPaymentId: jest.Mock; refundPayment: jest.Mock };
+  let paystack: { refundTransaction: jest.Mock };
 
   beforeEach(async () => {
     prisma = {
@@ -52,6 +58,9 @@ describe('PaymentsService', () => {
     notifications = { create: jest.fn() };
     audit = { record: jest.fn() };
     currency = { convert: jest.fn() };
+    paypal = { getCaptureId: jest.fn(), refundCapture: jest.fn() };
+    razorpay = { findCapturedPaymentId: jest.fn(), refundPayment: jest.fn() };
+    paystack = { refundTransaction: jest.fn() };
 
     const moduleRef = await Test.createTestingModule({
       providers: [
@@ -61,6 +70,9 @@ describe('PaymentsService', () => {
         { provide: NotificationsService, useValue: notifications },
         { provide: AuditService, useValue: audit },
         { provide: CurrencyService, useValue: currency },
+        { provide: PayPalClientService, useValue: paypal },
+        { provide: RazorpayClientService, useValue: razorpay },
+        { provide: PaystackClientService, useValue: paystack },
       ],
     }).compile();
 
@@ -149,6 +161,83 @@ describe('PaymentsService', () => {
       expect(notifications.create).not.toHaveBeenCalled();
       expect(audit.record).toHaveBeenCalledTimes(1);
       expect(result.status).toBe('paid');
+    });
+  });
+
+  describe('refundOrder', () => {
+    const PAID_ORDER = { ...ORDER, status: 'paid' };
+
+    it('throws NotFoundException for a missing order', async () => {
+      prisma.order.findUnique.mockResolvedValueOnce(null);
+      await expect(service.refundOrder('admin-1', 'order-1')).rejects.toThrow(NotFoundException);
+    });
+
+    it('throws ConflictException for an order that is not paid', async () => {
+      prisma.order.findUnique.mockResolvedValueOnce({ ...ORDER, status: 'pending' });
+      await expect(service.refundOrder('admin-1', 'order-1')).rejects.toThrow(ConflictException);
+    });
+
+    it('throws ConflictException when the order has no providerRef', async () => {
+      prisma.order.findUnique.mockResolvedValueOnce({ ...PAID_ORDER, providerRef: null });
+      await expect(service.refundOrder('admin-1', 'order-1')).rejects.toThrow(ConflictException);
+    });
+
+    it('PayPal: looks up the capture id from the stored order id, then refunds that capture', async () => {
+      prisma.order.findUnique.mockResolvedValueOnce(PAID_ORDER);
+      paypal.getCaptureId.mockResolvedValueOnce('CAPTURE-1');
+      paypal.refundCapture.mockResolvedValueOnce({ refundId: 'REFUND-1', status: 'COMPLETED' });
+      prisma.order.update.mockResolvedValueOnce({ ...PAID_ORDER, status: 'refunded', refundRef: 'REFUND-1' });
+
+      const result = await service.refundOrder('admin-1', 'order-1');
+
+      expect(paypal.getCaptureId).toHaveBeenCalledWith('PAYPAL-ORDER-1');
+      expect(paypal.refundCapture).toHaveBeenCalledWith('CAPTURE-1');
+      expect(prisma.order.update).toHaveBeenCalledWith({
+        where: { id: 'order-1' },
+        data: expect.objectContaining({ status: 'refunded', refundRef: 'REFUND-1' }),
+      });
+      expect(audit.record).toHaveBeenCalledWith(
+        'admin-1',
+        'order.refund',
+        'order',
+        'order-1',
+        expect.objectContaining({ refundRef: 'REFUND-1' }),
+      );
+      expect(result.status).toBe('refunded');
+    });
+
+    it('PayPal: throws ConflictException if no capture can be found for the order', async () => {
+      prisma.order.findUnique.mockResolvedValueOnce(PAID_ORDER);
+      paypal.getCaptureId.mockResolvedValueOnce(null);
+
+      await expect(service.refundOrder('admin-1', 'order-1')).rejects.toThrow(ConflictException);
+      expect(paypal.refundCapture).not.toHaveBeenCalled();
+    });
+
+    it('Razorpay: looks up the captured payment id from the stored order id, then refunds that payment', async () => {
+      const order = { ...PAID_ORDER, provider: 'razorpay', providerRef: 'RZP-ORDER-1' };
+      prisma.order.findUnique.mockResolvedValueOnce(order);
+      razorpay.findCapturedPaymentId.mockResolvedValueOnce('pay_1');
+      razorpay.refundPayment.mockResolvedValueOnce({ refundId: 'rfnd_1', status: 'processed' });
+      prisma.order.update.mockResolvedValueOnce({ ...order, status: 'refunded', refundRef: 'rfnd_1' });
+
+      const result = await service.refundOrder('admin-1', 'order-1');
+
+      expect(razorpay.findCapturedPaymentId).toHaveBeenCalledWith('RZP-ORDER-1');
+      expect(razorpay.refundPayment).toHaveBeenCalledWith('pay_1');
+      expect(result.refundRef).toBe('rfnd_1');
+    });
+
+    it('Paystack: refunds directly against the stored transaction reference, no extra lookup', async () => {
+      const order = { ...PAID_ORDER, provider: 'paystack', providerRef: 'PSK-REF-1' };
+      prisma.order.findUnique.mockResolvedValueOnce(order);
+      paystack.refundTransaction.mockResolvedValueOnce({ refundId: '123', status: 'processed' });
+      prisma.order.update.mockResolvedValueOnce({ ...order, status: 'refunded', refundRef: '123' });
+
+      const result = await service.refundOrder('admin-1', 'order-1');
+
+      expect(paystack.refundTransaction).toHaveBeenCalledWith('PSK-REF-1');
+      expect(result.refundRef).toBe('123');
     });
   });
 });

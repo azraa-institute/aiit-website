@@ -185,4 +185,11 @@ export interface AdminOrderRow {
   status: AdminOrderStatus;
   createdAt: string;
   paidAt: string | null;
+  refundedAt: string | null;
+}
+
+/** Response to POST /admin/payments/orders/:id/refund. */
+export interface RefundResult {
+  order: AdminOrderRow;
+  refundRef: string;
 }

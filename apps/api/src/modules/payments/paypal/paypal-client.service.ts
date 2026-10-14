@@ -72,6 +72,25 @@ export class PayPalClientService {
     return { status: json.status, amountCents: Math.round(Number(value) * 100), currency };
   }
 
+  /** The capture id nested inside an order -- needed for refundCapture(), since Order.providerRef stores the PayPal *order* id, not the capture id. */
+  async getCaptureId(paypalOrderId: string): Promise<string | null> {
+    this.ensureConfigured();
+    const res = await this.request(`/v2/checkout/orders/${encodeURIComponent(paypalOrderId)}`, { method: 'GET' });
+    const json = (await res.json()) as {
+      purchase_units?: { payments?: { captures?: { id?: string }[] } }[];
+    };
+    return json.purchase_units?.[0]?.payments?.captures?.[0]?.id ?? null;
+  }
+
+  /** Full refund only (Phase 1) -- an empty body means "refund the full captured amount." */
+  async refundCapture(captureId: string): Promise<{ refundId: string; status: string }> {
+    this.ensureConfigured();
+    const res = await this.request(`/v2/payments/captures/${encodeURIComponent(captureId)}/refund`, { method: 'POST' });
+    const json = (await res.json()) as { id?: string; status?: string };
+    if (!json.id || !json.status) throw new ServiceUnavailableException('PayPal did not return a refund id.');
+    return { refundId: json.id, status: json.status };
+  }
+
   async verifyWebhookSignature(headers: Record<string, string | string[] | undefined>, body: unknown): Promise<boolean> {
     this.ensureConfigured();
     const webhookId = process.env.PAYPAL_WEBHOOK_ID;

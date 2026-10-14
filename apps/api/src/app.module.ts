@@ -4,6 +4,7 @@ import { APP_GUARD } from '@nestjs/core';
 import { ConfigModule } from '@nestjs/config';
 import { LoggerModule } from 'nestjs-pino';
 import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
+import { ScheduleModule } from '@nestjs/schedule';
 import { PrismaModule } from './common/prisma/prisma.module';
 import { HealthModule } from './modules/health/health.module';
 import { AuthModule } from './modules/auth/auth.module';
@@ -26,6 +27,7 @@ import { AuditModule } from './common/audit/audit.service';
 import { SupabaseAdminModule } from './common/supabase-admin/supabase-admin.service';
 import { MemoryCacheModule } from './common/cache/memory-cache.service';
 import { R2Module } from './common/r2/r2.service';
+import { WebinarsModule } from './modules/webinars/webinars.module';
 
 @Module({
   imports: [
@@ -44,6 +46,9 @@ import { R2Module } from './common/r2/r2.service';
         limit: Number(process.env.THROTTLE_LIMIT ?? 100),
       },
     ]),
+    // Powers WebinarReminderCronService's sweep -- the only scheduled job
+    // in this codebase so far.
+    ScheduleModule.forRoot(),
     PrismaModule,
     AuditModule,
     SupabaseAdminModule,
@@ -66,6 +71,7 @@ import { R2Module } from './common/r2/r2.service';
     InstructorModule,
     SupportModule,
     QuillModule,
+    WebinarsModule,
   ],
   providers: [{ provide: APP_GUARD, useClass: ThrottlerGuard }],
 })

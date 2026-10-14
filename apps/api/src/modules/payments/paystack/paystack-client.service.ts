@@ -58,6 +58,15 @@ export class PaystackClientService {
     return { status, amountCents: amount, currency };
   }
 
+  /** Full refund only (Phase 1) -- omitting `amount` means "refund the full transaction." Paystack refunds by the original transaction reference directly, unlike PayPal/Razorpay which need a separate capture/payment id lookup. */
+  async refundTransaction(reference: string): Promise<{ refundId: string; status: string }> {
+    this.ensureConfigured();
+    const res = await this.request('/refund', { method: 'POST', body: JSON.stringify({ transaction: reference }) });
+    const json = (await res.json()) as { data?: { id?: number; status?: string } };
+    if (json.data?.id == null) throw new ServiceUnavailableException('Paystack did not return a refund id.');
+    return { refundId: String(json.data.id), status: json.data.status ?? 'processed' };
+  }
+
   verifyWebhookSignature(rawBody: Buffer, signatureHeader: string): boolean {
     this.ensureConfigured();
     const expected = createHmac('sha512', this.secretKey as string).update(rawBody).digest('hex');

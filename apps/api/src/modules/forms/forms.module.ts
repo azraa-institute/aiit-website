@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { EmailModule } from '../../common/email/email.module';
 import { TurnstileModule } from '../../common/turnstile/turnstile.module';
 import { JwtGuard } from '../../common/guards/jwt.guard';
+import { WebinarsModule } from '../webinars/webinars.module';
 import { ContactController } from './contact/contact.controller';
 import { ContactService } from './contact/contact.service';
 import { NewsletterController } from './newsletter/newsletter.controller';
@@ -17,7 +18,7 @@ import { ConsentService } from './consent/consent.service';
 // table (affiliate_applications) and any historical rows in it are left in
 // place, just no longer written to.
 @Module({
-  imports: [EmailModule, TurnstileModule],
+  imports: [EmailModule, TurnstileModule, WebinarsModule],
   controllers: [ContactController, NewsletterController, WebinarController, ConsentController],
   providers: [ContactService, NewsletterService, WebinarService, ConsentService, JwtGuard],
 })

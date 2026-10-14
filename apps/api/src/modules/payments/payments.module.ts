@@ -24,5 +24,6 @@ import { PaystackWebhookController } from './paystack/paystack-webhook.controlle
     PaystackWebhookController,
   ],
   providers: [PaymentsService, PayPalClientService, RazorpayClientService, PaystackClientService],
+  exports: [PaymentsService],
 })
 export class PaymentsModule {}

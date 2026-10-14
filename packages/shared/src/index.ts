@@ -28,3 +28,4 @@ export * from './affiliate';
 export * from './payment';
 export * from './quill';
 export * from './blog';
+export * from './webinar';

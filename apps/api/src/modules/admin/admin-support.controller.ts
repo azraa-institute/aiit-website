@@ -15,6 +15,7 @@ import type {
   ComplaintStatus,
   Paginated,
   PaymentsSummary,
+  RefundResult,
 } from '@aiit/shared';
 import { JwtGuard, type AuthenticatedUser } from '../../common/guards/jwt.guard';
 import { RolesGuard } from '../../common/guards/roles.guard';
@@ -187,6 +188,12 @@ export class AdminSupportController {
   @Get('payments/orders')
   orders(@Query() query: ListOrdersQueryDto): Promise<Paginated<AdminOrderRow>> {
     return this.reports.orders(query);
+  }
+
+  @Post('payments/orders/:id/refund')
+  @Throttle({ default: { limit: 10, ttl: 60_000 } })
+  refund(@CurrentUser() user: AuthenticatedUser, @Param('id', ParseUUIDPipe) id: string): Promise<RefundResult> {
+    return this.reports.refund(user.userId, id);
   }
 
   @Get('exports/payments')

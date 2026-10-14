@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../../../common/prisma/prisma.service';
 import { EmailService } from '../../../common/email/email.service';
 import { escapeHtml } from '../../../common/email/escape-html';
+import { WebinarNotificationsService } from '../../webinars/webinar-notifications.service';
 import type { RegisterWebinarDto } from './dto/register-webinar.dto';
 
 const NOTIFY_EMAIL = 'info@aiit.network';
@@ -11,6 +12,7 @@ export class WebinarService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly email: EmailService,
+    private readonly notifications: WebinarNotificationsService,
   ) {}
 
   /** Idempotent per (email, webinarSlug) -- a duplicate click re-registers nothing and sends no second notification. */
@@ -20,9 +22,17 @@ export class WebinarService {
     });
     if (existing) return;
 
-    await this.prisma.webinarRegistration.create({
+    // Null if this slug doesn't match a real Webinar row (shouldn't happen
+    // from the live form, which only ever submits the real featured
+    // webinar's slug) -- the registration still saves either way, it just
+    // won't get a confirmation email or show up on /me/webinars without a
+    // webinar to resolve against.
+    const webinar = await this.prisma.webinar.findUnique({ where: { slug: dto.webinarSlug } });
+
+    const registration = await this.prisma.webinarRegistration.create({
       data: {
         webinarSlug: dto.webinarSlug,
+        webinarId: webinar?.id,
         name: dto.name,
         email: dto.email,
         whatsapp: dto.whatsapp,
@@ -30,6 +40,8 @@ export class WebinarService {
         persona: dto.persona,
       },
     });
+
+    if (webinar) await this.notifications.sendConfirmation(registration, webinar);
 
     await this.email.send({
       to: NOTIFY_EMAIL,

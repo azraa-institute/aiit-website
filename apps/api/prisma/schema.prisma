@@ -488,6 +488,13 @@ model Order {
   amountCents Int             @map("amount_cents") // snapshotted from Course.priceUsdCents at order-creation time, never client-supplied
   status      OrderStatus     @default(pending)
   paidAt      DateTime?       @map("paid_at") @db.Timestamptz(6)
+  // Full refund only (Phase 1) -- set together, only after the provider's
+  // refund call actually succeeds, same "never optimistic" convention as
+  // Certificate.revokedAt. refundRef is the provider's own refund id
+  // (PayPal refund id / Razorpay refund id / Paystack refund id) --
+  // "who did it" is on the AuditLog row, not duplicated here.
+  refundedAt  DateTime?       @map("refunded_at") @db.Timestamptz(6)
+  refundRef   String?         @map("refund_ref")
   // Last raw provider response/webhook payload -- support/debugging only, never rendered to users.
   rawPayload  Json?           @map("raw_payload")
   createdAt   DateTime        @default(now()) @map("created_at") @db.Timestamptz(6)
@@ -769,19 +776,82 @@ model NewsletterSubscriber {
   @@schema("public")
 }
 
+enum WebinarStatus {
+  upcoming
+  live
+  past
+
+  @@schema("public")
+}
+
+// The admin-manageable webinar/event catalog -- replaces what used to be a
+// single hardcoded entry in apps/web/src/data/webinars.ts. The public
+// /webinar page now fetches this (GET /webinars/:slug) instead of importing
+// a static array; agenda/audience stay as flexible Json/array fields since
+// they're inherently variable-shaped per event, same reasoning as
+// Course.pricing's own free-form fields elsewhere in this schema.
+model Webinar {
+  id             String                @id @default(uuid()) @db.Uuid
+  slug           String                @unique
+  title          String
+  heroHeadline   String                @map("hero_headline")
+  kicker         String
+  summary        String
+  description    String
+  startsAt       DateTime?             @map("starts_at") @db.Timestamptz(6)
+  scheduleNote   String                @map("schedule_note")
+  durationLabel  String                @map("duration_label")
+  timezoneNote   String                @map("timezone_note")
+  platform       String
+  language       String
+  seatsLimited   Boolean               @default(true) @map("seats_limited")
+  // { title: string; points: string[] }[] -- see the doc comment above.
+  agenda         Json
+  audience       String[]
+  image          String
+  videoUrl       String?               @map("video_url")
+  videoThumbnail String?               @map("video_thumbnail")
+  // Revealed to registrants once the admin sets it -- null until then, see
+  // WebinarRegistration's reminder-email fields, which need this to exist
+  // before a reminder is actually useful to send.
+  joinUrl        String?               @map("join_url")
+  status         WebinarStatus         @default(upcoming)
+  featured       Boolean               @default(false)
+  createdAt      DateTime              @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt      DateTime              @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+  registrations  WebinarRegistration[]
+
+  @@map("webinars")
+  @@schema("public")
+}
+
 // Unique per (email, webinarSlug) rather than per email alone -- the current
 // registration form only ever submits one featured webinar at a time, but a
 // bare per-email unique would wrongly block someone from registering for a
 // later, different webinar.
 model WebinarRegistration {
-  id          String   @id @default(uuid()) @db.Uuid
-  webinarSlug String   @map("webinar_slug")
+  id          String    @id @default(uuid()) @db.Uuid
+  webinarSlug String    @map("webinar_slug")
+  // Nullable: rows created before the Webinar model existed only have
+  // webinarSlug. Every new registration sets both.
+  webinarId   String?   @map("webinar_id") @db.Uuid
+  webinar     Webinar?  @relation(fields: [webinarId], references: [id])
   name        String
   email       String
   whatsapp    String?
   region      String
   persona     String
-  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  // Each sent at most once -- a scheduled sweep (WebinarReminderService)
+  // sets these as it sends, so re-running the sweep never double-emails.
+  // The admin's manual "send now" action can force a resend regardless.
+  confirmationSentAt DateTime? @map("confirmation_sent_at") @db.Timestamptz(6)
+  reminder24hSentAt  DateTime? @map("reminder_24h_sent_at") @db.Timestamptz(6)
+  reminder30mSentAt  DateTime? @map("reminder_30m_sent_at") @db.Timestamptz(6)
+  // Manually toggled by an admin -- webinars run on Zoom/Google Meet, not
+  // the in-house LiveKit classroom, so there's no automatic attendance
+  // signal available the way LiveClassAttendance has for live classes.
+  attendedAt  DateTime? @map("attended_at") @db.Timestamptz(6)
+  createdAt   DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
 
   @@unique([email, webinarSlug])
   @@map("webinar_registrations")

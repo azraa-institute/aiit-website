@@ -72,6 +72,23 @@ export class RazorpayClientService {
     return { status: json.status, amountCents: json.amount, currency: json.currency, orderId: json.order_id };
   }
 
+  /** The captured payment's own id for an order -- needed for refundPayment(), since Order.providerRef stores the Razorpay *order* id, not the payment id. */
+  async findCapturedPaymentId(razorpayOrderId: string): Promise<string | null> {
+    this.ensureConfigured();
+    const res = await this.request(`/orders/${encodeURIComponent(razorpayOrderId)}/payments`, { method: 'GET' });
+    const json = (await res.json()) as { items?: { id?: string; status?: string }[] };
+    return json.items?.find((p) => p.status === 'captured')?.id ?? null;
+  }
+
+  /** Full refund only (Phase 1) -- an empty body means "refund the full captured amount." */
+  async refundPayment(paymentId: string): Promise<{ refundId: string; status: string }> {
+    this.ensureConfigured();
+    const res = await this.request(`/payments/${encodeURIComponent(paymentId)}/refund`, { method: 'POST' });
+    const json = (await res.json()) as { id?: string; status?: string };
+    if (!json.id) throw new ServiceUnavailableException('Razorpay did not return a refund id.');
+    return { refundId: json.id, status: json.status ?? 'processed' };
+  }
+
   private async request(path: string, init: { method: string; body?: string }): Promise<Response> {
     const basic = Buffer.from(`${this.keyId}:${this.keySecret}`).toString('base64');
     const res = await fetch(`${this.apiBase}${path}`, {

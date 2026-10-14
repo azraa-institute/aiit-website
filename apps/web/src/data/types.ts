@@ -132,9 +132,12 @@ export interface Webinar {
   agenda: { title: string; points: string[] }[];
   audience: string[];
   registrationUrl: string;
+  /** The flyer -- used by the homepage's WebinarSpotlight card. Not shown on the webinar page itself. */
   image: string;
-  /** A hosted (R2) video URL -- shown in place of `image` on the webinar page's hero when set, with `image` as its poster frame. */
+  /** A hosted (R2) video URL for the webinar page's dedicated video section. */
   videoUrl?: string;
+  /** A 16:9 poster frame for `videoUrl`, shown before playback starts -- a dedicated asset, not `image` (a portrait flyer looks wrong stretched into a 16:9 video frame). */
+  videoThumbnail?: string;
   status: 'upcoming' | 'live' | 'past';
   featured: boolean;
 }

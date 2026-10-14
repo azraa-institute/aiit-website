@@ -9,7 +9,7 @@ export const WEBINARS: Webinar[] = [
   {
     id: 'web-modern-it',
     slug: 'mastering-modern-information-technology',
-    title: 'Three Technologies. One Session. A Smarter Start in Tech.',
+    title: 'One Live Session. A Smarter Start in Tech.',
     heroHeadline: 'Mastering Modern Information Technology',
     kicker: 'AIIT Academy presents · Free live webinar',
     summary:
@@ -63,6 +63,7 @@ export const WEBINARS: Webinar[] = [
     registrationUrl: '/webinar#register',
     image: '/assets/webinar/aiit-free-webinar.webp',
     videoUrl: 'https://media.aiit.network/media/video/4bdca149-d8ea-436b-8591-5cae3e83983f.mp4',
+    videoThumbnail: '/assets/webinar/aiit-webinar-thumbnail.webp',
     status: 'upcoming',
     featured: true,
   },

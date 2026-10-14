@@ -109,6 +109,11 @@
   border-radius: var(--radius-pill);
 }
 
+.webinar-page__agenda > .btn,
+.webinar-page__audience > .btn {
+  margin-top: var(--space-6);
+}
+
 /* Register */
 .webinar-page__register {
   display: grid;

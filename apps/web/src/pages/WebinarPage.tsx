@@ -123,6 +123,10 @@ export default function WebinarPage() {
               <div className="webinar-page__countdown">
                 <Countdown startsAt={w.startsAt} fallback="Date to be announced" />
               </div>
+
+              <Button as="link" to="/webinar#register" variant="secondary" arrow>
+                Reserve your seat
+              </Button>
             </div>
             <Plate
               source={w.image}
@@ -154,6 +158,9 @@ export default function WebinarPage() {
                 </div>
               ))}
             </div>
+            <Button as="link" to="/webinar#register" variant="secondary" arrow>
+              Register for this session
+            </Button>
           </div>
 
           <div className="webinar-page__audience" data-reveal>
@@ -163,6 +170,9 @@ export default function WebinarPage() {
                 <li key={a}>{a}</li>
               ))}
             </ul>
+            <Button as="link" to="/webinar#register" variant="secondary" arrow>
+              Save my spot
+            </Button>
           </div>
 
           <div className="webinar-page__audience" data-reveal>
@@ -172,6 +182,9 @@ export default function WebinarPage() {
                 <li key={a}>{a}</li>
               ))}
             </ul>
+            <Button as="link" to="/webinar#register" variant="secondary" arrow>
+              Register now
+            </Button>
           </div>
         </div>
       </Section>

@@ -51,8 +51,10 @@ export function BlogPreviewModal({ data, onClose }: { data: BlogPreviewData; onC
       <div className="blog-preview__panel" role="dialog" aria-modal="true" aria-label="Post preview" onClick={(e) => e.stopPropagation()}>
         <div className="blog-preview__bar">
           <span>Preview -- not the live page</span>
-          <button type="button" className="adm-btn adm-btn--ghost" ref={closeRef} onClick={onClose}>
-            Close
+          <button type="button" className="blog-preview__close" aria-label="Close preview" ref={closeRef} onClick={onClose}>
+            <svg width="16" height="16" viewBox="0 0 15 15" aria-hidden="true">
+              <path d="M3 3l9 9M12 3 3 12" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+            </svg>
           </button>
         </div>
         <div className="blog-preview__scroll">

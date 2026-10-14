@@ -34,6 +34,22 @@
   font-weight: var(--fw-medium);
 }
 
+.blog-preview__close {
+  display: grid;
+  flex-shrink: 0;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  color: var(--ivory);
+  transition: background var(--dur-fast) var(--ease-out), color var(--dur-fast) var(--ease-out);
+}
+.blog-preview__close:hover,
+.blog-preview__close:focus-visible {
+  background: rgba(244, 239, 231, 0.16);
+  color: var(--ivory);
+}
+
 .blog-preview__scroll {
   flex: 1;
   overflow-y: auto;

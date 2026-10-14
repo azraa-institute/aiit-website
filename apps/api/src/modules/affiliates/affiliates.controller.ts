@@ -10,6 +10,7 @@ import { ApplyAffiliateDto } from './dto/apply-affiliate.dto';
 import { ApplyNewAffiliateDto } from './dto/apply-new-affiliate.dto';
 import { ActivateAffiliateDto } from './dto/activate-affiliate.dto';
 import { UpdatePayoutDto } from './dto/update-payout.dto';
+import { UpdateAffiliateContactDto } from './dto/update-contact.dto';
 
 /**
  * Not role-gated -- see AffiliatesService's doc comment for why. JwtGuard
@@ -54,11 +55,24 @@ export class AffiliatesController {
     return this.affiliates.me(user.userId);
   }
 
-  /** Self-service: where to send this affiliate's payout -- admin-visible only, see AffiliatesService.updatePayoutDetails(). */
+  /**
+   * Self-service: where to send this affiliate's payout -- admin-visible
+   * only, see AffiliatesService.updatePayoutDetails(). Tighter throttle
+   * than this controller's own default: this changes where real money
+   * gets sent, unlike a plain read.
+   */
   @Put('me/payout')
   @UseGuards(JwtGuard)
-  updatePayout(@CurrentUser() user: AuthenticatedUser, @Body() dto: UpdatePayoutDto): Promise<AffiliateMe> {
-    return this.affiliates.updatePayoutDetails(user.userId, dto);
+  @Throttle({ default: { limit: 6, ttl: 60_000 } })
+  updatePayout(@CurrentUser() user: AuthenticatedUser, @Body() dto: UpdatePayoutDto, @Req() request: Request): Promise<AffiliateMe> {
+    return this.affiliates.updatePayoutDetails(user.userId, dto, request.ip);
+  }
+
+  /** Self-service: updating the contact/context details given at application time (phone, handle, location, about-you). */
+  @Put('me/contact')
+  @UseGuards(JwtGuard)
+  updateContact(@CurrentUser() user: AuthenticatedUser, @Body() dto: UpdateAffiliateContactDto): Promise<AffiliateMe> {
+    return this.affiliates.updateContactDetails(user.userId, dto);
   }
 
   /** Unlocks the referral link -- see AffiliatesService.activate(). */

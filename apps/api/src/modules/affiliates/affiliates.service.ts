@@ -38,6 +38,13 @@ const EMPTY_ME: AffiliateMe = {
   registrationCount: null,
   earnings: null,
   payoutDetails: null,
+  payouts: [],
+  phone: null,
+  handle: null,
+  country: null,
+  state: null,
+  city: null,
+  motivation: null,
 };
 
 // Published on the public site (apps/web/src/data/blueprint.ts's
@@ -362,6 +369,7 @@ export class AffiliatesService {
     const registrationCount = approved
       ? await this.prisma.profile.count({ where: { referredByAffiliateId: affiliate.id } })
       : null;
+    const payoutRows = await this.prisma.affiliatePayout.findMany({ where: { affiliateId: affiliate.id }, orderBy: { paidAt: 'desc' } });
     return {
       hasApplied: true,
       type: affiliate.type,
@@ -372,12 +380,34 @@ export class AffiliatesService {
       registrationCount,
       earnings: registrationCount === null ? null : await computeEarnings(this.prisma, affiliate, registrationCount),
       payoutDetails: payoutDetailsFrom(affiliate),
+      // recordedByName (which admin) is deliberately omitted here -- that's
+      // internal admin-side detail, not something the affiliate needs.
+      payouts: payoutRows.map((p) => ({
+        id: p.id,
+        amountCents: p.amountCents,
+        currency: p.currency,
+        note: p.note,
+        paidAt: p.paidAt.toISOString(),
+        recordedByName: null,
+      })),
+      phone: affiliate.phone,
+      handle: affiliate.handle,
+      country: affiliate.country,
+      state: affiliate.state,
+      city: affiliate.city,
+      motivation: affiliate.motivation,
     };
   }
 
-
-  /** Self-service: an affiliate submitting/updating where to send their payout -- admin-visible only, never used to move money automatically (see Affiliate.payoutMethod's schema comment). */
-  async updatePayoutDetails(userId: string, input: AffiliatePayoutInput): Promise<AffiliateMe> {
+  /**
+   * Self-service: an affiliate submitting/updating where to send their
+   * payout -- admin-visible only, never used to move money automatically
+   * (see Affiliate.payoutMethod's schema comment). Tightly throttled at
+   * the controller (this changes where real money gets sent) and the
+   * submitting IP is captured in the audit entry, same forensic pattern
+   * as the e-signature's signedIp, so a disputed change has a paper trail.
+   */
+  async updatePayoutDetails(userId: string, input: AffiliatePayoutInput, submittedIp: string | undefined): Promise<AffiliateMe> {
     const affiliate = await this.prisma.affiliate.findUnique({ where: { userId } });
     if (!affiliate) throw new NotFoundException('No affiliate application found for your account.');
     const updated = await this.prisma.affiliate.update({
@@ -393,7 +423,30 @@ export class AffiliatesService {
         payoutUpdatedAt: new Date(),
       },
     });
-    await this.audit.record(userId, 'affiliate.payout_details_updated', 'affiliate', affiliate.id, { method: input.method });
+    const wasChange = Boolean(affiliate.payoutMethod);
+    await this.audit.record(userId, wasChange ? 'affiliate.payout_details_changed' : 'affiliate.payout_details_added', 'affiliate', affiliate.id, {
+      method: input.method,
+      ip: submittedIp ?? null,
+    });
+    return this.toMe(updated);
+  }
+
+  /** Self-service edit of the context collected at application time -- circumstances change after applying. */
+  async updateContactDetails(userId: string, input: ApplyContext): Promise<AffiliateMe> {
+    const affiliate = await this.prisma.affiliate.findUnique({ where: { userId } });
+    if (!affiliate) throw new NotFoundException('No affiliate application found for your account.');
+    const updated = await this.prisma.affiliate.update({
+      where: { userId },
+      data: {
+        phone: input.phone?.trim() || null,
+        handle: input.handle?.trim() || null,
+        country: input.country?.trim() || null,
+        state: input.state?.trim() || null,
+        city: input.city?.trim() || null,
+        motivation: input.motivation?.trim() || null,
+      },
+    });
+    await this.audit.record(userId, 'affiliate.contact_updated', 'affiliate', affiliate.id, {});
     return this.toMe(updated);
   }
 }

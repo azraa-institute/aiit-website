@@ -11,7 +11,7 @@ describe('AffiliatesService', () => {
   let service: AffiliatesService;
   let prisma: {
     affiliate: { create: jest.Mock; findUnique: jest.Mock; update: jest.Mock };
-    affiliatePayout: { aggregate: jest.Mock };
+    affiliatePayout: { aggregate: jest.Mock; findMany: jest.Mock };
     profile: { count: jest.Mock; findMany: jest.Mock; upsert: jest.Mock };
     $queryRaw: jest.Mock;
   };
@@ -22,7 +22,7 @@ describe('AffiliatesService', () => {
   beforeEach(() => {
     prisma = {
       affiliate: { create: jest.fn(), findUnique: jest.fn(), update: jest.fn() },
-      affiliatePayout: { aggregate: jest.fn().mockResolvedValue({ _sum: { amountCents: null } }) },
+      affiliatePayout: { aggregate: jest.fn().mockResolvedValue({ _sum: { amountCents: null } }), findMany: jest.fn().mockResolvedValue([]) },
       profile: { count: jest.fn(), findMany: jest.fn(), upsert: jest.fn() },
       $queryRaw: jest.fn().mockResolvedValue([]),
     };
@@ -89,6 +89,13 @@ describe('AffiliatesService', () => {
       registrationCount: null,
       earnings: null,
       payoutDetails: null,
+      payouts: [],
+      phone: null,
+      handle: null,
+      country: null,
+      state: null,
+      city: null,
+      motivation: null,
     });
   });
 
@@ -201,7 +208,7 @@ describe('AffiliatesService', () => {
         payoutUpdatedAt: new Date('2026-10-14T12:00:00.000Z'),
       });
 
-      const result = await service.updatePayoutDetails(USER, { method: 'paypal', paypalEmail: 'ada@example.com' });
+      const result = await service.updatePayoutDetails(USER, { method: 'paypal', paypalEmail: 'ada@example.com' }, IP);
 
       expect(prisma.affiliate.update).toHaveBeenCalledWith({
         where: { userId: USER },
@@ -222,9 +229,43 @@ describe('AffiliatesService', () => {
 
     it('404s for an account with no affiliate application', async () => {
       prisma.affiliate.findUnique.mockResolvedValue(null);
-      await expect(service.updatePayoutDetails(USER, { method: 'paypal', paypalEmail: 'ada@example.com' })).rejects.toBeInstanceOf(
+      await expect(service.updatePayoutDetails(USER, { method: 'paypal', paypalEmail: 'ada@example.com' }, IP)).rejects.toBeInstanceOf(
         NotFoundException,
       );
+    });
+  });
+
+  describe('updateContactDetails', () => {
+    it('saves the edited fields, trimmed, and blanks to null', async () => {
+      prisma.affiliate.findUnique.mockResolvedValue({ id: AFFILIATE_ID, userId: USER });
+      prisma.affiliate.update.mockResolvedValue({
+        id: AFFILIATE_ID,
+        type: 'student',
+        applicationStatus: 'pending',
+        referralSlug: 'abc123',
+        activatedAt: null,
+        rejectionReason: null,
+        phone: '+2348012345678',
+      });
+
+      await service.updateContactDetails(USER, { phone: ' +2348012345678 ', handle: '', country: 'Nigeria' });
+
+      expect(prisma.affiliate.update).toHaveBeenCalledWith({
+        where: { userId: USER },
+        data: {
+          phone: '+2348012345678',
+          handle: null,
+          country: 'Nigeria',
+          state: null,
+          city: null,
+          motivation: null,
+        },
+      });
+    });
+
+    it('404s for an account with no affiliate application', async () => {
+      prisma.affiliate.findUnique.mockResolvedValue(null);
+      await expect(service.updateContactDetails(USER, {})).rejects.toBeInstanceOf(NotFoundException);
     });
   });
 

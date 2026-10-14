@@ -65,6 +65,15 @@ export interface AffiliateMe {
   registrationCount: number | null;
   earnings: AffiliateEarnings | null;
   payoutDetails: AffiliatePayoutDetails | null;
+  /** Their own payout history -- same ledger the admin sees, for transparency. */
+  payouts: AffiliatePayoutRecord[];
+  /** The context collected at application time -- editable on the Settings page (PUT /affiliates/me/contact). */
+  phone: string | null;
+  handle: string | null;
+  country: string | null;
+  state: string | null;
+  city: string | null;
+  motivation: string | null;
 }
 
 export interface AdminAffiliateSummary {

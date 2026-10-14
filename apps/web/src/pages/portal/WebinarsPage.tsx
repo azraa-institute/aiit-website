@@ -115,7 +115,7 @@ export default function WebinarsPage() {
  * "TBA" mark rather than hiding itself when a session has no date yet
  * (formatDate's own "Date to be announced" fallback doesn't split into a
  * month/day pair, so that case is handled here instead of passed through). */
-function WebinarDateBlock({ startsAt }: { startsAt?: string }) {
+function WebinarDateBlock({ startsAt }: { startsAt?: string | null }) {
   if (!startsAt) {
     return (
       <div className="webinar-card__date webinar-card__date--tba">

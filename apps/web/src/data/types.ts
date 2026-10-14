@@ -109,38 +109,10 @@ export interface Course {
   updatedAt: string;
 }
 
-export interface Webinar {
-  id: string;
-  slug: string;
-  title: string;
-  /** Short marketing headline for the hero slide. */
-  heroHeadline: string;
-  kicker: string;
-  summary: string;
-  description: string;
-  /** ISO datetime or null when "to be announced". */
-  startsAt: string | null;
-  /** Human string shown when startsAt is null. */
-  scheduleNote: string;
-  durationLabel: string;
-  timezoneNote: string;
-  platform: string;
-  price: number | null;
-  language: string;
-  seatsLimited: boolean;
-  speakerId: string | null;
-  agenda: { title: string; points: string[] }[];
-  audience: string[];
-  registrationUrl: string;
-  /** The flyer -- used by the homepage's WebinarSpotlight card. Not shown on the webinar page itself. */
-  image: string;
-  /** A hosted (R2) video URL for the webinar page's dedicated video section. */
-  videoUrl?: string;
-  /** A 16:9 poster frame for `videoUrl`, shown before playback starts -- a dedicated asset, not `image` (a portrait flyer looks wrong stretched into a 16:9 video frame). */
-  videoThumbnail?: string;
-  status: 'upcoming' | 'live' | 'past';
-  featured: boolean;
-}
+// The Webinar entity itself is DB-driven now (apps/api's Webinar Prisma
+// model, see @aiit/shared's PublicWebinar/AdminWebinar/LearnerWebinar) --
+// this file no longer has its own static type/data for it, see
+// data/webinars.ts's doc comment.
 
 export type EventKind = 'webinar' | 'workshop' | 'masterclass' | 'info-session' | 'event';
 

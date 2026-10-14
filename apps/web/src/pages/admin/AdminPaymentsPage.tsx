@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import type { AdminOrderRow, AdminOrderStatus, AdminPaymentProvider, Paginated, PaymentsSummary } from '@aiit/shared';
-import { apiFetchBlob, downloadBlob } from '@/lib/api';
+import { apiFetch, apiFetchBlob, downloadBlob, ApiError } from '@/lib/api';
 import { formatPrice } from '@/lib/format';
 import { formatWhen, useAdminCourses, useAdminFetch } from './adminData';
 
@@ -35,6 +35,9 @@ export default function AdminPaymentsPage() {
   const [page, setPage] = useState(1);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string>();
+  const [refundingId, setRefundingId] = useState<string | null>(null);
+  const [refundBusyId, setRefundBusyId] = useState<string | null>(null);
+  const [refundError, setRefundError] = useState<string>();
 
   const summary = useAdminFetch<PaymentsSummary>('/admin/payments/summary');
 
@@ -57,6 +60,22 @@ export default function AdminPaymentsPage() {
       setError(err instanceof Error ? err.message : 'Could not download that file.');
     } finally {
       setBusy(false);
+    }
+  }
+
+  /** Full refund only, real money -- the in-app "Refund"/"Confirm refund" double-click below is this project's house pattern for an irreversible, consequential action, not a native window.confirm(). */
+  async function confirmRefund(orderId: string) {
+    setRefundBusyId(orderId);
+    setRefundError(undefined);
+    try {
+      await apiFetch(`/admin/payments/orders/${orderId}/refund`, { method: 'POST' });
+      setRefundingId(null);
+      orders.reload();
+      summary.reload();
+    } catch (err) {
+      setRefundError(err instanceof ApiError ? err.message : 'Could not process that refund.');
+    } finally {
+      setRefundBusyId(null);
     }
   }
 
@@ -230,6 +249,12 @@ export default function AdminPaymentsPage() {
         ) : null}
         {orders.status === 'ready' && orders.data.items.length === 0 ? <p className="adm-muted">No orders match these filters.</p> : null}
 
+        {refundError ? (
+          <p className="adm-error" role="alert">
+            {refundError}
+          </p>
+        ) : null}
+
         {orders.status === 'ready' && orders.data.items.length > 0 ? (
           <>
             <div className="adm-tablewrap">
@@ -242,6 +267,7 @@ export default function AdminPaymentsPage() {
                     <th className="num">Amount</th>
                     <th>Status</th>
                     <th>Created</th>
+                    <th>Refund</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -258,6 +284,38 @@ export default function AdminPaymentsPage() {
                         <span className={`adm-tag ${statusTone(o.status)}`}>{o.status}</span>
                       </td>
                       <td>{formatWhen(o.createdAt)}</td>
+                      <td>
+                        {o.status === 'paid' ? (
+                          refundingId === o.id ? (
+                            <span className="adm-card__actions">
+                              <button
+                                type="button"
+                                className="adm-btn adm-btn--danger"
+                                disabled={refundBusyId === o.id}
+                                onClick={() => confirmRefund(o.id)}
+                              >
+                                {refundBusyId === o.id ? 'Refunding…' : 'Confirm refund'}
+                              </button>
+                              <button
+                                type="button"
+                                className="adm-btn adm-btn--ghost"
+                                disabled={refundBusyId === o.id}
+                                onClick={() => setRefundingId(null)}
+                              >
+                                Cancel
+                              </button>
+                            </span>
+                          ) : (
+                            <button type="button" className="adm-linkbtn" onClick={() => setRefundingId(o.id)}>
+                              Refund
+                            </button>
+                          )
+                        ) : o.status === 'refunded' && o.refundedAt ? (
+                          <span className="adm-muted">Refunded {formatWhen(o.refundedAt)}</span>
+                        ) : (
+                          <span className="adm-muted">—</span>
+                        )}
+                      </td>
                     </tr>
                   ))}
                 </tbody>

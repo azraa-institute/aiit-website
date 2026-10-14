@@ -1,11 +1,12 @@
 import { useState } from 'react';
 import type { FormEvent } from 'react';
+import type { PublicWebinar } from '@aiit/shared';
 import { Layout } from '@/components/layout/Layout';
 import { PageBanner } from '@/components/layout/PageBanner';
 import { Seo, organizationLd } from '@/lib/Seo';
 import { useScrollReveal } from '@/lib/useScrollReveal';
-import { FEATURED_WEBINAR, LIVE_EVENTS, WEBINAR_WHY_ATTEND } from '@/data/webinars';
-import type { Webinar } from '@/data/types';
+import { useApiFetch } from '@/lib/useApiFetch';
+import { LIVE_EVENTS, WEBINAR_WHY_ATTEND } from '@/data/webinars';
 import { Section, SectionHeading } from '@/components/primitives/Section';
 import { Plate } from '@/components/primitives/Plate';
 import { Countdown } from '@/components/common/Countdown';
@@ -26,7 +27,7 @@ const KIND_LABEL: Record<string, string> = {
 };
 
 /** The compact facts strip under the hero intro -- Section D/H's fuller event-details list pulls from the exact same `w` fields, never a second hardcoded copy. */
-function MetaRow({ w }: { w: Webinar }) {
+function MetaRow({ w }: { w: PublicWebinar }) {
   return (
     <ul className="webinar-page__meta-row" role="list">
       <li>Free live webinar</li>
@@ -39,7 +40,7 @@ function MetaRow({ w }: { w: Webinar }) {
 }
 
 export default function WebinarPage() {
-  const w = FEATURED_WEBINAR;
+  const state = useApiFetch<PublicWebinar[]>('/webinars');
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [whatsapp, setWhatsapp] = useState('');
@@ -49,7 +50,29 @@ export default function WebinarPage() {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string>();
   const [done, setDone] = useState(false);
-  useScrollReveal();
+  useScrollReveal([state.status]);
+
+  if (state.status === 'loading') {
+    return (
+      <Layout>
+        <Seo title="Live at AIIT" path="/webinar" />
+        <p className="webinar-page__loading">Loading…</p>
+      </Layout>
+    );
+  }
+  if (state.status === 'error' || state.data.length === 0) {
+    return (
+      <Layout>
+        <Seo title="Live at AIIT" path="/webinar" />
+        <PageBanner
+          eyebrow="Live at AIIT"
+          title="Nothing scheduled right now"
+          intro="Check back soon, or explore the courses these sessions lead into in the meantime."
+        />
+      </Layout>
+    );
+  }
+  const w = state.data.find((x) => x.featured) ?? state.data[0];
 
   async function onSubmit(e: FormEvent) {
     e.preventDefault();

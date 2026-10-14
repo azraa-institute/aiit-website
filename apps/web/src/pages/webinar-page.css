@@ -1,3 +1,9 @@
+.webinar-page__loading {
+  padding: clamp(4rem, 3rem + 5vw, 7rem) var(--gutter);
+  text-align: center;
+  color: var(--fg-muted);
+}
+
 /* Section B — compact meta row under the hero intro */
 /* This is a thin one-line info strip, not a full section boundary -- the
    base .section--tight padding-block (up to 5rem top AND bottom) stacked

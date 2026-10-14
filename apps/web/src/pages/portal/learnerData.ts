@@ -1,21 +1,18 @@
 import { useEffect, useState } from 'react';
-import type { Assignment, Certificate, Enrollment, Me, Notification, UserRole } from '@aiit/shared';
+import type { Assignment, Certificate, Enrollment, LearnerWebinar, Me, Notification, UserRole } from '@aiit/shared';
 import { apiFetch } from '@/lib/api';
 import { supabase } from '@/lib/supabaseClient';
 
 /**
  * Learner portal data layer. Fetches the real backend (Phase 1's auth
  * endpoints + the Phase 2 enrollment/assignment/certificate/notification
- * modules) in parallel and assembles one LearnerRecord, so every page keeps
- * branching on the same loading/ready/error shape it always has.
+ * modules, and GET /me/webinars as of 2026-10-15) in parallel and
+ * assembles one LearnerRecord, so every page keeps branching on the same
+ * loading/ready/error shape it always has.
  *
  * `email` deliberately isn't part of LearnerProfile -- the API's Profile
  * model doesn't store it (Supabase's auth.users owns that); anywhere email
  * needs to be shown, read it from useAuth()'s session instead.
- *
- * Webinar registrations have no real backend yet (out of scope this phase)
- * -- always empty, same honest "nothing to show" behaviour as before, not a
- * stub pretending to be real.
  */
 
 export interface LearnerProfile {
@@ -40,14 +37,6 @@ export interface LearnerProfile {
   joinedAt: string;
 }
 
-export interface WebinarRegistration {
-  id: string;
-  title: string;
-  startsAt?: string;
-  status: 'upcoming' | 'attended' | 'missed';
-  joinUrl?: string;
-}
-
 export interface NextAction {
   label: string;
   href: string;
@@ -62,7 +51,7 @@ export interface LearnerRecord {
   certificates: Certificate[];
   assignments: Assignment[];
   notifications: Notification[];
-  webinars: WebinarRegistration[];
+  webinars: LearnerWebinar[];
   /** True only right after a genuine first-ever signup (Google or email/password) -- the API's real signal for the portal's one-time welcome toast. */
   isNewSignup: boolean;
   /** From the API's computed Me.profileComplete -- drives the completion wizard/banner and the RequireCompleteProfile route guard. */
@@ -70,12 +59,13 @@ export interface LearnerRecord {
 }
 
 async function fetchLearner(): Promise<LearnerRecord> {
-  const [me, enrolled, assignments, certificates, notifications] = await Promise.all([
+  const [me, enrolled, assignments, certificates, notifications, webinars] = await Promise.all([
     apiFetch<Me>('/auth/me'),
     apiFetch<Enrollment[]>('/me/enrollments'),
     apiFetch<Assignment[]>('/me/assignments'),
     apiFetch<Certificate[]>('/me/certificates'),
     apiFetch<Notification[]>('/me/notifications'),
+    apiFetch<LearnerWebinar[]>('/me/webinars'),
   ]);
 
   return {
@@ -105,7 +95,7 @@ async function fetchLearner(): Promise<LearnerRecord> {
     assignments,
     certificates,
     notifications,
-    webinars: [],
+    webinars,
     isNewSignup: me.isNewSignup,
     profileComplete: me.profileComplete,
   };

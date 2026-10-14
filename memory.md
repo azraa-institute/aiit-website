@@ -579,10 +579,11 @@ having checked the **retired** legacy `affiliate_applications` table instead of 
 live `Affiliate` table. Flag if a specific missing application is identified with an
 email/date — that's a data/ops question, not the logic bug this ruled out.
 
-**Working tree is dirty** — this session's changes are **uncommitted**, on top of an
-already-dirty tree from 2026-10-13 (`CLAUDE.md`, this file, and a `storage.ts`
-dead-code deletion, all still uncommitted from before). Run `git status`/`git diff`
-before assuming anything else changed.
+**Update, same day, second round:** all of the above plus the affiliate bug fix +
+manual-add feature (see §15's second 2026-10-14 entry) are now **committed** as 7
+separate commits on local `main` — **none pushed yet**. Working tree itself is
+clean (`git status` confirmed). Run `git log origin/main..main` (or just
+`git status`/`git log`) to confirm before assuming anything else changed.
 
 **Manual steps still needed before the Blog CMS works in production** (none of
 these are code — flagged to the project owner, not yet done):
@@ -780,6 +781,63 @@ export and is still live and correct.
 ---
 
 ## 15. Session handover log
+
+### 2026-10-14 (same day, second round) — Affiliate form bug fix + manual-add feature
+**Objective:** following up the affiliate investigation above, the project owner
+hit the exact "account already exists" 409 path live and reported the error as
+"it just loads and nothing is done" plus a mysterious blank space on the form.
+Also asked for an admin-side "add affiliate manually" button (for people AIIT
+already has a relationship with outside the public form) with the same
+email-a-temporary-password treatment as staff accounts, and asked for the
+affiliate sign-up/sign-in structure to be explained.
+**Root cause found (real bug, not a hypothesis):** `AffiliatePage.tsx` renders its
+error banner with `className="auth__alert"` but never imports `auth.css` (where
+that class's actual red/pink alert styling lives) — `affiliate-page.css` only
+reset its `margin`, so the message fell back to the ambient `.on-ink` section's
+light text tint, rendering as near-invisible pale text on the cream form card.
+That's the "blank space." Fixed by giving `.affiliate__form > .auth__alert` its
+own color/background rule (same visual treatment as `auth.css`'s real one), and
+added a "Sign in →" link directly in that specific message (routed back to
+`/affiliate` via router `state.from`, reusing `LoginPage.tsx`'s existing
+post-login-redirect plumbing — no backend change needed).
+**Affiliate sign-up/sign-in structure (as requested, for the record):**
+affiliate-ness is **not a Profile.role** — it's just "does an `Affiliate` row
+exist for this user" (see schema.prisma's comment on the model). A brand-new
+applicant's account is created server-side with a one-time password
+(`AffiliatesService.applyNew()`), emailed to them. **They sign in at the exact
+same `/login` page students use** — there is no separate affiliate sign-in
+page. After signing in they land on `/portal` like any learner; to reach
+`/affiliate-portal` they either click the "Go to your affiliate dashboard"
+link that appears on the public `/affiliate` page once `hasApplied` is true, or
+navigate to `/affiliate-portal` directly — **there is no persistent header/nav
+link to it today**, which is a real (pre-existing, not touched this session)
+navigation gap worth flagging for a future pass.
+**Shipped:** the alert-visibility fix above; a new `AffiliatesService
+.createManually()` (mirrors `applyNew()`'s account-creation half, but
+deliberately leaves `signedName`/`agreementVersion`/`signedAt`/`signedIp` null
+rather than fabricate e-signature evidence, defaults to `'approved'` status)
+exposed as `POST /admin/affiliates`; a new "Add affiliate manually" button +
+form on `AdminAffiliatesPage.tsx`. `AffiliatesModule` now exports
+`AffiliatesService` so `AdminModule` can inject it.
+**Verification:** `tsc`/`eslint` clean on every touched file in both
+workspaces; full API suite green (61 suites/472 tests, +4 new since the
+morning's 468 — one new `admin-affiliates` test, three new `AffiliatesService
+.createManually` tests); `npm run build` (apps/web) succeeds.
+**Git:** all of today's work (this round + the morning's five-task round) is
+now committed as 7 separate commits (see `git log`), **none pushed to `main`
+yet** — the project owner asked for separate commits specifically, pushing
+was not requested/confirmed.
+**Unresolved/handed back to the project owner:** the GitHub fine-grained PAT
+(walked through the correct Developer Settings path this round — Personal
+access tokens → Fine-grained tokens, not OAuth Apps — with Resource owner set
+to the organization); `GITHUB_TOKEN`/`GITHUB_REPO` still not set in Render;
+`blog-media` bucket creation status not confirmed (project owner said "created"
+but this wasn't independently verified in a browser this session); nothing
+pushed/deployed/live-verified. The no-nav-link-to-affiliate-portal gap noted
+above is a candidate for a future small fix, not done this session.
+**Next action:** push these 7 commits once the project owner confirms, then
+complete the manual GITHUB_TOKEN/bucket steps and live-verify the Blog CMS and
+the affiliate fixes together.
 
 ### 2026-10-14 — Five product asks: UI polish, staff auth fixes, Blog CMS, affiliate investigation
 **Objective:** implement five tasks handed over directly by the project owner: (1)

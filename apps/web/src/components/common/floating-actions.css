@@ -220,13 +220,13 @@
 }
 
 /* ============================================================
-   ASK QUILL ORB — sits between the back-to-top orb and the
-   WhatsApp orb in the same stack, same disc-and-unfurl-panel
-   language as WhatsApp below, just in Quill's own ink/brass
-   palette (QuillAvatar supplies the disc's face directly, no
-   separate background here) and without WhatsApp's attention
-   bounce -- Quill is a secondary, always-available assistant,
-   not the primary conversion action.
+   ASK QUILL ORB — the bottom-most, most prominent button in the
+   stack (last in DOM order wins the corner spot, see
+   .floating-actions above), above WhatsApp and the back-to-top
+   orb. Same disc-and-unfurl-panel language as WhatsApp below,
+   just in Quill's own ink/brass palette (QuillAvatar supplies the
+   disc's face directly, no separate background here) and without
+   WhatsApp's attention bounce.
    ============================================================ */
 .quill-orb {
   position: relative;
@@ -381,6 +381,10 @@
   background: none;
   cursor: pointer;
   opacity: 0;
+  /* Set further apart from WhatsApp/Quill below it -- it's a plain utility
+     control, not part of the WhatsApp/Quill conversion pair, so it reads as
+     a distinct, secondary item in the stack rather than a third peer. */
+  margin-bottom: var(--space-6);
   transform: translateY(8px);
   transition:
     opacity var(--dur-base) var(--ease-out),

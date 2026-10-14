@@ -3,7 +3,6 @@ import { SITE } from '@/data/site';
 import { FOOTER_QUICK_LINKS, FOOTER_POPULAR_COURSES, FOOTER_NAV } from '@/data/navigation';
 import { SocialLinks } from '@/components/common/SocialLinks';
 import { NewsletterForm } from '@/components/common/NewsletterForm';
-import { assetUrl } from '@/lib/assetUrl';
 import { useCookieConsent } from '@/lib/CookieConsentContext';
 import { Logo } from './Logo';
 import { FooterNetworkGraphic } from './FooterNetworkGraphic';
@@ -58,19 +57,7 @@ export function Footer() {
               <ul role="list">
                 {FOOTER_POPULAR_COURSES.map((l) => (
                   <li key={l.label}>
-                    <img
-                      className="site-footer__thumb"
-                      src={assetUrl(l.image)}
-                      alt=""
-                      width={44}
-                      height={44}
-                      loading="lazy"
-                      decoding="async"
-                    />
-                    <span className="site-footer__course-text">
-                      <Link to={l.to}>{l.label}</Link>
-                      <span className="site-footer__by">By AIIT Network</span>
-                    </span>
+                    <Link to={l.to}>{l.label}</Link>
                   </li>
                 ))}
               </ul>

@@ -136,15 +136,6 @@ export function FloatingActions() {
         </span>
       </button>
 
-      <button type="button" className="quill-orb" aria-label="Ask Quill" onClick={() => openQuill()}>
-        <span className="quill-orb__panel" aria-hidden="true">
-          <span className="quill-orb__word">Ask Quill</span>
-        </span>
-        <span className="quill-orb__disc">
-          <QuillAvatar size={25} />
-        </span>
-      </button>
-
       <a
         className="wa-orb"
         href={`https://wa.me/${WA_NUMBER}?text=${WA_TEXT}`}
@@ -168,6 +159,15 @@ export function FloatingActions() {
           </svg>
         </span>
       </a>
+
+      <button type="button" className="quill-orb" aria-label="Ask Quill" onClick={() => openQuill()}>
+        <span className="quill-orb__panel" aria-hidden="true">
+          <span className="quill-orb__word">Ask Quill</span>
+        </span>
+        <span className="quill-orb__disc">
+          <QuillAvatar size={25} />
+        </span>
+      </button>
     </div>
   );
 }

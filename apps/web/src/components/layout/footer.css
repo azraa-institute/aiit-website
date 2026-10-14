@@ -146,33 +146,6 @@
   color: inherit;
 }
 
-.site-footer__by {
-  display: block;
-  font-size: var(--fs-xs);
-  color: var(--fg-muted);
-  margin-top: 2px;
-}
-
-/* "Learning now" — a small course thumbnail sits to the left of each title. */
-.site-footer__col--courses li {
-  display: flex;
-  align-items: flex-start;
-  gap: var(--space-3);
-}
-.site-footer__course-text {
-  display: flex;
-  flex-direction: column;
-  min-width: 0;
-}
-.site-footer__thumb {
-  flex-shrink: 0;
-  width: 2.5rem;
-  height: 2.5rem;
-  margin-top: 2px;
-  object-fit: cover;
-  border-radius: var(--radius-xs);
-  border: 1px solid var(--line-invert);
-}
 .site-footer__view-all {
   display: inline-flex;
   align-items: center;

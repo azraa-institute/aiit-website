@@ -47,6 +47,7 @@ interface StudentRow {
   status: StudentSummary['status'];
   created_at: Date;
   enrolled: number;
+  affiliate_id: string | null;
 }
 
 @Injectable()
@@ -160,8 +161,11 @@ export class AdminUsersService {
     const [rows, totals] = await Promise.all([
       this.prisma.$queryRaw<StudentRow[]>`
         SELECT p.id, p.name, u.email, p.country, p.status, p.created_at,
-               (SELECT count(*) FROM enrollments e WHERE e.user_id = p.id AND e.status <> 'cancelled')::int AS enrolled
-        FROM profiles p LEFT JOIN auth.users u ON u.id = p.id
+               (SELECT count(*) FROM enrollments e WHERE e.user_id = p.id AND e.status <> 'cancelled')::int AS enrolled,
+               a.id AS affiliate_id
+        FROM profiles p
+        LEFT JOIN auth.users u ON u.id = p.id
+        LEFT JOIN affiliates a ON a.user_id = p.id
         WHERE ${where}
         ORDER BY p.created_at DESC
         LIMIT ${pageSize} OFFSET ${(page - 1) * pageSize}`,
@@ -178,6 +182,7 @@ export class AdminUsersService {
         status: r.status,
         joinedAt: r.created_at.toISOString(),
         enrolledCourses: r.enrolled,
+        affiliateId: r.affiliate_id,
       })),
       total: totals[0]?.total ?? 0,
       page,
@@ -188,7 +193,7 @@ export class AdminUsersService {
   async studentDetail(id: string): Promise<StudentDetail> {
     const profile = await this.prisma.profile.findFirst({ where: { id, role: 'learner' } });
     if (!profile) throw new NotFoundException('Student not found.');
-    const [emails, enrollments, attended, certificates] = await Promise.all([
+    const [emails, enrollments, attended, certificates, affiliate] = await Promise.all([
       this.emailsFor([id]),
       this.prisma.enrollment.findMany({
         where: { userId: id },
@@ -200,6 +205,7 @@ export class AdminUsersService {
         where: { userId: id },
         select: { id: true, courseId: true, credentialId: true, issuedAt: true, revokedAt: true, revokedReason: true },
       }),
+      this.prisma.affiliate.findUnique({ where: { userId: id }, select: { id: true } }),
     ]);
     return {
       id: profile.id,
@@ -209,6 +215,7 @@ export class AdminUsersService {
       status: profile.status,
       joinedAt: profile.createdAt.toISOString(),
       enrolledCourses: enrollments.filter((e) => e.status !== 'cancelled').length,
+      affiliateId: affiliate?.id ?? null,
       phone: profile.phone,
       timeZone: profile.timeZone,
       suspendedAt: profile.suspendedAt?.toISOString() ?? null,

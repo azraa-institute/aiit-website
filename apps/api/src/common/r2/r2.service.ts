@@ -38,6 +38,13 @@ export class R2Service {
       this.client = new S3Client({
         region: 'auto',
         endpoint: `https://${process.env.R2_ACCOUNT_ID}.r2.cloudflarestorage.com`,
+        // R2 doesn't support virtual-hosted-style bucket addressing
+        // (bucket-name.account-id.r2.cloudflarestorage.com isn't a real,
+        // resolvable host) -- without this the SDK's v3 default produces
+        // exactly that non-existent hostname and every signed URL fails
+        // with a DNS-level "Failed to fetch" in the browser. Cloudflare's
+        // own R2 + AWS SDK docs call this out explicitly.
+        forcePathStyle: true,
         credentials: {
           accessKeyId: process.env.R2_ACCESS_KEY_ID!,
           secretAccessKey: process.env.R2_SECRET_ACCESS_KEY!,

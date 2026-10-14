@@ -76,6 +76,12 @@ class ListAffiliatesQuery {
   @IsIn(AFFILIATE_TYPES)
   type?: AffiliateType;
 
+  /** Name/email search, same ILIKE convention as ListStudentsQueryDto's `q` -- lets the Students page's "Affiliate" badge deep-link here by email. */
+  @IsOptional()
+  @IsString()
+  @MaxLength(100)
+  q?: string;
+
   @IsOptional()
   @Transform(({ value }) => Number(value))
   @IsInt()

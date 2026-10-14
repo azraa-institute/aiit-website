@@ -35,6 +35,8 @@ export interface StudentSummary {
   status: AccountStatus;
   joinedAt: string;
   enrolledCourses: number;
+  /** Set when this learner account also has an Affiliate row (see schema.prisma's comment on that model -- affiliate-ness is never a Profile.role). Non-null is the affiliate's id, usable to look them up on the admin Affiliates page. */
+  affiliateId: string | null;
 }
 
 export interface StudentDetail extends StudentSummary {

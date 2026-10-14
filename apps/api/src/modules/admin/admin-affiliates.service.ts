@@ -21,6 +21,7 @@ const PAGE_SIZE = 25;
 interface ListQuery {
   status?: AffiliateApplicationStatus;
   type?: AffiliateType;
+  q?: string;
   page?: number;
 }
 
@@ -52,9 +53,18 @@ export class AdminAffiliatesService {
 
   async list(query: ListQuery): Promise<Paginated<AdminAffiliateSummary>> {
     const page = query.page ?? 1;
+    let userIdFilter: Prisma.StringFilter | undefined;
+    if (query.q?.trim()) {
+      const like = `%${query.q.trim().replace(/[%_\\]/g, '\\$&')}%`;
+      const matches = await this.prisma.$queryRaw<{ id: string }[]>`
+        SELECT p.id FROM profiles p LEFT JOIN auth.users u ON u.id = p.id
+        WHERE p.name ILIKE ${like} OR u.email ILIKE ${like}`;
+      userIdFilter = { in: matches.map((m) => m.id) };
+    }
     const where: Prisma.AffiliateWhereInput = {
       ...(query.status ? { applicationStatus: query.status } : {}),
       ...(query.type ? { type: query.type } : {}),
+      ...(userIdFilter ? { userId: userIdFilter } : {}),
     };
     const [rows, total] = await Promise.all([
       this.prisma.affiliate.findMany({ where, orderBy: { createdAt: 'desc' }, skip: (page - 1) * PAGE_SIZE, take: PAGE_SIZE }),

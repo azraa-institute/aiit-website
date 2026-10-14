@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import type { Paginated, StudentDetail, StudentSummary, SuspendResult } from '@aiit/shared';
 import { apiFetch } from '@/lib/api';
 import { cn } from '@/lib/cn';
@@ -124,6 +124,14 @@ function StudentPanel({ id, onChanged, onClose }: { id: string; onChanged: () =>
           <h3 className="adm-drawer__name">{state.data.name ?? 'No name yet'}</h3>
           <p className="adm-muted">{state.data.email ?? 'No email on record'}</p>
           <span className={cn('adm-status', `adm-status--${state.data.status}`)}>{state.data.status.replace('_', ' ')}</span>
+          {state.data.affiliateId ? (
+            <p className="adm-notice">
+              Also an affiliate --{' '}
+              <Link to={`/admin/affiliates?q=${encodeURIComponent(state.data.email ?? '')}`} className="adm-linkbtn">
+                view their affiliate record
+              </Link>
+            </p>
+          ) : null}
 
           <dl className="adm-dl">
             <div>
@@ -379,6 +387,7 @@ export default function AdminStudentsPage() {
                         <button type="button" className="adm-linkbtn" onClick={() => setSelected(s.id)}>
                           {s.name ?? 'No name yet'}
                         </button>
+                        {s.affiliateId ? <span className="adm-tag adm-tag--creator"> Affiliate</span> : null}
                       </td>
                       <td>{s.email ?? '—'}</td>
                       <td>{s.country ?? '—'}</td>

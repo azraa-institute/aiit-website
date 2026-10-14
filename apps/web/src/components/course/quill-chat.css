@@ -34,14 +34,19 @@
   }
 }
 
+/* A full 100dvh panel left no visible page behind it at all -- a visitor
+   had to tap close just to see anything else, including the very CTA
+   button they opened Quill from. A bottom-sheet that stops short of the
+   top keeps the backdrop (and the page it dims) visibly in view instead. */
 @media (max-width: 480px) {
   .quill-chat__backdrop {
     padding: 0;
+    align-items: flex-end;
   }
   .quill-chat__panel {
     max-width: none;
-    height: 100dvh;
-    border-radius: 0;
+    height: min(80dvh, calc(100dvh - var(--space-9)));
+    border-radius: var(--radius-lg) var(--radius-lg) 0 0;
   }
 }
 

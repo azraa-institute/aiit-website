@@ -7,6 +7,7 @@ import { useScrollReveal } from '@/lib/useScrollReveal';
 import { FEATURED_WEBINAR, LIVE_EVENTS, WEBINAR_WHY_ATTEND } from '@/data/webinars';
 import type { Webinar } from '@/data/types';
 import { Section, SectionHeading } from '@/components/primitives/Section';
+import { Plate } from '@/components/primitives/Plate';
 import { Countdown } from '@/components/common/Countdown';
 import { Button } from '@/components/primitives/Button';
 import { TextField, SelectField } from '@/components/common/Field';
@@ -234,6 +235,18 @@ export default function WebinarPage() {
 
               <div className="webinar-page__countdown">
                 <Countdown startsAt={w.startsAt} fallback="Date to be announced" />
+              </div>
+
+              <div className="webinar-page__flyer">
+                <p className="webinar-page__flyer-label">Event flyer</p>
+                <Plate
+                  source={w.image}
+                  seed={`webinar-page-flyer-${w.id}`}
+                  motif="signal"
+                  tone="ink"
+                  fit="natural"
+                  alt=""
+                />
               </div>
             </div>
 

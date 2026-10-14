@@ -179,6 +179,21 @@
   padding-top: var(--space-5);
   border-top: 1px solid var(--hairline);
 }
+.webinar-page__flyer {
+  margin-top: var(--space-7);
+  max-width: 300px;
+}
+.webinar-page__flyer-label {
+  font-size: var(--fs-xs);
+  letter-spacing: var(--tracking-eyebrow);
+  text-transform: uppercase;
+  color: var(--fg-faint);
+  margin-bottom: var(--space-3);
+}
+.webinar-page__flyer .plate {
+  border-radius: var(--radius-md);
+  border: 1px solid var(--line-invert);
+}
 .webinar-page__form {
   display: grid;
   gap: var(--space-4);

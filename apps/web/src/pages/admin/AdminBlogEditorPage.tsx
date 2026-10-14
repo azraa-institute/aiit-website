@@ -352,6 +352,9 @@ export default function AdminBlogEditorPage() {
               Delete draft
             </button>
           ) : null}
+          <button type="button" className="adm-btn adm-btn--ghost" onClick={() => navigate('/admin/blog')}>
+            Cancel
+          </button>
         </div>
       </form>
 

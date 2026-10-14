@@ -1,10 +1,27 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import type { ChangeEvent, FormEvent } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
-import type { AdminBlogPost, BlogLayoutPreset, BlogPostInput } from '@aiit/shared';
+import type { AdminBlogPost, BlogLayoutPreset, BlogMediaUploadResult, BlogPostInput } from '@aiit/shared';
 import { apiFetch } from '@/lib/api';
+import { looksLikeHtml } from '@/lib/markdown';
 import { formatWhen, useAdminFetch } from './adminData';
 import { BlogPreviewModal } from './BlogPreviewModal';
+
+interface MediaItem extends BlogMediaUploadResult {
+  name: string;
+}
+
+const MEDIA_ACCEPT = 'image/jpeg,image/png,image/webp,image/gif,audio/mpeg,audio/wav,audio/ogg,video/mp4,video/webm,video/quicktime';
+
+/** Matches markdown.ts's own `[audio: URL]`/`[video: URL]` shorthand and the Markdown image fallback -- see its doc comment for why raw <audio>/<video> tags aren't used in a Markdown-mode body. */
+function mediaSnippet(item: MediaItem, bodyIsHtml: boolean): string {
+  if (item.kind === 'image') {
+    return bodyIsHtml ? `<figure><img src="${item.url}" alt=""></figure>` : `![](${item.url})`;
+  }
+  return bodyIsHtml
+    ? `<figure class="article-media article-media--${item.kind}"><${item.kind} controls src="${item.url}"></${item.kind}></figure>`
+    : `[${item.kind}: ${item.url}]`;
+}
 
 const PRESET_INFO: Record<BlogLayoutPreset, { label: string; description: string }> = {
   editorial: { label: 'Editorial (default)', description: 'Generous line-length, serif headings, large cover image.' },
@@ -12,6 +29,11 @@ const PRESET_INFO: Record<BlogLayoutPreset, { label: string; description: string
   'news-brief': { label: 'News brief', description: 'Compact hero, tighter rhythm -- short/time-sensitive posts.' },
   spotlight: { label: 'Spotlight', description: 'Large pull-quotes, byline promoted -- interviews/features.' },
   'data-deep-dive': { label: 'Data deep-dive', description: 'Wider column for tables/charts, monospace stat callouts.' },
+  listicle: { label: 'Listicle', description: 'Numbered circular badges per section -- "Top N" / ranked posts.' },
+  'case-study': { label: 'Case study', description: 'Bordered result/metric callout boxes -- project outcomes, client stories.' },
+  'visual-essay': { label: 'Visual essay', description: 'Image-forward: bigger figures, quieter captions, wider column.' },
+  magazine: { label: 'Magazine', description: 'Drop cap on the opening paragraph -- a long-form feature read.' },
+  'video-feature': { label: 'Video feature', description: 'Built around an embedded video, given cinematic framing.' },
 };
 const PRESETS = Object.keys(PRESET_INFO) as BlogLayoutPreset[];
 
@@ -78,6 +100,10 @@ export default function AdminBlogEditorPage() {
   const [notice, setNotice] = useState<string>();
   const [showPreview, setShowPreview] = useState(false);
   const [post, setPost] = useState<AdminBlogPost | null>(null);
+  const [mediaItems, setMediaItems] = useState<MediaItem[]>([]);
+  const [mediaUploading, setMediaUploading] = useState(false);
+  const [mediaError, setMediaError] = useState<string>();
+  const bodyRef = useRef<HTMLTextAreaElement>(null);
 
   useEffect(() => {
     if (existing.status === 'ready') {
@@ -197,6 +223,42 @@ export default function AdminBlogEditorPage() {
     }
   }
 
+  /** The media library -- as many files as the admin picks, uploaded one at a time so a failure partway leaves the rest already added. */
+  async function handleMediaFiles(e: ChangeEvent<HTMLInputElement>) {
+    const files = Array.from(e.target.files ?? []);
+    e.target.value = '';
+    if (files.length === 0) return;
+    setMediaError(undefined);
+    setMediaUploading(true);
+    try {
+      for (const file of files) {
+        const body = new FormData();
+        body.append('file', file);
+        const result = await apiFetch<BlogMediaUploadResult>('/admin/blog/media', { method: 'POST', body });
+        setMediaItems((cur) => [...cur, { ...result, name: file.name }]);
+      }
+    } catch (err) {
+      setMediaError(err instanceof Error ? err.message : 'Could not upload one of those files.');
+    } finally {
+      setMediaUploading(false);
+    }
+  }
+
+  /** Inserts at the textarea's last known cursor position, matching the body's current flavor (raw HTML vs Markdown) -- see mediaSnippet()'s doc comment. */
+  function insertMedia(item: MediaItem) {
+    const ta = bodyRef.current;
+    const pos = ta?.selectionStart ?? form.bodyMarkdown.length;
+    const snippet = `\n\n${mediaSnippet(item, looksLikeHtml(form.bodyMarkdown))}\n\n`;
+    const next = form.bodyMarkdown.slice(0, pos) + snippet + form.bodyMarkdown.slice(pos);
+    update('bodyMarkdown', next);
+    requestAnimationFrame(() => {
+      if (!ta) return;
+      const newPos = pos + snippet.length;
+      ta.focus();
+      ta.setSelectionRange(newPos, newPos);
+    });
+  }
+
   if (!isNew && existing.status === 'loading') return <p className="adm-muted">Loading…</p>;
   if (!isNew && existing.status === 'error') return <p className="adm-error" role="alert">{existing.message}</p>;
 
@@ -251,6 +313,7 @@ export default function AdminBlogEditorPage() {
           <label className="adm-field adm-field--wide">
             <span>Body (Markdown, or pasted HTML)</span>
             <textarea
+              ref={bodyRef}
               required
               rows={16}
               value={form.bodyMarkdown}
@@ -280,6 +343,33 @@ export default function AdminBlogEditorPage() {
             <input type="file" accept="image/jpeg,image/png,image/webp" onChange={(e) => handleCoverUpload(e, 'coverImage2Url')} />
             {form.coverImage2Url ? <img src={form.coverImage2Url} alt="" style={{ maxWidth: '100%', borderRadius: 8, marginTop: 8 }} /> : null}
           </label>
+          <div className="adm-field adm-field--wide">
+            <span>Media library -- insert into the body at your cursor</span>
+            <input type="file" accept={MEDIA_ACCEPT} multiple disabled={mediaUploading} onChange={handleMediaFiles} />
+            {mediaUploading ? <p className="adm-muted">Uploading…</p> : null}
+            {mediaError ? <p className="adm-error" role="alert">{mediaError}</p> : null}
+            {mediaItems.length > 0 ? (
+              <ul className="adm-list" role="list">
+                {mediaItems.map((item, idx) => (
+                  <li className="adm-card" key={`${item.url}-${idx}`}>
+                    <div className="adm-card__main">
+                      {item.kind === 'image' ? (
+                        <img src={item.url} alt="" style={{ maxWidth: 80, maxHeight: 80, borderRadius: 6 }} />
+                      ) : (
+                        <span className="adm-tag adm-tag--creator">{item.kind}</span>
+                      )}
+                      <span className="adm-card__meta">{item.name}</span>
+                    </div>
+                    <div className="adm-card__actions">
+                      <button type="button" className="adm-btn adm-btn--ghost" onClick={() => insertMedia(item)}>
+                        Insert
+                      </button>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            ) : null}
+          </div>
         </div>
 
         <h2 className="adm-h2">SEO &amp; metadata</h2>

@@ -130,4 +130,19 @@ describe('AdminBlogService', () => {
     github.listDir.mockResolvedValue(['a-post.md']);
     await expect(service.checkSlug('a-post')).resolves.toEqual({ available: false });
   });
+
+  describe('uploadMedia', () => {
+    const file = (mimetype: string) => ({ originalname: 'clip.bin', mimetype, buffer: Buffer.from('x') }) as Express.Multer.File;
+
+    it('detects kind from mimetype and uploads under a kind-named subdir', async () => {
+      const result = await service.uploadMedia(file('video/mp4'));
+      expect(result.kind).toBe('video');
+      expect(supabase.uploadToStorage).toHaveBeenCalledWith('blog-media', expect.stringMatching(/^media\/video\//), expect.any(Buffer), 'video/mp4');
+      expect(result.url).toContain('blog-media');
+    });
+
+    it('rejects a mimetype outside image/audio/video', async () => {
+      await expect(service.uploadMedia(file('application/pdf'))).rejects.toThrow();
+    });
+  });
 });

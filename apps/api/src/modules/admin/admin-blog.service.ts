@@ -1,7 +1,7 @@
 import { randomUUID } from 'crypto';
-import { ConflictException, Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, ConflictException, Injectable, NotFoundException } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
-import type { AdminBlogPost, AdminBlogPostSummary, BlogPostStatus, BlogPublishResult } from '@aiit/shared';
+import type { AdminBlogPost, AdminBlogPostSummary, BlogMediaUploadResult, BlogPostStatus, BlogPublishResult } from '@aiit/shared';
 import { PrismaService } from '../../common/prisma/prisma.service';
 import { AuditService } from '../../common/audit/audit.service';
 import { SupabaseAdminService } from '../../common/supabase-admin/supabase-admin.service';
@@ -214,11 +214,28 @@ export class AdminBlogService {
    * that renders a post's cover image accepts any image source.
    */
   async uploadCoverImage(file: Express.Multer.File): Promise<{ url: string }> {
-    const ext = (file.originalname.split('.').pop() || 'jpg').toLowerCase();
-    const key = `${randomUUID()}.${ext}`;
+    return { url: await this.uploadToPublicUrl(file, 'covers') };
+  }
+
+  /**
+   * The editor's media library -- as many images/audio/video files as an
+   * admin wants, each inserted into the body at the cursor (see
+   * markdown.ts's `[audio: URL]`/`[video: URL]` shorthand for why those two
+   * aren't just raw <audio>/<video> HTML). Same permanent-public-URL
+   * approach as uploadCoverImage, not committed into the repo.
+   */
+  async uploadMedia(file: Express.Multer.File): Promise<BlogMediaUploadResult> {
+    const kind = mediaKind(file.mimetype);
+    const url = await this.uploadToPublicUrl(file, `media/${kind}`);
+    return { url, kind };
+  }
+
+  private async uploadToPublicUrl(file: Express.Multer.File, subdir: string): Promise<string> {
+    const ext = (file.originalname.split('.').pop() || 'bin').toLowerCase();
+    const key = `${subdir}/${randomUUID()}.${ext}`;
     await this.supabase.uploadToStorage(BLOG_MEDIA_BUCKET, key, file.buffer, file.mimetype);
     const base = process.env.SUPABASE_URL ?? '';
-    return { url: `${base}/storage/v1/object/public/${BLOG_MEDIA_BUCKET}/${key}` };
+    return `${base}/storage/v1/object/public/${BLOG_MEDIA_BUCKET}/${key}`;
   }
 
   private async findOrThrow(id: string): Promise<BlogPostRow> {
@@ -266,6 +283,13 @@ export class AdminBlogService {
 /** Escapes a frontmatter scalar -- values here are always single-line (validated by BlogPostInputDto), so only the quote character itself needs handling. */
 function scalar(v: string): string {
   return `"${v.replace(/"/g, "'")}"`;
+}
+
+function mediaKind(mimetype: string): BlogMediaUploadResult['kind'] {
+  if (mimetype.startsWith('image/')) return 'image';
+  if (mimetype.startsWith('audio/')) return 'audio';
+  if (mimetype.startsWith('video/')) return 'video';
+  throw new BadRequestException("That file type isn't supported (allowed: images, audio, video).");
 }
 
 function buildMarkdownFile(post: BlogPostRow): string {

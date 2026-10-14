@@ -18,7 +18,7 @@ import {
 import { FileInterceptor } from '@nestjs/platform-express';
 import { memoryStorage } from 'multer';
 import { Throttle } from '@nestjs/throttler';
-import type { AdminBlogPost, AdminBlogPostSummary, BlogPublishResult } from '@aiit/shared';
+import type { AdminBlogPost, AdminBlogPostSummary, BlogMediaUploadResult, BlogPublishResult } from '@aiit/shared';
 import { JwtGuard, type AuthenticatedUser } from '../../common/guards/jwt.guard';
 import { RolesGuard } from '../../common/guards/roles.guard';
 import { Roles } from '../../common/decorators/roles.decorator';
@@ -29,6 +29,28 @@ import { BlogPostInputDto, ListBlogPostsQueryDto } from './dto/admin-blog.dto';
 
 const COVER_IMAGE_MAX_BYTES = 4 * 1024 * 1024;
 const COVER_IMAGE_MIME_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
+
+/**
+ * One flat ceiling covering the largest case (video) -- multer's
+ * FileInterceptor can't apply a per-mimetype limit before it's even read
+ * the file, so kind-specific checks happen in AdminBlogService.uploadMedia
+ * after the fact. The Supabase bucket's own file_size_limit (dashboard
+ * config, not visible from here) is the real backstop if this is ever
+ * raised past what it allows.
+ */
+const MEDIA_MAX_BYTES = 80 * 1024 * 1024;
+const MEDIA_MIME_TYPES = [
+  'image/jpeg',
+  'image/png',
+  'image/webp',
+  'image/gif',
+  'audio/mpeg',
+  'audio/wav',
+  'audio/ogg',
+  'video/mp4',
+  'video/webm',
+  'video/quicktime',
+];
 
 const GITHUB_ERROR_STATUS: Record<GithubPublishError['code'], number> = {
   auth: 502,
@@ -117,6 +139,22 @@ export class AdminBlogController {
       throw new UnsupportedMediaTypeException("That file type isn't supported (allowed: jpeg, png, webp).");
     }
     return this.blog.uploadCoverImage(file);
+  }
+
+  /**
+   * The editor's media library -- as many images/audio/video files as an
+   * admin wants to insert into the body at the cursor, not just the two
+   * dedicated cover-image fields. See AdminBlogService.uploadMedia.
+   */
+  @Post('media')
+  @Throttle({ default: { limit: 30, ttl: 60_000 } })
+  @UseInterceptors(FileInterceptor('file', { storage: memoryStorage(), limits: { fileSize: MEDIA_MAX_BYTES } }))
+  async uploadMedia(@UploadedFile() file?: Express.Multer.File): Promise<BlogMediaUploadResult> {
+    if (!file) throw new BadRequestException('No file was uploaded.');
+    if (!MEDIA_MIME_TYPES.includes(file.mimetype)) {
+      throw new UnsupportedMediaTypeException("That file type isn't supported (allowed: common image/audio/video formats).");
+    }
+    return this.blog.uploadMedia(file);
   }
 }
 

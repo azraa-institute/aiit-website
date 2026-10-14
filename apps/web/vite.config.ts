@@ -11,7 +11,18 @@ import { PRODUCTS } from './src/data/products';
 const postsDir = fileURLToPath(new URL('./src/content/posts', import.meta.url));
 
 /** Keep in sync with BlogLayoutPreset in packages/shared/src/blog.ts -- an unrecognized or missing value falls back to "editorial" rather than breaking the build. */
-const BLOG_LAYOUT_PRESETS = ['editorial', 'tutorial', 'news-brief', 'spotlight', 'data-deep-dive'];
+const BLOG_LAYOUT_PRESETS = [
+  'editorial',
+  'tutorial',
+  'news-brief',
+  'spotlight',
+  'data-deep-dive',
+  'listicle',
+  'case-study',
+  'visual-essay',
+  'magazine',
+  'video-feature',
+];
 
 function parseFrontmatter(raw: string) {
   const text = raw.replace(/^﻿/, '');

@@ -224,6 +224,18 @@
   height: auto;
   border-radius: var(--radius-sm);
 }
+/* [audio: URL] / [video: URL] embeds (markdown.ts) -- audio has no
+   intrinsic visual box like an image/video does, so it gets its own card
+   so a bare control bar doesn't look like a layout accident. */
+.article-media--audio {
+  padding: var(--space-4);
+  background: var(--ivory-deep);
+  border-radius: var(--radius-sm);
+}
+.article-copy figure audio {
+  display: block;
+  width: 100%;
+}
 .article-copy figcaption {
   margin-top: var(--space-2);
   font-family: var(--font-ui);
@@ -919,4 +931,80 @@
 }
 .resource-article--data-deep-dive .article-copy table {
   font-size: var(--fs-sm);
+}
+
+/* LISTICLE — numbered circular badges per section, for "Top N" posts. */
+.resource-article--listicle .article-copy {
+  counter-reset: listicle-step;
+}
+.resource-article--listicle .article-copy h2 {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+.resource-article--listicle .article-copy h2::before {
+  counter-increment: listicle-step;
+  content: counter(listicle-step);
+  flex-shrink: 0;
+  display: grid;
+  place-items: center;
+  width: 1.8em;
+  height: 1.8em;
+  border-radius: 50%;
+  background: var(--brass);
+  color: #fff;
+  font-family: var(--font-ui);
+  font-size: 0.55em;
+  font-weight: 700;
+}
+
+/* CASE STUDY — bordered "result" callout boxes instead of a plain left-rule quote. */
+.resource-article--case-study .article-copy blockquote {
+  margin-block: 1.8em;
+  padding: var(--space-5);
+  border: 1px solid var(--line-strong);
+  border-left: 4px solid var(--brass-deep);
+  border-radius: var(--radius-sm);
+  background: var(--accent-wash);
+  font-family: var(--res-serif);
+  font-size: 1.05em;
+}
+.resource-article--case-study .article-copy strong {
+  color: var(--brass-deep);
+}
+
+/* VISUAL ESSAY — image-forward: bigger figures, quieter captions, wider column. */
+.resource-article--visual-essay .article-body.prose {
+  max-width: 92ch;
+}
+.resource-article--visual-essay .article-copy figure {
+  margin-block: 2.2em;
+}
+.resource-article--visual-essay .article-copy figcaption {
+  text-align: center;
+  font-style: italic;
+}
+
+/* MAGAZINE — a long-form feature read: drop cap on the opening paragraph. */
+.resource-article--magazine .article-copy > p:first-of-type::first-letter {
+  float: left;
+  font-family: var(--res-serif);
+  font-size: 3.4em;
+  line-height: 0.82;
+  padding-right: 0.1em;
+  color: var(--brass-deep);
+}
+
+/* VIDEO FEATURE — built around an embedded video: it gets the cinematic treatment, text stays secondary. */
+.resource-article--video-feature .article-hero__title {
+  font-size: clamp(2rem, 1.6rem + 2.5vw, 3.2rem);
+}
+.resource-article--video-feature .article-media {
+  margin-block: 2em;
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  background: var(--ink);
+}
+.resource-article--video-feature .article-media--video video {
+  border-radius: 0;
 }

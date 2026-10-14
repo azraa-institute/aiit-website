@@ -16,7 +16,18 @@ import {
 import type { BlogLayoutPreset } from '@aiit/shared';
 
 /** Kept local (not @aiit/shared, which is type-only) so this literal array is a compile error to forget updating alongside BlogLayoutPreset. */
-export const BLOG_LAYOUT_PRESETS = ['editorial', 'tutorial', 'news-brief', 'spotlight', 'data-deep-dive'] as const;
+export const BLOG_LAYOUT_PRESETS = [
+  'editorial',
+  'tutorial',
+  'news-brief',
+  'spotlight',
+  'data-deep-dive',
+  'listicle',
+  'case-study',
+  'visual-essay',
+  'magazine',
+  'video-feature',
+] as const;
 void (BLOG_LAYOUT_PRESETS satisfies readonly BlogLayoutPreset[]);
 
 export class BlogPostInputDto {

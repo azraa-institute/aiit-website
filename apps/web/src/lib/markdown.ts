@@ -117,7 +117,8 @@ function stripComments(s: string): string {
   return s.replace(/<!--[\s\S]*?-->/g, '');
 }
 
-function looksLikeHtml(s: string): boolean {
+/** Whether `articleToHtml` will treat this body as raw HTML (sanitise-only) rather than Markdown -- exported so the admin editor can pick a matching snippet flavor when inserting media (see AdminBlogEditorPage.tsx). */
+export function looksLikeHtml(s: string): boolean {
   return HTML_BLOCK_RE.test(s);
 }
 
@@ -248,6 +249,20 @@ function markdownToHtml(src: string): string {
           cap ? `<figcaption>${inline(cap)}</figcaption>` : ''
         }</figure>`,
       );
+      i++;
+      continue;
+    }
+
+    // standalone audio/video embed -- [audio: URL] / [video: URL] on their
+    // own line. A dedicated shorthand (not a raw <audio>/<video> tag)
+    // because looksLikeHtml() above is whole-document: one real HTML tag
+    // anywhere in the body flips the ENTIRE post into the sanitise-only
+    // HTML path, silently breaking every other Markdown heading/bold/list
+    // in it. This stays inert to that detector.
+    const mediaOnly = line.trim().match(/^\[(audio|video)\s*:\s*([^\]]+)\]$/i);
+    if (mediaOnly) {
+      const kind = mediaOnly[1].toLowerCase();
+      out.push(`<figure class="article-media article-media--${kind}"><${kind} controls src="${attr(mediaOnly[2].trim())}"></${kind}></figure>`);
       i++;
       continue;
     }

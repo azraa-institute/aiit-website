@@ -20,7 +20,17 @@
 export type BlogPostStatus = 'draft' | 'scheduled' | 'published' | 'archived';
 
 /** An engineer-authored CSS modifier (resource-detail.css) -- never free-form/admin CSS. */
-export type BlogLayoutPreset = 'editorial' | 'tutorial' | 'news-brief' | 'spotlight' | 'data-deep-dive';
+export type BlogLayoutPreset =
+  | 'editorial'
+  | 'tutorial'
+  | 'news-brief'
+  | 'spotlight'
+  | 'data-deep-dive'
+  | 'listicle'
+  | 'case-study'
+  | 'visual-essay'
+  | 'magazine'
+  | 'video-feature';
 
 export interface AdminBlogPostSummary {
   id: string;
@@ -81,4 +91,14 @@ export interface BlogPublishError {
   code: 'validation' | 'auth' | 'conflict' | 'rate_limited' | 'network' | 'unknown';
   message: string;
   retryable: boolean;
+}
+
+/**
+ * Response to POST /admin/blog/media (the editor's media library panel --
+ * as many images/audio/video files as the admin wants, inserted into the
+ * body at the cursor; separate from the two dedicated cover-image fields).
+ */
+export interface BlogMediaUploadResult {
+  url: string;
+  kind: 'image' | 'audio' | 'video';
 }

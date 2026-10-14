@@ -4,6 +4,7 @@ import { useAuth } from './AuthContext';
 import { getPortalReturn } from './portalReturn';
 import { publicFileUrl } from './storage';
 import { useLearner } from '@/pages/portal/learnerData';
+import { useAffiliateMe } from '@/pages/affiliate/affiliateData';
 
 /**
  * Shared data behind the public header's account control (desktop dropdown
@@ -30,6 +31,13 @@ export function useAccountMenu() {
   const authenticated = status === 'authenticated' && !!session;
   const learnerState = useLearner({ enabled: authenticated });
   const profile = learnerState.status === 'ready' ? learnerState.learner.profile : null;
+  // Affiliate-ness isn't a Profile.role (see schema.prisma's comment on the
+  // Affiliate model) -- without this, every affiliate's "Return to
+  // Dashboard" silently sent them to the learner portal instead of their
+  // own, the same class of bug LoginPage.tsx's own affiliate check guards
+  // against.
+  const affiliateState = useAffiliateMe();
+  const isAffiliate = affiliateState.status === 'ready' && affiliateState.data.hasApplied;
 
   const name = profile?.name ?? session?.user.email ?? null;
   const photoUrl = publicFileUrl('avatars', profile?.avatarKey ?? null);
@@ -38,8 +46,8 @@ export function useAccountMenu() {
     authenticated,
     name,
     photoUrl,
-    returnTarget: returnTo === 'resources' ? '/portal/resources' : '/portal',
-    returnLabel: returnTo === 'resources' ? 'Return to Resources' : 'Return to Dashboard',
+    returnTarget: isAffiliate ? '/affiliate-portal' : returnTo === 'resources' ? '/portal/resources' : '/portal',
+    returnLabel: isAffiliate ? 'Return to Dashboard' : returnTo === 'resources' ? 'Return to Resources' : 'Return to Dashboard',
     signOut,
   };
 }

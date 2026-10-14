@@ -37,6 +37,67 @@ function TypeTag({ type }: { type: AffiliateType }) {
   return <span className={cn('adm-tag', TYPE_TAG_CLASS[type])}>{TYPE_LABEL[type]}</span>;
 }
 
+function formatCents(cents: number): string {
+  return `$${(cents / 100).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+}
+
+const PAYOUT_METHOD_LABEL: Record<string, string> = { paypal: 'PayPal', bank: 'Bank transfer' };
+
+function payoutDetailsSummary(details: AdminAffiliateDetail['payoutDetails']): string {
+  if (!details) return 'Not submitted yet';
+  const method = PAYOUT_METHOD_LABEL[details.method] ?? details.method;
+  if (details.method === 'paypal') return `${method} — ${details.paypalEmail ?? ''}`;
+  return `${method} — ${details.bankName ?? ''} (${details.bankAccountNumber ?? ''}), ${details.bankCountry ?? ''}`;
+}
+
+/** An admin recording a payout they already sent themselves (PayPal/bank transfer, outside this system) -- never moves money, see AdminAffiliatesService.recordPayout(). */
+function RecordPayoutForm({ affiliateId, onRecorded }: { affiliateId: string; onRecorded: () => void }) {
+  const [amount, setAmount] = useState('');
+  const [note, setNote] = useState('');
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string>();
+
+  async function onSubmit(e: FormEvent) {
+    e.preventDefault();
+    setBusy(true);
+    setError(undefined);
+    try {
+      await apiFetch(`/admin/affiliates/${affiliateId}/payouts`, {
+        method: 'POST',
+        body: JSON.stringify({ amountDollars: Number(amount), note: note.trim() || undefined }),
+      });
+      setAmount('');
+      setNote('');
+      onRecorded();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Could not record that payout.');
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <form className="adm-form" onSubmit={onSubmit}>
+      <div className="adm-grid">
+        <label className="adm-field">
+          <span>Amount paid (USD)</span>
+          <input type="number" min={1} step={1} required value={amount} onChange={(e) => setAmount(e.target.value)} />
+        </label>
+        <label className="adm-field adm-field--wide">
+          <span>Note (optional)</span>
+          <input maxLength={300} value={note} onChange={(e) => setNote(e.target.value)} placeholder="e.g. October payout via PayPal" />
+        </label>
+      </div>
+      {error ? <p className="adm-error" role="alert">{error}</p> : null}
+      <div className="adm-actions">
+        <button type="submit" className="adm-btn adm-btn--primary" disabled={busy || !amount}>
+          {busy ? 'Recording…' : 'Record payout'}
+        </button>
+      </div>
+    </form>
+  );
+}
+
 function Kpi({ label, value, active, onClick }: { label: string; value: number; active?: boolean; onClick?: () => void }) {
   const body = (
     <>
@@ -115,6 +176,18 @@ function Detail({ id, onChanged, onClose }: { id: string; onChanged: () => void;
               <dd>{state.data.registrationCount}</dd>
             </div>
             <div>
+              <dt>Estimated earned</dt>
+              <dd>
+                {state.data.earnings.estimatedCents == null
+                  ? 'No published rate for this type yet'
+                  : `${formatCents(state.data.earnings.estimatedCents)} (${formatCents(state.data.earnings.paidCents)} paid, ${formatCents(state.data.earnings.owedCents ?? 0)} owed)`}
+              </dd>
+            </div>
+            <div>
+              <dt>Payout details</dt>
+              <dd>{payoutDetailsSummary(state.data.payoutDetails)}</dd>
+            </div>
+            <div>
               <dt>Signature</dt>
               <dd>{state.data.signedName ? `${state.data.signedName}${state.data.signedAt ? ` — ${formatWhen(state.data.signedAt)}` : ''}` : 'Not on file (applied before e-signature)'}</dd>
             </div>
@@ -186,6 +259,26 @@ function Detail({ id, onChanged, onClose }: { id: string; onChanged: () => void;
             ))}
           </div>
           <p className="adm-muted">Approving or rejecting emails the applicant and notifies them in-app.</p>
+
+          <h3 className="adm-drawer__sub">Payouts</h3>
+          <p className="adm-muted">
+            No live payment integration -- pay the affiliate yourself via their payout details above, then record it
+            here.
+          </p>
+          <RecordPayoutForm affiliateId={state.data.id} onRecorded={state.reload} />
+          {state.data.payouts.length > 0 ? (
+            <ul className="adm-plain" role="list">
+              {state.data.payouts.map((p) => (
+                <li key={p.id}>
+                  {formatCents(p.amountCents)} — {formatWhen(p.paidAt)}
+                  {p.recordedByName ? ` · recorded by ${p.recordedByName}` : ''}
+                  {p.note ? ` · ${p.note}` : ''}
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p className="adm-muted">No payouts recorded yet.</p>
+          )}
         </>
       ) : null}
     </aside>

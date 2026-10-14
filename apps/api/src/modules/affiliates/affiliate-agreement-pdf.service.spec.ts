@@ -23,6 +23,14 @@ const BASE_AFFILIATE = {
   reviewedAt: null,
   reviewedBy: null,
   createdAt: new Date('2026-10-03T12:00:00.000Z'),
+  payoutMethod: null,
+  payoutPaypalEmail: null,
+  payoutBankCountry: null,
+  payoutBankAccountName: null,
+  payoutBankAccountNumber: null,
+  payoutBankName: null,
+  payoutBankCode: null,
+  payoutUpdatedAt: null,
 };
 
 // Several pages of body text across 4 embedded fonts take noticeably longer

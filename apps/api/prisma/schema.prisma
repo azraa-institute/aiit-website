@@ -119,6 +119,20 @@ enum AffiliateApplicationStatus {
   @@schema("public")
 }
 
+// Manual payouts only (no live money-movement integration) -- an admin
+// records each payment here after actually sending it via whatever rail
+// matches the affiliate's submitted payoutMethod. Kept as its own
+// append-only ledger, not a single "amount paid" field on Affiliate,
+// since a real affiliate relationship spans many payout cycles and the
+// dashboard needs "earned so far minus paid so far = owed" to stay
+// correct across all of them, not just the most recent one.
+enum AffiliatePayoutMethod {
+  paypal
+  bank
+
+  @@schema("public")
+}
+
 model Affiliate {
   id                String                     @id @default(uuid()) @db.Uuid
   userId            String                     @unique @map("user_id") @db.Uuid
@@ -164,7 +178,43 @@ model Affiliate {
   // toMe()) until both this AND applicationStatus = approved are true.
   activatedAt       DateTime?                  @map("activated_at") @db.Timestamptz(6)
 
+  // Where to actually send money -- self-reported by the affiliate (PUT
+  // /affiliates/me/payout), admin-visible only, never used to move money
+  // automatically. Free-text bank fields (not a rigid routing-number/IBAN
+  // schema) so one form works for however banking actually works in the
+  // affiliate's own country -- same convention as Profile.country/city.
+  payoutMethod          AffiliatePayoutMethod? @map("payout_method")
+  payoutPaypalEmail     String?                @map("payout_paypal_email")
+  payoutBankCountry     String?                @map("payout_bank_country")
+  payoutBankAccountName String?                @map("payout_bank_account_name")
+  payoutBankAccountNumber String?              @map("payout_bank_account_number")
+  payoutBankName        String?                @map("payout_bank_name")
+  // Generic on purpose: IFSC (India), sort code (UK), routing number (US),
+  // SWIFT/BIC for an international wire -- whichever the affiliate's own
+  // bank actually uses, labeled generically in the UI too.
+  payoutBankCode         String?               @map("payout_bank_code")
+  payoutUpdatedAt        DateTime?             @map("payout_updated_at") @db.Timestamptz(6)
+  payouts                AffiliatePayout[]
+
   @@map("affiliates")
+  @@schema("public")
+}
+
+model AffiliatePayout {
+  id          String    @id @default(uuid()) @db.Uuid
+  affiliateId String    @map("affiliate_id") @db.Uuid
+  affiliate   Affiliate @relation(fields: [affiliateId], references: [id], onDelete: Cascade)
+  amountCents Int       @map("amount_cents")
+  currency    String    @default("USD")
+  note        String?
+  paidAt      DateTime  @default(now()) @map("paid_at") @db.Timestamptz(6)
+  // Which admin recorded it -- plain uuid, no FK, same no-relation
+  // convention as CourseInstructor.instructorId/Affiliate.reviewedBy.
+  recordedBy  String    @map("recorded_by") @db.Uuid
+  createdAt   DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  @@index([affiliateId])
+  @@map("affiliate_payouts")
   @@schema("public")
 }
 

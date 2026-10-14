@@ -1,7 +1,7 @@
 import { randomBytes } from 'node:crypto';
 import { BadRequestException, ConflictException, Injectable, NotFoundException } from '@nestjs/common';
 import { Prisma, type Affiliate } from '@prisma/client';
-import type { AffiliateApplicationStatus, AffiliateMe, AffiliateType } from '@aiit/shared';
+import type { AffiliateApplicationStatus, AffiliateEarnings, AffiliateMe, AffiliatePayoutDetails, AffiliatePayoutInput, AffiliateType } from '@aiit/shared';
 import { PrismaService } from '../../common/prisma/prisma.service';
 import { AuditService } from '../../common/audit/audit.service';
 import { EmailService } from '../../common/email/email.service';
@@ -36,7 +36,51 @@ const EMPTY_ME: AffiliateMe = {
   activated: false,
   referralLink: null,
   registrationCount: null,
+  earnings: null,
+  payoutDetails: null,
 };
+
+// Published on the public site (apps/web/src/data/blueprint.ts's
+// AFFILIATE.rates) -- the backend is the authoritative source for the
+// actual dollar math, so these live here, not derived from that
+// frontend-only marketing copy. Keep the two in sync by hand if pricing
+// ever changes.
+const DIRECT_REFERRAL_RATE_CENTS = 700;
+const DIRECT_REFERRAL_MILESTONE = 500;
+const DIRECT_REFERRAL_MILESTONE_RATE_CENTS = 1000;
+const CREATOR_REFERRAL_RATE_CENTS = 500;
+
+/**
+ * Tiered for a direct student referrer (first 500 at $7, the rest at $10),
+ * flat for a creator-introduced referral ($5) -- matches the public site's
+ * "Two ways to earn" copy exactly. Returns null for 'affiliate_to_affiliate':
+ * no rate for that has ever been published, so this never invents one.
+ */
+export function estimateEarningsCents(type: AffiliateType, registrationCount: number): number | null {
+  if (type === 'creator') return registrationCount * CREATOR_REFERRAL_RATE_CENTS;
+  if (type === 'student') {
+    if (registrationCount <= DIRECT_REFERRAL_MILESTONE) return registrationCount * DIRECT_REFERRAL_RATE_CENTS;
+    const base = DIRECT_REFERRAL_MILESTONE * DIRECT_REFERRAL_RATE_CENTS;
+    const extra = (registrationCount - DIRECT_REFERRAL_MILESTONE) * DIRECT_REFERRAL_MILESTONE_RATE_CENTS;
+    return base + extra;
+  }
+  return null;
+}
+
+/** Shared by AffiliatesService.toMe() and AdminAffiliatesService.detail() so the affiliate's own dashboard and the admin's view of them always agree on the same number. */
+export async function computeEarnings(prisma: PrismaService, affiliate: Affiliate, registrationCount: number): Promise<AffiliateEarnings> {
+  const [estimatedCents, paid] = await Promise.all([
+    Promise.resolve(estimateEarningsCents(affiliate.type, registrationCount)),
+    prisma.affiliatePayout.aggregate({ where: { affiliateId: affiliate.id }, _sum: { amountCents: true } }),
+  ]);
+  const paidCents = paid._sum.amountCents ?? 0;
+  return {
+    estimatedCents,
+    paidCents,
+    owedCents: estimatedCents === null ? null : estimatedCents - paidCents,
+    currency: 'USD',
+  };
+}
 
 /**
  * Self-service affiliate application + the applicant's own status view.
@@ -315,6 +359,9 @@ export class AffiliatesService {
   private async toMe(affiliate: Affiliate): Promise<AffiliateMe> {
     const approved = affiliate.applicationStatus === 'approved';
     const activated = Boolean(affiliate.activatedAt);
+    const registrationCount = approved
+      ? await this.prisma.profile.count({ where: { referredByAffiliateId: affiliate.id } })
+      : null;
     return {
       hasApplied: true,
       type: affiliate.type,
@@ -322,11 +369,47 @@ export class AffiliatesService {
       rejectionReason: affiliate.rejectionReason,
       activated,
       referralLink: approved && activated ? `${webOrigin()}/r/${affiliate.referralSlug}` : null,
-      registrationCount: approved
-        ? await this.prisma.profile.count({ where: { referredByAffiliateId: affiliate.id } })
-        : null,
+      registrationCount,
+      earnings: registrationCount === null ? null : await computeEarnings(this.prisma, affiliate, registrationCount),
+      payoutDetails: payoutDetailsFrom(affiliate),
     };
   }
+
+
+  /** Self-service: an affiliate submitting/updating where to send their payout -- admin-visible only, never used to move money automatically (see Affiliate.payoutMethod's schema comment). */
+  async updatePayoutDetails(userId: string, input: AffiliatePayoutInput): Promise<AffiliateMe> {
+    const affiliate = await this.prisma.affiliate.findUnique({ where: { userId } });
+    if (!affiliate) throw new NotFoundException('No affiliate application found for your account.');
+    const updated = await this.prisma.affiliate.update({
+      where: { userId },
+      data: {
+        payoutMethod: input.method,
+        payoutPaypalEmail: input.method === 'paypal' ? (input.paypalEmail?.trim() ?? null) : null,
+        payoutBankCountry: input.method === 'bank' ? (input.bankCountry?.trim() ?? null) : null,
+        payoutBankAccountName: input.method === 'bank' ? (input.bankAccountName?.trim() ?? null) : null,
+        payoutBankAccountNumber: input.method === 'bank' ? (input.bankAccountNumber?.trim() ?? null) : null,
+        payoutBankName: input.method === 'bank' ? (input.bankName?.trim() ?? null) : null,
+        payoutBankCode: input.method === 'bank' ? (input.bankCode?.trim() ?? null) : null,
+        payoutUpdatedAt: new Date(),
+      },
+    });
+    await this.audit.record(userId, 'affiliate.payout_details_updated', 'affiliate', affiliate.id, { method: input.method });
+    return this.toMe(updated);
+  }
+}
+
+export function payoutDetailsFrom(affiliate: Affiliate): AffiliatePayoutDetails | null {
+  if (!affiliate.payoutMethod || !affiliate.payoutUpdatedAt) return null;
+  return {
+    method: affiliate.payoutMethod,
+    paypalEmail: affiliate.payoutPaypalEmail ?? undefined,
+    bankCountry: affiliate.payoutBankCountry ?? undefined,
+    bankAccountName: affiliate.payoutBankAccountName ?? undefined,
+    bankAccountNumber: affiliate.payoutBankAccountNumber ?? undefined,
+    bankName: affiliate.payoutBankName ?? undefined,
+    bankCode: affiliate.payoutBankCode ?? undefined,
+    updatedAt: affiliate.payoutUpdatedAt.toISOString(),
+  };
 }
 
 function generateReferralSlug(): string {

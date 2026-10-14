@@ -1,4 +1,4 @@
-import { Body, Controller, Get, HttpCode, HttpStatus, Post, Req, Res, StreamableFile, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, HttpCode, HttpStatus, Post, Put, Req, Res, StreamableFile, UseGuards } from '@nestjs/common';
 import { Throttle } from '@nestjs/throttler';
 import type { Request, Response } from 'express';
 import type { AffiliateMe } from '@aiit/shared';
@@ -9,6 +9,7 @@ import { AffiliateAgreementPdfService } from './affiliate-agreement-pdf.service'
 import { ApplyAffiliateDto } from './dto/apply-affiliate.dto';
 import { ApplyNewAffiliateDto } from './dto/apply-new-affiliate.dto';
 import { ActivateAffiliateDto } from './dto/activate-affiliate.dto';
+import { UpdatePayoutDto } from './dto/update-payout.dto';
 
 /**
  * Not role-gated -- see AffiliatesService's doc comment for why. JwtGuard
@@ -51,6 +52,13 @@ export class AffiliatesController {
   @UseGuards(JwtGuard)
   me(@CurrentUser() user: AuthenticatedUser): Promise<AffiliateMe> {
     return this.affiliates.me(user.userId);
+  }
+
+  /** Self-service: where to send this affiliate's payout -- admin-visible only, see AffiliatesService.updatePayoutDetails(). */
+  @Put('me/payout')
+  @UseGuards(JwtGuard)
+  updatePayout(@CurrentUser() user: AuthenticatedUser, @Body() dto: UpdatePayoutDto): Promise<AffiliateMe> {
+    return this.affiliates.updatePayoutDetails(user.userId, dto);
   }
 
   /** Unlocks the referral link -- see AffiliatesService.activate(). */

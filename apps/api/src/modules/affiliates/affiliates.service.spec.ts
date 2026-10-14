@@ -11,6 +11,7 @@ describe('AffiliatesService', () => {
   let service: AffiliatesService;
   let prisma: {
     affiliate: { create: jest.Mock; findUnique: jest.Mock; update: jest.Mock };
+    affiliatePayout: { aggregate: jest.Mock };
     profile: { count: jest.Mock; findMany: jest.Mock; upsert: jest.Mock };
     $queryRaw: jest.Mock;
   };
@@ -21,6 +22,7 @@ describe('AffiliatesService', () => {
   beforeEach(() => {
     prisma = {
       affiliate: { create: jest.fn(), findUnique: jest.fn(), update: jest.fn() },
+      affiliatePayout: { aggregate: jest.fn().mockResolvedValue({ _sum: { amountCents: null } }) },
       profile: { count: jest.fn(), findMany: jest.fn(), upsert: jest.fn() },
       $queryRaw: jest.fn().mockResolvedValue([]),
     };
@@ -85,6 +87,8 @@ describe('AffiliatesService', () => {
       activated: false,
       referralLink: null,
       registrationCount: null,
+      earnings: null,
+      payoutDetails: null,
     });
   });
 
@@ -141,6 +145,87 @@ describe('AffiliatesService', () => {
     expect(result.referralLink).toBe('https://aiit.network/r/abc123');
     expect(result.registrationCount).toBe(7);
     expect(prisma.profile.count).toHaveBeenCalledWith({ where: { referredByAffiliateId: AFFILIATE_ID } });
+    // affiliate_to_affiliate has no published rate -- never invent one.
+    expect(result.earnings).toEqual({ estimatedCents: null, paidCents: 0, owedCents: null, currency: 'USD' });
+  });
+
+  describe('earnings', () => {
+    it('is flat $5/referral for a creator-introduced affiliate', async () => {
+      prisma.affiliate.findUnique.mockResolvedValue({
+        id: AFFILIATE_ID,
+        type: 'creator',
+        applicationStatus: 'approved',
+        referralSlug: 'abc123',
+        activatedAt: new Date(),
+        rejectionReason: null,
+      });
+      prisma.profile.count.mockResolvedValue(10);
+      prisma.affiliatePayout.aggregate.mockResolvedValue({ _sum: { amountCents: 2000 } });
+
+      const result = await service.me(USER);
+
+      expect(result.earnings).toEqual({ estimatedCents: 5000, paidCents: 2000, owedCents: 3000, currency: 'USD' });
+    });
+
+    it('is tiered for a direct student referrer -- $7 up to 500, $10 past it', async () => {
+      prisma.affiliate.findUnique.mockResolvedValue({
+        id: AFFILIATE_ID,
+        type: 'student',
+        applicationStatus: 'approved',
+        referralSlug: 'abc123',
+        activatedAt: new Date(),
+        rejectionReason: null,
+      });
+      prisma.profile.count.mockResolvedValue(510);
+      prisma.affiliatePayout.aggregate.mockResolvedValue({ _sum: { amountCents: null } });
+
+      const result = await service.me(USER);
+
+      // 500 * $7 + 10 * $10 = $3600
+      expect(result.earnings).toEqual({ estimatedCents: 360_000, paidCents: 0, owedCents: 360_000, currency: 'USD' });
+    });
+  });
+
+  describe('updatePayoutDetails', () => {
+    it('saves PayPal details and clears bank fields', async () => {
+      prisma.affiliate.findUnique.mockResolvedValue({ id: AFFILIATE_ID, userId: USER });
+      prisma.affiliate.update.mockResolvedValue({
+        id: AFFILIATE_ID,
+        type: 'student',
+        applicationStatus: 'pending',
+        referralSlug: 'abc123',
+        activatedAt: null,
+        rejectionReason: null,
+        payoutMethod: 'paypal',
+        payoutPaypalEmail: 'ada@example.com',
+        payoutUpdatedAt: new Date('2026-10-14T12:00:00.000Z'),
+      });
+
+      const result = await service.updatePayoutDetails(USER, { method: 'paypal', paypalEmail: 'ada@example.com' });
+
+      expect(prisma.affiliate.update).toHaveBeenCalledWith({
+        where: { userId: USER },
+        data: expect.objectContaining({
+          payoutMethod: 'paypal',
+          payoutPaypalEmail: 'ada@example.com',
+          payoutBankAccountName: null,
+          payoutBankAccountNumber: null,
+          payoutBankName: null,
+          payoutBankCode: null,
+          payoutBankCountry: null,
+        }),
+      });
+      expect(result.payoutDetails).toEqual(
+        expect.objectContaining({ method: 'paypal', paypalEmail: 'ada@example.com' }),
+      );
+    });
+
+    it('404s for an account with no affiliate application', async () => {
+      prisma.affiliate.findUnique.mockResolvedValue(null);
+      await expect(service.updatePayoutDetails(USER, { method: 'paypal', paypalEmail: 'ada@example.com' })).rejects.toBeInstanceOf(
+        NotFoundException,
+      );
+    });
   });
 
   describe('applyNew', () => {

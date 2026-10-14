@@ -9,6 +9,7 @@ describe('AdminAffiliatesService', () => {
   let service: AdminAffiliatesService;
   let prisma: {
     affiliate: { findUnique: jest.Mock; update: jest.Mock; groupBy: jest.Mock };
+    affiliatePayout: { findMany: jest.Mock; aggregate: jest.Mock; create: jest.Mock };
     profile: { findMany: jest.Mock; count: jest.Mock; groupBy: jest.Mock };
     notification: { create: jest.Mock };
     $queryRaw: jest.Mock;
@@ -32,6 +33,11 @@ describe('AdminAffiliatesService', () => {
   beforeEach(() => {
     prisma = {
       affiliate: { findUnique: jest.fn(), update: jest.fn(), groupBy: jest.fn().mockResolvedValue([]) },
+      affiliatePayout: {
+        findMany: jest.fn().mockResolvedValue([]),
+        aggregate: jest.fn().mockResolvedValue({ _sum: { amountCents: null } }),
+        create: jest.fn(),
+      },
       profile: { findMany: jest.fn().mockResolvedValue([{ id: APPLICANT, name: 'Ada' }]), count: jest.fn().mockResolvedValue(0), groupBy: jest.fn().mockResolvedValue([]) },
       notification: { create: jest.fn() },
       $queryRaw: jest.fn().mockResolvedValue([{ id: APPLICANT, email: 'ada@example.com' }]),
@@ -108,5 +114,24 @@ describe('AdminAffiliatesService', () => {
       totalRegistrations: 17,
     });
     expect(prisma.profile.count).toHaveBeenCalledWith({ where: { referredByAffiliateId: { not: null } } });
+  });
+
+  describe('recordPayout', () => {
+    it('creates a ledger entry and returns the refreshed detail', async () => {
+      prisma.affiliate.findUnique.mockResolvedValue(row('approved'));
+
+      await service.recordPayout(ADMIN, AFFILIATE, 7000, 'October payout');
+
+      expect(prisma.affiliatePayout.create).toHaveBeenCalledWith({
+        data: { affiliateId: AFFILIATE, amountCents: 7000, note: 'October payout', recordedBy: ADMIN },
+      });
+      expect(audit.record).toHaveBeenCalledWith(ADMIN, 'affiliate.payout_recorded', 'affiliate', AFFILIATE, { amountCents: 7000 });
+    });
+
+    it('rejects a zero or negative amount', async () => {
+      prisma.affiliate.findUnique.mockResolvedValue(row('approved'));
+      await expect(service.recordPayout(ADMIN, AFFILIATE, 0, undefined)).rejects.toBeInstanceOf(BadRequestException);
+      expect(prisma.affiliatePayout.create).not.toHaveBeenCalled();
+    });
   });
 });

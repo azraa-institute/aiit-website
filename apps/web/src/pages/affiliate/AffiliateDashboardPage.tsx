@@ -1,10 +1,14 @@
 import { useState } from 'react';
 import type { FormEvent } from 'react';
-import type { AffiliateApplicationStatus, AffiliateMe, AffiliateType } from '@aiit/shared';
+import type { AffiliateApplicationStatus, AffiliateMe, AffiliatePayoutMethod, AffiliateType } from '@aiit/shared';
 import { cn } from '@/lib/cn';
 import { apiFetch, apiFetchBlob, downloadBlob, ApiError } from '@/lib/api';
 import { useAffiliateMe } from './affiliateData';
 import './affiliate-portal.css';
+
+function formatCents(cents: number): string {
+  return `$${(cents / 100).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+}
 
 const TYPE_LABEL: Record<AffiliateType, string> = {
   creator: 'Creator',
@@ -128,6 +132,108 @@ function ActivationCard({ onActivated }: { onActivated: (me: AffiliateMe) => voi
   );
 }
 
+/**
+ * Where to actually send money -- self-reported, admin-visible only. No
+ * live payout integration exists (see AffiliatesService.updatePayoutDetails's
+ * doc comment): an admin pays manually via whichever method this points at,
+ * then records it in the admin portal, which is what moves registrationCount
+ * x rate - payout history. Free-text bank fields, not a rigid routing-
+ * number/IBAN schema, so one form works regardless of the affiliate's own
+ * country's banking conventions.
+ */
+function PayoutDetailsCard({ details, onSaved }: { details: AffiliateMe['payoutDetails']; onSaved: (me: AffiliateMe) => void }) {
+  const [method, setMethod] = useState<AffiliatePayoutMethod>(details?.method ?? 'paypal');
+  const [paypalEmail, setPaypalEmail] = useState(details?.paypalEmail ?? '');
+  const [bankCountry, setBankCountry] = useState(details?.bankCountry ?? '');
+  const [bankAccountName, setBankAccountName] = useState(details?.bankAccountName ?? '');
+  const [bankAccountNumber, setBankAccountNumber] = useState(details?.bankAccountNumber ?? '');
+  const [bankName, setBankName] = useState(details?.bankName ?? '');
+  const [bankCode, setBankCode] = useState(details?.bankCode ?? '');
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string>();
+  const [saved, setSaved] = useState(false);
+
+  async function onSubmit(e: FormEvent) {
+    e.preventDefault();
+    setSaving(true);
+    setError(undefined);
+    setSaved(false);
+    try {
+      const me = await apiFetch<AffiliateMe>('/affiliates/me/payout', {
+        method: 'PUT',
+        body: JSON.stringify(
+          method === 'paypal'
+            ? { method, paypalEmail: paypalEmail.trim() }
+            : { method, bankCountry: bankCountry.trim(), bankAccountName: bankAccountName.trim(), bankAccountNumber: bankAccountNumber.trim(), bankName: bankName.trim(), bankCode: bankCode.trim() },
+        ),
+      });
+      onSaved(me);
+      setSaved(true);
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : 'Could not save your payout details.');
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  return (
+    <section className="aff-card">
+      <h2>Payout details</h2>
+      <p>
+        Where should AIIT send your earnings? This is reviewed by the AIIT team, who pay out on the agreed schedule --
+        it doesn&apos;t connect to a live payment account automatically.
+      </p>
+      <form className="adm-form" onSubmit={onSubmit}>
+        <div className="adm-grid">
+          <label className="adm-field">
+            <span>Payout method</span>
+            <select value={method} onChange={(e) => setMethod(e.target.value as AffiliatePayoutMethod)}>
+              <option value="paypal">PayPal</option>
+              <option value="bank">Bank transfer</option>
+            </select>
+          </label>
+          {method === 'paypal' ? (
+            <label className="adm-field adm-field--wide">
+              <span>PayPal email</span>
+              <input type="email" required value={paypalEmail} onChange={(e) => setPaypalEmail(e.target.value)} />
+            </label>
+          ) : (
+            <>
+              <label className="adm-field">
+                <span>Country your bank is in</span>
+                <input required value={bankCountry} onChange={(e) => setBankCountry(e.target.value)} />
+              </label>
+              <label className="adm-field">
+                <span>Account holder name</span>
+                <input required value={bankAccountName} onChange={(e) => setBankAccountName(e.target.value)} />
+              </label>
+              <label className="adm-field">
+                <span>Bank name</span>
+                <input required value={bankName} onChange={(e) => setBankName(e.target.value)} />
+              </label>
+              <label className="adm-field">
+                <span>Account number</span>
+                <input required value={bankAccountNumber} onChange={(e) => setBankAccountNumber(e.target.value)} />
+              </label>
+              <label className="adm-field adm-field--wide">
+                <span>IFSC / sort code / routing number / SWIFT (whichever your bank uses)</span>
+                <input value={bankCode} onChange={(e) => setBankCode(e.target.value)} />
+              </label>
+            </>
+          )}
+        </div>
+        {error ? <p className="adm-error" role="alert">{error}</p> : null}
+        {saved ? <p className="adm-notice" role="status">Saved.</p> : null}
+        <div className="adm-actions">
+          <button type="submit" className="adm-btn adm-btn--primary" disabled={saving}>
+            {saving ? 'Saving…' : 'Save payout details'}
+          </button>
+        </div>
+      </form>
+    </section>
+  );
+}
+
 export default function AffiliateDashboardPage() {
   const state = useAffiliateMe();
   const [copied, setCopied] = useState(false);
@@ -212,10 +318,34 @@ export default function AffiliateDashboardPage() {
 
       {approved && data.activated && data.referralLink ? (
         <>
-          <section className="aff-stat">
-            <span className="aff-stat__value">{(data.registrationCount ?? 0).toLocaleString()}</span>
-            <span className="aff-stat__label">registered via your link</span>
-          </section>
+          <div className="aff-stats-row">
+            <section className="aff-stat">
+              <span className="aff-stat__value">{(data.registrationCount ?? 0).toLocaleString()}</span>
+              <span className="aff-stat__label">registered via your link</span>
+            </section>
+            {data.earnings?.estimatedCents != null ? (
+              <>
+                <section className="aff-stat">
+                  <span className="aff-stat__value">{formatCents(data.earnings.estimatedCents)}</span>
+                  <span className="aff-stat__label">estimated earned</span>
+                </section>
+                <section className="aff-stat">
+                  <span className="aff-stat__value">{formatCents(data.earnings.paidCents)}</span>
+                  <span className="aff-stat__label">paid out so far</span>
+                </section>
+                <section className="aff-stat">
+                  <span className="aff-stat__value">{formatCents(data.earnings.owedCents ?? 0)}</span>
+                  <span className="aff-stat__label">still owed</span>
+                </section>
+              </>
+            ) : null}
+          </div>
+          {data.earnings?.estimatedCents != null ? (
+            <p className="aff-card__footnote">
+              Estimated from AIIT&apos;s published rates and your verified registrations -- the AIIT team confirms the
+              exact figure before paying out.
+            </p>
+          ) : null}
 
           <section className="aff-card">
             <h2>Your referral link</h2>
@@ -230,6 +360,8 @@ export default function AffiliateDashboardPage() {
           </section>
         </>
       ) : null}
+
+      {approved ? <PayoutDetailsCard details={data.payoutDetails} onSaved={() => state.refetch()} /> : null}
 
       <section className="aff-card">
         <h2>Your signed agreement</h2>

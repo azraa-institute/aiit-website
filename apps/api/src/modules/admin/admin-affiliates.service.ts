@@ -1,11 +1,20 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { Prisma, type Affiliate } from '@prisma/client';
-import type { AdminAffiliateCredentials, AdminAffiliateDetail, AdminAffiliateStats, AdminAffiliateSummary, AffiliateApplicationStatus, AffiliateType, Paginated } from '@aiit/shared';
+import type {
+  AdminAffiliateCredentials,
+  AdminAffiliateDetail,
+  AdminAffiliateStats,
+  AdminAffiliateSummary,
+  AffiliateApplicationStatus,
+  AffiliatePayoutRecord,
+  AffiliateType,
+  Paginated,
+} from '@aiit/shared';
 import { PrismaService } from '../../common/prisma/prisma.service';
 import { AuditService } from '../../common/audit/audit.service';
 import { EmailService } from '../../common/email/email.service';
 import { brandedEmailHtml } from '../../common/email/branded-email';
-import { AffiliatesService, type AdminCreateAffiliateInput } from '../affiliates/affiliates.service';
+import { AffiliatesService, computeEarnings, payoutDetailsFrom, type AdminCreateAffiliateInput } from '../affiliates/affiliates.service';
 
 const PAGE_SIZE = 25;
 
@@ -65,11 +74,18 @@ export class AdminAffiliatesService {
     const row = await this.prisma.affiliate.findUnique({ where: { id } });
     if (!row) throw new NotFoundException('Affiliate application not found.');
 
-    const [names, count, reviewerName] = await Promise.all([
+    const [names, count, reviewerName, payoutRows] = await Promise.all([
       this.namesAndEmails([row.userId]),
       this.prisma.profile.count({ where: { referredByAffiliateId: row.id } }),
       row.reviewedBy ? this.namesAndEmails([row.reviewedBy]) : Promise.resolve(new Map()),
+      this.prisma.affiliatePayout.findMany({ where: { affiliateId: row.id }, orderBy: { paidAt: 'desc' } }),
     ]);
+    // Unlike the affiliate's own dashboard (which hides stats until
+    // approved, see AffiliatesService.toMe()), the admin view always shows
+    // the real count/earnings -- screening isn't gated on approval status.
+    const earnings = await computeEarnings(this.prisma, row, count);
+    const payoutRecorders = await this.namesAndEmails(payoutRows.map((p) => p.recordedBy));
+
     return {
       ...this.toSummary(row, names, count),
       phone: row.phone,
@@ -84,6 +100,33 @@ export class AdminAffiliatesService {
       rejectionReason: row.rejectionReason,
       reviewedAt: row.reviewedAt?.toISOString() ?? null,
       reviewedByName: row.reviewedBy ? (reviewerName.get(row.reviewedBy)?.name ?? null) : null,
+      earnings,
+      payoutDetails: payoutDetailsFrom(row),
+      payouts: payoutRows.map((p) => this.toPayoutRecord(p, payoutRecorders)),
+    };
+  }
+
+  /** An admin recording a payout they already sent themselves (PayPal/bank transfer, outside this system) -- never moves money. */
+  async recordPayout(adminId: string, affiliateId: string, amountCents: number, note: string | undefined): Promise<AdminAffiliateDetail> {
+    const row = await this.prisma.affiliate.findUnique({ where: { id: affiliateId } });
+    if (!row) throw new NotFoundException('Affiliate application not found.');
+    if (amountCents <= 0) throw new BadRequestException('Enter a payout amount greater than zero.');
+
+    await this.prisma.affiliatePayout.create({
+      data: { affiliateId, amountCents, note: note?.trim() || null, recordedBy: adminId },
+    });
+    await this.audit.record(adminId, 'affiliate.payout_recorded', 'affiliate', affiliateId, { amountCents });
+    return this.detail(affiliateId);
+  }
+
+  private toPayoutRecord(p: Prisma.AffiliatePayoutGetPayload<Record<string, never>>, names: Map<string, { name: string | null; email: string | null }>): AffiliatePayoutRecord {
+    return {
+      id: p.id,
+      amountCents: p.amountCents,
+      currency: p.currency,
+      note: p.note,
+      paidAt: p.paidAt.toISOString(),
+      recordedByName: names.get(p.recordedBy)?.name ?? null,
     };
   }
 

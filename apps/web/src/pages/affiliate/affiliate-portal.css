@@ -160,6 +160,11 @@
   color: var(--ink-muted);
   line-height: 1.6;
 }
+.aff-card__footnote {
+  margin: 0;
+  font-size: 0.82rem;
+  color: var(--ink-faint);
+}
 .aff-card--rejected,
 .aff-card--status {
   padding-left: calc(var(--space-6) + 3px);
@@ -199,6 +204,21 @@
 .aff-stat__label {
   font-size: 0.9rem;
   color: var(--ink-muted);
+}
+
+.aff-stats-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-4);
+}
+.aff-stats-row .aff-stat {
+  flex: 1 1 180px;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--space-1);
+}
+.aff-stats-row .aff-stat__value {
+  font-size: 1.9rem;
 }
 
 /* ---------- Referral link reveal box ---------- */

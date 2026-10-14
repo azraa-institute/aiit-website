@@ -2,7 +2,7 @@ import { Body, Controller, Get, Header, Param, ParseUUIDPipe, Patch, Post, Query
 import type { Request } from 'express';
 import { Throttle } from '@nestjs/throttler';
 import { Transform } from 'class-transformer';
-import { IsEmail, IsIn, IsInt, IsOptional, IsString, MaxLength, Min, MinLength, ValidateIf } from 'class-validator';
+import { IsEmail, IsIn, IsInt, IsOptional, IsPositive, IsString, MaxLength, Min, MinLength, ValidateIf } from 'class-validator';
 import type { AdminAffiliateCredentials, AdminAffiliateDetail, AdminAffiliateStats, AdminAffiliateSummary, AffiliateApplicationStatus, AffiliateType, Paginated } from '@aiit/shared';
 import { JwtGuard, type AuthenticatedUser } from '../../common/guards/jwt.guard';
 import { RolesGuard } from '../../common/guards/roles.guard';
@@ -92,6 +92,19 @@ class SetAffiliateStatusDto {
   rejectionReason?: string;
 }
 
+/** An admin recording a payout they already sent themselves -- see AdminAffiliatesService.recordPayout()'s doc comment; this never moves money. */
+class RecordPayoutDto {
+  /** Whole-dollar amount, not cents -- the UI collects a plain dollar figure; cents live only in the DB/API response. */
+  @IsInt()
+  @IsPositive()
+  amountDollars!: number;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(300)
+  note?: string;
+}
+
 @Controller('admin/affiliates')
 @UseGuards(JwtGuard, RolesGuard)
 @Roles('admin')
@@ -135,5 +148,14 @@ export class AdminAffiliatesController {
     @Body() dto: SetAffiliateStatusDto,
   ): Promise<AdminAffiliateDetail> {
     return this.affiliates.setStatus(user.userId, id, dto.status, dto.rejectionReason);
+  }
+
+  @Post(':id/payouts')
+  recordPayout(
+    @CurrentUser() user: AuthenticatedUser,
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() dto: RecordPayoutDto,
+  ): Promise<AdminAffiliateDetail> {
+    return this.affiliates.recordPayout(user.userId, id, dto.amountDollars * 100, dto.note);
   }
 }

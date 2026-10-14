@@ -106,7 +106,7 @@ export default function WebinarPage() {
       </Section>
 
       {/* C — Full-width, independent video */}
-      <Section tone="paper" size="default" className="webinar-page__video-section">
+      <Section tone="paper" size="tight" className="webinar-page__video-section">
         <div className="container container--wide">
           <div className="webinar-page__video-frame" data-reveal>
             {w.videoUrl ? (

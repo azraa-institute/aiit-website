@@ -1,6 +1,12 @@
 /* Section B — compact meta row under the hero intro */
+/* This is a thin one-line info strip, not a full section boundary -- the
+   base .section--tight padding-block (up to 5rem top AND bottom) stacked
+   against the banner's own bottom padding on one side and the video
+   section's own top padding on the other, producing a huge dead gap on
+   both edges. Overridden to something much closer to the surrounding
+   content instead. */
 .webinar-page__meta-section {
-  padding-top: 0;
+  padding-block: 0 var(--space-6);
 }
 .webinar-page__meta-row {
   display: flex;
@@ -32,10 +38,10 @@
   display: none;
 }
 
-/* Section C — the video, a cinematic centerpiece independent of the flyer */
-.webinar-page__video-section {
-  padding-top: clamp(1.5rem, 1rem + 2vw, 2.5rem);
-}
+/* Section C — the video, a cinematic centerpiece independent of the flyer.
+   No extra top padding here -- `size="tight"` on the Section itself
+   already supplies it; adding more on top of that was the other half of
+   the oversized gap below the meta row. */
 .webinar-page__video-frame {
   border-radius: var(--radius-lg);
   background: var(--ink);

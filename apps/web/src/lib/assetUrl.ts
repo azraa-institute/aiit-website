@@ -12,7 +12,7 @@
  * Bump `ASSET_VERSION` whenever a file in `public/assets/` is replaced under
  * its existing name.
  */
-export const ASSET_VERSION = '4';
+export const ASSET_VERSION = '5';
 
 /** Append the asset version to a local `/assets/...` URL. External URLs and
  *  data/blob URIs are returned unchanged. */

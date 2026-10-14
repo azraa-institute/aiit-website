@@ -9,11 +9,11 @@ export const WEBINARS: Webinar[] = [
   {
     id: 'web-modern-it',
     slug: 'mastering-modern-information-technology',
-    title: 'Artificial Intelligence, Cyber Security & Blockchain, Explained in One Session',
+    title: 'Three Technologies. One Session. A Smarter Start in Tech.',
     heroHeadline: 'Mastering Modern Information Technology',
-    kicker: 'Free live webinar · Seats limited',
+    kicker: 'AIIT Academy presents · Free live webinar',
     summary:
-      'A free introductory webinar from AIIT Academy for students, professionals and aspiring tech learners across Africa, Asia and beyond. Understand three in-demand tech careers and how to start learning them, live, with Q&A.',
+      'Explore Artificial Intelligence, Cyber Security and Blockchain in one practical, beginner-friendly session. Discover what each field offers, where the opportunities are, and how to take your first step.',
     description:
       'A practical, beginner-friendly overview of where the opportunities are in Artificial Intelligence, Cyber Security and Blockchain, and how AIIT helps you get there. No registration fee · Certificate-track guidance included · Runs 60–90 minutes.',
     startsAt: null,

@@ -5,7 +5,8 @@ import { PageBanner } from '@/components/layout/PageBanner';
 import { Seo, organizationLd } from '@/lib/Seo';
 import { useScrollReveal } from '@/lib/useScrollReveal';
 import { FEATURED_WEBINAR, LIVE_EVENTS, WEBINAR_WHY_ATTEND } from '@/data/webinars';
-import { Section } from '@/components/primitives/Section';
+import type { Webinar } from '@/data/types';
+import { Section, SectionHeading } from '@/components/primitives/Section';
 import { Plate } from '@/components/primitives/Plate';
 import { Countdown } from '@/components/common/Countdown';
 import { Button } from '@/components/primitives/Button';
@@ -23,6 +24,19 @@ const KIND_LABEL: Record<string, string> = {
   'info-session': 'Info session',
   event: 'Event',
 };
+
+/** The compact facts strip under the hero intro -- Section D/H's fuller event-details list pulls from the exact same `w` fields, never a second hardcoded copy. */
+function MetaRow({ w }: { w: Webinar }) {
+  return (
+    <ul className="webinar-page__meta-row" role="list">
+      <li>Free live webinar</li>
+      <li>{w.durationLabel}</li>
+      <li>{w.language}</li>
+      <li>Online · {w.platform}</li>
+      <li>{w.scheduleNote}</li>
+    </ul>
+  );
+}
 
 export default function WebinarPage() {
   const w = FEATURED_WEBINAR;
@@ -82,27 +96,128 @@ export default function WebinarPage() {
           ...(w.startsAt ? { startDate: w.startsAt } : {}),
         }}
       />
-      <PageBanner eyebrow="Free live webinar · Seats limited" title={w.title} intro={w.summary} titleWidth="wide" />
 
-      <Section tone="paper" size="default">
+      {/* B — Title and introduction */}
+      <PageBanner eyebrow={w.kicker} title={w.title} intro={w.summary} titleWidth="wide" />
+      <Section tone="paper" size="tight" className="webinar-page__meta-section">
         <div className="container container--wide">
-          <div className="webinar-page__feature" data-reveal>
-            <div className="webinar-page__feature-body">
-              <span className="tag tag--live">Free live webinar</span>
-              <p className="webinar-page__desc">{w.description}</p>
+          <MetaRow w={w} />
+        </div>
+      </Section>
+
+      {/* C — Full-width, independent video */}
+      <Section tone="paper" size="default" className="webinar-page__video-section">
+        <div className="container container--wide">
+          <div className="webinar-page__video-frame" data-reveal>
+            {w.videoUrl ? (
+              <video
+                className="webinar-page__video"
+                src={w.videoUrl}
+                poster={assetUrl(w.image)}
+                controls
+                preload="metadata"
+                playsInline
+                aria-label={`${w.title} — webinar introduction video`}
+              />
+            ) : (
+              <div className="webinar-page__video-placeholder" role="img" aria-label="Webinar introduction video coming soon">
+                <span>Webinar introduction coming soon.</span>
+              </div>
+            )}
+          </div>
+          <p className="webinar-page__video-caption">
+            Get a preview of the fields, skills and opportunities covered in this live session.
+          </p>
+        </div>
+      </Section>
+
+      {/* D — Primary registration CTA */}
+      <Section tone="paper" size="tight" hairline className="webinar-page__cta-section">
+        <div className="container container--wide">
+          <div className="webinar-page__cta-primary" data-reveal>
+            <Button as="link" to="/webinar#register" variant="primary" size="lg" arrow>
+              Reserve My Free Seat
+            </Button>
+            <p className="webinar-page__cta-reassurance">Free to attend · Online · Beginner-friendly</p>
+          </div>
+        </div>
+      </Section>
+
+      {/* E — The three technology fields */}
+      <Section tone="paper" size="default" hairline>
+        <div className="container container--wide">
+          <SectionHeading
+            align="start"
+            title="Three high-demand technology fields. One live session."
+            intro="Understand the fundamentals, explore real-world applications, and discover where each field can take you."
+          />
+          <div className="webinar-page__agenda-grid">
+            {w.agenda.map((a, i) => (
+              <div key={a.title} data-reveal>
+                <span className="index-num">{String(i + 1).padStart(2, '0')}</span>
+                <h3>{a.title}</h3>
+                <ul>
+                  {a.points.map((p) => (
+                    <li key={p}>{p}</li>
+                  ))}
+                </ul>
+              </div>
+            ))}
+          </div>
+          <Button as="link" to="/webinar#register" variant="secondary" arrow>
+            Register for this session
+          </Button>
+        </div>
+      </Section>
+
+      {/* F — Who should attend */}
+      <Section tone="ivory" size="default" hairline>
+        <div className="container container--wide">
+          <SectionHeading align="start" title="Who should attend" />
+          <ul className="webinar-page__plain-list" role="list">
+            {w.audience.map((a) => (
+              <li key={a} data-reveal>
+                {a}
+              </li>
+            ))}
+          </ul>
+        </div>
+      </Section>
+
+      {/* G — What attendees will gain */}
+      <Section tone="paper" size="default" hairline>
+        <div className="container container--wide">
+          <SectionHeading align="start" title="What you'll gain from attending" />
+          <ul className="webinar-page__plain-list" role="list">
+            {WEBINAR_WHY_ATTEND.map((a) => (
+              <li key={a} data-reveal>
+                {a}
+              </li>
+            ))}
+          </ul>
+        </div>
+      </Section>
+
+      {/* H — Event details, flyer, and final CTA */}
+      <Section id="register" tone="ink" size="lg">
+        <div className="container container--wide">
+          <div className="webinar-page__register" data-reveal>
+            <div className="webinar-page__register-text">
+              <h2>Your next step in technology starts here.</h2>
+              <p>Join AIIT for a practical introduction to the technologies shaping modern industries.</p>
 
               <dl className="webinar-page__facts">
                 <div>
-                  <dt>When</dt>
-                  <dd>{w.scheduleNote}</dd>
-                </div>
-                <div>
-                  <dt>Duration</dt>
-                  <dd>{w.durationLabel}</dd>
+                  <dt>Format</dt>
+                  <dd>Online live webinar</dd>
                 </div>
                 <div>
                   <dt>Platform</dt>
                   <dd>{w.platform}</dd>
+                </div>
+                <div>
+                  <dt>Duration</dt>
+                  <dd>{w.durationLabel}</dd>
                 </div>
                 <div>
                   <dt>Language</dt>
@@ -110,106 +225,28 @@ export default function WebinarPage() {
                 </div>
                 <div>
                   <dt>Cost</dt>
-                  <dd>Completely Free</dd>
+                  <dd>Completely free</dd>
                 </div>
                 <div>
-                  <dt>Time</dt>
-                  <dd>{w.timezoneNote}</dd>
+                  <dt>Date and time</dt>
+                  <dd>{w.scheduleNote}</dd>
                 </div>
               </dl>
-              <p className="webinar-page__meta-line">
-                No registration fee · Certificate-track guidance included · Runs 60–90 minutes
-              </p>
 
               <div className="webinar-page__countdown">
                 <Countdown startsAt={w.startsAt} fallback="Date to be announced" />
               </div>
 
-              <Button as="link" to="/webinar#register" variant="secondary" arrow>
-                Reserve your seat
-              </Button>
-            </div>
-            {w.videoUrl ? (
-              <video
-                className="webinar-page__feature-media webinar-page__feature-video"
-                src={w.videoUrl}
-                poster={assetUrl(w.image)}
-                controls
-                preload="metadata"
-                playsInline
-              />
-            ) : (
+              <p className="webinar-page__flyer-label">Event flyer</p>
               <Plate
                 source={w.image}
-                seed={`webinar-page-${w.id}`}
+                seed={`webinar-page-flyer-${w.id}`}
                 motif="signal"
-                ratio={3 / 4}
-                fit="contain"
-                className="webinar-page__feature-media"
+                tone="ink"
+                fit="natural"
+                className="webinar-page__flyer"
                 alt=""
               />
-            )}
-          </div>
-
-          <div className="webinar-page__agenda" data-reveal>
-            <h2>Three high-demand tech fields, one live session</h2>
-            <p className="webinar-page__agenda-intro">
-              A practical, beginner-friendly overview of where the opportunities are, and how AIIT
-              helps you get there.
-            </p>
-            <div className="webinar-page__agenda-grid">
-              {w.agenda.map((a, i) => (
-                <div key={a.title}>
-                  <span className="index-num">{String(i + 1).padStart(2, '0')}</span>
-                  <h3>{a.title}</h3>
-                  <ul>
-                    {a.points.map((p) => (
-                      <li key={p}>{p}</li>
-                    ))}
-                  </ul>
-                </div>
-              ))}
-            </div>
-            <Button as="link" to="/webinar#register" variant="secondary" arrow>
-              Register for this session
-            </Button>
-          </div>
-
-          <div className="webinar-page__audience" data-reveal>
-            <h2>Who should attend</h2>
-            <ul>
-              {w.audience.map((a) => (
-                <li key={a}>{a}</li>
-              ))}
-            </ul>
-            <Button as="link" to="/webinar#register" variant="secondary" arrow>
-              Save my spot
-            </Button>
-          </div>
-
-          <div className="webinar-page__audience" data-reveal>
-            <h2>Why attend this free webinar</h2>
-            <ul>
-              {WEBINAR_WHY_ATTEND.map((a) => (
-                <li key={a}>{a}</li>
-              ))}
-            </ul>
-            <Button as="link" to="/webinar#register" variant="secondary" arrow>
-              Register now
-            </Button>
-          </div>
-        </div>
-      </Section>
-
-      <Section id="register" tone="ink" size="lg">
-        <div className="container container--wide">
-          <div className="webinar-page__register" data-reveal>
-            <div className="webinar-page__register-text">
-              <h2>Register in a minute.</h2>
-              <p>
-                You&apos;ll receive the exact date, time and joining link by email or WhatsApp once
-                the session is scheduled. {w.seatsLimited && 'Seats are limited.'}
-              </p>
             </div>
 
             {done ? (
@@ -225,6 +262,8 @@ export default function WebinarPage() {
               </div>
             ) : (
               <form className="webinar-page__form" onSubmit={onSubmit}>
+                <p className="webinar-page__form-kicker">Register for the Free Webinar</p>
+                {w.seatsLimited && <p className="webinar-page__seats-note">Seats are limited.</p>}
                 {error ? (
                   <p className="auth__alert" role="alert">
                     {error}
@@ -287,7 +326,7 @@ export default function WebinarPage() {
                 />
                 <Turnstile onVerify={setTurnstileToken} />
                 <Button as="button" type="submit" size="lg" fullWidth arrow loading={submitting} disabled={!canSubmit}>
-                  Reserve my seat
+                  Register for the Free Webinar
                 </Button>
               </form>
             )}
@@ -295,6 +334,7 @@ export default function WebinarPage() {
         </div>
       </Section>
 
+      {/* More live at AIIT */}
       <Section tone="paper" size="default" hairline>
         <div className="container container--wide">
           <h2 className="webinar-page__events-title">More live at AIIT</h2>

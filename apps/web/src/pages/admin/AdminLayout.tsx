@@ -11,6 +11,7 @@ const ADMIN_NAV: StaffNavEntry[] = [
   { to: '/admin/classes', label: 'Classes' },
   { to: '/admin/complaints', label: 'Complaints' },
   { to: '/admin/affiliates', label: 'Affiliates' },
+  { to: '/admin/blog', label: 'Blog' },
   { to: '/admin/announcements', label: 'Announcements' },
   { to: '/admin/payments', label: 'Payments' },
   { to: '/admin/certificates', label: 'Certificates' },

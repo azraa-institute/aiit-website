@@ -101,6 +101,8 @@ const AdminAnnouncementsPage = lazy(() => import('@/pages/admin/AdminAnnouncemen
 const AdminReportsPage = lazy(() => import('@/pages/admin/AdminReportsPage'));
 const AdminMessagesPage = lazy(() => import('@/pages/admin/AdminMessagesPage'));
 const AdminAffiliatesPage = lazy(() => import('@/pages/admin/AdminAffiliatesPage'));
+const AdminBlogPage = lazy(() => import('@/pages/admin/AdminBlogPage'));
+const AdminBlogEditorPage = lazy(() => import('@/pages/admin/AdminBlogEditorPage'));
 const AdminPaymentsPage = lazy(() => import('@/pages/admin/AdminPaymentsPage'));
 const AdminSettingsPage = lazy(() => import('@/pages/admin/AdminSettingsPage'));
 const AffiliateLayout = lazy(() => import('@/pages/affiliate/AffiliateLayout'));
@@ -333,6 +335,9 @@ export function App() {
                 <Route path="classes" element={<AdminClassesPage />} />
                 <Route path="complaints" element={<AdminComplaintsPage />} />
                 <Route path="affiliates" element={<AdminAffiliatesPage />} />
+                <Route path="blog" element={<AdminBlogPage />} />
+                <Route path="blog/new" element={<AdminBlogEditorPage />} />
+                <Route path="blog/:id" element={<AdminBlogEditorPage />} />
                 <Route path="announcements" element={<AdminAnnouncementsPage />} />
                 <Route path="payments" element={<AdminPaymentsPage />} />
                 <Route path="reports" element={<AdminReportsPage />} />

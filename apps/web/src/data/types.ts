@@ -172,6 +172,12 @@ export interface Resource {
   words: number;
   /** Canonical URL where the post was originally published, if any. */
   source?: string;
+  /** Layout/visual preset key -- a resource-detail.css modifier class, e.g. "editorial" | "tutorial". Always present; build-time ingestion defaults missing/unknown values to "editorial". */
+  preset: string;
+  /** SEO overrides (admin portal "SEO & Metadata" fields) -- fall back to title/excerpt/image when absent. */
+  seoTitle?: string;
+  seoDescription?: string;
+  ogImage?: string;
 }
 
 export interface EcosystemStep {

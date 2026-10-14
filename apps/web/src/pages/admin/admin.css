@@ -940,6 +940,20 @@
   color: var(--red);
   border-color: var(--red);
 }
+.adm-status--b-draft {
+  color: var(--ink-faint);
+}
+.adm-status--b-scheduled {
+  color: var(--brass-deep);
+  border-color: var(--brass);
+}
+.adm-status--b-published {
+  color: #2f6b3f;
+  border-color: #2f6b3f;
+}
+.adm-status--b-archived {
+  color: var(--ink-faint);
+}
 /* A filled pill (not outlined like .adm-status) -- type is a description,
    not an alert state, so it should read quieter than a status badge. */
 .adm-tag {

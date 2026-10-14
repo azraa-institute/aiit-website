@@ -223,10 +223,10 @@ export default function ResourceDetailPage() {
   return (
     <Layout>
       <Seo
-        title={resource.title}
-        description={resource.excerpt}
+        title={resource.seoTitle || resource.title}
+        description={resource.seoDescription || resource.excerpt}
         path={`/resources/${resource.slug}`}
-        image={resource.image}
+        image={resource.ogImage || resource.image}
         type="article"
         jsonLd={[
           {
@@ -254,7 +254,7 @@ export default function ResourceDetailPage() {
           <span className="article-line__fill" />
         </div>
 
-        <article>
+        <article className={`resource-article resource-article--${resource.preset}`}>
           <div className="article-read" ref={readRef}>
             {/* ---------- Hero ---------- */}
             <header className="article-hero container">

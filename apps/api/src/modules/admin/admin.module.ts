@@ -13,10 +13,20 @@ import { AdminMessagesController } from './admin-messages.controller';
 import { AdminMessagesService } from './admin-messages.service';
 import { AdminAffiliatesController } from './admin-affiliates.controller';
 import { AdminAffiliatesService } from './admin-affiliates.service';
+import { AdminBlogController } from './admin-blog.controller';
+import { AdminBlogService } from './admin-blog.service';
+import { GithubPublisherService } from './github-publisher.service';
 
 @Module({
   imports: [EmailModule, EnrollmentsModule],
-  controllers: [AdminUsersController, AdminCoursesController, AdminSupportController, AdminMessagesController, AdminAffiliatesController],
+  controllers: [
+    AdminUsersController,
+    AdminCoursesController,
+    AdminSupportController,
+    AdminMessagesController,
+    AdminAffiliatesController,
+    AdminBlogController,
+  ],
   providers: [
     AdminUsersService,
     AdminCoursesService,
@@ -25,6 +35,8 @@ import { AdminAffiliatesService } from './admin-affiliates.service';
     AdminReportsService,
     AdminMessagesService,
     AdminAffiliatesService,
+    AdminBlogService,
+    GithubPublisherService,
   ],
 })
 export class AdminModule {}

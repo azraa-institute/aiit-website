@@ -10,6 +10,9 @@ import { PRODUCTS } from './src/data/products';
 
 const postsDir = fileURLToPath(new URL('./src/content/posts', import.meta.url));
 
+/** Keep in sync with BlogLayoutPreset in packages/shared/src/blog.ts -- an unrecognized or missing value falls back to "editorial" rather than breaking the build. */
+const BLOG_LAYOUT_PRESETS = ['editorial', 'tutorial', 'news-brief', 'spotlight', 'data-deep-dive'];
+
 function parseFrontmatter(raw: string) {
   const text = raw.replace(/^﻿/, '');
   const m = text.match(/^---\r?\n([\s\S]*?)\r?\n---\r?\n?([\s\S]*)$/);
@@ -64,6 +67,10 @@ function buildPostsList() {
         featured: data.featured === true,
         tags: Array.isArray(data.tags) ? data.tags : [],
         source: data.source ? String(data.source) : undefined,
+        preset: BLOG_LAYOUT_PRESETS.includes(String(data.preset)) ? String(data.preset) : 'editorial',
+        seoTitle: data.seoTitle ? String(data.seoTitle) : undefined,
+        seoDescription: data.seoDescription ? String(data.seoDescription) : undefined,
+        ogImage: data.ogImage ? String(data.ogImage) : undefined,
         words,
       };
     })

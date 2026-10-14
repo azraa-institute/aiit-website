@@ -2,8 +2,21 @@ name: CI
 
 on:
   pull_request:
+    # See the matching comment on push's paths-ignore below.
+    paths-ignore:
+      - 'apps/web/src/content/posts/**'
+      - 'apps/web/public/assets/blog/**'
   push:
     branches: [main]
+    # A blog-publish commit (admin portal -> GithubPublisherService) only
+    # ever touches a content Markdown file or a blog image -- lint/
+    # typecheck/test/migrate-diff/build are meaningless for that, and
+    # buildPostsList()'s own required-field check is the real safety net
+    # for malformed frontmatter. Vercel's own build (independent of this
+    # workflow) is what actually validates and ships the content.
+    paths-ignore:
+      - 'apps/web/src/content/posts/**'
+      - 'apps/web/public/assets/blog/**'
 
 jobs:
   ci:

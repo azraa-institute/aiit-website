@@ -1011,3 +1011,57 @@ model ComplaintMessage {
   @@map("complaint_messages")
   @@schema("public")
 }
+
+// ---- Blog (admin-authored, GitHub-published) ----
+// The DB is the authoring/workflow source of truth for a post (draft, metadata,
+// status pipeline) -- it is NOT what the public site renders from. The live
+// frontend still reads only apps/web/src/content/posts/*.md at build time
+// (see vite.config.ts's buildPostsList()/virtual:aiit-blog), exactly as it did
+// before this table existed. A row only becomes a live post once the Publish
+// action (GithubPublisherService) commits/updates a matching .md file in that
+// folder; publishedAt/lastCommitSha/filePath are only ever written after that
+// commit is confirmed, never optimistically. Unpublish deletes the file via
+// the same API and only then flips status to archived.
+
+enum BlogPostStatus {
+  draft
+  scheduled
+  published
+  archived
+
+  @@schema("public")
+}
+
+model BlogPost {
+  id             String         @id @default(uuid()) @db.Uuid
+  slug           String         @unique
+  title          String
+  category       String // matches an existing Resources category -- free text, same convention as Course.catalogueCategory
+  excerpt        String
+  bodyMarkdown   String         @map("body_markdown")
+  coverImageUrl  String?        @map("cover_image_url")
+  coverImage2Url String?        @map("cover_image2_url")
+  tags           String[]       @default([])
+  readMinutes    Int?           @map("read_minutes") // null = frontend falls back to its own word-count estimate, same as today
+  featured       Boolean        @default(false)
+  // One of @aiit/shared's BLOG_LAYOUT_PRESETS -- an engineer-authored CSS
+  // modifier class key (resource-detail.css), never free-form/admin CSS.
+  preset         String         @default("editorial")
+  seoTitle       String?        @map("seo_title")
+  seoDescription String?        @map("seo_description")
+  ogImageUrl     String?        @map("og_image_url")
+  status         BlogPostStatus @default(draft)
+  authorId       String         @map("author_id") @db.Uuid // plain uuid to a Profile with role admin/instructor -- no FK, same no-relation convention as CourseInstructor.instructorId
+  authorNameSnap String?        @map("author_name_snap") // snapshotted at publish, same convention as Certificate.holderName -- survives the author's own profile changing/deletion
+  scheduledAt    DateTime?      @map("scheduled_at") @db.Timestamptz(6)
+  publishedAt    DateTime?      @map("published_at") @db.Timestamptz(6)
+  lastCommitSha  String?        @map("last_commit_sha") // DB<->GitHub reconciliation bridge
+  filePath       String?        @map("file_path") // repo path once published, needed again by update/unpublish
+  createdAt      DateTime       @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt      DateTime       @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  @@index([status, updatedAt])
+  @@index([authorId])
+  @@map("blog_posts")
+  @@schema("public")
+}

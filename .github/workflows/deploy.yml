@@ -10,6 +10,14 @@ name: Deploy
 on:
   push:
     branches: [main]
+    # A blog-publish commit (admin portal -> GithubPublisherService) only
+    # ever touches a content Markdown file or a blog image -- no schema
+    # change, nothing this job's migrate/Render-redeploy step needs to run
+    # for. Vercel's own build (triggered independently of this workflow) is
+    # what actually puts the post live.
+    paths-ignore:
+      - 'apps/web/src/content/posts/**'
+      - 'apps/web/public/assets/blog/**'
 
 jobs:
   migrate:

@@ -846,3 +846,77 @@
     transition: none;
   }
 }
+
+/* ============================================================
+   LAYOUT PRESETS — admin-picked per post (BlogPost.preset / the
+   `preset` frontmatter key), one engineer-authored modifier class
+   layered on the shared template above. Never free-form/admin CSS:
+   a fixed, curated set only. `.resource-article--editorial` is the
+   default/unmarked look already defined above, so it has no block
+   of its own here.
+   ============================================================ */
+
+/* TUTORIAL — numbered-step rhythm for h2s, more room around code. */
+.resource-article--tutorial .article-copy {
+  counter-reset: tutorial-step;
+}
+.resource-article--tutorial .article-copy h2 {
+  counter-increment: tutorial-step;
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-3);
+}
+.resource-article--tutorial .article-copy h2::before {
+  content: counter(tutorial-step, decimal-leading-zero);
+  font-family: var(--font-ui);
+  font-size: var(--fs-sm);
+  font-weight: var(--fw-medium);
+  color: var(--brass-deep);
+  letter-spacing: 0.04em;
+}
+.resource-article--tutorial .article-copy pre {
+  margin-block: 1.6em;
+  padding: var(--space-5);
+}
+
+/* NEWS BRIEF — compact hero, tighter rhythm, for short/time-sensitive posts. */
+.resource-article--news-brief .article-hero__title {
+  font-size: clamp(1.8rem, 1.5rem + 2vw, 2.6rem);
+}
+.resource-article--news-brief .article-hero__deck {
+  max-width: 62ch;
+}
+.resource-article--news-brief .article-copy > * + * {
+  margin-top: 1.1em;
+}
+.resource-article--news-brief .article-toc--inline {
+  display: none;
+}
+
+/* SPOTLIGHT — large pull-quote treatment, byline promoted. */
+.resource-article--spotlight .article-hero__meta {
+  font-size: var(--fs-sm);
+  font-weight: var(--fw-medium);
+  color: var(--ink);
+}
+.resource-article--spotlight .article-copy blockquote {
+  margin-block: 1.8em;
+  padding-left: var(--space-6);
+  border-left: 3px solid var(--brass-deep);
+  font-family: var(--res-serif);
+  font-size: clamp(1.25rem, 1.1rem + 0.6vw, 1.6rem);
+  line-height: 1.45;
+  color: var(--ink);
+}
+
+/* DATA DEEP-DIVE — wider column for tables/charts, monospace stat callouts. */
+.resource-article--data-deep-dive .article-body.prose {
+  max-width: 96ch;
+}
+.resource-article--data-deep-dive .article-copy strong {
+  font-family: var(--font-mono, monospace);
+  font-weight: var(--fw-medium);
+}
+.resource-article--data-deep-dive .article-copy table {
+  font-size: var(--fs-sm);
+}

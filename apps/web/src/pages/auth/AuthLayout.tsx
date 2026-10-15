@@ -36,9 +36,9 @@ const DEFAULT_ASIDE_IMAGE = '/assets/auth/aiit-registration.webp';
 
 export function AuthLayout({ title, intro, children, footer, social, tone = 'default', asideImage, layout = 'split', heroEyebrow }: AuthLayoutProps) {
   const card = (
-    <div className="auth__card">
+    <div className={cn('auth__card', layout === 'hero' && 'on-ink')}>
       <Link to="/" className="auth__brand" aria-label="AIIT home">
-        <Logo variant="dark" />
+        <Logo variant={layout === 'hero' ? 'light' : 'dark'} />
       </Link>
       <header className="auth__head">
         <h1 className="auth__title">{title}</h1>

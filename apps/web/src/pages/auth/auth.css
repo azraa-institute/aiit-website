@@ -56,9 +56,83 @@
   width: 100%;
   padding: clamp(1.5rem, 4vw, 4rem) clamp(1.5rem, 6vw, 6rem);
 }
+/* ---- Dark glass card -- the hero composition's card sits directly on a
+   busy photo, where the plain white card every other auth page uses would
+   either wash out or need a heavy scrim that dulls the photo. Text/field
+   colours ride the existing on-ink token flip (AuthLayout puts the on-ink
+   class on this card in layout="hero") rather than being hand-picked per
+   element here -- only the surface itself, the gold accents, and the
+   button need their own rules. ---- */
 .auth--hero .auth__card {
-  box-shadow: 0 24px 60px -16px rgba(10, 8, 6, 0.55);
+  position: relative;
+  overflow: hidden;
+  padding: clamp(2rem, 1.2rem + 2vw, 2.5rem);
+  background: linear-gradient(145deg, rgba(14, 24, 39, 0.9), rgba(12, 16, 24, 0.82));
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+  border: 1px solid rgba(220, 185, 120, 0.24);
+  border-radius: 22px;
+  box-shadow:
+    0 24px 70px rgba(0, 0, 0, 0.38),
+    inset 0 1px 0 rgba(255, 255, 255, 0.07);
 }
+/* A restrained blue-to-gold tint -- two soft radial washes from opposite
+   corners under the content, not a loud gradient across the whole card. */
+.auth--hero .auth__card::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  background:
+    radial-gradient(120% 90% at 0% 0%, rgba(96, 148, 214, 0.12), transparent 55%),
+    radial-gradient(120% 90% at 100% 100%, rgba(216, 178, 103, 0.1), transparent 60%);
+  pointer-events: none;
+}
+.auth--hero .auth__card > * {
+  position: relative;
+  z-index: 1;
+}
+.auth--hero .field__control:focus {
+  border-color: var(--brass-tint);
+  box-shadow: 0 0 0 3px rgba(216, 178, 103, 0.22);
+}
+
+.auth--hero .auth__aux a,
+.auth--hero .auth__footer a,
+.auth--hero .auth__mode-toggle {
+  color: var(--brass-tint);
+}
+.auth--hero .auth__aux a:hover,
+.auth--hero .auth__footer a:hover,
+.auth--hero .auth__mode-toggle:hover {
+  color: var(--ivory);
+}
+
+.auth--hero .auth__alert {
+  background: rgba(192, 43, 35, 0.16);
+  border-color: rgba(230, 120, 110, 0.4);
+  color: #ffd9d4;
+}
+.auth--hero .auth__alert svg {
+  color: #ff9d92;
+}
+
+/* A tasteful gold gradient primary button instead of the site-wide flat
+   ink/ivory one -- scoped here only, every other auth page keeps the
+   shared .btn--primary look. */
+.auth--hero .btn--primary {
+  --btn-bg: linear-gradient(135deg, #ecc97a 0%, #b9893a 100%);
+  --btn-fg: #241804;
+  --btn-border: transparent;
+}
+.auth--hero .btn--primary:hover {
+  --btn-bg: linear-gradient(135deg, #f2d48f 0%, #c89645 100%);
+}
+.auth--hero .btn--primary:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(236, 201, 122, 0.35);
+}
+
 /* A short gold eyebrow label overlaid on the hero image -- same dash +
    small-caps language as StaffShell's .shell__portal-dash -- for a photo
    that doesn't already carry its own program/section label baked in. */
@@ -85,8 +159,21 @@
   background: var(--brass-tint);
 }
 @media (max-width: 640px) {
+  /* A card tall enough to need scrolling plus vertical centering is how it
+     ends up overlapping the logo/eyebrow sitting near the top of the same
+     full-height box -- top-align instead, with enough clearance below the
+     eyebrow that the two never touch, and let the page scroll if the card
+     is taller than the viewport rather than centering it over them. */
+  .auth--hero {
+    align-items: flex-start;
+  }
   .auth--hero .auth__main {
     justify-content: center;
+    padding-top: clamp(8rem, 26vh, 10rem);
+    padding-bottom: calc(clamp(2rem, 6vh, 3rem) + env(safe-area-inset-bottom, 0px));
+  }
+  .auth--hero .auth__card {
+    border-radius: 18px;
   }
 }
 

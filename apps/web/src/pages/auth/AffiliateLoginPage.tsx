@@ -133,9 +133,8 @@ export default function AffiliateLoginPage() {
     <>
       <Seo title="Affiliate Sign In" path="/affiliate/login" noindex />
       <AuthLayout
+        layout="hero"
         asideImage={ASIDE_IMAGE}
-        asideFit="contain"
-        hideAsideCopy
         title={mfaPending ? 'Two-factor authentication' : 'Affiliate sign-in'}
         intro={
           mfaPending

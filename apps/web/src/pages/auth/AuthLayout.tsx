@@ -17,55 +17,69 @@ interface AuthLayoutProps {
   tone?: 'default' | 'staff';
   /** Overrides the photo-panel image; defaults to the student one. */
   asideImage?: string;
-  /** How the asideImage fills its frame -- see Plate's own doc comment. Defaults to 'cover' (a crop), which is right for the portrait-ish source photos most callers use; a landscape graphic with its own baked-in text (logo, headline) needs 'contain' instead, or cropping cuts pieces of it off. */
-  asideFit?: 'cover' | 'contain' | 'natural';
-  /** The generic SITE.headline/progression overlay is redundant on an asideImage that already carries its own headline and branding (e.g. a purpose-made program banner) -- suppresses it in that case. */
-  hideAsideCopy?: boolean;
+  /**
+   * 'split' (default): the usual side-by-side -- a tall portrait-cropped
+   * photo panel next to the card, full page height. Works for the
+   * portrait-ish source photos every other caller uses.
+   * 'hero': a full-width 16:9 band above a centered card instead --
+   * for a landscape graphic with its own baked-in text (logo, headline),
+   * which a tall portrait crop would either letterbox with dead space or
+   * crop down to an unrecognizable sliver. No SITE.headline overlay in
+   * this mode -- the banner already carries its own.
+   */
+  layout?: 'split' | 'hero';
 }
 
 const DEFAULT_ASIDE_IMAGE = '/assets/auth/aiit-registration.webp';
 
-export function AuthLayout({ title, intro, children, footer, social, tone = 'default', asideImage, asideFit, hideAsideCopy }: AuthLayoutProps) {
+export function AuthLayout({ title, intro, children, footer, social, tone = 'default', asideImage, layout = 'split' }: AuthLayoutProps) {
+  const card = (
+    <div className="auth__card">
+      <Link to="/" className="auth__brand" aria-label="AIIT home">
+        <Logo variant="dark" />
+      </Link>
+      <header className="auth__head">
+        <h1 className="auth__title">{title}</h1>
+        <p className="auth__intro">{intro}</p>
+      </header>
+      {children}
+      {social && (
+        <>
+          <div className="auth__divider">Or continue with</div>
+          <div className="auth__social">{social}</div>
+        </>
+      )}
+      {footer && <div className="auth__footer">{footer}</div>}
+    </div>
+  );
+
+  if (layout === 'hero') {
+    return (
+      <div className="auth auth--hero">
+        <div className="auth__hero-band on-ink">
+          <Plate source={asideImage ?? DEFAULT_ASIDE_IMAGE} seed="auth" ratio={16 / 9} tone="ink" fit="cover" alt="" />
+        </div>
+        <main className="auth__main" id="main">
+          {card}
+        </main>
+      </div>
+    );
+  }
+
   return (
     <div className={cn('auth', tone === 'staff' && 'auth--staff')}>
       <aside className="auth__aside on-ink">
-        <Plate
-          source={asideImage ?? DEFAULT_ASIDE_IMAGE}
-          seed="auth"
-          ratio={3 / 4}
-          tone="ink"
-          fit={asideFit}
-          className="auth__aside-art"
-          alt=""
-        />
-        {hideAsideCopy ? null : (
-          <div className="auth__aside-inner">
-            <div className="auth__aside-copy">
-              <p className="auth__aside-statement">{SITE.headline}</p>
-              <p className="auth__progression">{SITE.progression.join('  ·  ')}</p>
-            </div>
+        <Plate source={asideImage ?? DEFAULT_ASIDE_IMAGE} seed="auth" ratio={3 / 4} tone="ink" className="auth__aside-art" alt="" />
+        <div className="auth__aside-inner">
+          <div className="auth__aside-copy">
+            <p className="auth__aside-statement">{SITE.headline}</p>
+            <p className="auth__progression">{SITE.progression.join('  ·  ')}</p>
           </div>
-        )}
+        </div>
       </aside>
 
       <main className="auth__main" id="main">
-        <div className="auth__card">
-          <Link to="/" className="auth__brand" aria-label="AIIT home">
-            <Logo variant="dark" />
-          </Link>
-          <header className="auth__head">
-            <h1 className="auth__title">{title}</h1>
-            <p className="auth__intro">{intro}</p>
-          </header>
-          {children}
-          {social && (
-            <>
-              <div className="auth__divider">Or continue with</div>
-              <div className="auth__social">{social}</div>
-            </>
-          )}
-          {footer && <div className="auth__footer">{footer}</div>}
-        </div>
+        {card}
       </main>
     </div>
   );

@@ -19,6 +19,28 @@
   }
 }
 
+/* ---- Alternate composition: a 16:9 banner above the card, for a landscape
+   graphic (its own logo/headline baked in) instead of a portrait photo --
+   see AuthLayout's layout="hero". Overrides the two-column grid above with
+   a simple stack; .auth__main/.auth__card need no changes, they already
+   center the card at any container width. ---- */
+.auth--hero {
+  display: block;
+}
+.auth__hero-band {
+  width: 100%;
+  max-height: 50vh;
+  overflow: hidden;
+}
+.auth__hero-band .plate {
+  width: 100%;
+}
+@media (min-width: 768px) {
+  .auth__hero-band {
+    max-height: 44vh;
+  }
+}
+
 /* ============================================================
    THE PHOTO PANEL
    ============================================================ */

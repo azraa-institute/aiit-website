@@ -1,10 +1,20 @@
 import { StaffShell, type StaffNavItem } from '@/components/staff/StaffShell';
+import {
+  AcademicsIcon,
+  ContentIcon,
+  DashboardIcon,
+  FinanceIcon,
+  PeopleIcon,
+  SupportIcon,
+  SystemIcon,
+} from '@/components/staff/StaffNavIcons';
 import './admin.css';
 
 const ADMIN_NAV: StaffNavItem[] = [
-  { to: '/admin', label: 'Dashboard', end: true },
+  { to: '/admin', label: 'Dashboard', end: true, icon: <DashboardIcon /> },
   {
     label: 'People',
+    icon: <PeopleIcon />,
     items: [
       { to: '/admin/students', label: 'Students' },
       { to: '/admin/instructors', label: 'Instructors' },
@@ -14,6 +24,7 @@ const ADMIN_NAV: StaffNavItem[] = [
   },
   {
     label: 'Academics',
+    icon: <AcademicsIcon />,
     items: [
       { to: '/admin/courses', label: 'Courses' },
       { to: '/admin/timetables', label: 'Timetables' },
@@ -23,6 +34,7 @@ const ADMIN_NAV: StaffNavItem[] = [
   },
   {
     label: 'Content',
+    icon: <ContentIcon />,
     items: [
       { to: '/admin/blog', label: 'Blog' },
       { to: '/admin/webinars', label: 'Webinars' },
@@ -31,6 +43,7 @@ const ADMIN_NAV: StaffNavItem[] = [
   },
   {
     label: 'Support',
+    icon: <SupportIcon />,
     items: [
       { to: '/admin/complaints', label: 'Complaints' },
       { to: '/admin/messages', label: 'Messages' },
@@ -38,6 +51,7 @@ const ADMIN_NAV: StaffNavItem[] = [
   },
   {
     label: 'Finance',
+    icon: <FinanceIcon />,
     items: [
       { to: '/admin/payments', label: 'Payments' },
       { to: '/admin/reports', label: 'Reports' },
@@ -45,6 +59,7 @@ const ADMIN_NAV: StaffNavItem[] = [
   },
   {
     label: 'System',
+    icon: <SystemIcon />,
     items: [
       { to: '/admin/audit', label: 'Audit log' },
       { to: '/admin/settings', label: 'Settings' },

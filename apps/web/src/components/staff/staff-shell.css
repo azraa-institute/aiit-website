@@ -12,6 +12,11 @@
   color: var(--ink);
   font-family: var(--font-ui);
 }
+.shell--admin {
+  /* A richer, more saturated gold than the default --brass-tint -- this
+     is the one sidebar with a reference design to match exactly. */
+  --shell-accent: #d6a857;
+}
 .shell--instructor {
   --shell-bg: var(--slate-deep);
   --shell-accent: #cfe0de;
@@ -40,11 +45,21 @@
   width: auto;
 }
 .shell__portal {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
   font-size: var(--fs-eyebrow);
   font-weight: 700;
   letter-spacing: var(--tracking-eyebrow);
   text-transform: uppercase;
   color: var(--shell-accent);
+}
+.shell__portal-dash {
+  flex-shrink: 0;
+  width: 18px;
+  height: 2px;
+  border-radius: 1px;
+  background: var(--shell-accent);
 }
 
 .shell__nav ul {
@@ -53,13 +68,15 @@
   padding: 0;
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: 4px;
 }
 .shell__link {
-  display: block;
-  padding: 0.6rem var(--space-3);
-  border-radius: var(--radius-sm);
-  color: rgba(244, 239, 231, 0.72);
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: 0.65rem var(--space-3);
+  border-radius: var(--radius-md);
+  color: rgba(244, 239, 231, 0.55);
   font-weight: 600;
   font-size: 0.92rem;
   transition:
@@ -70,25 +87,60 @@
   background: rgba(244, 239, 231, 0.08);
   color: var(--ivory);
 }
+.shell__link--top {
+  padding: 0.75rem var(--space-4);
+  font-size: 1rem;
+}
 .shell__link.is-active {
-  background: rgba(244, 239, 231, 0.14);
+  position: relative;
+  background: rgba(214, 168, 87, 0.12);
   color: var(--ivory);
-  box-shadow: inset 3px 0 0 var(--shell-accent);
+  font-weight: 700;
+}
+.shell__link.is-active::before {
+  content: '';
+  position: absolute;
+  left: -2px;
+  top: 18%;
+  bottom: 18%;
+  width: 3px;
+  border-radius: 3px;
+  background: var(--shell-accent);
+}
+.shell__link.is-active .shell__link-icon {
+  color: var(--shell-accent);
+}
+.shell__link-icon {
+  display: inline-flex;
+  flex-shrink: 0;
+  color: inherit;
+}
+.shell__link--top .shell__link-icon {
+  width: 18px;
+  height: 18px;
+}
+.shell__link-label {
+  flex: 1;
+  min-width: 0;
 }
 
 .shell__group-toggle {
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  gap: var(--space-3);
   width: 100%;
-  padding: 0.6rem var(--space-3);
-  border-radius: var(--radius-sm);
-  color: rgba(244, 239, 231, 0.5);
+  padding: 0.75rem var(--space-4);
+  border-radius: var(--radius-md);
+  color: rgba(244, 239, 231, 0.55);
   font-weight: 700;
-  font-size: 0.78rem;
+  font-size: 0.82rem;
   letter-spacing: var(--tracking-eyebrow);
   text-transform: uppercase;
   transition: color var(--dur-fast) var(--ease-out);
+}
+.shell__group-toggle .shell__link-icon {
+  width: 18px;
+  height: 18px;
 }
 .shell__group-toggle:hover {
   color: var(--ivory);
@@ -106,7 +158,7 @@
   margin-bottom: 2px;
 }
 .shell__subnav .shell__link {
-  padding-left: calc(var(--space-3) + var(--space-3));
+  padding-left: calc(var(--space-4) + 18px + var(--space-3));
 }
 
 .shell__user {

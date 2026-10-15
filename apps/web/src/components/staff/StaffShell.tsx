@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import type { ReactNode } from 'react';
 import { Link, NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { Seo } from '@/lib/Seo';
 import { cn } from '@/lib/cn';
@@ -14,11 +15,14 @@ export interface StaffNavEntry {
   to: string;
   label: string;
   end?: boolean;
+  /** Only meaningful at the top level (a direct link, or a group header) -- sub-items under an open group stay icon-less, matching the reference design. */
+  icon?: ReactNode;
 }
 
 /** A collapsible section header with its own sub-links -- for a portal with enough entries (admin) that a flat list reads as a wall of links. */
 export interface StaffNavGroup {
   label: string;
+  icon?: ReactNode;
   items: StaffNavEntry[];
 }
 
@@ -107,7 +111,10 @@ export function StaffShell({
             <SidebarToggleIcon open />
           </button>
         </div>
-        <p className="shell__portal">{portal}</p>
+        <p className="shell__portal">
+          <span className="shell__portal-dash" aria-hidden="true" />
+          {portal}
+        </p>
 
         <nav className="shell__nav" aria-label={`${portal} sections`}>
           <ul role="list">
@@ -120,7 +127,8 @@ export function StaffShell({
                     aria-expanded={isGroupOpen(item)}
                     onClick={() => toggleGroup(item)}
                   >
-                    {item.label}
+                    {item.icon ? <span className="shell__link-icon">{item.icon}</span> : null}
+                    <span className="shell__link-label">{item.label}</span>
                     <svg className="shell__group-chevron" width="10" height="10" viewBox="0 0 10 10" aria-hidden="true">
                       <path d="M2.5 3.5 5 6l2.5-2.5" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" />
                     </svg>
@@ -130,7 +138,7 @@ export function StaffShell({
                       {item.items.map((sub) => (
                         <li key={sub.to}>
                           <NavLink to={sub.to} end={sub.end} className={({ isActive }) => cn('shell__link', isActive && 'is-active')}>
-                            {sub.label}
+                            <span className="shell__link-label">{sub.label}</span>
                           </NavLink>
                         </li>
                       ))}
@@ -139,8 +147,9 @@ export function StaffShell({
                 </li>
               ) : (
                 <li key={item.to}>
-                  <NavLink to={item.to} end={item.end} className={({ isActive }) => cn('shell__link', isActive && 'is-active')}>
-                    {item.label}
+                  <NavLink to={item.to} end={item.end} className={({ isActive }) => cn('shell__link', 'shell__link--top', isActive && 'is-active')}>
+                    {item.icon ? <span className="shell__link-icon">{item.icon}</span> : null}
+                    <span className="shell__link-label">{item.label}</span>
                   </NavLink>
                 </li>
               ),

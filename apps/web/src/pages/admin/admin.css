@@ -557,7 +557,9 @@
   top: 0;
   right: 0;
   bottom: 0;
-  width: min(26rem, 100%);
+  /* Was 26rem -- a combined field like "Bank name (masked number), Country"
+     reliably wrapped into a ragged 2-3 lines at that width. */
+  width: min(34rem, 100%);
   padding: var(--space-5);
   overflow-y: auto;
   background: var(--surface);
@@ -565,17 +567,25 @@
   box-shadow: var(--shadow-lift);
 }
 .adm-drawer__head {
+  /* Bleeds to the drawer's own edges via negative margin, rather than
+     needing every caller to wrap its content in a separate body element --
+     same "letterhead" colour language as .adm-page__head's gradient band,
+     just without the seal (one full seal treatment per screen is plenty). */
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: var(--space-4);
+  gap: var(--space-3);
+  margin: calc(var(--space-5) * -1) calc(var(--space-5) * -1) var(--space-4);
+  padding: var(--space-4) var(--space-5);
+  background: linear-gradient(165deg, color-mix(in srgb, var(--shell-accent, var(--brass-tint)) 16%, var(--surface)) 0%, var(--surface) 75%);
+  border-bottom: 1px solid var(--line-strong);
 }
 .adm-drawer__head h2 {
   font-size: var(--fs-eyebrow);
   font-weight: 700;
   letter-spacing: var(--tracking-eyebrow);
   text-transform: uppercase;
-  color: var(--ink-faint);
+  color: var(--shell-accent, var(--brass-deep));
 }
 .adm-drawer__name {
   font-family: var(--font-accent);
@@ -589,16 +599,28 @@
 .adm-dl {
   margin: var(--space-4) 0;
   display: grid;
-  gap: var(--space-2);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  background: var(--paper);
 }
 .adm-dl > div {
   display: grid;
-  grid-template-columns: 10rem minmax(0, 1fr);
+  grid-template-columns: 11rem minmax(0, 1fr);
   gap: var(--space-3);
+  padding: var(--space-3) var(--space-4);
   font-size: 0.88rem;
+  border-bottom: 1px solid var(--line);
+}
+.adm-dl > div:last-child {
+  border-bottom: none;
+}
+.adm-dl > div:nth-child(even) {
+  background: color-mix(in srgb, var(--shell-accent, var(--brass-tint)) 5%, transparent);
 }
 .adm-dl dt {
   color: var(--ink-muted);
+  font-weight: 600;
 }
 .adm-dl dd {
   margin: 0;
@@ -856,7 +878,7 @@
 
 /* ---- Complaints inbox, announcements, reports ---- */
 .adm-drawer--wide {
-  width: min(34rem, 100%);
+  width: min(42rem, 100%);
 }
 .adm-thread {
   display: flex;
@@ -914,6 +936,10 @@
   align-items: center;
   gap: var(--space-2);
   margin: var(--space-4) 0 var(--space-2);
+  padding: var(--space-3);
+  background: var(--paper);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
 }
 .adm-status--c-open {
   color: var(--red);

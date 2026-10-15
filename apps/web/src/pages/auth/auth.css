@@ -32,7 +32,14 @@
   background: var(--ink);
 }
 .auth__hero-band {
-  position: absolute;
+  /* Locked to the viewport, not .auth--hero's own box -- that box is only
+     min-height: 100svh, so a card taller than one screen (logo, title,
+     intro, two fields, a link, a button -- easily taller than 100svh on a
+     short laptop screen) pushes it past the viewport height. inset: 0 of
+     THAT taller box would force the (much smaller, fixed-resolution)
+     source image to zoom in far more than the viewport itself ever needs,
+     cropping out the whole scene down to a sliver of foreground. */
+  position: fixed;
   inset: 0;
   z-index: 0;
 }

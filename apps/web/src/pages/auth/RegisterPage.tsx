@@ -8,7 +8,7 @@ import { PasswordStrengthMeter } from '@/components/common/PasswordStrengthMeter
 import { PASSWORD_HINT, passwordMeetsRequirements, PasswordRequirementsList } from '@/components/common/PasswordRequirements';
 import { supabase } from '@/lib/supabaseClient';
 import { getPendingReferralSlug, clearPendingReferralSlug } from '@/lib/referralAttribution';
-import { AuthLayout, GoogleAuthButton, MicrosoftAuthButton, FacebookAuthButton } from './AuthLayout';
+import { AuthLayout, GoogleAuthButton, MicrosoftAuthButton } from './AuthLayout';
 
 const EMAIL_RE = /.+@.+\..+/;
 const ALREADY_REGISTERED_MESSAGE = 'An account with this email already exists. Please sign in instead.';
@@ -117,7 +117,10 @@ export default function RegisterPage() {
             <>
               <GoogleAuthButton onClick={() => onOAuthSignIn('google')} />
               <MicrosoftAuthButton onClick={() => onOAuthSignIn('azure')} />
-              <FacebookAuthButton onClick={() => onOAuthSignIn('facebook')} />
+              {/* Facebook temporarily omitted from the UI -- the app isn't through
+                  Facebook's App Review yet, so sign-in would fail for everyone except
+                  the developer/testers on that app. Re-add <FacebookAuthButton
+                  onClick={() => onOAuthSignIn('facebook')} /> here once that's done. */}
             </>
           )
         }

@@ -157,6 +157,14 @@
    its left edge, instead of drifting apart at a card height/viewport size
    other than whatever one a fixed top/left offset was tuned against. */
 .auth__hero-eyebrow {
+  /* Explicit stacking + its own text-shadow (same technique
+     .auth__aside-statement already uses elsewhere in this file) so it
+     reads clearly regardless of which part of the photo happens to sit
+     behind it -- a plain gold-on-photo label can lose contrast over a
+     darker, cooler-toned region without one. */
+  position: relative;
+  z-index: 1;
+  flex-shrink: 0;
   display: flex;
   align-items: center;
   gap: var(--space-3);
@@ -166,6 +174,7 @@
   font-weight: 700;
   letter-spacing: var(--tracking-eyebrow);
   text-transform: uppercase;
+  text-shadow: 0 1px 6px rgba(0, 0, 0, 0.7);
 }
 .auth__hero-eyebrow::before {
   content: '';
@@ -192,6 +201,12 @@
   }
   .auth--hero .auth__card {
     border-radius: 18px;
+  }
+  /* A bit more breathing room than desktop's clamp() gives at this width,
+     so the label reads as clearly separate from the card rather than
+     sitting right at its rounded top edge. */
+  .auth__hero-eyebrow {
+    margin-bottom: 1.5rem;
   }
 }
 

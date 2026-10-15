@@ -122,6 +122,7 @@ const InstructorGradingPage = lazy(() => import('@/pages/instructor/InstructorGr
 const InstructorComplaintsPage = lazy(() => import('@/pages/instructor/InstructorComplaintsPage'));
 const InstructorSettingsPage = lazy(() => import('@/pages/instructor/InstructorSettingsPage'));
 const StaffLoginPage = lazy(() => import('@/pages/auth/StaffLoginPage'));
+const AffiliateLoginPage = lazy(() => import('@/pages/auth/AffiliateLoginPage'));
 const StaffChangePasswordPage = lazy(() => import('@/pages/auth/StaffChangePasswordPage'));
 const LiveClassroomPage = lazy(() => import('@/pages/portal/LiveClassroomPage'));
 const LegalPage = lazy(() => import('@/pages/LegalPage'));
@@ -292,13 +293,18 @@ export function App() {
               />
               <Route path="/portal/classes/:id" element={<LegacyClassroomRedirect />} />
 
+              {/* Affiliate sign-in: its own page (like /staff/login), not the shared
+                  /login -- affiliates are a regular (learner-login) account under the
+                  hood, but have no reason to land on the student sign-in form. */}
+              <Route path="/affiliate/login" element={<AffiliateLoginPage />} />
+
               {/* Affiliate portal: a regular (learner-login) account, not staff -- gated on
                   having an Affiliate row at all, not on approval status (the dashboard
                   itself shows pending/in-review/approved/rejected). */}
               <Route
                 path="/affiliate-portal"
                 element={
-                  <RequireAuth>
+                  <RequireAuth to="/affiliate/login">
                     <RequireAffiliate>
                       <AffiliateLayout />
                     </RequireAffiliate>

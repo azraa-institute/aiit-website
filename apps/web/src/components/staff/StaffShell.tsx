@@ -72,7 +72,7 @@ export function StaffShell({
   // Affiliates are regular accounts (RequireAuth's default /login gate), not
   // staff -- only admin/instructor sign back in at /staff/login.
   function handleSignOut() {
-    signOut().then(() => navigate(tone === 'affiliate' ? '/login' : '/staff/login'));
+    signOut().then(() => navigate(tone === 'affiliate' ? '/affiliate/login' : '/staff/login'));
   }
 
   function groupContainsActiveRoute(group: StaffNavGroup): boolean {

@@ -17,11 +17,15 @@ interface AuthLayoutProps {
   tone?: 'default' | 'staff';
   /** Overrides the photo-panel image; defaults to the student one. */
   asideImage?: string;
+  /** How the asideImage fills its frame -- see Plate's own doc comment. Defaults to 'cover' (a crop), which is right for the portrait-ish source photos most callers use; a landscape graphic with its own baked-in text (logo, headline) needs 'contain' instead, or cropping cuts pieces of it off. */
+  asideFit?: 'cover' | 'contain' | 'natural';
+  /** The generic SITE.headline/progression overlay is redundant on an asideImage that already carries its own headline and branding (e.g. a purpose-made program banner) -- suppresses it in that case. */
+  hideAsideCopy?: boolean;
 }
 
 const DEFAULT_ASIDE_IMAGE = '/assets/auth/aiit-registration.webp';
 
-export function AuthLayout({ title, intro, children, footer, social, tone = 'default', asideImage }: AuthLayoutProps) {
+export function AuthLayout({ title, intro, children, footer, social, tone = 'default', asideImage, asideFit, hideAsideCopy }: AuthLayoutProps) {
   return (
     <div className={cn('auth', tone === 'staff' && 'auth--staff')}>
       <aside className="auth__aside on-ink">
@@ -30,15 +34,18 @@ export function AuthLayout({ title, intro, children, footer, social, tone = 'def
           seed="auth"
           ratio={3 / 4}
           tone="ink"
+          fit={asideFit}
           className="auth__aside-art"
           alt=""
         />
-        <div className="auth__aside-inner">
-          <div className="auth__aside-copy">
-            <p className="auth__aside-statement">{SITE.headline}</p>
-            <p className="auth__progression">{SITE.progression.join('  ·  ')}</p>
+        {hideAsideCopy ? null : (
+          <div className="auth__aside-inner">
+            <div className="auth__aside-copy">
+              <p className="auth__aside-statement">{SITE.headline}</p>
+              <p className="auth__progression">{SITE.progression.join('  ·  ')}</p>
+            </div>
           </div>
-        </div>
+        )}
       </aside>
 
       <main className="auth__main" id="main">

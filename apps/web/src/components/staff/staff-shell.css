@@ -4,7 +4,7 @@
    brass rule, instructor = deep slate, affiliate = deep bronze. */
 
 .shell {
-  --shell-side-w: 15.5rem;
+  --shell-side-w: 17rem;
   --shell-bg: #1c1714;
   --shell-accent: var(--brass-tint);
   min-height: 100vh;
@@ -136,6 +136,7 @@
   font-size: 0.82rem;
   letter-spacing: var(--tracking-eyebrow);
   text-transform: uppercase;
+  text-align: left;
   transition: color var(--dur-fast) var(--ease-out);
 }
 .shell__group-toggle .shell__link-icon {

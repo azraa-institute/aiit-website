@@ -34,6 +34,7 @@ export default function LoginPage() {
   const deleted = searchParams.get('reason') === 'deleted';
   const suspendedRedirect = searchParams.get('reason') === 'suspended';
   const [staffAccount, setStaffAccount] = useState(false);
+  const [affiliateAccount, setAffiliateAccount] = useState(false);
   // Set when a fresh sign-in attempt itself reveals the account is suspended
   // (Supabase refuses to issue a banned account a session at all, so this
   // can only be found by asking our own backend, not from Supabase's error
@@ -183,20 +184,21 @@ export default function LoginPage() {
       // Fall through -- the portal's own error state covers a transient failure.
     }
 
-    // Unlike staff, affiliates have no separate sign-in page of their own --
-    // this *is* where they sign in, the same page a learner uses. Arriving
-    // here already pointed at /affiliate-portal (RequireAuth bounced an
-    // anonymous visit there back to this page -- see RequireAuth.tsx/
-    // AffiliatesService's email links) just means honouring that exact
-    // target instead of the default /affiliate-portal root. Previously this
-    // signed the affiliate back out and showed a "go sign in" link pointing
-    // right back here, a dead end: there's nowhere else to send them, so
-    // the fix is routing them to the right portal, not turning them away.
+    // Affiliates now have their own sign-in page (/affiliate/login) -- every
+    // legitimate affiliate sign-in happens there, so anyone reaching this
+    // (student) page with an affiliate account is turned away, the same way
+    // a staff account is above, rather than let into the wrong portal. This
+    // used to fall through and sign them straight into /affiliate-portal
+    // instead, back when /affiliate/login didn't exist yet and there was
+    // nowhere else to send them -- that's no longer true.
     try {
       const affiliateMe = await apiFetch<AffiliateMe>('/affiliates/me');
       if (affiliateMe.hasApplied) {
-        const dest = state?.from?.pathname?.startsWith('/affiliate-portal') ? state.from.pathname : '/affiliate-portal';
-        navigate(dest, { replace: true });
+        await supabase?.auth.signOut().catch(() => {});
+        setSubmitting(false);
+        setMfaPending(false);
+        setAffiliateAccount(true);
+        setError('This is an AIIT affiliate account, so it cannot sign in here.');
         return;
       }
     } catch {
@@ -296,6 +298,11 @@ export default function LoginPage() {
             {staffAccount && (
               <p className="auth__aux">
                 <Link to="/staff/login">Go to the staff sign-in</Link>
+              </p>
+            )}
+            {affiliateAccount && (
+              <p className="auth__aux">
+                <Link to="/affiliate/login">Go to the affiliate sign-in</Link>
               </p>
             )}
             <TextField

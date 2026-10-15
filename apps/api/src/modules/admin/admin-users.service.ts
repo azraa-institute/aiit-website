@@ -156,10 +156,14 @@ export class AdminUsersService {
         Prisma.sql`EXISTS (SELECT 1 FROM enrollments e WHERE e.user_id = p.id AND e.course_id = ${query.courseId}::uuid AND e.status <> 'cancelled')`,
       );
     }
+    if (query.referredByAffiliateId) {
+      conditions.push(Prisma.sql`p.referred_by_affiliate_id = ${query.referredByAffiliateId}::uuid`);
+    }
     // See ListStudentsQueryDto.includeAffiliates's doc comment -- an
     // affiliate who has actually enrolled in something is never hidden,
-    // this only filters out the affiliate-only case.
-    if (!query.includeAffiliates) {
+    // this only filters out the affiliate-only case. Not applied at all
+    // when filtering by referredByAffiliateId's doc comment.
+    if (!query.includeAffiliates && !query.referredByAffiliateId) {
       conditions.push(
         Prisma.sql`NOT (a.id IS NOT NULL AND NOT EXISTS (SELECT 1 FROM enrollments e WHERE e.user_id = p.id AND e.status <> 'cancelled'))`,
       );

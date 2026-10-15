@@ -152,9 +152,8 @@ function Detail({ id, onChanged, onClose }: { id: string; onChanged: () => void;
           <h3 className="adm-drawer__name">{state.data.name ?? 'No name yet'}</h3>
           <p className="adm-muted">{state.data.email ?? 'No email on record'}</p>
           <p className="adm-muted">
-            Every affiliate is also a regular learner account --{' '}
-            <Link to={`/admin/students?q=${encodeURIComponent(state.data.email ?? '')}`} className="adm-linkbtn">
-              view their student profile
+            <Link to={`/admin/students?referredByAffiliateId=${state.data.id}`} className="adm-linkbtn">
+              View the students they referred ({state.data.registrationCount})
             </Link>
           </p>
 

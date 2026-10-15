@@ -298,6 +298,7 @@ export default function AdminStudentsPage() {
   const status = params.get('status') ?? '';
   const courseId = params.get('courseId') ?? '';
   const includeAffiliates = params.get('includeAffiliates') === 'true';
+  const referredByAffiliateId = params.get('referredByAffiliateId') ?? '';
   const page = Math.max(1, Number(params.get('page') ?? 1));
 
   const query = new URLSearchParams({ page: String(page), pageSize: String(PAGE_SIZE) });
@@ -305,6 +306,7 @@ export default function AdminStudentsPage() {
   if (status) query.set('status', status);
   if (courseId) query.set('courseId', courseId);
   if (includeAffiliates) query.set('includeAffiliates', 'true');
+  if (referredByAffiliateId) query.set('referredByAffiliateId', referredByAffiliateId);
   const list = useAdminFetch<Paginated<StudentSummary>>(`/admin/students?${query.toString()}`);
 
   function setParam(key: string, value: string) {
@@ -335,6 +337,15 @@ export default function AdminStudentsPage() {
           <p className="adm-intro">Everyone who has signed up. Open a student to see their courses or suspend the account.</p>
         </div>
       </div>
+
+      {referredByAffiliateId ? (
+        <p className="adm-notice" role="status">
+          Showing only students referred by this affiliate's link.{' '}
+          <button type="button" className="adm-linkbtn" onClick={() => setParam('referredByAffiliateId', '')}>
+            Clear filter
+          </button>
+        </p>
+      ) : null}
 
       <div className="adm-toolbar">
         <label className="adm-field">

@@ -68,6 +68,11 @@ export class ListStudentsQueryDto {
   @IsBoolean()
   includeAffiliates?: boolean;
 
+  /** Students who registered via this affiliate's referral link -- see Profile.referredByAffiliateId. Always shown regardless of includeAffiliates: the whole point of this filter is a complete list of everyone a specific affiliate brought in. */
+  @IsOptional()
+  @IsUUID()
+  referredByAffiliateId?: string;
+
   @IsOptional()
   @Transform(({ value }) => Number(value))
   @IsInt()

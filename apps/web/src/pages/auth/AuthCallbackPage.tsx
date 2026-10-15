@@ -10,12 +10,13 @@ import { AuthLayout } from './AuthLayout';
 import { MfaChallenge } from './MfaChallenge';
 
 /**
- * Lands here after email confirmation, magic-link, or Google OAuth.
- * Implicit-flow sessions (email confirmation, magic link) are parsed from
- * the URL hash by supabase-js itself on load (detectSessionInUrl defaults
- * to true) -- this page just waits for AuthContext to reflect that. PKCE/
- * OAuth flows (Google) carry a `?code=` param that needs an explicit
- * exchange. `handled` guards against React 18 StrictMode's double effect
+ * Lands here after email confirmation, magic-link, or OAuth (Google,
+ * Microsoft, Facebook). Implicit-flow sessions (email confirmation, magic
+ * link) are parsed from the URL hash by supabase-js itself on load
+ * (detectSessionInUrl defaults to true) -- this page just waits for
+ * AuthContext to reflect that. PKCE/OAuth flows carry a `?code=` param that
+ * needs an explicit exchange, the same way regardless of provider.
+ * `handled` guards against React 18 StrictMode's double effect
  * invocation calling exchangeCodeForSession twice with an already-used code.
  * PortalLayout's one-time welcome toast is driven by the API's own
  * `isNewSignup` signal (GET /auth/me), not anything decided here -- this

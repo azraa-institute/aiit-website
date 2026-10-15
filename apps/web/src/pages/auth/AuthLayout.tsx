@@ -85,6 +85,24 @@ const GoogleMark = () => (
   </svg>
 );
 
+const MicrosoftMark = () => (
+  <svg width="18" height="18" viewBox="0 0 18 18" aria-hidden="true">
+    <rect x="0" y="0" width="8.5" height="8.5" fill="#F25022" />
+    <rect x="9.5" y="0" width="8.5" height="8.5" fill="#7FBA00" />
+    <rect x="0" y="9.5" width="8.5" height="8.5" fill="#00A4EF" />
+    <rect x="9.5" y="9.5" width="8.5" height="8.5" fill="#FFB900" />
+  </svg>
+);
+
+const FacebookMark = () => (
+  <svg width="18" height="18" viewBox="0 0 18 18" aria-hidden="true">
+    <path
+      fill="#1877F2"
+      d="M18 9a9 9 0 1 0-10.4 8.89v-6.29H5.31V9h2.29V7.01c0-2.26 1.35-3.51 3.41-3.51.99 0 2.02.18 2.02.18v2.22h-1.14c-1.12 0-1.47.7-1.47 1.41V9h2.5l-.4 2.6h-2.1v6.29A9 9 0 0 0 18 9Z"
+    />
+  </svg>
+);
+
 /**
  * Icon-only, so the accessible name lives entirely in aria-label; `title`
  * adds a native tooltip on hover for sighted mouse users.
@@ -94,7 +112,7 @@ function ProviderButton({
   onClick,
   label,
 }: {
-  provider: 'google';
+  provider: 'google' | 'azure' | 'facebook';
   onClick?: () => void;
   label: string;
 }) {
@@ -106,7 +124,7 @@ function ProviderButton({
       aria-label={label}
       title={label}
     >
-      <GoogleMark />
+      {provider === 'google' ? <GoogleMark /> : provider === 'azure' ? <MicrosoftMark /> : <FacebookMark />}
     </button>
   );
 }
@@ -117,4 +135,17 @@ function ProviderButton({
  */
 export function GoogleAuthButton({ onClick }: { onClick?: () => void }) {
   return <ProviderButton provider="google" onClick={onClick} label="Continue with Google" />;
+}
+
+/**
+ * Supabase's OAuth provider id for Microsoft/Outlook accounts (personal and
+ * work/school, via Entra ID) is "azure", not "microsoft" -- the class name
+ * still reads auth__provider--azure to match.
+ */
+export function MicrosoftAuthButton({ onClick }: { onClick?: () => void }) {
+  return <ProviderButton provider="azure" onClick={onClick} label="Continue with Microsoft" />;
+}
+
+export function FacebookAuthButton({ onClick }: { onClick?: () => void }) {
+  return <ProviderButton provider="facebook" onClick={onClick} label="Continue with Facebook" />;
 }

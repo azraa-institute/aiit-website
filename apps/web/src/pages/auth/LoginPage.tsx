@@ -9,7 +9,7 @@ import type { AffiliateMe, Me } from '@aiit/shared';
 import { apiFetch, canEnterPortal } from '@/lib/api';
 import { invalidateMe } from '@/lib/me';
 import { needsMfaChallenge } from '@/lib/mfa';
-import { AuthLayout, GoogleAuthButton } from './AuthLayout';
+import { AuthLayout, GoogleAuthButton, MicrosoftAuthButton, FacebookAuthButton } from './AuthLayout';
 import { MfaChallenge } from './MfaChallenge';
 
 interface LocationState {
@@ -215,7 +215,7 @@ export default function LoginPage() {
     await enterPortal();
   }
 
-  async function onOAuthSignIn(provider: 'google') {
+  async function onOAuthSignIn(provider: 'google' | 'azure' | 'facebook') {
     if (!supabase) {
       setError('Sign-in is not configured yet.');
       return;
@@ -257,6 +257,8 @@ export default function LoginPage() {
           magicLinkSent || mfaPending ? undefined : (
             <>
               <GoogleAuthButton onClick={() => onOAuthSignIn('google')} />
+              <MicrosoftAuthButton onClick={() => onOAuthSignIn('azure')} />
+              <FacebookAuthButton onClick={() => onOAuthSignIn('facebook')} />
             </>
           )
         }

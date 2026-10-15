@@ -8,7 +8,7 @@ import { PasswordStrengthMeter } from '@/components/common/PasswordStrengthMeter
 import { PASSWORD_HINT, passwordMeetsRequirements, PasswordRequirementsList } from '@/components/common/PasswordRequirements';
 import { supabase } from '@/lib/supabaseClient';
 import { getPendingReferralSlug, clearPendingReferralSlug } from '@/lib/referralAttribution';
-import { AuthLayout, GoogleAuthButton } from './AuthLayout';
+import { AuthLayout, GoogleAuthButton, MicrosoftAuthButton, FacebookAuthButton } from './AuthLayout';
 
 const EMAIL_RE = /.+@.+\..+/;
 const ALREADY_REGISTERED_MESSAGE = 'An account with this email already exists. Please sign in instead.';
@@ -94,7 +94,7 @@ export default function RegisterPage() {
     setSent(true);
   }
 
-  async function onOAuthSignIn(provider: 'google') {
+  async function onOAuthSignIn(provider: 'google' | 'azure' | 'facebook') {
     if (!supabase) {
       setError('Sign-up is not configured yet.');
       return;
@@ -116,6 +116,8 @@ export default function RegisterPage() {
           sent ? undefined : (
             <>
               <GoogleAuthButton onClick={() => onOAuthSignIn('google')} />
+              <MicrosoftAuthButton onClick={() => onOAuthSignIn('azure')} />
+              <FacebookAuthButton onClick={() => onOAuthSignIn('facebook')} />
             </>
           )
         }

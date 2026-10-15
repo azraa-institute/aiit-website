@@ -67,6 +67,16 @@ export class PaystackClientService {
     return { refundId: String(json.data.id), status: json.data.status ?? 'processed' };
   }
 
+  /** Paystack's bank directory only covers these four countries (confirmed against its docs), as plain lowercase names, not ISO codes -- callers pass one of exactly those strings. */
+  async listBanks(country: string): Promise<{ name: string; code: string }[]> {
+    this.ensureConfigured();
+    const res = await this.request(`/bank?country=${encodeURIComponent(country)}&perPage=100`, { method: 'GET' });
+    const json = (await res.json()) as { data?: { name?: string; code?: string }[] };
+    return (json.data ?? [])
+      .filter((b): b is { name: string; code: string } => typeof b.name === 'string' && typeof b.code === 'string')
+      .sort((a, b) => a.name.localeCompare(b.name));
+  }
+
   verifyWebhookSignature(rawBody: Buffer, signatureHeader: string): boolean {
     this.ensureConfigured();
     const expected = createHmac('sha512', this.secretKey as string).update(rawBody).digest('hex');

@@ -169,4 +169,24 @@ export class PaymentsService {
     }
     return (await this.paystack.refundTransaction(providerRef)).refundId;
   }
+
+  private static readonly PAYSTACK_BANK_COUNTRIES: Record<string, string> = {
+    NG: 'nigeria',
+    GH: 'ghana',
+    KE: 'kenya',
+    ZA: 'south africa',
+  };
+
+  /**
+   * Live bank directory, for the affiliate payout form's "Bank name"
+   * dropdown -- Paystack only has one for these four countries. Returns
+   * null (not an empty array) for anywhere else, so the caller can tell
+   * "no directory for this country" apart from "directory returned
+   * nothing", and fall back to a free-text field.
+   */
+  async listBanksForCountry(isoCountryCode: string): Promise<{ name: string; code: string }[] | null> {
+    const country = PaymentsService.PAYSTACK_BANK_COUNTRIES[isoCountryCode.toUpperCase()];
+    if (!country) return null;
+    return this.paystack.listBanks(country);
+  }
 }

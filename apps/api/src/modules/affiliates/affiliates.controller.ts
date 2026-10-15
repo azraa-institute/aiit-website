@@ -1,9 +1,10 @@
-import { Body, Controller, Get, HttpCode, HttpStatus, Post, Put, Req, Res, StreamableFile, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, HttpCode, HttpStatus, Post, Put, Query, Req, Res, StreamableFile, UseGuards } from '@nestjs/common';
 import { Throttle } from '@nestjs/throttler';
 import type { Request, Response } from 'express';
 import type { AffiliateMe } from '@aiit/shared';
 import { JwtGuard, type AuthenticatedUser } from '../../common/guards/jwt.guard';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
+import { PaymentsService } from '../payments/payments.service';
 import { AffiliatesService } from './affiliates.service';
 import { AffiliateAgreementPdfService } from './affiliate-agreement-pdf.service';
 import { ApplyAffiliateDto } from './dto/apply-affiliate.dto';
@@ -24,6 +25,7 @@ export class AffiliatesController {
   constructor(
     private readonly affiliates: AffiliatesService,
     private readonly pdfService: AffiliateAgreementPdfService,
+    private readonly payments: PaymentsService,
   ) {}
 
   @Post('apply')
@@ -73,6 +75,17 @@ export class AffiliatesController {
   @UseGuards(JwtGuard)
   updateContact(@CurrentUser() user: AuthenticatedUser, @Body() dto: UpdateAffiliateContactDto): Promise<AffiliateMe> {
     return this.affiliates.updateContactDetails(user.userId, dto);
+  }
+
+  /**
+   * Live bank list for the payout form's "Bank name" dropdown, keyed by the
+   * bank country's ISO-3166-1 alpha-2 code -- null means Paystack has no
+   * directory for that country, so the frontend falls back to free text.
+   */
+  @Get('banks')
+  @UseGuards(JwtGuard)
+  banks(@Query('country') country: string): Promise<{ name: string; code: string }[] | null> {
+    return this.payments.listBanksForCountry(country ?? '');
   }
 
   /** Unlocks the referral link -- see AffiliatesService.activate(). */

@@ -3,6 +3,8 @@ import type { FormEvent } from 'react';
 import type { AffiliateMe, AffiliatePayoutMethod } from '@aiit/shared';
 import { cn } from '@/lib/cn';
 import { apiFetch, ApiError } from '@/lib/api';
+import { useApiFetch } from '@/lib/useApiFetch';
+import { COUNTRIES } from '@/data/countries';
 import { useAffiliateMe } from './affiliateData';
 import { formatCents } from './affiliateFormat';
 import './affiliate-portal.css';
@@ -42,43 +44,16 @@ function EyeIcon({ open }: { open: boolean }) {
   );
 }
 
-const NIGERIAN_BANKS = [
-  'Access Bank',
-  'Citibank Nigeria',
-  'Ecobank Nigeria',
-  'Fidelity Bank',
-  'First Bank of Nigeria',
-  'First City Monument Bank (FCMB)',
-  'Globus Bank',
-  'Guaranty Trust Bank (GTBank)',
-  'Heritage Bank',
-  'Jaiz Bank',
-  'Keystone Bank',
-  'Kuda Bank',
-  'Moniepoint MFB',
-  'Opay',
-  'Palmpay',
-  'Polaris Bank',
-  'Providus Bank',
-  'Stanbic IBTC Bank',
-  'Standard Chartered Bank Nigeria',
-  'Sterling Bank',
-  'SunTrust Bank',
-  'Titan Trust Bank',
-  'Union Bank of Nigeria',
-  'United Bank for Africa (UBA)',
-  'Unity Bank',
-  'Wema Bank',
-  'Zenith Bank',
-];
+/** Paystack has a live bank directory for exactly these four countries (see PaymentsService.listBanksForCountry) -- everywhere else falls back to a free-text bank name. */
+const BANK_LIST_COUNTRIES = new Set(['NG', 'GH', 'KE', 'ZA']);
 
-type BankCountryChoice = 'IN' | 'NG' | 'other';
+const COUNTRIES_SORTED = [...COUNTRIES].sort((a, b) => a.name.localeCompare(b.name));
 
-function detectCountryChoice(bankCountry: string | undefined): BankCountryChoice {
+/** Matches a saved free-text bankCountry (every record before this dropdown existed, e.g. "Nigeria" or "India") back to its ISO code so the select can preselect it. Empty if it was never set or doesn't match any known country name. */
+function detectCountryCode(bankCountry: string | undefined): string {
   const v = (bankCountry ?? '').trim().toLowerCase();
-  if (v === 'india' || v === 'in') return 'IN';
-  if (v === 'nigeria' || v === 'ng') return 'NG';
-  return 'other';
+  if (!v) return '';
+  return COUNTRIES.find((c) => c.name.toLowerCase() === v || c.code.toLowerCase() === v)?.code ?? '';
 }
 
 function maskAccountNumber(value: string): string {
@@ -92,15 +67,16 @@ function maskAccountNumber(value: string): string {
  * live payout integration exists (see AffiliatesService.updatePayoutDetails's
  * doc comment): an admin pays manually via whichever method this points at,
  * then records it in the admin portal, which is what moves registrationCount
- * x rate - payout history. India/Nigeria get field layouts matching their
- * actual bank-transfer conventions (IFSC vs. NUBAN); anything else falls
- * back to fully generic free-text fields.
+ * x rate - payout history. India gets a field layout matching its actual
+ * bank-transfer convention (IFSC); Nigeria/Ghana/Kenya/South Africa get a
+ * live bank-name dropdown from Paystack's bank directory (see
+ * PaymentsService.listBanksForCountry); anywhere else falls back to fully
+ * generic free-text fields.
  */
 function PayoutDetailsForm({ details, onSaved }: { details: AffiliateMe['payoutDetails']; onSaved: (me: AffiliateMe) => void }) {
   const [method, setMethod] = useState<AffiliatePayoutMethod>(details?.method ?? 'paypal');
   const [paypalEmail, setPaypalEmail] = useState(details?.paypalEmail ?? '');
-  const [countryChoice, setCountryChoice] = useState<BankCountryChoice>(detectCountryChoice(details?.bankCountry));
-  const [bankCountry, setBankCountry] = useState(details?.bankCountry ?? '');
+  const [countryCode, setCountryCode] = useState(() => detectCountryCode(details?.bankCountry));
   const [bankAccountName, setBankAccountName] = useState(details?.bankAccountName ?? '');
   const [bankAccountNumber, setBankAccountNumber] = useState(details?.bankAccountNumber ?? '');
   const [bankName, setBankName] = useState(details?.bankName ?? '');
@@ -113,9 +89,30 @@ function PayoutDetailsForm({ details, onSaved }: { details: AffiliateMe['payoutD
 
   const hasExistingDetails = Boolean(details);
 
+  const banksPath = BANK_LIST_COUNTRIES.has(countryCode) ? `/affiliates/banks?country=${countryCode}` : null;
+  const banksState = useApiFetch<{ name: string; code: string }[] | null>(banksPath);
+  const bankOptions = banksState.status === 'ready' ? banksState.data : null;
+  const hasBankList = Boolean(bankOptions && bankOptions.length > 0);
+
   function resetConfirm() {
     setConfirmChange(false);
     setSaved(false);
+  }
+
+  function onCountryChange(code: string) {
+    setCountryCode(code);
+    // A bank picked under the old country no longer means anything once the
+    // list it came from (or the free-text convention, for IFSC/sort code)
+    // has changed out from under it.
+    setBankName('');
+    setBankCode('');
+    resetConfirm();
+  }
+
+  function onSelectBank(name: string) {
+    setBankName(name);
+    setBankCode(bankOptions?.find((b) => b.name === name)?.code ?? '');
+    resetConfirm();
   }
 
   async function save() {
@@ -123,7 +120,7 @@ function PayoutDetailsForm({ details, onSaved }: { details: AffiliateMe['payoutD
     setError(undefined);
     setSaved(false);
     try {
-      const resolvedBankCountry = countryChoice === 'IN' ? 'India' : countryChoice === 'NG' ? 'Nigeria' : bankCountry.trim();
+      const resolvedBankCountry = COUNTRIES.find((c) => c.code === countryCode)?.name ?? '';
       const me = await apiFetch<AffiliateMe>('/affiliates/me/payout', {
         method: 'PUT',
         body: JSON.stringify(
@@ -217,30 +214,20 @@ function PayoutDetailsForm({ details, onSaved }: { details: AffiliateMe['payoutD
               <label className="adm-field">
                 <span>Bank country</span>
                 <select
-                  value={countryChoice}
-                  onChange={(e) => {
-                    setCountryChoice(e.target.value as BankCountryChoice);
-                    resetConfirm();
-                  }}
+                  required
+                  value={countryCode}
+                  onChange={(e) => onCountryChange(e.target.value)}
                 >
-                  <option value="IN">India</option>
-                  <option value="NG">Nigeria</option>
-                  <option value="other">Other</option>
+                  <option value="" disabled>
+                    Select a country…
+                  </option>
+                  {COUNTRIES_SORTED.map((c) => (
+                    <option key={c.code} value={c.code}>
+                      {c.name}
+                    </option>
+                  ))}
                 </select>
               </label>
-              {countryChoice === 'other' ? (
-                <label className="adm-field">
-                  <span>Country your bank is in</span>
-                  <input
-                    required
-                    value={bankCountry}
-                    onChange={(e) => {
-                      setBankCountry(e.target.value);
-                      resetConfirm();
-                    }}
-                  />
-                </label>
-              ) : null}
               <label className="adm-field">
                 <span>Account holder name</span>
                 <input
@@ -253,21 +240,14 @@ function PayoutDetailsForm({ details, onSaved }: { details: AffiliateMe['payoutD
                 />
               </label>
 
-              {countryChoice === 'NG' ? (
+              {hasBankList ? (
                 <label className="adm-field">
                   <span>Bank name</span>
-                  <select
-                    required
-                    value={bankName}
-                    onChange={(e) => {
-                      setBankName(e.target.value);
-                      resetConfirm();
-                    }}
-                  >
+                  <select required value={bankName} onChange={(e) => onSelectBank(e.target.value)}>
                     <option value="">Select a bank…</option>
-                    {NIGERIAN_BANKS.map((b) => (
-                      <option key={b} value={b}>
-                        {b}
+                    {bankOptions?.map((b) => (
+                      <option key={b.code} value={b.name}>
+                        {b.name}
                       </option>
                     ))}
                   </select>
@@ -276,7 +256,7 @@ function PayoutDetailsForm({ details, onSaved }: { details: AffiliateMe['payoutD
                 <label className="adm-field">
                   <span>Bank name</span>
                   <input
-                    required={countryChoice === 'IN'}
+                    required={countryCode === 'IN'}
                     value={bankName}
                     onChange={(e) => {
                       setBankName(e.target.value);
@@ -287,14 +267,14 @@ function PayoutDetailsForm({ details, onSaved }: { details: AffiliateMe['payoutD
               )}
 
               <label className="adm-field aff-masked-field">
-                <span>Account number{countryChoice === 'NG' ? ' (NUBAN, 10 digits)' : ''}</span>
+                <span>Account number{countryCode === 'NG' ? ' (NUBAN, 10 digits)' : ''}</span>
                 <span className="aff-masked-field__row">
                   <input
                     type="text"
                     required
-                    inputMode={countryChoice === 'NG' ? 'numeric' : 'text'}
-                    pattern={countryChoice === 'NG' ? '\\d{10}' : undefined}
-                    title={countryChoice === 'NG' ? 'A 10-digit NUBAN account number' : undefined}
+                    inputMode={countryCode === 'NG' ? 'numeric' : 'text'}
+                    pattern={countryCode === 'NG' ? '\\d{10}' : undefined}
+                    title={countryCode === 'NG' ? 'A 10-digit NUBAN account number' : undefined}
                     value={revealAccountNumber ? bankAccountNumber : maskAccountNumber(bankAccountNumber)}
                     onFocus={() => setRevealAccountNumber(true)}
                     onChange={(e) => {
@@ -313,7 +293,7 @@ function PayoutDetailsForm({ details, onSaved }: { details: AffiliateMe['payoutD
                 </span>
               </label>
 
-              {countryChoice === 'IN' ? (
+              {countryCode === 'IN' ? (
                 <label className="adm-field adm-field--wide">
                   <span>IFSC code</span>
                   <input
@@ -328,7 +308,7 @@ function PayoutDetailsForm({ details, onSaved }: { details: AffiliateMe['payoutD
                     }}
                   />
                 </label>
-              ) : countryChoice === 'other' ? (
+              ) : !hasBankList ? (
                 <label className="adm-field adm-field--wide">
                   <span>IFSC / sort code / routing number / SWIFT (whichever your bank uses)</span>
                   <input

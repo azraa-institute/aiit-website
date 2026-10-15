@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom';
 import type { PublicWebinar } from '@aiit/shared';
 import { useApiFetch } from '@/lib/useApiFetch';
+import { useScrollReveal } from '@/lib/useScrollReveal';
 import { Section } from '@/components/primitives/Section';
 import { Plate } from '@/components/primitives/Plate';
 import { Countdown } from '@/components/common/Countdown';
@@ -9,6 +10,13 @@ import './webinar-spotlight.css';
 
 export function WebinarSpotlight() {
   const state = useApiFetch<PublicWebinar[]>('/webinars');
+  // HomePage's own useScrollReveal() call runs once at initial mount, which
+  // is before this component's fetch resolves and its [data-reveal] div
+  // exists -- without re-scanning here once `state.status` changes, that div
+  // is never observed and stays at its default opacity: 0 forever (same
+  // fix CourseDetailPage/WebinarPage/etc. already apply for their own
+  // async content).
+  useScrollReveal([state.status]);
   // Nothing to promote (still loading, errored, or no webinar exists) --
   // the homepage just quietly omits this section rather than showing a
   // loading flicker or an empty-state card in the middle of the page.

@@ -67,11 +67,6 @@
   width: 100%;
   padding: clamp(1.5rem, 4vw, 4rem) clamp(1.5rem, 6vw, 6rem);
 }
-.auth__hero-stack {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-}
 /* ---- Dark glass card -- the hero composition's card sits directly on a
    busy photo, where the plain white card every other auth page uses would
    either wash out or need a heavy scrim that dulls the photo. Text/field
@@ -149,48 +144,13 @@
   box-shadow: 0 0 0 3px rgba(236, 201, 122, 0.35);
 }
 
-/* A short gold eyebrow label directly above the card -- same dash +
-   small-caps language as StaffShell's .shell__portal-dash -- for a photo
-   that doesn't already carry its own program/section label baked in. In
-   normal flow inside .auth__hero-stack (not absolutely positioned over the
-   image), so it always sits the same fixed gap above the card and shares
-   its left edge, instead of drifting apart at a card height/viewport size
-   other than whatever one a fixed top/left offset was tuned against. */
-.auth__hero-eyebrow {
-  /* Explicit stacking + its own text-shadow (same technique
-     .auth__aside-statement already uses elsewhere in this file) so it
-     reads clearly regardless of which part of the photo happens to sit
-     behind it -- a plain gold-on-photo label can lose contrast over a
-     darker, cooler-toned region without one. */
-  position: relative;
-  z-index: 1;
-  flex-shrink: 0;
-  display: flex;
-  align-items: center;
-  gap: var(--space-3);
-  margin: 0 0 clamp(1.25rem, 1rem + 1vw, 1.75rem);
-  color: var(--brass-tint);
-  font-size: var(--fs-eyebrow);
-  font-weight: 700;
-  letter-spacing: var(--tracking-eyebrow);
-  text-transform: uppercase;
-  text-shadow: 0 1px 6px rgba(0, 0, 0, 0.7);
-}
-.auth__hero-eyebrow::before {
-  content: '';
-  width: 28px;
-  height: 2px;
-  border-radius: 1px;
-  background: var(--brass-tint);
-}
 @media (max-width: 640px) {
-  /* The eyebrow+card move together now (same flex stack), so they can't
-     drift apart here -- this is purely about clearing the *photo's own*
-     baked-in logo near the real top of the viewport, which this layout
-     doesn't control. Top-align rather than vertically centering a stack
-     tall enough to reach that high on a short screen, with enough
-     clearance that it never touches the logo, and let the page scroll if
-     the stack is taller than the viewport. */
+  /* Purely about clearing the *photo's own* baked-in logo near the real
+     top of the viewport, which this layout doesn't control. Top-align
+     rather than vertically centering a card tall enough to reach that
+     high on a short screen, with enough clearance that it never touches
+     the logo, and let the page scroll if the card is taller than the
+     viewport. */
   .auth--hero {
     align-items: flex-start;
   }
@@ -201,12 +161,6 @@
   }
   .auth--hero .auth__card {
     border-radius: 18px;
-  }
-  /* A bit more breathing room than desktop's clamp() gives at this width,
-     so the label reads as clearly separate from the card rather than
-     sitting right at its rounded top edge. */
-  .auth__hero-eyebrow {
-    margin-bottom: 1.5rem;
   }
 }
 

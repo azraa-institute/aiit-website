@@ -28,13 +28,11 @@ interface AuthLayoutProps {
    * this mode -- the banner already carries its own.
    */
   layout?: 'split' | 'hero';
-  /** 'hero' only: a short gold eyebrow label (dash + small caps, same language as StaffShell's portal label) overlaid on the image, for a photo that doesn't already carry its own program/section label baked in. */
-  heroEyebrow?: string;
 }
 
 const DEFAULT_ASIDE_IMAGE = '/assets/auth/aiit-registration.webp';
 
-export function AuthLayout({ title, intro, children, footer, social, tone = 'default', asideImage, layout = 'split', heroEyebrow }: AuthLayoutProps) {
+export function AuthLayout({ title, intro, children, footer, social, tone = 'default', asideImage, layout = 'split' }: AuthLayoutProps) {
   const card = (
     <div className={cn('auth__card', layout === 'hero' && 'on-ink')}>
       <Link to="/" className="auth__brand" aria-label="AIIT home">
@@ -62,16 +60,7 @@ export function AuthLayout({ title, intro, children, footer, social, tone = 'def
           <Plate source={asideImage ?? DEFAULT_ASIDE_IMAGE} seed="auth" ratio={16 / 9} tone="ink" fit="cover" alt="" />
         </div>
         <main className="auth__main" id="main">
-          {/* The eyebrow and card move as one unit (same flex stack), not
-              independently positioned over the image -- that's what let
-              them drift apart (the eyebrow pinned to a fixed viewport
-              offset, the card's own position driven by its content height
-              and vertical centering) at viewport sizes/card heights other
-              than whatever one this was tuned against. */}
-          <div className="auth__hero-stack">
-            {heroEyebrow && <p className="auth__hero-eyebrow">{heroEyebrow}</p>}
-            {card}
-          </div>
+          {card}
         </main>
       </div>
     );

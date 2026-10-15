@@ -48,6 +48,17 @@
   width: 100%;
   height: 100%;
 }
+.auth__hero-band img {
+  /* Anchored to the top, not the default centre -- the source photo's own
+     baked-in logo sits in its top-left corner, and on any viewport wider
+     than the image's own ~16:9 (cover crops top+bottom to fill the extra
+     width), a centred crop cuts into it. Top-anchoring means that crop
+     only ever comes out of the bottom (the floor), never the top. On a
+     narrower/taller viewport (most real windows), height is already the
+     constraining dimension and there's no vertical crop to anchor at all,
+     so this has no effect there. */
+  object-position: 50% 0%;
+}
 .auth--hero .auth__main {
   position: relative;
   z-index: 1;
@@ -55,6 +66,11 @@
   justify-content: flex-start;
   width: 100%;
   padding: clamp(1.5rem, 4vw, 4rem) clamp(1.5rem, 6vw, 6rem);
+}
+.auth__hero-stack {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
 }
 /* ---- Dark glass card -- the hero composition's card sits directly on a
    busy photo, where the plain white card every other auth page uses would
@@ -133,18 +149,18 @@
   box-shadow: 0 0 0 3px rgba(236, 201, 122, 0.35);
 }
 
-/* A short gold eyebrow label overlaid on the hero image -- same dash +
+/* A short gold eyebrow label directly above the card -- same dash +
    small-caps language as StaffShell's .shell__portal-dash -- for a photo
-   that doesn't already carry its own program/section label baked in. */
+   that doesn't already carry its own program/section label baked in. In
+   normal flow inside .auth__hero-stack (not absolutely positioned over the
+   image), so it always sits the same fixed gap above the card and shares
+   its left edge, instead of drifting apart at a card height/viewport size
+   other than whatever one a fixed top/left offset was tuned against. */
 .auth__hero-eyebrow {
-  position: absolute;
-  z-index: 1;
-  top: clamp(5rem, 11vh, 7rem);
-  left: clamp(1.5rem, 4vw, 3rem);
   display: flex;
   align-items: center;
   gap: var(--space-3);
-  margin: 0;
+  margin: 0 0 clamp(1.25rem, 1rem + 1vw, 1.75rem);
   color: var(--brass-tint);
   font-size: var(--fs-eyebrow);
   font-weight: 700;
@@ -159,11 +175,13 @@
   background: var(--brass-tint);
 }
 @media (max-width: 640px) {
-  /* A card tall enough to need scrolling plus vertical centering is how it
-     ends up overlapping the logo/eyebrow sitting near the top of the same
-     full-height box -- top-align instead, with enough clearance below the
-     eyebrow that the two never touch, and let the page scroll if the card
-     is taller than the viewport rather than centering it over them. */
+  /* The eyebrow+card move together now (same flex stack), so they can't
+     drift apart here -- this is purely about clearing the *photo's own*
+     baked-in logo near the real top of the viewport, which this layout
+     doesn't control. Top-align rather than vertically centering a stack
+     tall enough to reach that high on a short screen, with enough
+     clearance that it never touches the logo, and let the page scroll if
+     the stack is taller than the viewport. */
   .auth--hero {
     align-items: flex-start;
   }
@@ -437,6 +455,15 @@
   gap: var(--space-3);
 }
 .auth__title {
+  /* Explicit, not left to inherit -- color: var(--fg) is only declared on
+     body, so every descendant's actual (computed) color is fixed at
+     whatever --fg resolved to there, never re-evaluated against a nearer
+     ancestor's --fg override. .auth__intro/.field__label etc. already
+     declare color: var(--fg...) directly on themselves for this reason,
+     which is why they correctly flipped to ivory under the hero card's
+     on-ink while this heading -- the one rule that skipped it -- rendered
+     as near-black on a near-black card. */
+  color: var(--fg);
   font-family: var(--font-display);
   font-size: var(--fs-heading);
   font-weight: var(--fw-medium);

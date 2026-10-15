@@ -60,10 +60,18 @@ export function AuthLayout({ title, intro, children, footer, social, tone = 'def
       <div className="auth auth--hero">
         <div className="auth__hero-band on-ink">
           <Plate source={asideImage ?? DEFAULT_ASIDE_IMAGE} seed="auth" ratio={16 / 9} tone="ink" fit="cover" alt="" />
-          {heroEyebrow && <p className="auth__hero-eyebrow">{heroEyebrow}</p>}
         </div>
         <main className="auth__main" id="main">
-          {card}
+          {/* The eyebrow and card move as one unit (same flex stack), not
+              independently positioned over the image -- that's what let
+              them drift apart (the eyebrow pinned to a fixed viewport
+              offset, the card's own position driven by its content height
+              and vertical centering) at viewport sizes/card heights other
+              than whatever one this was tuned against. */}
+          <div className="auth__hero-stack">
+            {heroEyebrow && <p className="auth__hero-eyebrow">{heroEyebrow}</p>}
+            {card}
+          </div>
         </main>
       </div>
     );

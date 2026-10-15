@@ -146,7 +146,25 @@ export function Header({ overHero = false }: HeaderProps) {
                       className={({ isActive }) => cn('site-header__link', isActive && 'is-active')}
                       aria-haspopup={item.children ? 'true' : undefined}
                       aria-expanded={item.children ? groupOpen : undefined}
-                      onClick={() => setOpenGroup(null)}
+                      onClick={(e) => {
+                        // A mouse user already saw the panel via onMouseEnter before
+                        // they could click, so groupOpen is already true by the time
+                        // they do -- this only changes anything for a touch tap,
+                        // which never fires onMouseEnter at all: without this, the
+                        // very first tap on "About Us"/"Courses"/etc. navigated
+                        // straight through before the panel ever got a chance to
+                        // show, on any touch-capable device wide enough to render
+                        // this desktop nav instead of MobileMenu's own (working,
+                        // tap-based) accordion. First tap opens the panel instead of
+                        // following the link; tapping the same label again (now that
+                        // it's open) navigates, same as a mouse click always has.
+                        if (item.children && !groupOpen) {
+                          e.preventDefault();
+                          openNow(item.label);
+                          return;
+                        }
+                        setOpenGroup(null);
+                      }}
                       onFocus={() => item.children && openNow(item.label)}
                       onKeyDown={(e) => {
                         if (!item.children) return;

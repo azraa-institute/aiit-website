@@ -49,15 +49,17 @@
   height: 100%;
 }
 .auth__hero-band img {
-  /* Anchored to the top, not the default centre -- the source photo's own
-     baked-in logo sits in its top-left corner, and on any viewport wider
-     than the image's own ~16:9 (cover crops top+bottom to fill the extra
-     width), a centred crop cuts into it. Top-anchoring means that crop
-     only ever comes out of the bottom (the floor), never the top. On a
-     narrower/taller viewport (most real windows), height is already the
-     constraining dimension and there's no vertical crop to anchor at all,
-     so this has no effect there. */
-  object-position: 50% 0%;
+  /* Anchored to the top-LEFT, not the default centre -- the source photo's
+     own baked-in logo sits in its top-left corner. A viewport wider than
+     the image's own ~16:9 crops top+bottom to fill the extra width;
+     top-anchoring means that crop only ever comes out of the bottom. A
+     viewport narrower/taller than ~16:9 (phones, small tablets in
+     portrait) crops left+right instead to fill the extra height -- a
+     centred crop here cut the logo off entirely on anything narrow
+     enough, since it sits right at the image's own left edge. Left-
+     anchoring means that crop only ever comes out of the right side (the
+     globe), never the left. */
+  object-position: 0% 0%;
 }
 .auth--hero .auth__main {
   position: relative;

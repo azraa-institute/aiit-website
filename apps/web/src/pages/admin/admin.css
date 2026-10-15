@@ -9,15 +9,18 @@
   margin-bottom: var(--space-5);
 }
 /* The dark "letterhead" banner every admin/instructor page opens with --
-   targets the text block specifically (always a bare <div>, confirmed
-   across every current .adm-page__head usage), not .adm-page__head itself,
-   so an occasional sibling action button (e.g. AdminClassesPage's "Add a
-   one-off class") sits outside the banner instead of being squeezed inside
-   it or overlapping the seal. Colour comes from --shell-bg/--shell-accent,
-   the same custom properties StaffShell already sets per tone
-   (admin/instructor/affiliate) on the ancestor .shell element -- one rule
-   here, correct on every portal automatically, nothing to repeat per tone. */
-.adm-page__head > div {
+   targets the text block specifically (always the bare, first-child <div>),
+   not .adm-page__head itself, so a sibling action button or group (e.g.
+   AdminClassesPage's "Add a one-off class", or AdminWebinarEditorPage's
+   "View registrants"/"Back to webinars" pair) sits outside the banner
+   instead of being squeezed inside it or overlapping the seal. `:first-child`
+   matters here -- without it this also matches any later sibling <div>
+   (like an .adm-actions wrapper), painting it with the same banner.
+   Colour comes from --shell-bg/--shell-accent, the same custom properties
+   StaffShell already sets per tone (admin/instructor/affiliate) on the
+   ancestor .shell element -- one rule here, correct on every portal
+   automatically, nothing to repeat per tone. */
+.adm-page__head > div:first-child {
   position: relative;
   overflow: hidden;
   flex: 1 1 320px;
@@ -31,27 +34,27 @@
   background-position: calc(100% - 1.25rem) 50%, 0 0, 0 0;
   background-size: 72px 72px, auto, cover;
 }
-.adm-page__head > div .adm-eyebrow,
-.adm-page__head > div .adm-title,
-.adm-page__head > div .adm-intro,
-.adm-page__head > div .adm-muted {
+.adm-page__head > div:first-child .adm-eyebrow,
+.adm-page__head > div:first-child .adm-title,
+.adm-page__head > div:first-child .adm-intro,
+.adm-page__head > div:first-child .adm-muted {
   position: relative;
 }
-.adm-page__head > div .adm-eyebrow {
+.adm-page__head > div:first-child .adm-eyebrow {
   color: var(--shell-accent);
 }
-.adm-page__head > div .adm-title {
+.adm-page__head > div:first-child .adm-title {
   color: var(--ivory);
 }
-.adm-page__head > div .adm-intro,
-.adm-page__head > div .adm-muted {
+.adm-page__head > div:first-child .adm-intro,
+.adm-page__head > div:first-child .adm-muted {
   color: rgba(244, 239, 231, 0.78);
 }
-.adm-page__head > div a {
+.adm-page__head > div:first-child a {
   color: inherit;
 }
 @media (max-width: 640px) {
-  .adm-page__head > div {
+  .adm-page__head > div:first-child {
     padding: var(--space-4) var(--space-5);
     background-size: 52px 52px, auto, cover;
     background-position: calc(100% - 1rem) 1.1rem, 0 0, 0 0;

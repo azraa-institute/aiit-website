@@ -69,8 +69,8 @@ export default function AdminWebinarRegistrantsPage() {
             {webinar.status === 'ready' ? `${webinar.data.title} -- Registrants` : 'Registrants'}
           </h1>
         </div>
-        <Link to={id ? `/admin/webinars/${id}` : '/admin/webinars'} className="adm-btn adm-btn--ghost">
-          Back to webinar
+        <Link to="/admin/webinars" className="adm-btn adm-btn--ghost">
+          Back to webinars
         </Link>
       </div>
 

@@ -62,6 +62,15 @@ function maskAccountNumber(value: string): string {
   return `•••• ${digits.slice(-4)}`;
 }
 
+/** Must contain at least one letter from any script -- rejects a pure number/symbol string (e.g. a phone number pasted into "Account holder name" by mistake) without assuming a particular alphabet, so it doesn't reject real names written in scripts outside basic Latin. */
+const CONTAINS_A_LETTER = '.*\\p{L}.*';
+
+function payoutSummaryLine(details: NonNullable<AffiliateMe['payoutDetails']>): string {
+  if (details.method === 'paypal') return `PayPal — ${details.paypalEmail ?? ''}`;
+  const masked = details.bankAccountNumber ? maskAccountNumber(details.bankAccountNumber) : '';
+  return `Bank transfer — ${details.bankName ?? ''} (${masked}), ${details.bankCountry ?? ''}`;
+}
+
 /**
  * Where to actually send money -- self-reported, admin-visible only. No
  * live payout integration exists (see AffiliatesService.updatePayoutDetails's
@@ -86,6 +95,10 @@ function PayoutDetailsForm({ details, onSaved }: { details: AffiliateMe['payoutD
   const [error, setError] = useState<string>();
   const [saved, setSaved] = useState(false);
   const [confirmChange, setConfirmChange] = useState(false);
+  // First-time entry opens straight into the form (there's nothing to show
+  // a summary of yet); once details exist, they're shown closed/read-only
+  // until "Edit payout details" is clicked, rather than always sitting open.
+  const [editing, setEditing] = useState(!details);
 
   const hasExistingDetails = Boolean(details);
 
@@ -139,6 +152,7 @@ function PayoutDetailsForm({ details, onSaved }: { details: AffiliateMe['payoutD
       onSaved(me);
       setSaved(true);
       setRevealAccountNumber(false);
+      setEditing(false);
     } catch (err) {
       setError(err instanceof ApiError ? err.message : 'Could not save your payout details.');
     } finally {
@@ -156,6 +170,36 @@ function PayoutDetailsForm({ details, onSaved }: { details: AffiliateMe['payoutD
       return;
     }
     void save();
+  }
+
+  /** Discards any unsaved edits and goes back to the read-only summary -- the saved `details` are untouched either way, this only resets the form's own local state back to them. */
+  function cancelEdit() {
+    if (!details) return;
+    setMethod(details.method);
+    setPaypalEmail(details.paypalEmail ?? '');
+    setCountryCode(detectCountryCode(details.bankCountry));
+    setBankAccountName(details.bankAccountName ?? '');
+    setBankAccountNumber(details.bankAccountNumber ?? '');
+    setBankName(details.bankName ?? '');
+    setBankCode(details.bankCode ?? '');
+    setRevealAccountNumber(false);
+    setError(undefined);
+    setConfirmChange(false);
+    setEditing(false);
+  }
+
+  if (!editing && details) {
+    return (
+      <section className="aff-card">
+        <h2>Payout details</h2>
+        <p>{payoutSummaryLine(details)}</p>
+        <div className="adm-actions">
+          <button type="button" className="adm-btn adm-btn--primary" onClick={() => setEditing(true)}>
+            Edit payout details
+          </button>
+        </div>
+      </section>
+    );
   }
 
   return (
@@ -232,6 +276,9 @@ function PayoutDetailsForm({ details, onSaved }: { details: AffiliateMe['payoutD
                 <span>Account holder name</span>
                 <input
                   required
+                  minLength={2}
+                  pattern={CONTAINS_A_LETTER}
+                  title="Enter the account holder's actual name, not a number."
                   value={bankAccountName}
                   onChange={(e) => {
                     setBankAccountName(e.target.value);
@@ -256,7 +303,10 @@ function PayoutDetailsForm({ details, onSaved }: { details: AffiliateMe['payoutD
                 <label className="adm-field">
                   <span>Bank name</span>
                   <input
-                    required={countryCode === 'IN'}
+                    required
+                    minLength={2}
+                    pattern={CONTAINS_A_LETTER}
+                    title="Enter the bank's actual name, not a number."
                     value={bankName}
                     onChange={(e) => {
                       setBankName(e.target.value);
@@ -344,6 +394,10 @@ function PayoutDetailsForm({ details, onSaved }: { details: AffiliateMe['payoutD
           </button>
           {confirmChange ? (
             <button type="button" className="adm-btn adm-btn--ghost" onClick={() => setConfirmChange(false)}>
+              Cancel
+            </button>
+          ) : hasExistingDetails ? (
+            <button type="button" className="adm-btn adm-btn--ghost" onClick={cancelEdit} disabled={saving}>
               Cancel
             </button>
           ) : null}

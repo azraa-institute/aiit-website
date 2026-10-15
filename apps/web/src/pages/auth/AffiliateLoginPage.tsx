@@ -135,6 +135,7 @@ export default function AffiliateLoginPage() {
       <AuthLayout
         layout="hero"
         asideImage={ASIDE_IMAGE}
+        heroEyebrow="Affiliate Program"
         title={mfaPending ? 'Two-factor authentication' : 'Affiliate sign-in'}
         intro={
           mfaPending

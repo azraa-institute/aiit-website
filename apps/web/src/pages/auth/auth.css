@@ -52,6 +52,31 @@
 .auth--hero .auth__card {
   box-shadow: 0 24px 60px -16px rgba(10, 8, 6, 0.55);
 }
+/* A short gold eyebrow label overlaid on the hero image -- same dash +
+   small-caps language as StaffShell's .shell__portal-dash -- for a photo
+   that doesn't already carry its own program/section label baked in. */
+.auth__hero-eyebrow {
+  position: absolute;
+  z-index: 1;
+  top: clamp(5rem, 11vh, 7rem);
+  left: clamp(1.5rem, 4vw, 3rem);
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  margin: 0;
+  color: var(--brass-tint);
+  font-size: var(--fs-eyebrow);
+  font-weight: 700;
+  letter-spacing: var(--tracking-eyebrow);
+  text-transform: uppercase;
+}
+.auth__hero-eyebrow::before {
+  content: '';
+  width: 28px;
+  height: 2px;
+  border-radius: 1px;
+  background: var(--brass-tint);
+}
 @media (max-width: 640px) {
   .auth--hero .auth__main {
     justify-content: center;

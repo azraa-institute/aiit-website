@@ -19,6 +19,7 @@ export default function AdminWebinarRegistrantsPage() {
   const [reminderBusy, setReminderBusy] = useState<'24h' | '30m' | null>(null);
   const [reminderNotice, setReminderNotice] = useState<string>();
   const [error, setError] = useState<string>();
+  const noJoinUrl = webinar.status === 'ready' && !webinar.data.joinUrl;
 
   async function toggleAttended(r: AdminWebinarRegistrant) {
     setBusyId(r.id);
@@ -46,7 +47,11 @@ export default function AdminWebinarRegistrantsPage() {
         method: 'POST',
         body: JSON.stringify({ kind }),
       });
-      setReminderNotice(`Sent to ${result.sentCount} registrant${result.sentCount === 1 ? '' : 's'}.`);
+      if (result.sentCount === 0 && webinar.status === 'ready' && !webinar.data.joinUrl) {
+        setReminderNotice('Sent to 0 -- this webinar has no join link set yet, so reminders have nowhere to send people. Add one on the webinar form first.');
+      } else {
+        setReminderNotice(`Sent to ${result.sentCount} registrant${result.sentCount === 1 ? '' : 's'}.`);
+      }
       registrants.reload();
     } catch (err) {
       setError(err instanceof ApiError ? err.message : 'Could not send that reminder.');
@@ -73,10 +78,22 @@ export default function AdminWebinarRegistrantsPage() {
         <div className="adm-panel__head">
           <h2 id="registrants">Registrants</h2>
           <div className="adm-actions">
-            <button type="button" className="adm-btn adm-btn--ghost" disabled={reminderBusy !== null} onClick={() => sendReminder('24h')}>
+            <button
+              type="button"
+              className="adm-btn adm-btn--ghost"
+              disabled={reminderBusy !== null || noJoinUrl}
+              title={noJoinUrl ? 'Add a join link to this webinar first.' : undefined}
+              onClick={() => sendReminder('24h')}
+            >
               {reminderBusy === '24h' ? 'Sending…' : 'Send 24h reminder now'}
             </button>
-            <button type="button" className="adm-btn adm-btn--ghost" disabled={reminderBusy !== null} onClick={() => sendReminder('30m')}>
+            <button
+              type="button"
+              className="adm-btn adm-btn--ghost"
+              disabled={reminderBusy !== null || noJoinUrl}
+              title={noJoinUrl ? 'Add a join link to this webinar first.' : undefined}
+              onClick={() => sendReminder('30m')}
+            >
               {reminderBusy === '30m' ? 'Sending…' : 'Send 30min reminder now'}
             </button>
           </div>
@@ -85,6 +102,11 @@ export default function AdminWebinarRegistrantsPage() {
           Reminders also send automatically (24h and 30min before the start time) once a join link is set on the
           webinar -- these buttons are for an early or manual resend, not the normal path.
         </p>
+        {noJoinUrl ? (
+          <p className="adm-notice" role="status">
+            This webinar has no join link set yet, so reminders can't be sent. Add one on the webinar form.
+          </p>
+        ) : null}
         {reminderNotice ? (
           <p className="adm-notice" role="status">
             {reminderNotice}

@@ -1,22 +1,17 @@
 /**
- * A "panel with a rail" glyph -- the layout itself, not just an arrow -- used
- * for every sidebar collapse/expand control (student portal rail, admin and
- * instructor shells). `open` points the small chevron toward where the rail
- * will go: left to tuck it away, right to bring it back.
+ * A minimal two-line menu glyph -- used for every sidebar collapse/expand
+ * control (student portal rail, admin/instructor/affiliate shells). The
+ * accent dot sits at the end of the short bar on the side the rail will go:
+ * right when open (collapsing tucks it away left), left when collapsed
+ * (expanding brings it back from the left).
  */
 export function SidebarToggleIcon({ open }: { open: boolean }) {
+  const dotX = open ? 14.5 : 5.5;
   return (
     <svg width="17" height="17" viewBox="0 0 20 20" fill="none" aria-hidden="true">
-      <rect x="2.25" y="3.75" width="15.5" height="12.5" rx="2.75" stroke="currentColor" strokeWidth="1.4" />
-      <path d="M8 3.75v12.5" stroke="currentColor" strokeWidth="1.4" />
-      <path
-        d={open ? 'M6 7.5 3.6 10 6 12.5' : 'M4.5 7.5 6.9 10 4.5 12.5'}
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="1.5"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
+      <path d={open ? 'M3.5 7.3h8' : 'M8.5 7.3h8'} stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+      <path d="M3.5 12.7h13" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+      <circle cx={dotX} cy="7.3" r="1.35" fill="var(--shell-accent, var(--brass-tint))" />
     </svg>
   );
 }

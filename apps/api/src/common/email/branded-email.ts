@@ -88,3 +88,23 @@ export function brandedEmailHtml({ heading, intro, ctaLabel, ctaUrl, footerNote,
     </table>
   `;
 }
+
+/**
+ * A bordered label/value table for a `brandedEmailHtml` `bodyHtml` slot --
+ * for internal notifications (new webinar registration, new contact
+ * message) that need to show a handful of submitted fields rather than
+ * prose. Values are inserted as given, so callers must escapeHtml() them
+ * first, same as everywhere else these emails handle user input.
+ */
+export function fieldListHtml(fields: { label: string; value: string }[]): string {
+  const rows = fields
+    .map(
+      ({ label, value }) => `
+        <tr>
+          <td style="padding:10px 14px;border-bottom:1px solid rgba(20,17,15,0.08);font-family:Arial,Helvetica,sans-serif;font-size:13px;color:#8a837a;white-space:nowrap;vertical-align:top;">${label}</td>
+          <td style="padding:10px 14px;border-bottom:1px solid rgba(20,17,15,0.08);font-family:Arial,Helvetica,sans-serif;font-size:14px;color:#14110f;">${value}</td>
+        </tr>`,
+    )
+    .join('');
+  return `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border:1px solid rgba(20,17,15,0.1);border-radius:6px;border-collapse:collapse;overflow:hidden;">${rows}</table>`;
+}

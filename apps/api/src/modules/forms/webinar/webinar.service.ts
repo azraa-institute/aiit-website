@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../../../common/prisma/prisma.service';
 import { EmailService } from '../../../common/email/email.service';
 import { escapeHtml } from '../../../common/email/escape-html';
+import { brandedEmailHtml, fieldListHtml } from '../../../common/email/branded-email';
 import { WebinarNotificationsService } from '../../webinars/webinar-notifications.service';
 import type { RegisterWebinarDto } from './dto/register-webinar.dto';
 
@@ -43,17 +44,28 @@ export class WebinarService {
 
     if (webinar) await this.notifications.sendConfirmation(registration, webinar);
 
+    const adminUrl = webinar
+      ? `${process.env.APP_URL ?? 'https://aiit.network'}/admin/webinars/${webinar.id}/registrants`
+      : `${process.env.APP_URL ?? 'https://aiit.network'}/admin/webinars`;
+
     await this.email.send({
       to: NOTIFY_EMAIL,
       subject: `New webinar registration: ${dto.name.replace(/[\r\n]+/g, ' ')}`,
-      html: `
-        <p><strong>Webinar:</strong> ${escapeHtml(dto.webinarSlug)}</p>
-        <p><strong>Name:</strong> ${escapeHtml(dto.name)}</p>
-        <p><strong>Email:</strong> ${escapeHtml(dto.email)}</p>
-        ${dto.whatsapp ? `<p><strong>WhatsApp:</strong> ${escapeHtml(dto.whatsapp)}</p>` : ''}
-        <p><strong>Region:</strong> ${escapeHtml(dto.region)}</p>
-        <p><strong>Persona:</strong> ${escapeHtml(dto.persona)}</p>
-      `,
+      html: brandedEmailHtml({
+        heading: 'New webinar registration',
+        intro: `${escapeHtml(dto.name)} just registered for a webinar.`,
+        bodyHtml: fieldListHtml([
+          { label: 'Webinar', value: escapeHtml(dto.webinarSlug) },
+          { label: 'Name', value: escapeHtml(dto.name) },
+          { label: 'Email', value: escapeHtml(dto.email) },
+          ...(dto.whatsapp ? [{ label: 'WhatsApp', value: escapeHtml(dto.whatsapp) }] : []),
+          { label: 'Region', value: escapeHtml(dto.region) },
+          { label: 'Persona', value: escapeHtml(dto.persona) },
+        ]),
+        ctaLabel: 'View registrants',
+        ctaUrl: adminUrl,
+        footerNote: 'Automated notification from the AIIT website -- new webinar registration.',
+      }),
     });
   }
 }

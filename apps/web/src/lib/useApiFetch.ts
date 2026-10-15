@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { apiFetch } from './api';
 
 /** Minimal fetch-with-reload hook for the staff screens. `path === null` skips the request. */
@@ -25,5 +25,13 @@ export function useApiFetch<T>(path: string | null): FetchState<T> & { reload: (
   }, [path, tick]);
 
   const reload = useCallback(() => setTick((n) => n + 1), []);
-  return { ...state, reload };
+  // Memoized so the returned object is only a new reference when `state`
+  // itself actually changes -- a consumer with `useEffect(..., [result])`
+  // (AdminBlogEditorPage/AdminWebinarEditorPage both do this) would
+  // otherwise re-run that effect on every render, including the ones its
+  // own setState calls trigger, which is a tight infinite render loop that
+  // makes every button except a real network-bound action (like a form's
+  // submit) appear to silently do nothing -- their state updates get
+  // stomped back to the loaded data before the next paint.
+  return useMemo(() => ({ ...state, reload }), [state, reload]);
 }

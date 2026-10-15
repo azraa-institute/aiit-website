@@ -69,6 +69,9 @@ export default function AdminWebinarsPage() {
                 <Link to={`/admin/webinars/${w.id}`} className="adm-btn adm-btn--ghost">
                   Edit
                 </Link>
+                <Link to={`/admin/webinars/${w.id}/registrants`} className="adm-btn adm-btn--ghost">
+                  Registrants
+                </Link>
               </div>
             </li>
           ))}

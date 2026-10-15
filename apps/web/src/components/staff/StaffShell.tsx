@@ -16,6 +16,18 @@ export interface StaffNavEntry {
   end?: boolean;
 }
 
+/** A collapsible section header with its own sub-links -- for a portal with enough entries (admin) that a flat list reads as a wall of links. */
+export interface StaffNavGroup {
+  label: string;
+  items: StaffNavEntry[];
+}
+
+export type StaffNavItem = StaffNavEntry | StaffNavGroup;
+
+function isNavGroup(item: StaffNavItem): item is StaffNavGroup {
+  return 'items' in item;
+}
+
 /**
  * The frame for the admin and instructor portals: a sidebar + content area.
  * The two portals share this structure but not their look (`tone`) -- each is
@@ -29,13 +41,18 @@ export function StaffShell({
   /** Shown under the logo, e.g. "Administration" or "Instructor portal". */
   portal: string;
   tone: 'admin' | 'instructor' | 'affiliate';
-  nav: StaffNavEntry[];
+  nav: StaffNavItem[];
 }) {
   const navigate = useNavigate();
   const location = useLocation();
   const { signOut, session } = useAuth();
   const me = useMe();
   const [open, setOpen] = useState(false);
+  // Explicit per-group open/closed overrides -- undefined means "not
+  // manually toggled yet", which falls back to "open if it contains the
+  // current route" below, so navigating straight to a sub-page (e.g. a
+  // bookmark or a Link from elsewhere) always shows that group expanded.
+  const [groupOverride, setGroupOverride] = useState<Record<string, boolean>>({});
   // Desktop-only, same idea and mechanism as the student portal's rail --
   // see PortalLayout.tsx. Key is per-tone so an admin and an instructor
   // signed in on the same browser don't share one preference.
@@ -52,6 +69,18 @@ export function StaffShell({
   // staff -- only admin/instructor sign back in at /staff/login.
   function handleSignOut() {
     signOut().then(() => navigate(tone === 'affiliate' ? '/login' : '/staff/login'));
+  }
+
+  function groupContainsActiveRoute(group: StaffNavGroup): boolean {
+    return group.items.some((item) => location.pathname === item.to || location.pathname.startsWith(`${item.to}/`));
+  }
+
+  function isGroupOpen(group: StaffNavGroup): boolean {
+    return groupOverride[group.label] ?? groupContainsActiveRoute(group);
+  }
+
+  function toggleGroup(group: StaffNavGroup) {
+    setGroupOverride((prev) => ({ ...prev, [group.label]: !isGroupOpen(group) }));
   }
 
   return (
@@ -82,13 +111,40 @@ export function StaffShell({
 
         <nav className="shell__nav" aria-label={`${portal} sections`}>
           <ul role="list">
-            {nav.map((item) => (
-              <li key={item.to}>
-                <NavLink to={item.to} end={item.end} className={({ isActive }) => cn('shell__link', isActive && 'is-active')}>
-                  {item.label}
-                </NavLink>
-              </li>
-            ))}
+            {nav.map((item) =>
+              isNavGroup(item) ? (
+                <li key={item.label} className="shell__nav-group">
+                  <button
+                    type="button"
+                    className={cn('shell__group-toggle', isGroupOpen(item) && 'is-open')}
+                    aria-expanded={isGroupOpen(item)}
+                    onClick={() => toggleGroup(item)}
+                  >
+                    {item.label}
+                    <svg className="shell__group-chevron" width="10" height="10" viewBox="0 0 10 10" aria-hidden="true">
+                      <path d="M2.5 3.5 5 6l2.5-2.5" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" />
+                    </svg>
+                  </button>
+                  {isGroupOpen(item) ? (
+                    <ul role="list" className="shell__subnav">
+                      {item.items.map((sub) => (
+                        <li key={sub.to}>
+                          <NavLink to={sub.to} end={sub.end} className={({ isActive }) => cn('shell__link', isActive && 'is-active')}>
+                            {sub.label}
+                          </NavLink>
+                        </li>
+                      ))}
+                    </ul>
+                  ) : null}
+                </li>
+              ) : (
+                <li key={item.to}>
+                  <NavLink to={item.to} end={item.end} className={({ isActive }) => cn('shell__link', isActive && 'is-active')}>
+                    {item.label}
+                  </NavLink>
+                </li>
+              ),
+            )}
           </ul>
         </nav>
 

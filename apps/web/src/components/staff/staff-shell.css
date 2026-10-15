@@ -76,6 +76,39 @@
   box-shadow: inset 3px 0 0 var(--shell-accent);
 }
 
+.shell__group-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding: 0.6rem var(--space-3);
+  border-radius: var(--radius-sm);
+  color: rgba(244, 239, 231, 0.5);
+  font-weight: 700;
+  font-size: 0.78rem;
+  letter-spacing: var(--tracking-eyebrow);
+  text-transform: uppercase;
+  transition: color var(--dur-fast) var(--ease-out);
+}
+.shell__group-toggle:hover {
+  color: var(--ivory);
+}
+.shell__group-chevron {
+  flex-shrink: 0;
+  transform: rotate(-90deg);
+  transition: transform var(--dur-fast) var(--ease-out);
+}
+.shell__group-toggle.is-open .shell__group-chevron {
+  transform: rotate(0deg);
+}
+.shell__subnav {
+  margin-top: 2px;
+  margin-bottom: 2px;
+}
+.shell__subnav .shell__link {
+  padding-left: calc(var(--space-3) + var(--space-3));
+}
+
 .shell__user {
   margin-top: auto;
   padding-top: var(--space-4);

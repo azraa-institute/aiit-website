@@ -1,9 +1,9 @@
 import { useEffect, useState } from 'react';
 import type { FormEvent } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
-import type { AdminWebinar, AdminWebinarRegistrant, WebinarAgendaItem, WebinarInput, WebinarStatus } from '@aiit/shared';
+import type { AdminWebinar, WebinarAgendaItem, WebinarInput, WebinarStatus } from '@aiit/shared';
 import { apiFetch, ApiError } from '@/lib/api';
-import { formatWhen, useAdminFetch } from './adminData';
+import { useAdminFetch } from './adminData';
 
 const STATUS_OPTIONS: { value: WebinarStatus; label: string }[] = [
   { value: 'upcoming', label: 'Upcoming' },
@@ -76,122 +76,6 @@ function toLocalInputValue(iso: string | null | undefined): string {
   const d = new Date(iso);
   const pad = (n: number) => String(n).padStart(2, '0');
   return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
-}
-
-function RegistrantsPanel({ webinarId }: { webinarId: string }) {
-  const state = useAdminFetch<AdminWebinarRegistrant[]>(`/admin/webinars/${webinarId}/registrations`);
-  const [busyId, setBusyId] = useState<string | null>(null);
-  const [reminderBusy, setReminderBusy] = useState<'24h' | '30m' | null>(null);
-  const [reminderNotice, setReminderNotice] = useState<string>();
-  const [error, setError] = useState<string>();
-
-  async function toggleAttended(r: AdminWebinarRegistrant) {
-    setBusyId(r.id);
-    setError(undefined);
-    try {
-      await apiFetch(`/admin/webinars/registrations/${r.id}/attended`, {
-        method: 'PATCH',
-        body: JSON.stringify({ attended: !r.attendedAt }),
-      });
-      state.reload();
-    } catch (err) {
-      setError(err instanceof ApiError ? err.message : 'Could not update that registrant.');
-    } finally {
-      setBusyId(null);
-    }
-  }
-
-  async function sendReminder(kind: '24h' | '30m') {
-    setReminderBusy(kind);
-    setReminderNotice(undefined);
-    setError(undefined);
-    try {
-      const result = await apiFetch<{ sentCount: number }>(`/admin/webinars/${webinarId}/send-reminder`, {
-        method: 'POST',
-        body: JSON.stringify({ kind }),
-      });
-      setReminderNotice(`Sent to ${result.sentCount} registrant${result.sentCount === 1 ? '' : 's'}.`);
-      state.reload();
-    } catch (err) {
-      setError(err instanceof ApiError ? err.message : 'Could not send that reminder.');
-    } finally {
-      setReminderBusy(null);
-    }
-  }
-
-  return (
-    <section className="adm-panel" aria-labelledby="registrants">
-      <div className="adm-panel__head">
-        <h2 id="registrants">Registrants</h2>
-        <div className="adm-actions">
-          <button type="button" className="adm-btn adm-btn--ghost" disabled={reminderBusy !== null} onClick={() => sendReminder('24h')}>
-            {reminderBusy === '24h' ? 'Sending…' : 'Send 24h reminder now'}
-          </button>
-          <button type="button" className="adm-btn adm-btn--ghost" disabled={reminderBusy !== null} onClick={() => sendReminder('30m')}>
-            {reminderBusy === '30m' ? 'Sending…' : 'Send 30min reminder now'}
-          </button>
-        </div>
-      </div>
-      <p className="adm-muted">
-        Reminders also send automatically (24h and 30min before the start time) once a join link is set below --
-        these buttons are for an early or manual resend, not the normal path.
-      </p>
-      {reminderNotice ? (
-        <p className="adm-notice" role="status">
-          {reminderNotice}
-        </p>
-      ) : null}
-      {error ? (
-        <p className="adm-error" role="alert">
-          {error}
-        </p>
-      ) : null}
-
-      {state.status === 'loading' ? <p className="adm-muted">Loading…</p> : null}
-      {state.status === 'error' ? (
-        <p className="adm-error" role="alert">
-          {state.message}
-        </p>
-      ) : null}
-      {state.status === 'ready' && state.data.length === 0 ? <p className="adm-muted">No one has registered yet.</p> : null}
-      {state.status === 'ready' && state.data.length > 0 ? (
-        <div className="adm-tablewrap">
-          <table className="adm-table adm-table--rows">
-            <thead>
-              <tr>
-                <th>Name</th>
-                <th>Email</th>
-                <th>Region</th>
-                <th>Registered</th>
-                <th>Reminders sent</th>
-                <th>Attended</th>
-              </tr>
-            </thead>
-            <tbody>
-              {state.data.map((r) => (
-                <tr key={r.id}>
-                  <td>{r.name}</td>
-                  <td>{r.email}</td>
-                  <td>{r.region}</td>
-                  <td>{formatWhen(r.createdAt)}</td>
-                  <td>
-                    {r.confirmationSentAt ? 'Confirmed' : 'Not confirmed'}
-                    {r.reminder24hSentAt ? ' · 24h' : ''}
-                    {r.reminder30mSentAt ? ' · 30m' : ''}
-                  </td>
-                  <td>
-                    <button type="button" className="adm-linkbtn" disabled={busyId === r.id} onClick={() => toggleAttended(r)}>
-                      {r.attendedAt ? 'Attended ✓' : 'Mark attended'}
-                    </button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      ) : null}
-    </section>
-  );
 }
 
 export default function AdminWebinarEditorPage() {
@@ -280,9 +164,16 @@ export default function AdminWebinarEditorPage() {
           <p className="adm-eyebrow">Content</p>
           <h1 className="adm-title">{webinar ? webinar.title || 'Edit webinar' : 'New webinar'}</h1>
         </div>
-        <Link to="/admin/webinars" className="adm-btn adm-btn--ghost">
-          Back to webinars
-        </Link>
+        <div className="adm-actions">
+          {webinar ? (
+            <Link to={`/admin/webinars/${webinar.id}/registrants`} className="adm-btn adm-btn--ghost">
+              View registrants
+            </Link>
+          ) : null}
+          <Link to="/admin/webinars" className="adm-btn adm-btn--ghost">
+            Back to webinars
+          </Link>
+        </div>
       </div>
 
       <form className="adm-form" onSubmit={handleSave}>
@@ -457,8 +348,6 @@ export default function AdminWebinarEditorPage() {
           </button>
         </div>
       </form>
-
-      {webinar ? <RegistrantsPanel webinarId={webinar.id} /> : null}
     </div>
   );
 }

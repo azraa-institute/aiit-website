@@ -11,7 +11,7 @@ import { AFFILIATE } from '@/data/blueprint';
 import { SITE } from '@/data/site';
 import { Section } from '@/components/primitives/Section';
 import { Button } from '@/components/primitives/Button';
-import { TextField, SelectField, TextArea } from '@/components/common/Field';
+import { TextField, SelectField, TextArea, CheckboxGroupField } from '@/components/common/Field';
 import { SearchableSelect } from '@/components/common/SearchableSelect';
 import { apiFetch, ApiError } from '@/lib/api';
 import { useMe } from '@/lib/me';
@@ -34,6 +34,16 @@ const ALREADY_REGISTERED_MESSAGE = 'An account with this email already exists. P
 // plain. Using the same COUNTRIES list the rest of the site uses is the
 // actual fix for "the country list doesn't match the student side".
 const COUNTRY_OPTIONS = [{ value: '', label: 'Select a country' }, ...COUNTRIES.map((c) => ({ value: c.name, label: c.name }))];
+
+// Checklist, not a single-select -- an applicant can hold any combination
+// (e.g. direct referrer + affiliate-to-affiliate). 'student' is the public-
+// facing label for the direct-referrer type (AffiliateType's own 'student'
+// value, kept as-is server-side -- see packages/shared/src/affiliate.ts).
+const AFFILIATE_TYPE_OPTIONS: { value: AffiliateType; label: string }[] = [
+  { value: 'student', label: 'Direct student referrer (refers students directly)' },
+  { value: 'creator', label: 'Creator (introduces content creators to AIIT)' },
+  { value: 'affiliate_to_affiliate', label: 'Affiliate-to-affiliate (brings in other affiliates)' },
+];
 
 function MailIcon() {
   return (
@@ -127,7 +137,8 @@ export default function AffiliatePage() {
   const [city, setCity] = useState('');
   const [source, setSource] = useState('');
   const [motivation, setMotivation] = useState('');
-  const [type, setType] = useState<AffiliateType | ''>('');
+  const [types, setTypes] = useState<AffiliateType[]>([]);
+  const [affiliateCouponCode, setAffiliateCouponCode] = useState('');
   // Deliberately its own field, not pre-filled from `name` -- typing it is
   // the actual signing gesture (see onSubmit), the same convention real
   // e-signature platforms use even when a name is already on file.
@@ -223,7 +234,7 @@ export default function AffiliatePage() {
     setSubmitting(true);
     try {
       const shared = {
-        type,
+        types,
         signedName: signedName.trim(),
         agreedToTerms: agreed,
         phone: combinePhone(phoneCountry, phoneNational) || undefined,
@@ -233,6 +244,7 @@ export default function AffiliatePage() {
         city: city || undefined,
         source: source || undefined,
         motivation: motivation.trim() || undefined,
+        affiliateCouponCode: affiliateCouponCode.trim() || undefined,
       };
 
       if (!isLoggedIn) {
@@ -270,7 +282,7 @@ export default function AffiliatePage() {
   }
 
   const canSubmit =
-    type.length > 0 &&
+    types.length > 0 &&
     country.length > 0 &&
     signedName.trim().length > 1 &&
     agreed &&
@@ -337,16 +349,28 @@ export default function AffiliatePage() {
             <RateFigure
               variant="milestone"
               value={10}
-              kicker="500+ referrals"
-              label="Once you cross 500 referrals"
+              kicker="500+ direct referrals"
+              label="Once a direct referrer crosses 500 students"
               active={ratesActive}
               delay={300}
             />
+            <span className="affiliate-rates__arrow" aria-hidden="true">
+              →
+            </span>
+            <div className="affiliate-rate affiliate-rate--affiliate" style={{ transitionDelay: '450ms' }}>
+              <p className="affiliate-rate__kicker">Affiliate-to-affiliate</p>
+              <p className="affiliate-rate__value">
+                <span>$</span>
+                2.50
+              </p>
+              <p className="affiliate-rate__label">Per affiliate you successfully refer</p>
+            </div>
           </div>
+          <p className="affiliate-eligibility-note">{a.eligibilityNote}</p>
         </div>
       </Section>
 
-      {/* ---------- 03 · Two ways to earn ---------- */}
+      {/* ---------- 03 · Three ways to earn ---------- */}
       <Section tone="ivory" size="lg">
         <div className="container container--wide">
           <p className="eyebrow">How you earn</p>
@@ -370,11 +394,7 @@ export default function AffiliatePage() {
                 <p className="pathway__kicker">{w.kicker}</p>
                 <h3 className="pathway__title">{w.title}</h3>
                 <p className="pathway__body">{w.body}</p>
-                {i === 0 ? (
-                  <PathwayFlow steps={['You', 'Your code', 'Student', 'AIIT']} reward="$7 → $10" />
-                ) : (
-                  <PathwayFlow steps={['You', 'Creator', "Creator's audience", 'AIIT']} reward="$5" />
-                )}
+                <PathwayFlow steps={w.flowSteps} reward={w.flowReward} />
               </article>
             ))}
           </div>
@@ -594,19 +614,22 @@ export default function AffiliatePage() {
 
                 <fieldset className="affiliate__form-section">
                   <legend>About you</legend>
-                  <SelectField
-                    label="What kind of affiliate are you?"
-                    name="type"
+                  <CheckboxGroupField
+                    label="What kind of affiliate are you? (select all that apply)"
                     required
                     className="field--wide"
-                    options={[
-                      { value: '', label: 'Select one' },
-                      { value: 'creator', label: 'Creator (introduces content creators to AIIT)' },
-                      { value: 'student', label: 'Student referrer (refers students directly)' },
-                      { value: 'affiliate_to_affiliate', label: 'Affiliate-to-affiliate (brings in other affiliates)' },
-                    ]}
-                    value={type}
-                    onChange={(e) => setType(e.target.value as AffiliateType | '')}
+                    options={AFFILIATE_TYPE_OPTIONS}
+                    value={types}
+                    onChange={(next) => setTypes(next as AffiliateType[])}
+                    hint="You can hold more than one -- e.g. refer students directly and also bring in other affiliates."
+                  />
+                  <TextField
+                    label="Have a coupon code from an AIIT affiliate? (optional)"
+                    name="affiliateCouponCode"
+                    className="field--wide"
+                    hint="If another affiliate gave you a code to recruit you into the affiliate program, enter it here."
+                    value={affiliateCouponCode}
+                    onChange={(e) => setAffiliateCouponCode(e.target.value)}
                   />
                   <PhoneCountrySelect label="Country code" value={phoneCountry} onChange={setPhoneCountry} />
                   <TextField

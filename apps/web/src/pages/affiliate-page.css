@@ -327,8 +327,20 @@
   color: var(--red-deep);
 }
 
+.affiliate-rate--affiliate .affiliate-rate__value {
+  font-size: clamp(2.5rem, 1.8rem + 3vw, 3.6rem);
+}
+
+.affiliate-eligibility-note {
+  margin-top: clamp(1.5rem, 2vw, 2.25rem);
+  max-width: 68ch;
+  font-size: var(--fs-sm);
+  line-height: 1.6;
+  color: var(--fg-muted);
+}
+
 /* ============================================================
-   03 · TWO WAYS TO EARN
+   03 · THREE WAYS TO EARN
    ============================================================ */
 .pathways {
   margin-top: clamp(2.5rem, 4vw, 4rem);
@@ -338,7 +350,7 @@
 }
 @media (min-width: 900px) {
   .pathways {
-    grid-template-columns: 1.1fr 0.9fr;
+    grid-template-columns: repeat(3, 1fr);
   }
 }
 
@@ -353,7 +365,8 @@
     box-shadow var(--dur-base) var(--ease-out);
 }
 .pathways[data-hovered]:not([data-hovered='0']) .pathway--0,
-.pathways[data-hovered]:not([data-hovered='1']) .pathway--1 {
+.pathways[data-hovered]:not([data-hovered='1']) .pathway--1,
+.pathways[data-hovered]:not([data-hovered='2']) .pathway--2 {
   opacity: 0.55;
 }
 .pathway:hover,
@@ -366,6 +379,9 @@
 }
 .pathway--1 {
   --pathway-accent: var(--slate-deep);
+}
+.pathway--2 {
+  --pathway-accent: var(--red-deep);
 }
 
 .pathway__kicker {

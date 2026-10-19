@@ -2,7 +2,7 @@ import { Body, Controller, Get, Header, Param, ParseUUIDPipe, Patch, Post, Query
 import type { Request } from 'express';
 import { Throttle } from '@nestjs/throttler';
 import { Transform } from 'class-transformer';
-import { IsEmail, IsIn, IsInt, IsOptional, IsPositive, IsString, MaxLength, Min, MinLength, ValidateIf } from 'class-validator';
+import { ArrayNotEmpty, ArrayUnique, IsArray, IsEmail, IsIn, IsInt, IsOptional, IsPositive, IsString, MaxLength, Min, MinLength, ValidateIf } from 'class-validator';
 import type { AdminAffiliateCredentials, AdminAffiliateDetail, AdminAffiliateStats, AdminAffiliateSummary, AffiliateApplicationStatus, AffiliateType, Paginated } from '@aiit/shared';
 import { JwtGuard, type AuthenticatedUser } from '../../common/guards/jwt.guard';
 import { RolesGuard } from '../../common/guards/roles.guard';
@@ -29,8 +29,11 @@ class AdminCreateAffiliateDto {
   @MaxLength(255)
   email!: string;
 
-  @IsIn(AFFILIATE_TYPES)
-  type!: AffiliateType;
+  @IsArray()
+  @ArrayNotEmpty()
+  @ArrayUnique()
+  @IsIn(AFFILIATE_TYPES, { each: true })
+  types!: AffiliateType[];
 
   @IsOptional()
   @IsIn(AFFILIATE_STATUSES)

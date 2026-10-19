@@ -12,6 +12,7 @@ import type {
 } from '@aiit/shared';
 import { apiFetch } from '@/lib/api';
 import { cn } from '@/lib/cn';
+import { CheckboxGroupField } from '@/components/common/Field';
 import { formatWhen, useAdminFetch } from './adminData';
 
 const TYPE_TAG_CLASS: Record<AffiliateType, string> = {
@@ -35,6 +36,17 @@ const TYPE_LABEL: Record<AffiliateType, string> = {
 
 function TypeTag({ type }: { type: AffiliateType }) {
   return <span className={cn('adm-tag', TYPE_TAG_CLASS[type])}>{TYPE_LABEL[type]}</span>;
+}
+
+/** One affiliate can now hold several types at once -- renders one tag per type, flex-wrapped. */
+function TypeTags({ types }: { types: AffiliateType[] }) {
+  return (
+    <span className="adm-tag-group">
+      {types.map((t) => (
+        <TypeTag key={t} type={t} />
+      ))}
+    </span>
+  );
 }
 
 function formatCents(cents: number): string {
@@ -161,7 +173,7 @@ function Detail({ id, onChanged, onClose }: { id: string; onChanged: () => void;
             <div>
               <dt>Type</dt>
               <dd>
-                <TypeTag type={state.data.type} />
+                <TypeTags types={state.data.types} />
               </dd>
             </div>
             <div>
@@ -176,18 +188,54 @@ function Detail({ id, onChanged, onClose }: { id: string; onChanged: () => void;
               <dt>Applied</dt>
               <dd>{formatWhen(state.data.createdAt)}</dd>
             </div>
+            {state.data.earnings.studentReferrals ? (
+              <div>
+                <dt>{state.data.studentReferralLinkLabel ?? 'Student referrals'}</dt>
+                <dd>
+                  {state.data.earnings.studentReferrals.totalCount} signed up,{' '}
+                  {state.data.earnings.studentReferrals.eligibleCount} onboarded (paid) --{' '}
+                  {formatCents(state.data.earnings.studentReferrals.estimatedCents)} estimated
+                </dd>
+              </div>
+            ) : null}
+            {state.data.earnings.affiliateReferrals ? (
+              <div>
+                <dt>Affiliate referrals</dt>
+                <dd>
+                  {state.data.earnings.affiliateReferrals.totalCount} applied with their coupon,{' '}
+                  {state.data.earnings.affiliateReferrals.eligibleCount} successful --{' '}
+                  {formatCents(state.data.earnings.affiliateReferrals.estimatedCents)} estimated
+                </dd>
+              </div>
+            ) : null}
             <div>
-              <dt>Registered via their link</dt>
-              <dd>{state.data.registrationCount}</dd>
-            </div>
-            <div>
-              <dt>Estimated earned</dt>
+              <dt>Total estimated earned</dt>
               <dd>
-                {state.data.earnings.estimatedCents == null
-                  ? 'No published rate for this type yet'
-                  : `${formatCents(state.data.earnings.estimatedCents)} (${formatCents(state.data.earnings.paidCents)} paid, ${formatCents(state.data.earnings.owedCents ?? 0)} owed)`}
+                {formatCents(state.data.earnings.estimatedCents)} ({formatCents(state.data.earnings.paidCents)} paid,{' '}
+                {formatCents(state.data.earnings.owedCents)} owed)
               </dd>
             </div>
+            <div>
+              <dt>Referral link</dt>
+              <dd>{state.data.referralLink ?? 'Not unlocked yet (not approved, or reference code not activated)'}</dd>
+            </div>
+            <div>
+              <dt>Affiliate coupon code</dt>
+              <dd>{state.data.affiliateCouponCode ?? 'Not unlocked yet (not approved, or reference code not activated)'}</dd>
+            </div>
+            <div>
+              <dt>Reference code</dt>
+              <dd>
+                {state.data.referenceCode ?? '—'}
+                {state.data.activatedAt ? ` — activated ${formatWhen(state.data.activatedAt)}` : ' — not yet activated'}
+              </dd>
+            </div>
+            {state.data.referredBy ? (
+              <div>
+                <dt>Referred by</dt>
+                <dd>{state.data.referredBy.name ?? state.data.referredBy.email ?? state.data.referredBy.id} (affiliate-to-affiliate coupon)</dd>
+              </div>
+            ) : null}
             <div>
               <dt>Payout details</dt>
               <dd>{payoutDetailsSummary(state.data.payoutDetails)}</dd>
@@ -303,7 +351,7 @@ function Detail({ id, onChanged, onClose }: { id: string; onChanged: () => void;
 function AddAffiliateForm({ onDone, onClose }: { onDone: () => void; onClose: () => void }) {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
-  const [type, setType] = useState<AffiliateType>('creator');
+  const [types, setTypes] = useState<AffiliateType[]>(['creator']);
   const [status, setStatus] = useState<AffiliateApplicationStatus>('approved');
   const [phone, setPhone] = useState('');
   const [country, setCountry] = useState('');
@@ -322,7 +370,7 @@ function AddAffiliateForm({ onDone, onClose }: { onDone: () => void; onClose: ()
         body: JSON.stringify({
           name: name.trim(),
           email: email.trim(),
-          type,
+          types,
           status,
           phone: phone.trim() || undefined,
           country: country.trim() || undefined,
@@ -383,16 +431,13 @@ function AddAffiliateForm({ onDone, onClose }: { onDone: () => void; onClose: ()
               <span>Email address</span>
               <input required type="email" maxLength={255} value={email} onChange={(e) => setEmail(e.target.value)} />
             </label>
-            <label className="adm-field">
-              <span>Type</span>
-              <select value={type} onChange={(e) => setType(e.target.value as AffiliateType)}>
-                {(Object.keys(TYPE_LABEL) as AffiliateType[]).map((t) => (
-                  <option key={t} value={t}>
-                    {TYPE_LABEL[t]}
-                  </option>
-                ))}
-              </select>
-            </label>
+            <CheckboxGroupField
+              label="Type (select all that apply)"
+              className="adm-field--wide"
+              options={(Object.keys(TYPE_LABEL) as AffiliateType[]).map((t) => ({ value: t, label: TYPE_LABEL[t] }))}
+              value={types}
+              onChange={(next) => setTypes(next as AffiliateType[])}
+            />
             <label className="adm-field">
               <span>Status</span>
               <select value={status} onChange={(e) => setStatus(e.target.value as AffiliateApplicationStatus)}>
@@ -418,7 +463,7 @@ function AddAffiliateForm({ onDone, onClose }: { onDone: () => void; onClose: ()
           </div>
           {error ? <p className="adm-error" role="alert">{error}</p> : null}
           <div className="adm-actions">
-            <button type="submit" className="adm-btn adm-btn--primary" disabled={busy}>
+            <button type="submit" className="adm-btn adm-btn--primary" disabled={busy || types.length === 0}>
               {busy ? 'Adding…' : 'Add affiliate'}
             </button>
           </div>
@@ -531,7 +576,7 @@ export default function AdminAffiliatesPage() {
                     </td>
                     <td>{a.email ?? '—'}</td>
                     <td>
-                      <TypeTag type={a.type} />
+                      <TypeTags types={a.types} />
                     </td>
                     <td className="num">{a.registrationCount}</td>
                     <td>{formatWhen(a.createdAt)}</td>

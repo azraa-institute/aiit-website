@@ -20,9 +20,33 @@ function CheckIcon() {
   );
 }
 
+/** One copy-to-clipboard box, reused for both the referral link and the coupon code -- same `.aff-linkbox` markup/CSS, just the value and copy state are per-instance. */
+function CopyBox({ value }: { value: string }) {
+  const [copied, setCopied] = useState(false);
+
+  async function copy() {
+    try {
+      await navigator.clipboard.writeText(value);
+      setCopied(true);
+      window.setTimeout(() => setCopied(false), 2000);
+    } catch {
+      /* clipboard unavailable, the value is still shown as selectable text */
+    }
+  }
+
+  return (
+    <div className="aff-linkbox">
+      <code>{value}</code>
+      <button type="button" className={cn('aff-linkbox__copy', copied && 'is-copied')} onClick={copy}>
+        {copied ? <CheckIcon /> : <CopyIcon />}
+        {copied ? 'Copied' : 'Copy'}
+      </button>
+    </div>
+  );
+}
+
 export default function AffiliateLinkPage() {
   const state = useAffiliateMe();
-  const [copied, setCopied] = useState(false);
 
   if (state.status === 'loading') return <p className="aff-loading">Loading…</p>;
   if (state.status === 'error') {
@@ -34,40 +58,35 @@ export default function AffiliateLinkPage() {
   }
 
   const { data } = state;
-  if (!data.referralLink) {
+  if (!data.referralLink && !data.affiliateCouponCode) {
     return (
       <section className="aff-card">
-        <h2>Your referral link</h2>
-        <p>Your referral link unlocks once your application is approved and activated -- head back to the Dashboard.</p>
+        <h2>Your referral tools</h2>
+        <p>Your referral link and/or coupon code unlock once your application is approved and activated -- head back to the Dashboard.</p>
       </section>
     );
   }
 
-  async function copyLink() {
-    if (!data.referralLink) return;
-    try {
-      await navigator.clipboard.writeText(data.referralLink);
-      setCopied(true);
-      window.setTimeout(() => setCopied(false), 2000);
-    } catch {
-      /* clipboard unavailable, the link is still shown as selectable text */
-    }
-  }
-
   return (
     <div className="aff-dash">
-      <section className="aff-card">
-        <h2>Your referral link</h2>
-        <p>Share this instead of a code, anyone who signs up after clicking it is attributed to you automatically.</p>
-        <div className="aff-linkbox">
-          <code>{data.referralLink}</code>
-          <button type="button" className={cn('aff-linkbox__copy', copied && 'is-copied')} onClick={copyLink}>
-            {copied ? <CheckIcon /> : <CopyIcon />}
-            {copied ? 'Copied' : 'Copy'}
-          </button>
-        </div>
-        <p className="aff-card__footnote">{(data.registrationCount ?? 0).toLocaleString()} people have registered via this link so far.</p>
-      </section>
+      {/* One titled section per type held -- an affiliate with 2 or 3 types sees each tool separately, not one ambiguous box. */}
+      {data.referralLink ? (
+        <section className="aff-card">
+          <h2>{data.studentReferralLinkLabel}</h2>
+          <p>Share this instead of a code, anyone who signs up after clicking it is attributed to you automatically.</p>
+          <CopyBox value={data.referralLink} />
+          <p className="aff-card__footnote">{(data.registrationCount ?? 0).toLocaleString()} people have registered via this link so far.</p>
+        </section>
+      ) : null}
+
+      {data.affiliateCouponCode ? (
+        <section className="aff-card">
+          <h2>Affiliate-to-Affiliate Coupon Code</h2>
+          <p>Share this code with anyone you&apos;d like to bring into the AIIT affiliate program -- they enter it when they apply.</p>
+          <CopyBox value={data.affiliateCouponCode} />
+          <p className="aff-card__footnote">{(data.affiliateReferralCount ?? 0).toLocaleString()} people have applied with your coupon code so far.</p>
+        </section>
+      ) : null}
     </div>
   );
 }

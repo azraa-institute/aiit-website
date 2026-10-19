@@ -993,6 +993,11 @@
   font-weight: 600;
   white-space: nowrap;
 }
+.adm-tag-group {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
 .adm-tag--creator {
   background: rgba(154, 123, 79, 0.16);
   color: var(--brass-deep);

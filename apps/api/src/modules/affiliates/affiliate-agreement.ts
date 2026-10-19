@@ -9,7 +9,8 @@
  * Builds on AIIT's existing signed document
  * (apps/web/public/assets/affiliate/aiit-affiliate-agreement.pdf) -- same
  * parties, purpose, eligible categories, 10% student discount, commission
- * structure ($5/$7/$10, matching the live AffiliatePage.tsx copy exactly),
+ * structure ($5/$7/$10 plus a flat $2.50 affiliate-to-affiliate rate added
+ * 2026-10-19, matching the live AffiliatePage.tsx copy exactly),
  * content-creator provisions, payment terms and term/termination -- with
  * clauses added that the original was missing for a real commercial
  * agreement: confidentiality, IP/marks, data protection, advertising-
@@ -26,7 +27,7 @@
  * commercial scale.
  */
 
-export const AFFILIATE_AGREEMENT_VERSION = '2026-10-03';
+export const AFFILIATE_AGREEMENT_VERSION = '2026-10-19';
 
 export interface AffiliateAgreementSection {
   heading: string;
@@ -77,11 +78,19 @@ export const AFFILIATE_AGREEMENT_SECTIONS: AffiliateAgreementSection[] = [
   {
     heading: '6. Commission Structure',
     paragraphs: [
-      'Subject to successful registration and verification of the referred learner on the AIIT platform, the Partner shall be entitled to the following commissions (all amounts in United States Dollars – USD):',
-      '• Direct referral: the Partner brings the student directly, using the Partner’s own referral link — $7.00 per successfully registered student.',
+      'Subject to successful enrolment and verification of the referred learner or affiliate on the AIIT platform, the Partner shall be entitled to the following commissions (all amounts in United States Dollars – USD):',
+      '• Direct referral: the Partner brings the student directly, using the Partner’s own referral link — $7.00 per successfully enrolled student.',
       '• Via a Content Creator: the Partner introduces a Content Creator, who then refers students using their own link — $5.00 per student referred by that Content Creator.',
-      '• Volume uplift: once the Partner’s cumulative direct referrals reach 500 or more students, the rate for further direct referrals rises to $10.00 per student.',
-      '“Successfully registered” means the student has completed the required registration process on the AIIT platform and has been verified by AIIT as a valid new learner attributable to the Partner’s or a Content Creator’s referral link. Commissions become payable only after AIIT’s verification and according to the payment schedule in Clause 8.',
+      '• Volume uplift: once the Partner’s cumulative direct referrals reach 500 or more students, the rate for further direct referrals rises to $10.00 per student. This volume uplift applies only to direct referrals under this sub-clause — it does not apply to Content Creator referrals or to affiliate-to-affiliate referrals under Clause 6A, each of which is paid at a flat rate regardless of volume.',
+      '“Successfully enrolled” means the student has completed the required registration process on the AIIT platform, has enrolled in and paid for a course (a free registration alone does not qualify), and has been verified by AIIT as a valid new learner attributable to the Partner’s or a Content Creator’s referral link. Commissions become payable only after AIIT’s verification and according to the payment schedule in Clause 8.',
+    ],
+  },
+  {
+    heading: '6A. Affiliate-to-Affiliate Commission',
+    paragraphs: [
+      'Where the Partner refers another individual who is approved as an AIIT affiliate (an "Introduced Affiliate"), using the Partner’s own affiliate coupon code rather than a clickable referral link, the Partner shall be entitled to a flat commission of $2.50 (United States Dollars) for each Introduced Affiliate who satisfies both of the following conditions: (a) that individual’s own affiliate application has been approved by AIIT, and (b) that individual has themselves successfully enrolled at least one paying student of their own, as defined in Clause 6 above.',
+      'This commission is flat and does not rise with volume — unlike the direct-referral volume uplift in Clause 6, there is no milestone at which the affiliate-to-affiliate rate increases, however many Introduced Affiliates the Partner refers.',
+      'An Introduced Affiliate who is approved but has not yet, personally, enrolled a paying student does not yet generate a commission under this Clause 6A — the commission becomes payable only once that condition is met, and according to the payment schedule in Clause 8.',
     ],
   },
   {

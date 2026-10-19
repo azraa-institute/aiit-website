@@ -1,11 +1,22 @@
-import { Equals, IsBoolean, IsIn, IsOptional, IsString, MaxLength, MinLength } from 'class-validator';
+import { ArrayNotEmpty, ArrayUnique, Equals, IsArray, IsBoolean, IsIn, IsOptional, IsString, MaxLength, MinLength } from 'class-validator';
 import type { AffiliateType } from '@aiit/shared';
 
 export const AFFILIATE_TYPES = ['creator', 'student', 'affiliate_to_affiliate'] as const;
 
 export class ApplyAffiliateDto {
-  @IsIn(AFFILIATE_TYPES)
-  type!: AffiliateType;
+  @IsArray()
+  @ArrayNotEmpty()
+  @ArrayUnique()
+  @IsIn(AFFILIATE_TYPES, { each: true })
+  types!: AffiliateType[];
+
+  // A coupon code is just another affiliate's own referral slug, typed in
+  // rather than clicked -- see AffiliatesService.resolveAffiliateCouponCode().
+  // Optional: most applicants don't have one.
+  @IsOptional()
+  @IsString()
+  @MaxLength(40)
+  affiliateCouponCode?: string;
 
   // The electronic signature itself -- typed deliberately into its own
   // field (see AffiliatePage.tsx's comment on why it isn't pre-filled from

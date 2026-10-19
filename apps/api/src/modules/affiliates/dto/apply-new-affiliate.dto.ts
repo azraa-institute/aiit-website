@@ -1,4 +1,4 @@
-import { Equals, IsBoolean, IsEmail, IsIn, IsOptional, IsString, MaxLength, MinLength } from 'class-validator';
+import { ArrayNotEmpty, ArrayUnique, Equals, IsArray, IsBoolean, IsEmail, IsIn, IsOptional, IsString, MaxLength, MinLength } from 'class-validator';
 import type { AffiliateType } from '@aiit/shared';
 import { AFFILIATE_TYPES } from './apply-affiliate.dto';
 
@@ -20,8 +20,11 @@ export class ApplyNewAffiliateDto {
   @MaxLength(255)
   email!: string;
 
-  @IsIn(AFFILIATE_TYPES)
-  type!: AffiliateType;
+  @IsArray()
+  @ArrayNotEmpty()
+  @ArrayUnique()
+  @IsIn(AFFILIATE_TYPES, { each: true })
+  types!: AffiliateType[];
 
   @IsString()
   @MinLength(2)
@@ -67,9 +70,15 @@ export class ApplyNewAffiliateDto {
   @MaxLength(1000)
   motivation?: string;
 
-  /** A pending /r/:slug click (getPendingReferralSlug()), if the applicant arrived via one -- see AffiliatesService.applyNew(). */
+  /** A pending /r/:slug click (getPendingReferralSlug()), if the applicant arrived via one -- see AffiliatesService.applyNew(). Attributes the new PROFILE (student-side), distinct from affiliateCouponCode below. */
   @IsOptional()
   @IsString()
   @MaxLength(40)
   referralSlug?: string;
+
+  /** Another affiliate's own referral slug, typed in as a "coupon code" rather than clicked -- attributes this new AFFILIATE row (affiliate-to-affiliate), distinct from referralSlug above. See AffiliatesService.resolveAffiliateCouponCode(). */
+  @IsOptional()
+  @IsString()
+  @MaxLength(40)
+  affiliateCouponCode?: string;
 }

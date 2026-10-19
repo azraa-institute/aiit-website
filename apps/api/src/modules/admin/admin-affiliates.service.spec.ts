@@ -8,7 +8,7 @@ const AFFILIATE = '33333333-3333-4333-8333-333333333333';
 describe('AdminAffiliatesService', () => {
   let service: AdminAffiliatesService;
   let prisma: {
-    affiliate: { findUnique: jest.Mock; update: jest.Mock; groupBy: jest.Mock };
+    affiliate: { findUnique: jest.Mock; findMany: jest.Mock; update: jest.Mock; groupBy: jest.Mock; count: jest.Mock };
     affiliatePayout: { findMany: jest.Mock; aggregate: jest.Mock; create: jest.Mock };
     profile: { findMany: jest.Mock; count: jest.Mock; groupBy: jest.Mock };
     notification: { create: jest.Mock };
@@ -21,9 +21,12 @@ describe('AdminAffiliatesService', () => {
   const row = (status = 'pending') => ({
     id: AFFILIATE,
     userId: APPLICANT,
-    type: 'creator',
+    types: ['creator'],
     applicationStatus: status,
     referralSlug: 'abc123',
+    referenceCode: 'AIIT-AFF-ABC123',
+    activatedAt: null,
+    referredByAffiliateId: null,
     rejectionReason: null,
     reviewedAt: null,
     reviewedBy: null,
@@ -32,7 +35,13 @@ describe('AdminAffiliatesService', () => {
 
   beforeEach(() => {
     prisma = {
-      affiliate: { findUnique: jest.fn(), update: jest.fn(), groupBy: jest.fn().mockResolvedValue([]) },
+      affiliate: {
+        findUnique: jest.fn(),
+        findMany: jest.fn().mockResolvedValue([]),
+        update: jest.fn(),
+        groupBy: jest.fn().mockResolvedValue([]),
+        count: jest.fn().mockResolvedValue(0),
+      },
       affiliatePayout: {
         findMany: jest.fn().mockResolvedValue([]),
         aggregate: jest.fn().mockResolvedValue({ _sum: { amountCents: null } }),
@@ -52,11 +61,12 @@ describe('AdminAffiliatesService', () => {
     affiliatesService.createManually.mockResolvedValue({ affiliate: row(), temporaryPassword: 'Abc123!xyz' });
     prisma.affiliate.findUnique.mockResolvedValue(row());
 
-    const result = await service.createManually(ADMIN, { name: 'Ada', email: 'ada@example.com', type: 'creator' } as never, '203.0.113.1');
+    const result = await service.createManually(ADMIN, { name: 'Ada', email: 'ada@example.com', types: ['creator'] } as never, '203.0.113.1');
 
-    expect(affiliatesService.createManually).toHaveBeenCalledWith(ADMIN, { name: 'Ada', email: 'ada@example.com', type: 'creator' }, '203.0.113.1');
+    expect(affiliatesService.createManually).toHaveBeenCalledWith(ADMIN, { name: 'Ada', email: 'ada@example.com', types: ['creator'] }, '203.0.113.1');
     expect(result.temporaryPassword).toBe('Abc123!xyz');
     expect(result.affiliate.id).toBe(AFFILIATE);
+    expect(result.affiliate.types).toEqual(['creator']);
   });
 
   it('rejecting without a reason is blocked', async () => {
@@ -114,6 +124,66 @@ describe('AdminAffiliatesService', () => {
       totalRegistrations: 17,
     });
     expect(prisma.profile.count).toHaveBeenCalledWith({ where: { referredByAffiliateId: { not: null } } });
+  });
+
+  describe('detail', () => {
+    it('surfaces the referral link/coupon only once approved and activated, plus the reference code regardless', async () => {
+      prisma.affiliate.findUnique.mockResolvedValue({ ...row('approved'), activatedAt: null });
+
+      const detail = await service.detail(AFFILIATE);
+
+      expect(detail.referralLink).toBeNull();
+      expect(detail.affiliateCouponCode).toBeNull();
+      expect(detail.referenceCode).toBe('AIIT-AFF-ABC123');
+      expect(detail.activatedAt).toBeNull();
+    });
+
+    it('surfaces the referral link once approved and activated, labeled for the held type', async () => {
+      prisma.affiliate.findUnique.mockResolvedValue({ ...row('approved'), types: ['student'], activatedAt: new Date() });
+
+      const detail = await service.detail(AFFILIATE);
+
+      expect(detail.referralLink).toBe('https://aiit.network/r/abc123');
+      expect(detail.studentReferralLinkLabel).toBe('Direct Student Referral Link');
+      expect(detail.affiliateCouponCode).toBeNull();
+    });
+
+    it('resolves referredBy into a displayable name/email for an affiliate-to-affiliate chain', async () => {
+      const REFERRER = '55555555-5555-4555-8555-555555555555';
+      prisma.affiliate.findUnique.mockImplementation(({ where }: { where: { id?: string } }) =>
+        Promise.resolve(where.id === AFFILIATE ? { ...row('approved'), referredByAffiliateId: REFERRER } : { id: REFERRER, userId: APPLICANT }),
+      );
+      prisma.$queryRaw.mockResolvedValue([{ id: APPLICANT, email: 'ref@example.com' }]);
+      prisma.profile.findMany.mockResolvedValue([{ id: APPLICANT, name: 'Referrer Name' }]);
+
+      const detail = await service.detail(AFFILIATE);
+
+      expect(detail.referredBy).toEqual({ id: REFERRER, name: 'Referrer Name', email: 'ref@example.com' });
+    });
+
+    it('breaks earnings down by pool, only including a pool the affiliate holds a type for', async () => {
+      prisma.affiliate.findUnique.mockResolvedValue({ ...row('approved'), types: ['affiliate_to_affiliate'] });
+      prisma.affiliate.count.mockResolvedValue(4);
+      prisma.$queryRaw.mockImplementation((q: unknown) =>
+        Promise.resolve(String(q).includes('affiliates a2') ? [{ count: 4n }] : [{ id: APPLICANT, email: 'ada@example.com' }]),
+      );
+
+      const detail = await service.detail(AFFILIATE);
+
+      expect(detail.earnings.studentReferrals).toBeNull();
+      expect(detail.earnings.affiliateReferrals).toEqual({ totalCount: 4, eligibleCount: 4, estimatedCents: 1000 });
+      expect(detail.earnings.estimatedCents).toBe(1000);
+    });
+  });
+
+  describe('list', () => {
+    it('filters by "has this type" rather than equality, since one affiliate can hold several', async () => {
+      await service.list({ type: 'affiliate_to_affiliate' });
+
+      expect(prisma.affiliate.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({ where: expect.objectContaining({ types: { has: 'affiliate_to_affiliate' } }) }),
+      );
+    });
   });
 
   describe('recordPayout', () => {

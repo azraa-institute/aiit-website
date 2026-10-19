@@ -14,7 +14,14 @@ import { PrismaService } from '../../common/prisma/prisma.service';
 import { AuditService } from '../../common/audit/audit.service';
 import { EmailService } from '../../common/email/email.service';
 import { brandedEmailHtml } from '../../common/email/branded-email';
-import { AffiliatesService, computeEarnings, payoutDetailsFrom, type AdminCreateAffiliateInput } from '../affiliates/affiliates.service';
+import {
+  AffiliatesService,
+  computeEarnings,
+  payoutDetailsFrom,
+  studentReferralLinkLabel,
+  webOrigin,
+  type AdminCreateAffiliateInput,
+} from '../affiliates/affiliates.service';
 
 const PAGE_SIZE = 25;
 
@@ -63,7 +70,9 @@ export class AdminAffiliatesService {
     }
     const where: Prisma.AffiliateWhereInput = {
       ...(query.status ? { applicationStatus: query.status } : {}),
-      ...(query.type ? { type: query.type } : {}),
+      // Array-contains, not equality -- one affiliate can now hold several
+      // types, so "filter by type" means "has this type", not "is this type".
+      ...(query.type ? { types: { has: query.type } } : {}),
       ...(userIdFilter ? { userId: userIdFilter } : {}),
     };
     const [rows, total] = await Promise.all([
@@ -71,9 +80,13 @@ export class AdminAffiliatesService {
       this.prisma.affiliate.count({ where }),
     ]);
 
-    const [names, counts] = await Promise.all([this.namesAndEmails(rows.map((r) => r.userId)), this.registrationCounts(rows.map((r) => r.id))]);
+    const [names, registrationCounts, affiliateReferralCounts] = await Promise.all([
+      this.namesAndEmails(rows.map((r) => r.userId)),
+      this.registrationCounts(rows.map((r) => r.id)),
+      this.affiliateReferralCounts(rows.map((r) => r.id)),
+    ]);
     return {
-      items: rows.map((r) => this.toSummary(r, names, counts.get(r.id) ?? 0)),
+      items: rows.map((r) => this.toSummary(r, names, registrationCounts.get(r.id) ?? 0, affiliateReferralCounts.get(r.id) ?? 0)),
       total,
       page,
       pageSize: PAGE_SIZE,
@@ -84,20 +97,24 @@ export class AdminAffiliatesService {
     const row = await this.prisma.affiliate.findUnique({ where: { id } });
     if (!row) throw new NotFoundException('Affiliate application not found.');
 
-    const [names, count, reviewerName, payoutRows] = await Promise.all([
+    const [names, count, affiliateReferralCount, reviewerName, payoutRows, referredBy] = await Promise.all([
       this.namesAndEmails([row.userId]),
       this.prisma.profile.count({ where: { referredByAffiliateId: row.id } }),
+      this.prisma.affiliate.count({ where: { referredByAffiliateId: row.id } }),
       row.reviewedBy ? this.namesAndEmails([row.reviewedBy]) : Promise.resolve(new Map()),
       this.prisma.affiliatePayout.findMany({ where: { affiliateId: row.id }, orderBy: { paidAt: 'desc' } }),
+      this.referrerInfo(row.referredByAffiliateId),
     ]);
     // Unlike the affiliate's own dashboard (which hides stats until
     // approved, see AffiliatesService.toMe()), the admin view always shows
     // the real count/earnings -- screening isn't gated on approval status.
-    const earnings = await computeEarnings(this.prisma, row, count);
+    const earnings = await computeEarnings(this.prisma, row);
     const payoutRecorders = await this.namesAndEmails(payoutRows.map((p) => p.recordedBy));
+    const unlocked = row.applicationStatus === 'approved' && Boolean(row.activatedAt);
+    const linkLabel = studentReferralLinkLabel(row.types);
 
     return {
-      ...this.toSummary(row, names, count),
+      ...this.toSummary(row, names, count, affiliateReferralCount),
       phone: row.phone,
       handle: row.handle,
       country: row.country,
@@ -113,6 +130,14 @@ export class AdminAffiliatesService {
       earnings,
       payoutDetails: payoutDetailsFrom(row),
       payouts: payoutRows.map((p) => this.toPayoutRecord(p, payoutRecorders)),
+      // Same values the affiliate sees on their own dashboard/link page --
+      // see AdminAffiliateDetail's own doc comment in packages/shared.
+      referralLink: unlocked && linkLabel ? `${webOrigin()}/r/${row.referralSlug}` : null,
+      studentReferralLinkLabel: unlocked ? linkLabel : null,
+      affiliateCouponCode: unlocked && row.types.includes('affiliate_to_affiliate') ? row.referralSlug.toUpperCase() : null,
+      referenceCode: row.referenceCode,
+      activatedAt: row.activatedAt?.toISOString() ?? null,
+      referredBy,
     };
   }
 
@@ -182,7 +207,7 @@ export class AdminAffiliatesService {
 
     const email = (await this.namesAndEmails([row.userId])).get(row.userId)?.email;
     if (!email) return;
-    const portalUrl = `${process.env.APP_URL ?? 'https://aiit.network'}/affiliate-portal`;
+    const portalUrl = `${webOrigin()}/affiliate-portal`;
     await this.email.send({
       to: email,
       subject: title,
@@ -198,16 +223,22 @@ export class AdminAffiliatesService {
     });
   }
 
-  private toSummary(row: Affiliate, names: Map<string, { name: string | null; email: string | null }>, registrationCount: number): AdminAffiliateSummary {
+  private toSummary(
+    row: Affiliate,
+    names: Map<string, { name: string | null; email: string | null }>,
+    registrationCount: number,
+    affiliateReferralCount: number,
+  ): AdminAffiliateSummary {
     const person = names.get(row.userId);
     return {
       id: row.id,
       userId: row.userId,
       name: person?.name ?? null,
       email: person?.email ?? null,
-      type: row.type,
+      types: row.types,
       applicationStatus: row.applicationStatus,
       registrationCount,
+      affiliateReferralCount,
       createdAt: row.createdAt.toISOString(),
     };
   }
@@ -232,5 +263,25 @@ export class AdminAffiliatesService {
       _count: { _all: true },
     });
     return new Map(rows.filter((r) => r.referredByAffiliateId).map((r) => [r.referredByAffiliateId as string, r._count._all]));
+  }
+
+  /** Raw count of other affiliates who applied using each affiliate's coupon code -- same batching shape as registrationCounts(), for the affiliate-to-affiliate pool. */
+  private async affiliateReferralCounts(affiliateIds: string[]): Promise<Map<string, number>> {
+    if (affiliateIds.length === 0) return new Map();
+    const rows = await this.prisma.affiliate.groupBy({
+      by: ['referredByAffiliateId'],
+      where: { referredByAffiliateId: { in: affiliateIds } },
+      _count: { _all: true },
+    });
+    return new Map(rows.filter((r) => r.referredByAffiliateId).map((r) => [r.referredByAffiliateId as string, r._count._all]));
+  }
+
+  /** Resolves an affiliate-to-affiliate referrer's id into a displayable name/email, for AdminAffiliateDetail.referredBy -- null if this affiliate didn't arrive via a coupon code. */
+  private async referrerInfo(referrerAffiliateId: string | null): Promise<AdminAffiliateDetail['referredBy']> {
+    if (!referrerAffiliateId) return null;
+    const referrer = await this.prisma.affiliate.findUnique({ where: { id: referrerAffiliateId } });
+    if (!referrer) return null;
+    const name = (await this.namesAndEmails([referrer.userId])).get(referrer.userId);
+    return { id: referrer.id, name: name?.name ?? null, email: name?.email ?? null };
   }
 }

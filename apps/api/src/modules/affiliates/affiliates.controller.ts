@@ -33,8 +33,15 @@ export class AffiliatesController {
   apply(@CurrentUser() user: AuthenticatedUser, @Body() dto: ApplyAffiliateDto, @Req() request: Request): Promise<AffiliateMe> {
     // agreedToTerms isn't forwarded -- the DTO's @Equals(true) already made "applied" and
     // "agreed" the same fact; signedName/signedAt are the actual evidence of consent.
-    const { type, signedName, phone, handle, country, state, city, source, motivation } = dto;
-    return this.affiliates.apply(user.userId, type, signedName, request.ip, { phone, handle, country, state, city, source, motivation });
+    const { types, signedName, phone, handle, country, state, city, source, motivation, affiliateCouponCode } = dto;
+    return this.affiliates.apply(
+      user.userId,
+      types,
+      signedName,
+      request.ip,
+      { phone, handle, country, state, city, source, motivation },
+      affiliateCouponCode,
+    );
   }
 
   /**

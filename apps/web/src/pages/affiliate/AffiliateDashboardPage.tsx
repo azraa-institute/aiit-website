@@ -141,7 +141,7 @@ export default function AffiliateDashboardPage() {
   }
 
   const { data } = state;
-  if (!data.hasApplied || !data.type || !data.applicationStatus) return null; // RequireAffiliate already redirects this case away
+  if (!data.hasApplied || data.types.length === 0 || !data.applicationStatus) return null; // RequireAffiliate already redirects this case away
 
   const rejected = data.applicationStatus === 'rejected';
   const approved = data.applicationStatus === 'approved';
@@ -165,9 +165,9 @@ export default function AffiliateDashboardPage() {
         <div className="aff-hero__seal" aria-hidden="true">
           <img src="/assets/legal/az-seal-brass.webp" alt="" />
         </div>
-        <p className="aff-hero__eyebrow">{TYPE_LABEL[data.type]}</p>
+        <p className="aff-hero__eyebrow">{data.types.map((t) => TYPE_LABEL[t]).join(' · ')}</p>
         <h1 className="aff-hero__title">Your affiliate dashboard</h1>
-        <p className="aff-hero__intro">{TYPE_INTRO[data.type]}</p>
+        <p className="aff-hero__intro">{data.types.map((t) => TYPE_INTRO[t]).join(' ')}</p>
       </header>
 
       {!rejected ? <StatusStepper status={data.applicationStatus} /> : null}
@@ -191,41 +191,84 @@ export default function AffiliateDashboardPage() {
 
       {approved && !data.activated ? <ActivationCard onActivated={() => state.refetch()} /> : null}
 
-      {approved && data.activated && data.referralLink ? (
+      {approved && data.activated ? (
         <>
-          <div className="aff-stats-row">
-            <section className="aff-stat">
-              <span className="aff-stat__value">{(data.registrationCount ?? 0).toLocaleString()}</span>
-              <span className="aff-stat__label">registered via your link</span>
+          {data.earnings?.studentReferrals ? (
+            <section className="aff-card">
+              <h2>{data.studentReferralLinkLabel ?? 'Student referrals'}</h2>
+              <div className="aff-stats-row">
+                <section className="aff-stat">
+                  <span className="aff-stat__value">{data.earnings.studentReferrals.totalCount.toLocaleString()}</span>
+                  <span className="aff-stat__label">signed up via your link</span>
+                </section>
+                <section className="aff-stat">
+                  <span className="aff-stat__value">{data.earnings.studentReferrals.eligibleCount.toLocaleString()}</span>
+                  <span className="aff-stat__label">onboarded (paid) -- counts toward pay</span>
+                </section>
+                <section className="aff-stat">
+                  <span className="aff-stat__value">{formatCents(data.earnings.studentReferrals.estimatedCents)}</span>
+                  <span className="aff-stat__label">estimated earned</span>
+                </section>
+              </div>
+              <p className="aff-card__footnote">
+                {data.types.includes('student')
+                  ? "$7 per onboarded student for your first 500, $10 per student after that -- only your direct referrals escalate this way."
+                  : 'A flat $5 per onboarded student, at any volume.'}
+              </p>
             </section>
-            {data.earnings?.estimatedCents != null ? (
-              <>
+          ) : null}
+
+          {data.earnings?.affiliateReferrals ? (
+            <section className="aff-card">
+              <h2>Affiliate referrals</h2>
+              <div className="aff-stats-row">
+                <section className="aff-stat">
+                  <span className="aff-stat__value">{data.earnings.affiliateReferrals.totalCount.toLocaleString()}</span>
+                  <span className="aff-stat__label">applied with your coupon code</span>
+                </section>
+                <section className="aff-stat">
+                  <span className="aff-stat__value">{data.earnings.affiliateReferrals.eligibleCount.toLocaleString()}</span>
+                  <span className="aff-stat__label">successful -- counts toward pay</span>
+                </section>
+                <section className="aff-stat">
+                  <span className="aff-stat__value">{formatCents(data.earnings.affiliateReferrals.estimatedCents)}</span>
+                  <span className="aff-stat__label">estimated earned</span>
+                </section>
+              </div>
+              <p className="aff-card__footnote">
+                A flat $2.50 per successful affiliate referral, at any volume -- counted once the affiliate you referred is
+                approved and has themselves onboarded a paying student of their own.
+              </p>
+            </section>
+          ) : null}
+
+          {data.earnings ? (
+            <>
+              <div className="aff-stats-row">
                 <section className="aff-stat">
                   <span className="aff-stat__value">{formatCents(data.earnings.estimatedCents)}</span>
-                  <span className="aff-stat__label">estimated earned</span>
+                  <span className="aff-stat__label">total estimated earned</span>
                 </section>
                 <section className="aff-stat">
                   <span className="aff-stat__value">{formatCents(data.earnings.paidCents)}</span>
                   <span className="aff-stat__label">paid out so far</span>
                 </section>
                 <section className="aff-stat">
-                  <span className="aff-stat__value">{formatCents(data.earnings.owedCents ?? 0)}</span>
+                  <span className="aff-stat__value">{formatCents(data.earnings.owedCents)}</span>
                   <span className="aff-stat__label">still owed</span>
                 </section>
-              </>
-            ) : null}
-          </div>
-          {data.earnings?.estimatedCents != null ? (
-            <p className="aff-card__footnote">
-              Estimated from AIIT&apos;s published rates and your verified registrations -- the AIIT team confirms the
-              exact figure before paying out.
-            </p>
+              </div>
+              <p className="aff-card__footnote">
+                Estimated from AIIT&apos;s published rates and your verified, onboarded referrals -- the AIIT team confirms
+                the exact figure before paying out.
+              </p>
+            </>
           ) : null}
 
           <div className="aff-quicklinks">
             <Link to="/affiliate-portal/link" className="aff-card aff-card--link">
-              <h2>Your referral link</h2>
-              <p>Get your shareable link and copy it for your audience.</p>
+              <h2>Your referral tools</h2>
+              <p>Get your referral link and/or coupon code, and copy them for sharing.</p>
               <span className="aff-card__cta">Open →</span>
             </Link>
             <Link to="/affiliate-portal/payout" className="aff-card aff-card--link">

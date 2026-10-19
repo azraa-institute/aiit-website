@@ -64,34 +64,54 @@ export const AFFILIATE = {
   kicker: 'AIIT Affiliate Program',
   title: 'Earn every time someone starts their tech career through you.',
   intro:
-    "Refer students to AIIT's globally recognised tech programmes, or introduce creators who'll promote us to their audience, and get paid per successful enrolment.",
+    "Refer students to AIIT's globally recognised tech programmes, introduce creators who'll promote us to their audience, or bring other affiliates into the program -- and get paid per successful, fully-onboarded enrolment.",
   primaryCta: { label: 'Apply as an Affiliate', to: '#apply' },
   secondaryCta: { label: 'See how you earn', to: '#earn' },
   rates: [
     { label: 'Per student you refer directly', value: '$7' },
     { label: 'Per student via a creator you introduce', value: '$5' },
-    { label: 'Once you cross 500 referrals', value: '$10' },
+    { label: 'Once a direct referrer crosses 500 students', value: '$10' },
+    { label: 'Per affiliate you successfully refer', value: '$2.50' },
   ],
-  waysHeading: 'Two ways to earn with AIIT',
+  // The $10 milestone applies ONLY to direct student referrals -- creator
+  // and affiliate-to-affiliate commissions are flat, forever, at every
+  // volume. "Fully onboarded"/"successful" both mean the referred person
+  // (or, for an affiliate referral, a student the referred affiliate
+  // brought in themselves) actually enrolled in and paid for a course --
+  // not just registered an account.
+  eligibilityNote:
+    "Commissions are payable once the referred student has enrolled in a paid course -- a free sign-up alone doesn't count. For an affiliate-to-affiliate referral, the affiliate you referred must have themselves onboarded at least one paying student. Only direct student referrals rise to $10 after 500; the creator and affiliate-to-affiliate rates are flat.",
+  waysHeading: 'Three ways to earn with AIIT',
   waysIntro:
-    "Pick one, or do both. You'll get a unique referral code either way, and every student who uses it saves 10% on their course.",
+    "Pick one, two, or all three when you apply. You'll get the right tool for each -- a referral link for student referrals, a coupon code for affiliate referrals.",
   ways: [
     {
       kicker: 'Refer students',
       title: 'Bring learners straight to AIIT',
-      body: 'Share your code with senior secondary students, undergraduates, professionals or graduates looking to upskill. They get 10% off, you earn $7 per verified enrolment, rising to $10 once you pass 500 referrals.',
+      body: 'Share your referral link with senior secondary students, undergraduates, professionals or graduates looking to upskill. They get 10% off, you earn $7 per student who enrols and pays, rising to $10 once you pass 500.',
+      flowSteps: ['You', 'Your referral link', 'Student', 'AIIT'],
+      flowReward: '$7 → $10',
     },
     {
       kicker: 'Introduce content creators',
       title: 'Connect us with creators in your network',
-      body: 'Know someone with an engaged audience (roughly 50,000+ followers)? Introduce them to AIIT. Every student their code brings in earns you $5, and AIIT deals with the creator directly on their own terms.',
+      body: 'Know someone with an engaged audience (roughly 50,000+ followers)? Introduce them to AIIT. Every student their link brings in and pays for earns you a flat $5, and AIIT deals with the creator directly on their own terms.',
+      flowSteps: ['You', 'Creator', "Creator's audience", 'AIIT'],
+      flowReward: '$5',
+    },
+    {
+      kicker: 'Refer other affiliates',
+      title: 'Grow the affiliate program itself',
+      body: "Give out your coupon code to people who'd make good AIIT affiliates. Once someone you referred is approved and has themselves onboarded a paying student, you earn a flat $2.50 -- no volume cap, no escalation.",
+      flowSteps: ['You', 'Your coupon code', 'New affiliate', 'Their first paying student'],
+      flowReward: '$2.50',
     },
   ],
   steps: [
     { index: '01', title: 'Apply', body: "Fill in the form below with your details and how you'd like to contribute." },
-    { index: '02', title: 'Get approved', body: 'Our team reviews your application by hand -- once approved, your personal referral link is ready in your affiliate dashboard.' },
-    { index: '03', title: 'Share your link', body: 'Promote AIIT to students or introduce us to a creator in your network -- no code to remember or type.' },
-    { index: '04', title: 'Get paid', body: 'Earnings are calculated on verified enrolments and paid on the agreed schedule.' },
+    { index: '02', title: 'Get approved', body: 'Our team reviews your application by hand -- once approved, your referral link and/or coupon code are ready in your affiliate dashboard.' },
+    { index: '03', title: 'Share your tools', body: 'A referral link for students, a coupon code for affiliates -- whichever you applied for, no code to remember or type for student referrals.' },
+    { index: '04', title: 'Get paid', body: 'Earnings are calculated on verified, fully-onboarded (paid) enrolments and affiliate referrals, and paid on the agreed schedule.' },
   ],
   disclaimer: "By applying, you're not employed by AIIT, affiliates work as independent referral partners.",
 };

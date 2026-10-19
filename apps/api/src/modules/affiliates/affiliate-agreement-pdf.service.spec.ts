@@ -3,9 +3,10 @@ import { AffiliateAgreementPdfService } from './affiliate-agreement-pdf.service'
 const BASE_AFFILIATE = {
   id: '22222222-2222-4222-8222-222222222222',
   userId: '11111111-1111-4111-8111-111111111111',
-  type: 'creator' as const,
+  types: ['creator' as const],
   applicationStatus: 'pending' as const,
   referralSlug: 'abc123',
+  referredByAffiliateId: null,
   phone: null,
   handle: null,
   country: null,

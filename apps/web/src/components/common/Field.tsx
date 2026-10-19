@@ -138,6 +138,54 @@ type SelectFieldProps = {
   options: { value: string; label: string }[];
 } & SelectHTMLAttributes<HTMLSelectElement>;
 
+type CheckboxGroupFieldProps = {
+  label: string;
+  hint?: string;
+  error?: string;
+  required?: boolean;
+  className?: string;
+  options: { value: string; label: string }[];
+  value: string[];
+  onChange: (value: string[]) => void;
+};
+
+/**
+ * "Check any that apply" -- unlike FieldShell's other variants, there's no
+ * single control to attach the label to, so this renders its own
+ * role="group"/aria-labelledby pairing instead of reusing FieldShell's
+ * label-for-id pattern. Used wherever a single-select dropdown needed to
+ * become a multi-select (e.g. the affiliate application form's "what kind
+ * of affiliate are you?").
+ */
+export function CheckboxGroupField({ label, hint, error, required, className, options, value, onChange }: CheckboxGroupFieldProps) {
+  const groupId = useId();
+  function toggle(optionValue: string) {
+    onChange(value.includes(optionValue) ? value.filter((v) => v !== optionValue) : [...value, optionValue]);
+  }
+  return (
+    <div className={cn('field', error && 'field--error', className)} role="group" aria-labelledby={groupId}>
+      <span className="field__label" id={groupId}>
+        {label}
+        {required && <span aria-hidden="true"> *</span>}
+      </span>
+      <div className="field__checkbox-group">
+        {options.map((o) => (
+          <label key={o.value} className="field__checkbox-option">
+            <input type="checkbox" checked={value.includes(o.value)} onChange={() => toggle(o.value)} />
+            <span>{o.label}</span>
+          </label>
+        ))}
+      </div>
+      {hint && !error && <p className="field__hint">{hint}</p>}
+      {error && (
+        <p className="field__error" role="alert">
+          {error}
+        </p>
+      )}
+    </div>
+  );
+}
+
 export function SelectField({ label, hint, error, required, options, className, ...rest }: SelectFieldProps) {
   return (
     <FieldShell label={label} hint={hint} error={error} required={required} className={className}>

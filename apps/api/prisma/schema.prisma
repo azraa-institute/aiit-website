@@ -136,7 +136,11 @@ enum AffiliatePayoutMethod {
 model Affiliate {
   id                String                     @id @default(uuid()) @db.Uuid
   userId            String                     @unique @map("user_id") @db.Uuid
-  type              AffiliateType
+  // Any combination of the three types -- an affiliate can be a creator,
+  // a direct student referrer, and an affiliate-to-affiliate recruiter all
+  // at once (see AffiliatesService.computeEarnings() for how each type's
+  // commission is computed independently and summed).
+  types             AffiliateType[]
   applicationStatus AffiliateApplicationStatus @default(pending) @map("application_status")
   // Short, URL-safe, public -- the path segment in /r/:referralSlug.
   referralSlug      String                     @unique @map("referral_slug")
@@ -195,6 +199,15 @@ model Affiliate {
   payoutBankCode         String?               @map("payout_bank_code")
   payoutUpdatedAt        DateTime?             @map("payout_updated_at") @db.Timestamptz(6)
   payouts                AffiliatePayout[]
+
+  // Set when this affiliate applied using another affiliate's referral
+  // slug as an affiliate-to-affiliate "coupon code" (see
+  // AffiliatesService.createRow()) -- plain uuid, no Prisma relation, same
+  // convention as reviewedBy/AffiliatePayout.recordedBy. Powers the
+  // affiliate-to-affiliate commission (AffiliatesService.
+  // countSuccessfulAffiliateReferrals()) the same way Profile.
+  // referredByAffiliateId powers the student-referral one.
+  referredByAffiliateId  String?               @map("referred_by_affiliate_id") @db.Uuid
 
   @@map("affiliates")
   @@schema("public")

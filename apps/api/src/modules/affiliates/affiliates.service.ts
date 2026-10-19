@@ -24,18 +24,21 @@ export interface ApplyContext {
 export interface AdminCreateAffiliateInput extends ApplyContext {
   name: string;
   email: string;
-  type: AffiliateType;
+  types: AffiliateType[];
   status?: AffiliateApplicationStatus;
 }
 
 const EMPTY_ME: AffiliateMe = {
   hasApplied: false,
-  type: null,
+  types: [],
   applicationStatus: null,
   rejectionReason: null,
   activated: false,
   referralLink: null,
+  studentReferralLinkLabel: null,
+  affiliateCouponCode: null,
   registrationCount: null,
+  affiliateReferralCount: null,
   earnings: null,
   payoutDetails: null,
   payouts: [],
@@ -51,42 +54,115 @@ const EMPTY_ME: AffiliateMe = {
 // AFFILIATE.rates) -- the backend is the authoritative source for the
 // actual dollar math, so these live here, not derived from that
 // frontend-only marketing copy. Keep the two in sync by hand if pricing
-// ever changes.
+// ever changes. Only the direct-student rate escalates after a volume
+// milestone -- creator and affiliate-to-affiliate are both flat, forever,
+// confirmed explicitly by the project owner.
 const DIRECT_REFERRAL_RATE_CENTS = 700;
 const DIRECT_REFERRAL_MILESTONE = 500;
 const DIRECT_REFERRAL_MILESTONE_RATE_CENTS = 1000;
 const CREATOR_REFERRAL_RATE_CENTS = 500;
+const AFFILIATE_REFERRAL_RATE_CENTS = 250;
 
-/**
- * Tiered for a direct student referrer (first 500 at $7, the rest at $10),
- * flat for a creator-introduced referral ($5) -- matches the public site's
- * "Two ways to earn" copy exactly. Returns null for 'affiliate_to_affiliate':
- * no rate for that has ever been published, so this never invents one.
- */
-export function estimateEarningsCents(type: AffiliateType, registrationCount: number): number | null {
-  if (type === 'creator') return registrationCount * CREATOR_REFERRAL_RATE_CENTS;
-  if (type === 'student') {
-    if (registrationCount <= DIRECT_REFERRAL_MILESTONE) return registrationCount * DIRECT_REFERRAL_RATE_CENTS;
-    const base = DIRECT_REFERRAL_MILESTONE * DIRECT_REFERRAL_RATE_CENTS;
-    const extra = (registrationCount - DIRECT_REFERRAL_MILESTONE) * DIRECT_REFERRAL_MILESTONE_RATE_CENTS;
-    return base + extra;
-  }
-  return null;
+/** First `milestone` units at `baseRate`, every unit after that at `milestoneRate`. Used only for the direct-student rate -- the one rate that escalates. */
+function tieredCents(count: number, baseRate: number, milestone: number, milestoneRate: number): number {
+  if (count <= milestone) return count * baseRate;
+  return milestone * baseRate + (count - milestone) * milestoneRate;
 }
 
-/** Shared by AffiliatesService.toMe() and AdminAffiliatesService.detail() so the affiliate's own dashboard and the admin's view of them always agree on the same number. */
-export async function computeEarnings(prisma: PrismaService, affiliate: Affiliate, registrationCount: number): Promise<AffiliateEarnings> {
-  const [estimatedCents, paid] = await Promise.all([
-    Promise.resolve(estimateEarningsCents(affiliate.type, registrationCount)),
+/**
+ * Distinct profiles this affiliate referred (Profile.referredByAffiliateId)
+ * who have "fully onboarded" -- i.e. have at least one paid Order. Raw SQL
+ * because Order.userId/Profile.id have no Prisma relation between them
+ * (same reason namesAndEmails() below already uses raw SQL in this file).
+ */
+export async function countOnboardedReferrals(prisma: PrismaService, affiliateId: string): Promise<number> {
+  const rows = await prisma.$queryRaw<{ count: bigint }[]>`
+    SELECT COUNT(DISTINCT p.id)::bigint AS count
+    FROM profiles p
+    WHERE p.referred_by_affiliate_id = ${affiliateId}::uuid
+      AND EXISTS (SELECT 1 FROM orders o WHERE o.user_id = p.id AND o.status = 'paid')`;
+  return Number(rows[0]?.count ?? 0);
+}
+
+/**
+ * Distinct affiliates this affiliate referred (Affiliate.referredByAffiliateId,
+ * set when the referred affiliate applied with this affiliate's coupon
+ * code) who are approved AND have themselves onboarded at least one paying
+ * student of their own (countOnboardedReferrals() on *their* id) -- the
+ * project owner's explicit "the affiliate must have onboarded a student"
+ * rule for what makes an affiliate-to-affiliate referral "successful".
+ */
+export async function countSuccessfulAffiliateReferrals(prisma: PrismaService, affiliateId: string): Promise<number> {
+  const rows = await prisma.$queryRaw<{ count: bigint }[]>`
+    SELECT COUNT(DISTINCT a2.id)::bigint AS count
+    FROM affiliates a2
+    WHERE a2.referred_by_affiliate_id = ${affiliateId}::uuid
+      AND a2.application_status = 'approved'
+      AND EXISTS (
+        SELECT 1 FROM profiles p
+        WHERE p.referred_by_affiliate_id = a2.id
+          AND EXISTS (SELECT 1 FROM orders o WHERE o.user_id = p.id AND o.status = 'paid')
+      )`;
+  return Number(rows[0]?.count ?? 0);
+}
+
+/**
+ * Shared by AffiliatesService.toMe() and AdminAffiliatesService.detail() so
+ * the affiliate's own dashboard and the admin's view of them always agree
+ * on the same numbers. Builds one bucket per pool the affiliate's `types`
+ * makes them eligible for and sums them -- see AffiliateEarnings' own doc
+ * comment in packages/shared for the exact rates.
+ */
+export async function computeEarnings(prisma: PrismaService, affiliate: Affiliate): Promise<AffiliateEarnings> {
+  const hasStudent = affiliate.types.includes('student');
+  const hasCreator = affiliate.types.includes('creator');
+  const hasAffiliateToAffiliate = affiliate.types.includes('affiliate_to_affiliate');
+
+  const [registrationCount, onboardedCount, affiliateReferralCount, successfulAffiliateReferralCount, paid] = await Promise.all([
+    hasStudent || hasCreator ? prisma.profile.count({ where: { referredByAffiliateId: affiliate.id } }) : Promise.resolve(0),
+    hasStudent || hasCreator ? countOnboardedReferrals(prisma, affiliate.id) : Promise.resolve(0),
+    hasAffiliateToAffiliate ? prisma.affiliate.count({ where: { referredByAffiliateId: affiliate.id } }) : Promise.resolve(0),
+    hasAffiliateToAffiliate ? countSuccessfulAffiliateReferrals(prisma, affiliate.id) : Promise.resolve(0),
     prisma.affiliatePayout.aggregate({ where: { affiliateId: affiliate.id }, _sum: { amountCents: true } }),
   ]);
+
+  const studentReferrals =
+    hasStudent || hasCreator
+      ? {
+          totalCount: registrationCount,
+          eligibleCount: onboardedCount,
+          // 'student' (direct) takes priority over 'creator' when both are held -- same shared link/pool, see the design note in the plan/memory.
+          estimatedCents: hasStudent
+            ? tieredCents(onboardedCount, DIRECT_REFERRAL_RATE_CENTS, DIRECT_REFERRAL_MILESTONE, DIRECT_REFERRAL_MILESTONE_RATE_CENTS)
+            : onboardedCount * CREATOR_REFERRAL_RATE_CENTS,
+        }
+      : null;
+
+  const affiliateReferrals = hasAffiliateToAffiliate
+    ? {
+        totalCount: affiliateReferralCount,
+        eligibleCount: successfulAffiliateReferralCount,
+        estimatedCents: successfulAffiliateReferralCount * AFFILIATE_REFERRAL_RATE_CENTS,
+      }
+    : null;
+
+  const estimatedCents = (studentReferrals?.estimatedCents ?? 0) + (affiliateReferrals?.estimatedCents ?? 0);
   const paidCents = paid._sum.amountCents ?? 0;
   return {
+    studentReferrals,
+    affiliateReferrals,
     estimatedCents,
     paidCents,
-    owedCents: estimatedCents === null ? null : estimatedCents - paidCents,
+    owedCents: estimatedCents - paidCents,
     currency: 'USD',
   };
+}
+
+/** 'student' wins over 'creator' when both are held -- they share one referral link/pool, see computeEarnings()'s matching comment. Null if neither is held. Exported for AdminAffiliatesService.detail() to compute the identical label admin sees. */
+export function studentReferralLinkLabel(types: AffiliateType[]): 'Direct Student Referral Link' | 'Creator Referral Link' | null {
+  if (types.includes('student')) return 'Direct Student Referral Link';
+  if (types.includes('creator')) return 'Creator Referral Link';
+  return null;
 }
 
 /**
@@ -108,13 +184,14 @@ export class AffiliatesService {
   /** An already-logged-in account applying -- no password to issue, they already have one. */
   async apply(
     userId: string,
-    type: AffiliateType,
+    types: AffiliateType[],
     signedName: string,
     signedIp: string | undefined,
     context: ApplyContext = {},
+    affiliateCouponCode?: string,
   ): Promise<AffiliateMe> {
-    const affiliate = await this.createRow(userId, type, signedName, signedIp, context);
-    await this.audit.record(userId, 'affiliate.apply', 'affiliate', affiliate.id, { type });
+    const affiliate = await this.createRow(userId, types, signedName, signedIp, context, affiliateCouponCode);
+    await this.audit.record(userId, 'affiliate.apply', 'affiliate', affiliate.id, { types });
     return this.toMe(affiliate);
   }
 
@@ -152,17 +229,16 @@ export class AffiliatesService {
       update: { name, mustChangePassword: true },
     });
 
-    const { type, signedName, phone, handle, country, state, city, source, motivation } = dto;
-    const affiliate = await this.createRow(userId, type, signedName, signedIp, {
-      phone,
-      handle,
-      country,
-      state,
-      city,
-      source,
-      motivation,
-    });
-    await this.audit.record(userId, 'affiliate.apply_new', 'affiliate', affiliate.id, { type, email });
+    const { types, signedName, phone, handle, country, state, city, source, motivation, affiliateCouponCode } = dto;
+    const affiliate = await this.createRow(
+      userId,
+      types,
+      signedName,
+      signedIp,
+      { phone, handle, country, state, city, source, motivation },
+      affiliateCouponCode,
+    );
+    await this.audit.record(userId, 'affiliate.apply_new', 'affiliate', affiliate.id, { types, email });
 
     // Deliberately /affiliate-portal, not /login: that route's own
     // RequireAuth (default `to="/login"`) bounces an anonymous visit there
@@ -223,7 +299,7 @@ export class AffiliatesService {
       .create({
         data: {
           userId,
-          type: dto.type,
+          types: dto.types,
           referralSlug: generateReferralSlug(),
           referenceCode: generateReferenceCode(),
           applicationStatus: status,
@@ -244,7 +320,7 @@ export class AffiliatesService {
         }
         throw err;
       });
-    await this.audit.record(adminId, 'affiliate.create_manual', 'affiliate', affiliate.id, { type: dto.type, email, status });
+    await this.audit.record(adminId, 'affiliate.create_manual', 'affiliate', affiliate.id, { types: dto.types, email, status });
 
     // See applyNew()'s matching comment -- /affiliate-portal, not /login,
     // so RequireAuth's `from`-preserving redirect lands them on the
@@ -320,22 +396,26 @@ export class AffiliatesService {
 
   private async createRow(
     userId: string,
-    type: AffiliateType,
+    types: AffiliateType[],
     signedName: string,
     signedIp: string | undefined,
     context: ApplyContext,
+    affiliateCouponCode?: string,
   ): Promise<Affiliate> {
+    if (types.length === 0) throw new BadRequestException('Select at least one affiliate type.');
+    const referredByAffiliateId = await this.resolveAffiliateCouponCode(affiliateCouponCode);
     return this.prisma.affiliate
       .create({
         data: {
           userId,
-          type,
+          types,
           referralSlug: generateReferralSlug(),
           referenceCode: generateReferenceCode(),
           signedName: signedName.trim(),
           signedIp: signedIp ?? null,
           agreementVersion: AFFILIATE_AGREEMENT_VERSION,
           signedAt: new Date(),
+          referredByAffiliateId,
           ...context,
         },
       })
@@ -348,6 +428,23 @@ export class AffiliatesService {
         }
         throw err;
       });
+  }
+
+  /**
+   * An affiliate-to-affiliate "coupon code" is just another affiliate's
+   * own referralSlug, typed in rather than clicked (see the
+   * studentReferralLinkLabel/affiliateCouponCode doc comments in
+   * packages/shared -- same slug, two presentations). Case-insensitive,
+   * same convention as activate()'s reference-code match. Undefined/empty
+   * input is a no-op (most applicants don't have one); a non-empty input
+   * that matches nothing is a real input error, not silently ignored.
+   */
+  private async resolveAffiliateCouponCode(code: string | undefined): Promise<string | null> {
+    const normalized = code?.trim().toLowerCase();
+    if (!normalized) return null;
+    const referrer = await this.prisma.affiliate.findUnique({ where: { referralSlug: normalized } });
+    if (!referrer) throw new BadRequestException('That coupon code doesn’t match any affiliate. Check it and try again.');
+    return referrer.id;
   }
 
   /** Same raw-SQL lookup admin-affiliates.service.ts uses -- auth.users isn't a Prisma model, so email only ever comes from a direct query against it. */
@@ -366,19 +463,26 @@ export class AffiliatesService {
   private async toMe(affiliate: Affiliate): Promise<AffiliateMe> {
     const approved = affiliate.applicationStatus === 'approved';
     const activated = Boolean(affiliate.activatedAt);
-    const registrationCount = approved
-      ? await this.prisma.profile.count({ where: { referredByAffiliateId: affiliate.id } })
-      : null;
+    const unlocked = approved && activated;
+    const [registrationCount, affiliateReferralCount] = approved
+      ? await Promise.all([
+          this.prisma.profile.count({ where: { referredByAffiliateId: affiliate.id } }),
+          this.prisma.affiliate.count({ where: { referredByAffiliateId: affiliate.id } }),
+        ])
+      : [null, null];
     const payoutRows = await this.prisma.affiliatePayout.findMany({ where: { affiliateId: affiliate.id }, orderBy: { paidAt: 'desc' } });
     return {
       hasApplied: true,
-      type: affiliate.type,
+      types: affiliate.types,
       applicationStatus: affiliate.applicationStatus,
       rejectionReason: affiliate.rejectionReason,
       activated,
-      referralLink: approved && activated ? `${webOrigin()}/r/${affiliate.referralSlug}` : null,
+      referralLink: unlocked && studentReferralLinkLabel(affiliate.types) ? `${webOrigin()}/r/${affiliate.referralSlug}` : null,
+      studentReferralLinkLabel: unlocked ? studentReferralLinkLabel(affiliate.types) : null,
+      affiliateCouponCode: unlocked && affiliate.types.includes('affiliate_to_affiliate') ? affiliate.referralSlug.toUpperCase() : null,
       registrationCount,
-      earnings: registrationCount === null ? null : await computeEarnings(this.prisma, affiliate, registrationCount),
+      affiliateReferralCount,
+      earnings: approved ? await computeEarnings(this.prisma, affiliate) : null,
       payoutDetails: payoutDetailsFrom(affiliate),
       // recordedByName (which admin) is deliberately omitted here -- that's
       // internal admin-side detail, not something the affiliate needs.
@@ -474,7 +578,7 @@ function generateReferenceCode(): string {
   return `AIIT-AFF-${randomBytes(3).toString('hex').toUpperCase()}`;
 }
 
-function webOrigin(): string {
+export function webOrigin(): string {
   return process.env.APP_URL ?? 'https://aiit.network';
 }
 

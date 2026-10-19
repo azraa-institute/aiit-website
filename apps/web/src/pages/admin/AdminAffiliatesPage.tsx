@@ -58,8 +58,8 @@ const PAYOUT_METHOD_LABEL: Record<string, string> = { paypal: 'PayPal', bank: 'B
 function payoutDetailsSummary(details: AdminAffiliateDetail['payoutDetails']): string {
   if (!details) return 'Not submitted yet';
   const method = PAYOUT_METHOD_LABEL[details.method] ?? details.method;
-  if (details.method === 'paypal') return `${method} — ${details.paypalEmail ?? ''}`;
-  return `${method} — ${details.bankName ?? ''} (${details.bankAccountNumber ?? ''}), ${details.bankCountry ?? ''}`;
+  if (details.method === 'paypal') return `${method}: ${details.paypalEmail ?? ''}`;
+  return `${method}: ${details.bankName ?? ''} (${details.bankAccountNumber ?? ''}), ${details.bankCountry ?? ''}`;
 }
 
 /** An admin recording a payout they already sent themselves (PayPal/bank transfer, outside this system) -- never moves money, see AdminAffiliatesService.recordPayout(). */
@@ -227,7 +227,7 @@ function Detail({ id, onChanged, onClose }: { id: string; onChanged: () => void;
               <dt>Reference code</dt>
               <dd>
                 {state.data.referenceCode ?? '—'}
-                {state.data.activatedAt ? ` — activated ${formatWhen(state.data.activatedAt)}` : ' — not yet activated'}
+                {state.data.activatedAt ? ` · activated ${formatWhen(state.data.activatedAt)}` : ' · not yet activated'}
               </dd>
             </div>
             {state.data.referredBy ? (
@@ -242,7 +242,7 @@ function Detail({ id, onChanged, onClose }: { id: string; onChanged: () => void;
             </div>
             <div>
               <dt>Signature</dt>
-              <dd>{state.data.signedName ? `${state.data.signedName}${state.data.signedAt ? ` — ${formatWhen(state.data.signedAt)}` : ''}` : 'Not on file (applied before e-signature)'}</dd>
+              <dd>{state.data.signedName ? `${state.data.signedName}${state.data.signedAt ? ` · ${formatWhen(state.data.signedAt)}` : ''}` : 'Not on file (applied before e-signature)'}</dd>
             </div>
             {state.data.phone ? (
               <div>
@@ -315,7 +315,7 @@ function Detail({ id, onChanged, onClose }: { id: string; onChanged: () => void;
 
           <h3 className="adm-drawer__sub">Payouts</h3>
           <p className="adm-muted">
-            No live payment integration -- pay the affiliate yourself via their payout details above, then record it
+            No live payment integration: pay the affiliate yourself via their payout details above, then record it
             here.
           </p>
           <RecordPayoutForm affiliateId={state.data.id} onRecorded={state.reload} />
@@ -323,7 +323,7 @@ function Detail({ id, onChanged, onClose }: { id: string; onChanged: () => void;
             <ul className="adm-plain" role="list">
               {state.data.payouts.map((p) => (
                 <li key={p.id}>
-                  {formatCents(p.amountCents)} — {formatWhen(p.paidAt)}
+                  {formatCents(p.amountCents)} · {formatWhen(p.paidAt)}
                   {p.recordedByName ? ` · recorded by ${p.recordedByName}` : ''}
                   {p.note ? ` · ${p.note}` : ''}
                 </li>
@@ -399,7 +399,7 @@ function AddAffiliateForm({ onDone, onClose }: { onDone: () => void; onClose: ()
         <>
           <p className="adm-notice" role="status">
             Done. We've emailed <strong>{result.affiliate.email}</strong> their login details and a one-time
-            password -- they'll be asked to set their own the moment they sign in.
+            password; they'll be asked to set their own the moment they sign in.
           </p>
           <dl className="adm-dl">
             <div>
@@ -413,7 +413,7 @@ function AddAffiliateForm({ onDone, onClose }: { onDone: () => void; onClose: ()
               </dd>
             </div>
           </dl>
-          <p className="adm-muted">This password is shown once -- keep a copy if you need to relay it yourself.</p>
+          <p className="adm-muted">This password is shown once. Keep a copy if you need to relay it yourself.</p>
           <div className="adm-actions">
             <button type="button" className="adm-btn adm-btn--primary" onClick={onClose}>
               Done

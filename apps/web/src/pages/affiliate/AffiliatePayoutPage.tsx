@@ -66,9 +66,9 @@ function maskAccountNumber(value: string): string {
 const CONTAINS_A_LETTER = '.*\\p{L}.*';
 
 function payoutSummaryLine(details: NonNullable<AffiliateMe['payoutDetails']>): string {
-  if (details.method === 'paypal') return `PayPal — ${details.paypalEmail ?? ''}`;
+  if (details.method === 'paypal') return `PayPal: ${details.paypalEmail ?? ''}`;
   const masked = details.bankAccountNumber ? maskAccountNumber(details.bankAccountNumber) : '';
-  return `Bank transfer — ${details.bankName ?? ''} (${masked}), ${details.bankCountry ?? ''}`;
+  return `Bank transfer: ${details.bankName ?? ''} (${masked}), ${details.bankCountry ?? ''}`;
 }
 
 /**

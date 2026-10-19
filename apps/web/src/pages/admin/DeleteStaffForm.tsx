@@ -26,7 +26,7 @@ export function DeleteStaffForm({
     <form className="adm-suspend" onSubmit={handleSubmit}>
       <p>
         Delete <strong>{name}</strong>&apos;s account? They are signed out immediately and cannot sign in again. This
-        is not reversible from here -- undoing it needs direct database access.
+        is not reversible from here; undoing it needs direct database access.
       </p>
       <label className="adm-field">
         <span>Reason (kept in the audit log)</span>

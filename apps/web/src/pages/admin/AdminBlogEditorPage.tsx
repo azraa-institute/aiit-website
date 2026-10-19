@@ -73,13 +73,13 @@ function FilePickerButton({
 const PRESET_INFO: Record<BlogLayoutPreset, { label: string; description: string }> = {
   editorial: { label: 'Editorial (default)', description: 'Generous line-length, serif headings, large cover image.' },
   tutorial: { label: 'Tutorial', description: 'Numbered steps, more room around code blocks, emphasized TOC.' },
-  'news-brief': { label: 'News brief', description: 'Compact hero, tighter rhythm -- short/time-sensitive posts.' },
-  spotlight: { label: 'Spotlight', description: 'Large pull-quotes, byline promoted -- interviews/features.' },
+  'news-brief': { label: 'News brief', description: 'Compact hero, tighter rhythm: short/time-sensitive posts.' },
+  spotlight: { label: 'Spotlight', description: 'Large pull-quotes, byline promoted: interviews/features.' },
   'data-deep-dive': { label: 'Data deep-dive', description: 'Wider column for tables/charts, monospace stat callouts.' },
-  listicle: { label: 'Listicle', description: 'Numbered circular badges per section -- "Top N" / ranked posts.' },
-  'case-study': { label: 'Case study', description: 'Bordered result/metric callout boxes -- project outcomes, client stories.' },
+  listicle: { label: 'Listicle', description: 'Numbered circular badges per section: "Top N" / ranked posts.' },
+  'case-study': { label: 'Case study', description: 'Bordered result/metric callout boxes: project outcomes, client stories.' },
   'visual-essay': { label: 'Visual essay', description: 'Image-forward: bigger figures, quieter captions, wider column.' },
-  magazine: { label: 'Magazine', description: 'Drop cap on the opening paragraph -- a long-form feature read.' },
+  magazine: { label: 'Magazine', description: 'Drop cap on the opening paragraph: a long-form feature read.' },
   'video-feature': { label: 'Video feature', description: 'Built around an embedded video, given cinematic framing.' },
 };
 const PRESETS = Object.keys(PRESET_INFO) as BlogLayoutPreset[];
@@ -222,7 +222,7 @@ export default function AdminBlogEditorPage() {
       setPost(result.post);
       setNotice(`Published. Commit: ${result.commitUrl}`);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Could not publish this post -- it has not been changed.');
+      setError(err instanceof Error ? err.message : 'Could not publish this post; it has not been changed.');
     } finally {
       setPublishing(false);
     }
@@ -236,7 +236,7 @@ export default function AdminBlogEditorPage() {
     try {
       const updated = await apiFetch<AdminBlogPost>(`/admin/blog/${post.id}/unpublish`, { method: 'POST' });
       setPost(updated);
-      setNotice('Unpublished -- the file has been removed from the live site.');
+      setNotice('Unpublished. The file has been removed from the live site.');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Could not unpublish this post.');
     } finally {
@@ -283,7 +283,7 @@ export default function AdminBlogEditorPage() {
     // signature in its query string, and must NOT also get our API's
     // Authorization header or JSON content-type.
     const res = await fetch(uploadUrl, { method: 'PUT', headers: { 'Content-Type': file.type }, body: file });
-    if (!res.ok) throw new Error(`Could not upload "${file.name}" to storage -- try again.`);
+    if (!res.ok) throw new Error(`Could not upload "${file.name}" to storage. Try again.`);
     return { url: publicUrl, kind: 'video' };
   }
 
@@ -420,7 +420,7 @@ export default function AdminBlogEditorPage() {
             {form.coverImage2Url ? <img src={form.coverImage2Url} alt="" style={{ maxWidth: '100%', borderRadius: 8, marginTop: 8 }} /> : null}
           </div>
           <div className="adm-field adm-field--wide">
-            <span>Media library -- insert into the body at your cursor</span>
+            <span>Media library: insert into the body at your cursor</span>
             <FilePickerButton
               label={mediaUploading ? 'Uploading…' : 'Choose images/audio/video'}
               accept={MEDIA_ACCEPT}
@@ -484,7 +484,7 @@ export default function AdminBlogEditorPage() {
                 <label key={p} className="adm-check">
                   <input type="radio" name="preset" checked={form.preset === p} onChange={() => update('preset', p)} />
                   <span>
-                    <strong>{PRESET_INFO[p].label}</strong> — {PRESET_INFO[p].description}
+                    <strong>{PRESET_INFO[p].label}:</strong> {PRESET_INFO[p].description}
                   </span>
                 </label>
               ))}

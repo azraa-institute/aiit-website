@@ -44,7 +44,7 @@ export const STUDENT_STORIES: StudentStory[] = [
     id: 'jean-claude-uwimana',
     title: 'AIIT gave me confidence',
     quote:
-      'AIIT gave me more than technical skills — it gave me confidence. The live classes, supportive instructors, and collaborative community made learning enjoyable and rewarding.',
+      'AIIT gave me more than technical skills; it gave me confidence. The live classes, supportive instructors, and collaborative community made learning enjoyable and rewarding.',
     initials: 'JU',
     name: 'Jean-Claude Uwimana',
     location: 'Kigali, Rwanda',

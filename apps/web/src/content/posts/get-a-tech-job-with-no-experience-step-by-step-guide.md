@@ -21,7 +21,7 @@ tags: ["Coding Bootcamp", "entry level tech jobs", "get a tech job with no exper
 
 <h3>Step 1: Pick a Specific Lane</h3>
 
-<p>The biggest mistake beginners make is trying to be everything at once—a bit of Python, some UI/UX design, and a touch of cloud computing. Generalists with no experience get overlooked.</p>
+<p>The biggest mistake beginners make is trying to be everything at once: a bit of Python, some UI/UX design, and a touch of cloud computing. Generalists with no experience get overlooked.</p>
 
 <p>You need to pick a highly specific niche. Decide if you want to be a Frontend Web Developer, a Data Analyst, or a Cybersecurity Analyst, and dedicate 100% of your learning bandwidth to mastering the core stack of that single role.</p>
 

@@ -406,7 +406,7 @@ export default function ResourceDetailPage() {
             <p className="res-eyebrow">The AIIT dispatch</p>
             <h2 className="article-signup__title">Get new resources by email</h2>
             <p className="article-signup__body">
-              A short note when we publish. Guides, explainers and career resources — no noise.
+              A short note when we publish. Guides, explainers and career resources, no noise.
             </p>
             <NewsletterForm />
           </section>

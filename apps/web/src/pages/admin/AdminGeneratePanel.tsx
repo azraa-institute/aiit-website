@@ -102,7 +102,7 @@ export function AdminGeneratePanel({ onDone }: { onDone: () => void }) {
               <option value="">Select a course…</option>
               {courseList.map((c) => (
                 <option key={c.id} value={c.id}>
-                  {c.title} — {c.enrolled} student{c.enrolled === 1 ? '' : 's'}
+                  {c.title} ({c.enrolled} student{c.enrolled === 1 ? '' : 's'})
                 </option>
               ))}
             </select>
@@ -185,7 +185,7 @@ export function AdminGeneratePanel({ onDone }: { onDone: () => void }) {
         <p className="adm-notice" role="status">
           Scheduled <strong>{result.created} classes</strong> for {result.timetable.courseTitle}
           {result.instructorName ? ` with ${result.instructorName}` : ''}. Students see them in their timetable now.
-          {result.unassigned ? ' No instructor is assigned yet — assign one under Courses and they will be added as host.' : ''}
+          {result.unassigned ? ' No instructor is assigned yet. Assign one under Courses and they will be added as host.' : ''}
         </p>
       ) : null}
 
@@ -198,7 +198,7 @@ export function AdminGeneratePanel({ onDone }: { onDone: () => void }) {
           <ul className="adm-plain">
             {conflicts.list.slice(0, 8).map((c) => (
               <li key={c.startsAt}>
-                {formatWhen(c.startsAt)} — already teaching “{c.otherClass}”
+                {formatWhen(c.startsAt)}, already teaching “{c.otherClass}”
               </li>
             ))}
             {conflicts.list.length > 8 ? <li>…and {conflicts.list.length - 8} more</li> : null}

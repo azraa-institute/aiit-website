@@ -140,7 +140,7 @@ export default function WebinarPage() {
                 controls
                 preload="metadata"
                 playsInline
-                aria-label={`${w.title} — webinar introduction video`}
+                aria-label={`${w.title}: webinar introduction video`}
               />
             ) : (
               <div className="webinar-page__video-placeholder" role="img" aria-label="Webinar introduction video coming soon">

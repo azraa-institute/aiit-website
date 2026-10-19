@@ -25,9 +25,9 @@ tags: ["Cybersecurity", "Ethical Hacking"]
 
 <p>Here is the simplest possible explanation.</p>
 
-<p>Every time a business puts something online — a website, a customer database, an app, a payment system — it creates a door. Most of the time, that door is used exactly the way it’s supposed to be: customers log in, staff access files, payments go through. But every door that lets the right people in can also be a door someone else tries to force open.</p>
+<p>Every time a business puts something online (a website, a customer database, an app, a payment system), it creates a door. Most of the time, that door is used exactly the way it’s supposed to be: customers log in, staff access files, payments go through. But every door that lets the right people in can also be a door someone else tries to force open.</p>
 
-<p>Cybersecurity is the practice of protecting computers, networks, software, and data from the people trying to force that door open — whether that’s a lone scammer, an organised criminal group, or in some cases, a government.</p>
+<p>Cybersecurity is the practice of protecting computers, networks, software, and data from the people trying to force that door open, whether that’s a lone scammer, an organised criminal group, or in some cases, a government.</p>
 
 <p>It is not one skill. It is a whole discipline built around one question, asked from every possible angle: how do we stop the wrong person from getting in, and what do we do if they already have?</p>
 
@@ -41,27 +41,27 @@ tags: ["Cybersecurity", "Ethical Hacking"]
 
 <h3>Network Security</h3>
 
-<p>Network security protects the pathways data travels through — the connections between computers, servers, and the internet. This includes firewalls, which control what traffic is allowed in and out, and systems that watch network traffic for anything unusual.</p>
+<p>Network security protects the pathways data travels through: the connections between computers, servers, and the internet. This includes firewalls, which control what traffic is allowed in and out, and systems that watch network traffic for anything unusual.</p>
 
 <p>A real-world analogy: network security is like controlling every road leading into a city, checking who’s allowed to pass and flagging anything suspicious before it reaches the centre.</p>
 
 <h3>Application Security</h3>
 
-<p>Application security focuses on the software itself — making sure the apps and websites people use every day don’t have weaknesses that can be exploited. This means testing code for flaws before it ships, and fixing vulnerabilities in software that’s already live.</p>
+<p>Application security focuses on the software itself: making sure the apps and websites people use every day don’t have weaknesses that can be exploited. This means testing code for flaws before it ships, and fixing vulnerabilities in software that’s already live.</p>
 
 <p>A real-world analogy: if network security is guarding the roads into the city, application security is making sure none of the buildings inside have unlocked back doors.</p>
 
 <h3>Cloud Security</h3>
 
-<p>As more businesses move their data and systems to the cloud, cloud security has become one of the fastest-growing specialisations. It focuses specifically on protecting data, applications, and infrastructure hosted on platforms like AWS, Azure, and Google Cloud — which have their own unique set of risks compared to traditional, on-premises systems.</p>
+<p>As more businesses move their data and systems to the cloud, cloud security has become one of the fastest-growing specialisations. It focuses specifically on protecting data, applications, and infrastructure hosted on platforms like AWS, Azure, and Google Cloud, which have their own unique set of risks compared to traditional, on-premises systems.</p>
 
 <h3>Identity and Access Management (IAM)</h3>
 
-<p>IAM is about controlling who can access what. Not everyone in a company needs access to everything, and IAM specialists design the systems that make sure a marketing employee can’t accidentally (or deliberately) reach the finance department’s records — through things like multi-factor authentication, permissions, and login policies.</p>
+<p>IAM is about controlling who can access what. Not everyone in a company needs access to everything, and IAM specialists design the systems that make sure a marketing employee can’t accidentally (or deliberately) reach the finance department’s records, through things like multi-factor authentication, permissions, and login policies.</p>
 
 <h3>Security Operations (SecOps)</h3>
 
-<p>This is the team that watches, in real time, for signs that something is going wrong — monitoring systems around the clock, investigating alerts, and responding the moment an attack is detected. If the other domains are about building strong locks, SecOps is the security team actually watching the cameras.</p>
+<p>This is the team that watches, in real time, for signs that something is going wrong: monitoring systems around the clock, investigating alerts, and responding the moment an attack is detected. If the other domains are about building strong locks, SecOps is the security team actually watching the cameras.</p>
 
 <hr/>
 
@@ -73,7 +73,7 @@ tags: ["Cybersecurity", "Ethical Hacking"]
 
 <p><strong>Ransomware.</strong> Malicious software that locks a victim out of their own files or systems until a ransom is paid. It has shut down hospitals, schools, and entire company networks, sometimes for weeks at a time.</p>
 
-<p><strong>Social engineering.</strong> A broader category than phishing — manipulating people into breaking normal security procedures, often by impersonating someone trustworthy, whether that’s a colleague, a bank, or IT support.</p>
+<p><strong>Social engineering.</strong> A broader category than phishing: manipulating people into breaking normal security procedures, often by impersonating someone trustworthy, whether that’s a colleague, a bank, or IT support.</p>
 
 <p><strong>DDoS attacks (Distributed Denial of Service).</strong> Flooding a website or system with so much fake traffic that it can’t function for real users, effectively taking it offline.</p>
 
@@ -87,7 +87,7 @@ tags: ["Cybersecurity", "Ethical Hacking"]
 
 <p><strong>The cost of a breach is enormous.</strong> Beyond the direct financial loss, a serious breach can mean regulatory fines, lawsuits, and reputational damage that takes years to recover from. Prevention is almost always cheaper than the alternative.</p>
 
-<p><strong>Attacks are constant, not occasional.</strong> Automated attacks probe systems around the clock, worldwide. It’s rarely a question of whether an organisation will be targeted, but when — and whether they were prepared.</p>
+<p><strong>Attacks are constant, not occasional.</strong> Automated attacks probe systems around the clock, worldwide. It’s rarely a question of whether an organisation will be targeted, but when, and whether they were prepared.</p>
 
 <p><strong>Everything is connected now.</strong> Cloud platforms, remote work, mobile apps, and connected devices have all multiplied the number of potential entry points a business needs to defend, compared to a decade ago.</p>
 
@@ -129,15 +129,15 @@ tags: ["Cybersecurity", "Ethical Hacking"]
 
 <p><strong>Build a portfolio, not just certificates.</strong> Document the challenges you complete on TryHackMe or Hack The Box, write about what you learned, and start building a public record of your hands-on skills. Employers in this field care enormously about demonstrated ability, not just paper qualifications.</p>
 
-<p><strong>Join the community.</strong> Cybersecurity has an unusually active, welcoming online community — Reddit, Discord servers, and local meetups are full of people sharing writeups, advice, and job leads.</p>
+<p><strong>Join the community.</strong> Cybersecurity has an unusually active, welcoming online community: Reddit, Discord servers, and local meetups are full of people sharing writeups, advice, and job leads.</p>
 
 <hr/>
 
 <h2>Is Cybersecurity the Right Path for You?</h2>
 
-<p>Cybersecurity tends to suit people who enjoy solving puzzles, thinking like an adversary, and paying close attention to detail. It rewards curiosity and persistence — a huge part of the job is asking “what if someone tried this?” over and over.</p>
+<p>Cybersecurity tends to suit people who enjoy solving puzzles, thinking like an adversary, and paying close attention to detail. It rewards curiosity and persistence: a huge part of the job is asking “what if someone tried this?” over and over.</p>
 
-<p>It’s also a field with genuine room for different personality types. Some roles, like penetration testing, are hands-on and investigative. Others, like security architecture, are more strategic and big-picture. Security operations roles suit people who like structure and vigilance. There is no single “type” of person who succeeds in cybersecurity — the field is broad enough to fit a wide range of strengths.</p>
+<p>It’s also a field with genuine room for different personality types. Some roles, like penetration testing, are hands-on and investigative. Others, like security architecture, are more strategic and big-picture. Security operations roles suit people who like structure and vigilance. There is no single “type” of person who succeeds in cybersecurity: the field is broad enough to fit a wide range of strengths.</p>
 
 <hr/>
 
@@ -155,7 +155,7 @@ tags: ["Cybersecurity", "Ethical Hacking"]
 
 <p><strong>Is cybersecurity a good career for beginners with no tech background?</strong> Yes, with the right starting point. Roles like Security Analyst and SOC Analyst are commonly used as entry points and don’t require deep coding knowledge, though understanding networking fundamentals is essential.</p>
 
-<p><strong>What is the difference between a cybersecurity analyst and an ethical hacker?</strong> A security analyst generally focuses on defence — monitoring, detecting, and responding to threats. An ethical hacker (penetration tester) focuses on offence – deliberately trying to break into systems, with permission, to find weaknesses before real attackers do. Many professionals move between both over their careers.</p>
+<p><strong>What is the difference between a cybersecurity analyst and an ethical hacker?</strong> A security analyst generally focuses on defence: monitoring, detecting, and responding to threats. An ethical hacker (penetration tester) focuses on offence: deliberately trying to break into systems, with permission, to find weaknesses before real attackers do. Many professionals move between both over their careers.</p>
 
 <p><strong>How long does it take to become job-ready in cybersecurity?</strong> A solid foundational understanding, enough to pursue an entry-level certification like CompTIA Security+, typically takes three to six months of consistent study. A fully job-ready skill set for an entry-level analyst role usually takes six to twelve months.</p>
 

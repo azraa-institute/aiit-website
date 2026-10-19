@@ -247,7 +247,7 @@ export class AdminLiveClassesService {
 
     const timetable = await this.createTimetable(adminId, {
       courseId: course.id,
-      title: `${course.title} — live classes`,
+      title: `${course.title}: live classes`,
       timeZone: dto.timeZone,
       startsOn,
       endsOn,

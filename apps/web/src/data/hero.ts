@@ -21,7 +21,7 @@ export interface HeroSlide {
 export const HERO_SLIDES: HeroSlide[] = [
   {
     id: 'intro',
-    heading: 'Technology, People, Opportunity — Without Borders',
+    heading: 'Technology, People, Opportunity: Without Borders',
     subtext: 'Global tech education for a brighter tomorrow.',
     image: '/assets/hero/hero-intro-poster.jpg',
     video: '/assets/hero/hero-intro.mp4',

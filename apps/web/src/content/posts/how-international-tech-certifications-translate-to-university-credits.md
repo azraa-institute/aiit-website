@@ -22,7 +22,7 @@ tags: ["credit transfer", "degree equivalence", "global education", "higher educ
 
 <p>The bridge between corporate tech certifications and traditional university degrees is often managed by the <strong>American Council on Education (ACE)</strong>.</p>
 
-<p>ACE evaluates non-traditional learning experiences—including workforce training, military service, and professional IT certifications—to determine if the material is rigorous enough to match college-level learning. If it is, ACE assigns a “recommended credit value” to the certification.</p>
+<p>ACE evaluates non-traditional learning experiences, including workforce training, military service, and professional IT certifications, to determine if the material is rigorous enough to match college-level learning. If it is, ACE assigns a “recommended credit value” to the certification.</p>
 
 <p>For example, ACE has reviewed Microsoft, CompTIA, and Cisco exams and concluded that passing them requires the same knowledge as passing specific college courses. When a university sees an ACE recommendation, they have a trusted, third-party guarantee that your certification meets academic standards.</p>
 

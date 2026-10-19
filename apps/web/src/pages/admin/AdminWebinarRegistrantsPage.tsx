@@ -48,7 +48,7 @@ export default function AdminWebinarRegistrantsPage() {
         body: JSON.stringify({ kind }),
       });
       if (result.sentCount === 0 && webinar.status === 'ready' && !webinar.data.joinUrl) {
-        setReminderNotice('Sent to 0 -- this webinar has no join link set yet, so reminders have nowhere to send people. Add one on the webinar form first.');
+        setReminderNotice('Sent to 0. This webinar has no join link set yet, so reminders have nowhere to send people. Add one on the webinar form first.');
       } else {
         setReminderNotice(`Sent to ${result.sentCount} registrant${result.sentCount === 1 ? '' : 's'}.`);
       }
@@ -66,7 +66,7 @@ export default function AdminWebinarRegistrantsPage() {
         <div>
           <p className="adm-eyebrow">Content</p>
           <h1 className="adm-title">
-            {webinar.status === 'ready' ? `${webinar.data.title} -- Registrants` : 'Registrants'}
+            {webinar.status === 'ready' ? `${webinar.data.title}: Registrants` : 'Registrants'}
           </h1>
         </div>
         <Link to="/admin/webinars" className="adm-btn adm-btn--ghost">
@@ -100,7 +100,7 @@ export default function AdminWebinarRegistrantsPage() {
         </div>
         <p className="adm-muted">
           Reminders also send automatically (24h and 30min before the start time) once a join link is set on the
-          webinar -- these buttons are for an early or manual resend, not the normal path.
+          webinar; these buttons are for an early or manual resend, not the normal path.
         </p>
         {noJoinUrl ? (
           <p className="adm-notice" role="status">

@@ -621,7 +621,7 @@ export default function AffiliatePage() {
                     options={AFFILIATE_TYPE_OPTIONS}
                     value={types}
                     onChange={(next) => setTypes(next as AffiliateType[])}
-                    hint="You can hold more than one -- e.g. refer students directly and also bring in other affiliates."
+                    hint="You can hold more than one, e.g. refer students directly and also bring in other affiliates."
                   />
                   <TextField
                     label="Have a coupon code from an AIIT affiliate? (optional)"

@@ -53,7 +53,7 @@ export class AffiliateAgreementPdfService {
     const doc = await PDFDocument.create();
     doc.registerFontkit(fontkit);
     doc.setTitle('AIIT Individual Partner Referral Agreement');
-    doc.setAuthor('AIIT — Azraa Institute of Information Technology');
+    doc.setAuthor('AIIT: Azraa Institute of Information Technology');
 
     const serif = await this.embed(doc, 'SourceSerif4-Regular.ttf');
     const serifBold = await this.embed(doc, 'SourceSerif4-Bold.ttf');

@@ -225,7 +225,7 @@ export class InstructorService {
     await this.notifyEnrolled(courseId, {
       kind: 'assignment',
       title: `New assignment: ${created.title}`,
-      body: `${created.course.title}${dueAt ? ` — due ${dueAt.toUTCString()}` : ''}`,
+      body: `${created.course.title}${dueAt ? `, due ${dueAt.toUTCString()}` : ''}`,
       href: '/portal/assignments',
     });
     return (await this.assignments(instructorId, courseId)).find((a) => a.id === created.id) as InstructorAssignment;

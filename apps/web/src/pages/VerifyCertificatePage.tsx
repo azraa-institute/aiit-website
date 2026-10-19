@@ -69,7 +69,7 @@ export default function VerifyCertificatePage() {
               <h1 className="verify-card__title verify-card__title--status">We couldn&apos;t verify this credential.</h1>
               <p className="verify-card__status-body">
                 No AIIT certificate matches the ID <strong>{credentialId}</strong>. Double-check the ID with whoever
-                presented it — a valid credential ID always starts with &ldquo;AIIT-&rdquo;.
+                presented it. A valid credential ID always starts with &ldquo;AIIT-&rdquo;.
               </p>
             </VerifyCardShell>
           )}
@@ -193,7 +193,7 @@ function VerifiedCard({ certificate }: { certificate: Certificate }) {
       <h1 className="verify-card__name">{certificate.holderName}</h1>
       <p className="verify-card__body">
         has successfully completed <strong>{certificate.course.title}</strong>, an AIIT course, and was issued the
-        credential below by AIIT — Azraa Institute of Information Technology.
+        credential below by AIIT (Azraa Institute of Information Technology).
       </p>
 
       <div className="verify-divider" role="presentation">
@@ -271,7 +271,7 @@ function VerifiedCard({ certificate }: { certificate: Certificate }) {
           ) : null}
           <div>
             <dt>Issuing institution</dt>
-            <dd>AIIT — Azraa Institute of Information Technology</dd>
+            <dd>AIIT (Azraa Institute of Information Technology)</dd>
           </div>
         </dl>
       )}

@@ -27,7 +27,7 @@ export const FAQS: FaqItem[] = [
     id: "faq-where-is-aiit-based-and-who",
     category: "About AIIT",
     question: "Where is AIIT based, and who can enroll?",
-    answer: "AIIT's head office is in Coimbatore, Tamil Nadu, India, with an active expansion focus across Africa. Because AIIT is an online platform, students from anywhere in the world — including Nigeria and other African countries — can enroll and learn remotely.",
+    answer: "AIIT's head office is in Coimbatore, Tamil Nadu, India, with an active expansion focus across Africa. Because AIIT is an online platform, students from anywhere in the world, including Nigeria and other African countries, can enroll and learn remotely.",
   },
   {
     id: "faq-what-subjects-and-technologies-does-aiit",
@@ -63,7 +63,7 @@ export const FAQS: FaqItem[] = [
     id: "faq-are-aiit-courses-self-paced-or",
     category: "Courses & Learning",
     question: "Are AIIT courses self-paced or scheduled?",
-    answer: "Most AIIT courses are delivered through a flexible online learning platform, allowing you to study at your own pace. Specific scheduling details vary by course — check each course page for exact format and duration.",
+    answer: "Most AIIT courses are delivered through a flexible online learning platform, allowing you to study at your own pace. Specific scheduling details vary by course; check each course page for exact format and duration.",
   },
   {
     id: "faq-do-i-need-any-prior-experience",
@@ -99,7 +99,7 @@ export const FAQS: FaqItem[] = [
     id: "faq-what-is-the-aiit-blueprint-program",
     category: "AIIT Blueprint",
     question: "What is the AIIT Blueprint program?",
-    answer: "AIIT Blueprint is AIIT's gateway to global higher education. It helps students transform their AIIT skills and certifications into academic and professional opportunities abroad — whether pursuing a Bachelor's, Master's, Postgraduate Diploma, Research Program, or Industry Certification.",
+    answer: "AIIT Blueprint is AIIT's gateway to global higher education. It helps students transform their AIIT skills and certifications into academic and professional opportunities abroad, whether pursuing a Bachelor's, Master's, Postgraduate Diploma, Research Program, or Industry Certification.",
   },
   {
     id: "faq-which-countries-can-i-study-in",
@@ -117,7 +117,7 @@ export const FAQS: FaqItem[] = [
     id: "faq-can-aiit-guarantee-my-student-visa",
     category: "AIIT Blueprint",
     question: "Can AIIT guarantee my student visa will be approved?",
-    answer: "No. Malaysia, UAE (Dubai), Singapore, Australia, and India generally offer student visa routes provided admission, financial, and immigration requirements are met — but visa policies change periodically and approval is always at the discretion of the respective immigration authorities. AIIT provides guidance and documentation support but cannot guarantee visa issuance.",
+    answer: "No. Malaysia, UAE (Dubai), Singapore, Australia, and India generally offer student visa routes provided admission, financial, and immigration requirements are met, but visa policies change periodically and approval is always at the discretion of the respective immigration authorities. AIIT provides guidance and documentation support but cannot guarantee visa issuance.",
   },
   {
     id: "faq-why-is-malaysia-a-popular-blueprint",
@@ -147,7 +147,7 @@ export const FAQS: FaqItem[] = [
     id: "faq-how-much-do-aiit-courses-cost",
     category: "Pricing & Enrollment",
     question: "How much do AIIT courses cost?",
-    answer: "Course pricing varies by program — for example, Cloud Computing and Cisco CCNA are listed at $140+, and Quantum Computing at $169+. Visit the Courses page for current pricing on each program.",
+    answer: "Course pricing varies by program. For example, Cloud Computing and Cisco CCNA are listed at $140+, and Quantum Computing at $169+. Visit the Courses page for current pricing on each program.",
   },
   {
     id: "faq-does-aiit-offer-discounts-on-courses",
@@ -183,12 +183,12 @@ export const FAQS: FaqItem[] = [
     id: "faq-does-aiit-have-social-media-channels",
     category: "Support",
     question: "Does AIIT have social media channels I can follow?",
-    answer: "Yes — you can follow AIIT on Facebook and YouTube (@AIIT.Network) for course updates, tips, and announcements.",
+    answer: "Yes, you can follow AIIT on Facebook and YouTube (@AIIT.Network) for course updates, tips, and announcements.",
   },
   {
     id: "faq-i-forgot-my-password-or-i",
     category: "Support",
-    question: "I forgot my password or I'm having trouble logging in — what do I do?",
+    question: "I forgot my password or I'm having trouble logging in. What do I do?",
     answer: "Use the \"Restore Password\" option on the Sign In screen to receive a password reset link by email. If you continue to have trouble, contact AIIT support for help.",
   },
 ];

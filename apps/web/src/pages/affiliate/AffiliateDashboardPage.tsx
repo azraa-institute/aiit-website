@@ -203,7 +203,7 @@ export default function AffiliateDashboardPage() {
                 </section>
                 <section className="aff-stat">
                   <span className="aff-stat__value">{data.earnings.studentReferrals.eligibleCount.toLocaleString()}</span>
-                  <span className="aff-stat__label">onboarded (paid) -- counts toward pay</span>
+                  <span className="aff-stat__label">onboarded (paid), counts toward pay</span>
                 </section>
                 <section className="aff-stat">
                   <span className="aff-stat__value">{formatCents(data.earnings.studentReferrals.estimatedCents)}</span>
@@ -212,7 +212,7 @@ export default function AffiliateDashboardPage() {
               </div>
               <p className="aff-card__footnote">
                 {data.types.includes('student')
-                  ? "$7 per onboarded student for your first 500, $10 per student after that -- only your direct referrals escalate this way."
+                  ? "$7 per onboarded student for your first 500, $10 per student after that; only your direct referrals escalate this way."
                   : 'A flat $5 per onboarded student, at any volume.'}
               </p>
             </section>
@@ -228,7 +228,7 @@ export default function AffiliateDashboardPage() {
                 </section>
                 <section className="aff-stat">
                   <span className="aff-stat__value">{data.earnings.affiliateReferrals.eligibleCount.toLocaleString()}</span>
-                  <span className="aff-stat__label">successful -- counts toward pay</span>
+                  <span className="aff-stat__label">successful, counts toward pay</span>
                 </section>
                 <section className="aff-stat">
                   <span className="aff-stat__value">{formatCents(data.earnings.affiliateReferrals.estimatedCents)}</span>
@@ -236,7 +236,7 @@ export default function AffiliateDashboardPage() {
                 </section>
               </div>
               <p className="aff-card__footnote">
-                A flat $2.50 per successful affiliate referral, at any volume -- counted once the affiliate you referred is
+                A flat $2.50 per successful affiliate referral, at any volume. Counted once the affiliate you referred is
                 approved and has themselves onboarded a paying student of their own.
               </p>
             </section>
@@ -259,7 +259,7 @@ export default function AffiliateDashboardPage() {
                 </section>
               </div>
               <p className="aff-card__footnote">
-                Estimated from AIIT&apos;s published rates and your verified, onboarded referrals -- the AIIT team confirms
+                Estimated from AIIT&apos;s published rates and your verified, onboarded referrals; the AIIT team confirms
                 the exact figure before paying out.
               </p>
             </>

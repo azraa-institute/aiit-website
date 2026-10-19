@@ -140,7 +140,7 @@ function Detail({ id, onChanged, onClose }: { id: string; onChanged: () => void;
             </label>
             <label className="adm-check">
               <input type="checkbox" checked={internal} onChange={(e) => setInternal(e.target.checked)} />
-              <span>Internal note — do not send to the filer</span>
+              <span>Internal note: do not send to the filer</span>
             </label>
             {error ? <p className="adm-error" role="alert">{error}</p> : null}
             <div className="adm-actions">
@@ -200,7 +200,7 @@ export default function AdminComplaintsPage() {
           <p className="adm-eyebrow">Support</p>
           <h1 className="adm-title">Complaints</h1>
           <p className="adm-intro">
-            Reports from students, and from instructors about a student. Only admins can read these — including any
+            Reports from students, and from instructors about a student. Only admins can read these, including any
             report about an instructor, or an instructor's report about a student.
           </p>
         </div>

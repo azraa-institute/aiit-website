@@ -47,7 +47,7 @@ function ChangePasswordCard() {
   return (
     <section className="aff-card">
       <h2>Change your password</h2>
-      <p>You&apos;re already signed in, so no current password is needed -- just choose a new one.</p>
+      <p>You&apos;re already signed in, so no current password is needed, just choose a new one.</p>
       <form className="adm-form" onSubmit={onSubmit}>
         <div className="adm-grid">
           <label className="adm-field">
@@ -120,7 +120,7 @@ function ContactDetailsCard({ data, onSaved }: { data: AffiliateMe; onSaved: (me
   return (
     <section className="aff-card">
       <h2>Your contact details</h2>
-      <p>What you told us when you applied -- keep it current so the AIIT team can reach you.</p>
+      <p>What you told us when you applied. Keep it current so the AIIT team can reach you.</p>
       <form className="adm-form" onSubmit={onSubmit}>
         <div className="adm-grid">
           <label className="adm-field">

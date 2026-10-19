@@ -77,7 +77,7 @@ export default function AdminCertificatesPage() {
           <h1 className="adm-title">Certificates</h1>
           <p className="adm-intro">
             Every certificate ever issued, across every student. Issuing a new one still happens from a student&apos;s own
-            page — this is where you find one without knowing which student it belongs to.
+            page; this is where you find one without knowing which student it belongs to.
           </p>
         </div>
       </div>

@@ -29,7 +29,7 @@ export function brandedEmailHtml({ heading, intro, ctaLabel, ctaUrl, footerNote,
               <td style="padding:36px 40px 24px;text-align:center;">
                 <img
                   src="${LOGO_URL}"
-                  alt="AIIT — Azraa Institute of Information Technology"
+                  alt="AIIT: Azraa Institute of Information Technology"
                   width="160"
                   style="display:block;margin:0 auto;border:0;max-width:160px;height:auto;"
                 />
@@ -81,7 +81,7 @@ export function brandedEmailHtml({ heading, intro, ctaLabel, ctaUrl, footerNote,
             </tr>
           </table>
           <p style="margin:20px 0 0;font-family:Arial,Helvetica,sans-serif;font-size:11px;color:#8a837a;">
-            AIIT — Azraa Institute of Information Technology · aiit.network
+            AIIT: Azraa Institute of Information Technology · aiit.network
           </p>
         </td>
       </tr>

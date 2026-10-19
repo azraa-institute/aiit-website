@@ -16,7 +16,7 @@ tags: ["AI search", "ChromaDB", "high dimensional space", "Pinecone"]
 
 <h2>The Problem with Traditional Databases</h2>
 
-<p>Traditional databases—like SQL relational databases—are fantastic for structured data. They organize information into neat rows and columns. When you query a traditional database, it looks for exact matches. If you search for an employee named “Jane,” it scans the table and returns “Jane.”</p>
+<p>Traditional databases (like SQL relational databases) are fantastic for structured data. They organize information into neat rows and columns. When you query a traditional database, it looks for exact matches. If you search for an employee named “Jane,” it scans the table and returns “Jane.”</p>
 
 <p>However, they struggle with unstructured data (like text paragraphs, images, or audio) and cannot easily answer a query like “find someone similar to Jane” or “show me boots for wet terrain” if the product is listed as “waterproof hiking shoes”. They lack the ability to comprehend context.</p>
 
@@ -25,7 +25,7 @@ tags: ["AI search", "ChromaDB", "high dimensional space", "Pinecone"]
 <figure><video controls="" preload="metadata"><source src="/assets/blog/aiit-vector-databases-demo.mp4" type="video/mp4"/></video></figure>
 
 <blockquote>
-<p><strong>Key insight:</strong> By representing data as coordinates in space, a search engine is no longer matching text—it is simply measuring the distance between ideas.</p>
+<p><strong>Key insight:</strong> By representing data as coordinates in space, a search engine is no longer matching text; it is simply measuring the distance between ideas.</p>
 </blockquote>
 
 <h2>What Are Vector Embeddings?</h2>
@@ -71,6 +71,6 @@ tags: ["AI search", "ChromaDB", "high dimensional space", "Pinecone"]
 
 <h2>The Future is Semantic</h2>
 
-<p>Keyword search is not dead—it is still crucial for precise, structured queries. But for navigating the massive oceans of unstructured data generated today, vector databases provide the semantic understanding required to build truly intelligent applications.</p>
+<p>Keyword search is not dead; it is still crucial for precise, structured queries. But for navigating the massive oceans of unstructured data generated today, vector databases provide the semantic understanding required to build truly intelligent applications.</p>
 
 <p>Ready to build the AI-powered search engines and intelligent applications of tomorrow? Get hands-on experience with vector databases and machine learning by exploring the <a href="/courses/">courses we offer at AIIT Network</a>.</p>

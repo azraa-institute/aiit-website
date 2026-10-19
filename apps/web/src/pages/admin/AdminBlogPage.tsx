@@ -36,7 +36,7 @@ export default function AdminBlogPage() {
           <p className="adm-eyebrow">Content</p>
           <h1 className="adm-title">Blog</h1>
           <p className="adm-intro">
-            Posts written here are committed straight to the Resources content folder on publish — the same place a
+            Posts written here are committed straight to the Resources content folder on publish, the same place a
             hand-authored Markdown post would live. Nothing goes live until you click Publish.
           </p>
         </div>

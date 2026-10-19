@@ -26,7 +26,7 @@ function CredentialsPanel({ creds, onDone }: { creds: StaffCredentials; onDone: 
     <section className="adm-creds" role="alert" aria-label="Sign-in details">
       <h2>Sign-in details for {creds.instructor.name}</h2>
       <p>
-        Give these to the instructor now. <strong>This is the only time the password is shown</strong> — if it is lost, reset
+        Give these to the instructor now. <strong>This is the only time the password is shown.</strong> If it is lost, reset
         it and a new one is generated.
       </p>
       <dl className="adm-dl">
@@ -111,7 +111,7 @@ export default function AdminInstructorsPage() {
       setSuspendingId(null);
       setNotice(
         r.affectedUpcomingClasses > 0
-          ? `Suspended. ${r.affectedUpcomingClasses} upcoming class${r.affectedUpcomingClasses === 1 ? ' still names' : 'es still name'} them as instructor — reassign ${r.affectedUpcomingClasses === 1 ? 'it' : 'them'} on the Classes page.`
+          ? `Suspended. ${r.affectedUpcomingClasses} upcoming class${r.affectedUpcomingClasses === 1 ? ' still names' : 'es still name'} them as instructor. Reassign ${r.affectedUpcomingClasses === 1 ? 'it' : 'them'} on the Classes page.`
           : 'Suspended.',
       );
       instructors.reload();
@@ -158,7 +158,7 @@ export default function AdminInstructorsPage() {
           <p className="adm-eyebrow">People</p>
           <h1 className="adm-title">Instructors</h1>
           <p className="adm-intro">
-            Instructors don&apos;t sign up — you create their login here and give them a temporary password. They sign in at
+            Instructors don&apos;t sign up: you create their login here and give them a temporary password. They sign in at
             /staff/login and choose their own password straight away.
           </p>
         </div>

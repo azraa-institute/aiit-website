@@ -119,7 +119,7 @@ export default function InstructorDashboardPage() {
             {d.gradingQueue.map((g) => (
               <li key={g.submissionId} className="adm-row">
                 <span>
-                  <strong>{g.studentName ?? 'A student'}</strong> — {g.assignmentTitle}
+                  <strong>{g.studentName ?? 'A student'}</strong> · {g.assignmentTitle}
                   <span className="adm-muted"> · {g.courseTitle} · handed in {formatWhen(g.submittedAt)}</span>
                 </span>
                 <Link to={`/instructor/assignments/${g.assignmentId}`} className="adm-btn adm-btn--ghost">

@@ -81,7 +81,7 @@ export default function ChangePasswordPage() {
       <Seo title="Set your password" path="/change-password" noindex />
       <AuthLayout
         title="Set your own password"
-        intro="You signed in with a one-time password. Choose your own to continue -- only you should know it."
+        intro="You signed in with a one-time password. Choose your own to continue; only you should know it."
         footer={<>Need help? Contact the AIIT team.</>}
       >
         <form className="auth__form" onSubmit={onSubmit} noValidate>

@@ -37,7 +37,7 @@ export default function AdminMessagesPage() {
           <p className="adm-eyebrow">Communication</p>
           <h1 className="adm-title">Messages</h1>
           <p className="adm-intro">
-            Everything submitted through the public Contact form on aiit.network — including anyone who used the
+            Everything submitted through the public Contact form on aiit.network, including anyone who used the
             &quot;Contact us&quot; link shown after a suspended sign-in.
           </p>
         </div>

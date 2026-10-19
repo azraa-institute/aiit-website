@@ -49,7 +49,7 @@ readMinutes: 9
 
 <p><strong>2. There is a massive skills gap.</strong> According to various tech reports, the demand for AI professionals globally is growing far faster than the supply. Africa, with its young and fast-growing population, is uniquely positioned to fill this gap but only if people start learning now.</p>
 
-<p><strong>3. Remote work has opened global doors.</strong> An AI professional trained in Johannesburg, Accra, or Nairobi can work for a company in London, New York, or Dubai — entirely remotely. The skills are universal, and the pay is competitive.</p>
+<p><strong>3. Remote work has opened global doors.</strong> An AI professional trained in Johannesburg, Accra, or Nairobi can work for a company in London, New York, or Dubai, entirely remotely. The skills are universal, and the pay is competitive.</p>
 
 <hr/>
 
@@ -59,7 +59,7 @@ readMinutes: 9
 
 <p><strong>Machine Learning (ML)</strong> is where computers learn from data without being explicitly programmed. This is the backbone of most modern AI applications. When Spotify recommends a song you end up loving, that is machine learning at work.</p>
 
-<p><strong>Deep Learning</strong> is a subfield of machine learning that uses structures called neural networks — loosely inspired by the human brain. It powers advanced applications like voice recognition (Siri, Alexa) and self-driving car technology.</p>
+<p><strong>Deep Learning</strong> is a subfield of machine learning that uses structures called neural networks (loosely inspired by the human brain). It powers advanced applications like voice recognition (Siri, Alexa) and self-driving car technology.</p>
 
 <p><strong>Natural Language Processing (NLP)</strong> is AI’s ability to understand, interpret, and generate human language. ChatGPT, Google Translate, and email spam filters all rely on NLP.</p>
 
@@ -77,7 +77,7 @@ readMinutes: 9
 
 <p>Yes, AI will automate some jobs. Repetitive, manual, and predictable tasks are most at risk. But here is the fuller picture: <strong>AI also creates enormous numbers of new jobs.</strong> Every AI system needs humans to build it, maintain it, feed it data, interpret its results, and ensure it behaves ethically.</p>
 
-<p>For Africa specifically, the risk and the opportunity are not equal. The continent has a massive opportunity to leapfrog — much like how many African countries skipped landlines and went straight to mobile phones. Rather than being left behind, Africans who develop AI skills now will be positioned at the <em>front</em> of the next wave.</p>
+<p>For Africa specifically, the risk and the opportunity are not equal. The continent has a massive opportunity to leapfrog, much like how many African countries skipped landlines and went straight to mobile phones. Rather than being left behind, Africans who develop AI skills now will be positioned at the <em>front</em> of the next wave.</p>
 
 <p>The World Economic Forum has estimated that while AI will displace certain roles, it will create millions of new jobs in data, AI development, digital trust, and adjacent fields. The question is: who will be trained to fill them?</p>
 
@@ -95,9 +95,9 @@ readMinutes: 9
 
 <p><strong>Step 3: Learn Data Analysis</strong> Before building AI models, you need to work with data. Tools like Pandas, NumPy, and Excel for data cleaning and analysis are important early skills.</p>
 
-<p><strong>Step 4: Take a Machine Learning Course</strong> Platforms like Coursera, Google, and local African-focused learning institutions offer beginner-level machine learning courses. Look for courses that are project-based — hands-on practice accelerates learning dramatically.</p>
+<p><strong>Step 4: Take a Machine Learning Course</strong> Platforms like Coursera, Google, and local African-focused learning institutions offer beginner-level machine learning courses. Look for courses that are project-based: hands-on practice accelerates learning dramatically.</p>
 
-<p><strong>Step 5: Build Projects and a Portfolio</strong> Employers and clients want to see what you can build. Start with small, real-world projects — a sentiment analysis tool, a price prediction model, or an image classifier. Post them on GitHub.</p>
+<p><strong>Step 5: Build Projects and a Portfolio</strong> Employers and clients want to see what you can build. Start with small, real-world projects: a sentiment analysis tool, a price prediction model, or an image classifier. Post them on GitHub.</p>
 
 <p><strong>Step 6: Get Certified</strong> Certifications from Google (Google Professional ML Engineer), Microsoft (Azure AI), or IBM signal credibility to employers and help you stand out in the job market.</p>
 
@@ -115,7 +115,7 @@ readMinutes: 9
 
 <p><strong>Education:</strong> AI-powered personalised learning tools are beginning to reach students in rural areas, adapting to each learner’s pace and language.</p>
 
-<p>If you learn AI, you will not just be chasing global opportunities. You will have the chance to <strong>build solutions that solve real African problems</strong> — and that is a powerful and meaningful place to build a career.</p>
+<p>If you learn AI, you will not just be chasing global opportunities. You will have the chance to <strong>build solutions that solve real African problems</strong>, and that is a powerful and meaningful place to build a career.</p>
 
 <hr/>
 
@@ -123,15 +123,15 @@ readMinutes: 9
 
 <p>The good news is that you do not need to travel abroad or enrol in an expensive university to learn AI. There are credible, structured paths to getting started right from where you are.</p>
 
-<p>At <strong>Azraa Institute of Information Technology (AIIT)</strong>, we offer beginner-friendly tech courses designed specifically with the African learner in mind — practical, structured, and accessible. Whether you are a fresh graduate, a career switcher, or someone who simply wants to build a future in tech, our programmes give you the foundation and mentorship to get started confidently.</p>
+<p>At <strong>Azraa Institute of Information Technology (AIIT)</strong>, we offer beginner-friendly tech courses designed specifically with the African learner in mind: practical, structured, and accessible. Whether you are a fresh graduate, a career switcher, or someone who simply wants to build a future in tech, our programmes give you the foundation and mentorship to get started confidently.</p>
 
 <p>Beyond AIIT, here are other reputable platforms to supplement your learning:</p>
 
 <ul>
-<li><strong>Coursera</strong> — Offers courses from top universities including the popular Machine Learning Specialisation by Andrew Ng</li>
-<li><strong>Google’s AI Education Hub</strong> — Free resources and structured learning paths</li>
-<li><strong>fast.ai</strong> — Practical deep learning, free and highly regarded</li>
-<li><strong>Kaggle</strong> — Practice real datasets and compete in data science challenges</li>
+<li><strong>Coursera</strong>: Offers courses from top universities including the popular Machine Learning Specialisation by Andrew Ng</li>
+<li><strong>Google’s AI Education Hub</strong>: Free resources and structured learning paths</li>
+<li><strong>fast.ai</strong>: Practical deep learning, free and highly regarded</li>
+<li><strong>Kaggle</strong>: Practice real datasets and compete in data science challenges</li>
 </ul>
 
 <p>Consistency matters more than speed. Even 30 to 60 minutes of focused study daily will compound significantly over a few months.</p>
@@ -154,7 +154,7 @@ readMinutes: 9
 
 <h2>Final Thoughts: The Time is Now</h2>
 
-<p>Africa is home to the world’s youngest population. By 2050, one in four people on earth will be African. That is an extraordinary opportunity — but only if that population is equipped with the skills the future demands.</p>
+<p>Africa is home to the world’s youngest population. By 2050, one in four people on earth will be African. That is an extraordinary opportunity, but only if that population is equipped with the skills the future demands.</p>
 
 <p>Artificial intelligence is not a trend that will pass. It is the infrastructure of the next economy. The question is not whether AI will matter in Africa. It already does. The question is whether <em>you</em> will be positioned to benefit from it.</p>
 

@@ -216,7 +216,7 @@ export default function AdminWebinarEditorPage() {
         <h2 className="adm-h2">Schedule</h2>
         <div className="adm-grid">
           <label className="adm-field">
-            <span>Starts at (optional -- leave blank for "to be announced")</span>
+            <span>Starts at (optional, leave blank for "to be announced")</span>
             <input
               type="datetime-local"
               value={toLocalInputValue(form.startsAt)}
@@ -248,7 +248,7 @@ export default function AdminWebinarEditorPage() {
             <span>Seats limited</span>
           </label>
           <label className="adm-field">
-            <span>Join link (Zoom/Meet -- revealed to registrants once set; also required for reminders to send)</span>
+            <span>Join link (Zoom/Meet; revealed to registrants once set; also required for reminders to send)</span>
             <input maxLength={500} value={form.joinUrl ?? ''} onChange={(e) => update('joinUrl', e.target.value || null)} />
           </label>
         </div>
@@ -319,7 +319,7 @@ export default function AdminWebinarEditorPage() {
           </label>
           <label className="adm-check">
             <input type="checkbox" checked={form.featured} onChange={(e) => update('featured', e.target.checked)} />
-            <span>Featured -- this is the one shown on /webinar and the homepage</span>
+            <span>Featured: this is the one shown on /webinar and the homepage</span>
           </label>
         </div>
 

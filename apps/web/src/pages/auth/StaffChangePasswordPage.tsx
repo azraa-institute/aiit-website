@@ -66,7 +66,7 @@ export default function StaffChangePasswordPage() {
         tone="staff"
         asideImage={ASIDE_IMAGE}
         title="Set your own password"
-        intro="You signed in with a temporary password. Choose a new one to continue — only you should know it."
+        intro="You signed in with a temporary password. Choose a new one to continue; only you should know it."
         footer={<>Need help? Contact the AIIT administrator.</>}
       >
         <form className="auth__form" onSubmit={onSubmit} noValidate>

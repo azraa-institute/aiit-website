@@ -55,8 +55,8 @@ export class CertificatePdfService {
   async render(input: CertificatePdfInput): Promise<Buffer> {
     const doc = await PDFDocument.create();
     doc.registerFontkit(fontkit);
-    doc.setTitle(`AIIT Certificate — ${input.courseTitle}`);
-    doc.setAuthor('AIIT — Azraa Institute of Information Technology');
+    doc.setTitle(`AIIT Certificate: ${input.courseTitle}`);
+    doc.setAuthor('AIIT: Azraa Institute of Information Technology');
 
     const page = doc.addPage([792, 612]); // US Letter, landscape -- matches the reference's ~1.29:1 aspect ratio
     const { width, height } = page.getSize();

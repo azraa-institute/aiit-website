@@ -304,7 +304,7 @@ function ClassroomInner({
     <div className={cn('classroom__inner', panel && 'has-panel', panel === 'whiteboard' && 'has-wide-panel')}>
       {connection === ConnectionState.Reconnecting || connection === ConnectionState.SignalReconnecting ? (
         <p className="classroom__banner" role="status">
-          Connection lost — trying to reconnect…
+          Connection lost, trying to reconnect…
         </p>
       ) : null}
       {connection === ConnectionState.Connecting ? (
@@ -540,7 +540,7 @@ function Tile({ trackRef, large, isScreen }: { trackRef: TrackReferenceOrPlaceho
           </span>
         ) : null}
         <span className="tile__name">
-          {isScreen ? `${name} — screen` : name}
+          {isScreen ? `${name} (screen)` : name}
           {participant.isLocal ? ' (you)' : ''}
         </span>
         {role === 'host' && !isScreen ? <span className="tile__role">Instructor</span> : null}

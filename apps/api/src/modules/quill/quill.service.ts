@@ -162,7 +162,7 @@ export class QuillService {
       return {
         reply: pick([
           `Hmm, I'm not totally sure I caught that 🤔 I'm best with questions about ${course.title}'s curriculum, pricing, certification, and career impact. Try one of these, or rephrase?`,
-          `I didn't quite follow that one — I can help most with what you'll learn, cost, duration, certification, or how to enroll in ${course.title}. What would help?`,
+          `I didn't quite follow that one. I can help most with what you'll learn, cost, duration, certification, or how to enroll in ${course.title}. What would help?`,
         ]),
         suggestions: COMMON_SUGGESTIONS,
         links: [courseLink(course)],
@@ -197,7 +197,7 @@ export class QuillService {
       case 'thanks':
         return {
           reply: pick([
-            `Anytime! Let me know if anything else comes up about ${course.title} — or any other AIIT course.`,
+            `Anytime! Let me know if anything else comes up about ${course.title}, or any other AIIT course.`,
             `Happy to help. I'm right here if more questions come up while you're deciding.`,
           ]),
           suggestions: COMMON_SUGGESTIONS,
@@ -240,7 +240,7 @@ export class QuillService {
       return {
         reply: pick([
           "Hmm, I'm not totally sure I caught that 🤔 I can help with what AIIT offers, pricing, certification, or picking the right course. Try one of these, or rephrase?",
-          "I didn't quite follow that one — I can help most with what AIIT teaches, cost, certification, or how to enroll. What would help?",
+          "I didn't quite follow that one. I can help most with what AIIT teaches, cost, certification, or how to enroll. What would help?",
         ]),
         suggestions: GENERAL_SUGGESTIONS,
         links: [coursesLink()],
@@ -255,7 +255,7 @@ export class QuillService {
       case 'price':
         return {
           reply:
-            'Pricing varies by course -- plenty are completely free, others are a one-time fee or included with membership. Browse the catalogue to see exact pricing for each.',
+            'Pricing varies by course. Plenty are completely free, others are a one-time fee or included with membership. Browse the catalogue to see exact pricing for each.',
           suggestions: GENERAL_SUGGESTIONS,
           links: [coursesLink()],
           matched: true,
@@ -264,7 +264,7 @@ export class QuillService {
       case 'duration_level':
         return {
           reply:
-            "Course length depends on what you pick -- anywhere from a few weeks to several months, at levels from absolute-beginner through advanced.",
+            "Course length depends on what you pick: anywhere from a few weeks to several months, at levels from absolute-beginner through advanced.",
           suggestions: GENERAL_SUGGESTIONS,
           links: [coursesLink()],
           matched: true,
@@ -273,7 +273,7 @@ export class QuillService {
       case 'certificate':
         return {
           reply:
-            'Every AIIT course ends in a certificate, and every certificate is independently verifiable -- anyone (an employer, a university) can confirm it from its credential ID.',
+            'Every AIIT course ends in a certificate, and every certificate is independently verifiable: anyone (an employer, a university) can confirm it from its credential ID.',
           suggestions: GENERAL_SUGGESTIONS,
           links: [coursesLink()],
           matched: true,
@@ -281,7 +281,7 @@ export class QuillService {
         };
       case 'enroll':
         return {
-          reply: 'Browse the courses below, pick one that fits your goals, and tap Enroll on its page -- most are available to start right away.',
+          reply: 'Browse the courses below, pick one that fits your goals, and tap Enroll on its page. Most are available to start right away.',
           suggestions: GENERAL_SUGGESTIONS,
           links: [coursesLink()],
           matched: true,
@@ -346,8 +346,8 @@ export class QuillService {
     return {
       reply:
         picks.length > 0
-          ? `AIIT's catalogue covers a lot of ground -- a few to start with: ${titles}. Browse the full list to see everything, filterable by level and category.`
-          : "I can't load the course list right now -- the full catalogue is always up to date on the Courses page.",
+          ? `AIIT's catalogue covers a lot of ground. A few to start with: ${titles}. Browse the full list to see everything, filterable by level and category.`
+          : "I can't load the course list right now, but the full catalogue is always up to date on the Courses page.",
       suggestions: GENERAL_SUGGESTIONS,
       links: [...picks.map(courseLink), coursesLink()],
       matched: true,
@@ -358,8 +358,8 @@ export class QuillService {
   private escalate(course: CourseDetail | null, explicit: boolean): QuillChatResponse {
     return {
       reply: explicit
-        ? `Good call — let's get you a real person rather than me guessing. Our team is fastest on WhatsApp, or you can email ${EMAIL} or call ${PHONE_DISPLAY} (Mon–Sat, 8am–6pm IST).`
-        : `I don't want to keep guessing on this one — let's get you a real person. Our team is fastest on WhatsApp, or email ${EMAIL} / call ${PHONE_DISPLAY} (Mon–Sat, 8am–6pm IST).`,
+        ? `Good call. Let's get you a real person rather than me guessing. Our team is fastest on WhatsApp, or you can email ${EMAIL} or call ${PHONE_DISPLAY} (Mon–Sat, 8am–6pm IST).`
+        : `I don't want to keep guessing on this one. Let's get you a real person. Our team is fastest on WhatsApp, or email ${EMAIL} / call ${PHONE_DISPLAY} (Mon–Sat, 8am–6pm IST).`,
       suggestions: [],
       links: [whatsappLink(course?.title), emailLink(), phoneLink()],
       matched: true,
@@ -371,7 +371,7 @@ export class QuillService {
     return {
       reply: pick([
         `Hey! I'm Quill, AIIT's course guide. I can tell you what you'll learn in ${course.title}, how it helps your career, pricing, duration, or how to get certified. What would you like to know?`,
-        `Hi there 👋 I'm Quill. Ask me anything about ${course.title} — curriculum, price, how long it takes, or what you'll walk away with.`,
+        `Hi there 👋 I'm Quill. Ask me anything about ${course.title}: curriculum, price, how long it takes, or what you'll walk away with.`,
       ]),
       suggestions: COMMON_SUGGESTIONS,
       links: [],
@@ -417,7 +417,7 @@ export class QuillService {
     const audience = course.audience[0] ?? 'people looking to break into this field';
     const outcomes = course.outcomes.slice(0, 2);
     const outcomeLine = outcomes.length > 0 ? ` able to ${outcomes.join(' and ').toLowerCase()}` : '';
-    const reply = `${course.title} is built for ${audience}. Graduates walk away${outcomeLine} — skills ${course.categoryName} employers are actively hiring for right now. You'll also earn ${course.certification}, AIIT's verifiable credential for your resume or LinkedIn.`;
+    const reply = `${course.title} is built for ${audience}. Graduates walk away${outcomeLine}: skills ${course.categoryName} employers are actively hiring for right now. You'll also earn ${course.certification}, AIIT's verifiable credential for your resume or LinkedIn.`;
 
     const articles = articlesFor(course);
     return {
@@ -432,16 +432,16 @@ export class QuillService {
   private answerPrice(course: CourseDetail): QuillChatResponse {
     let reply: string;
     if (course.pricing === 'free') {
-      reply = `Good news — ${course.title} is completely free to join.`;
+      reply = `Good news: ${course.title} is completely free to join.`;
     } else if (course.pricing === 'subscription') {
-      reply = `${course.title} is included with AIIT membership — no separate course fee.`;
+      reply = `${course.title} is included with AIIT membership, no separate course fee.`;
     } else {
       const price = formatPrice(course.price.amountCents, course.price.currency);
       const discount =
         course.price.wasAmountCents != null
           ? ` (down from ${formatPrice(course.price.wasAmountCents, course.price.currency)})`
           : '';
-      reply = `${course.title} is ${price}${discount}. You can pay with PayPal, Razorpay, or Paystack depending on your region — tap Enroll now on this page and checkout opens right there.`;
+      reply = `${course.title} is ${price}${discount}. You can pay with PayPal, Razorpay, or Paystack depending on your region. Tap Enroll now on this page and checkout opens right there.`;
     }
 
     return {
@@ -456,7 +456,7 @@ export class QuillService {
   private answerDurationLevel(course: CourseDetail): QuillChatResponse {
     const reqs = course.requirements.length > 0
       ? `What you'll need going in: ${course.requirements.slice(0, 3).join(', ')}.`
-      : `No specific prerequisites — just curiosity and a willingness to practice.`;
+      : `No specific prerequisites: just curiosity and a willingness to practice.`;
     return {
       reply: `${course.title} is a ${course.durationLabel} program at ${course.level} level. ${reqs}`,
       suggestions: ['What will I learn?', 'How much does it cost?', 'How do I enroll?'],
@@ -468,7 +468,7 @@ export class QuillService {
 
   private answerCertificate(course: CourseDetail): QuillChatResponse {
     return {
-      reply: `${course.certification} Every AIIT certificate is independently verifiable — anyone (an employer, a university) can confirm yours is real from its credential ID.`,
+      reply: `${course.certification} Every AIIT certificate is independently verifiable: anyone (an employer, a university) can confirm yours is real from its credential ID.`,
       suggestions: ['How will this help my career?', 'How much does it cost?', 'How do I enroll?'],
       links: [courseLink(course)],
       matched: true,
@@ -483,7 +483,7 @@ export class QuillService {
     else note = `It's ${formatPrice(course.price.amountCents, course.price.currency)}, paid securely at checkout.`;
 
     return {
-      reply: `Ready to jump in? Scroll up and tap "Enroll now" on this page — checkout takes under a minute. ${note}`,
+      reply: `Ready to jump in? Scroll up and tap "Enroll now" on this page. Checkout takes under a minute. ${note}`,
       suggestions: ['Is there a certificate?', 'How will this help my career?'],
       links: [enrollLink(course)],
       matched: true,
@@ -509,7 +509,7 @@ export class QuillService {
     const articles = articlesFor(course);
     const withVideo = QUILL_ARTICLES.find((a) => a.hasVideo && articles.includes(a));
     const reply = withVideo
-      ? `There's a short video walkthrough inside the article "${withVideo.title}" — and our YouTube channel has more on ${course.categoryName}.`
+      ? `There's a short video walkthrough inside the article "${withVideo.title}", and our YouTube channel has more on ${course.categoryName}.`
       : `I don't have a video queued for this exact course yet, but AIIT's YouTube channel covers ${course.categoryName} and related topics.`;
     return {
       reply,

@@ -12,7 +12,7 @@ tags: ["Beginners Guide", "Cisco CCNA", "Networking", "What is Networking"]
 
 <p>Every time you send a WhatsApp message, join a Zoom call, or stream a match on your phone, something invisible is happening behind the scenes: data is finding its way from one device to another, often across cities, countries, and oceans, in a fraction of a second.</p>
 
-<p>That invisible system is networking. It’s the least glamorous-sounding specialisation in tech, and also one of the most foundational. Almost nothing else in tech — cloud computing, cybersecurity, AI, none of it — works without a network to run on.</p>
+<p>That invisible system is networking. It’s the least glamorous-sounding specialisation in tech, and also one of the most foundational. Almost nothing else in tech (cloud computing, cybersecurity, AI, none of it) works without a network to run on.</p>
 
 <p>This guide breaks down what networking actually is, why one specific certification (Cisco’s CCNA) keeps coming up in every “how to start” conversation, and exactly how to begin, even if you’ve never touched a router in your life.</p>
 
@@ -66,7 +66,7 @@ tags: ["Beginners Guide", "Cisco CCNA", "Networking", "What is Networking"]
 
 <h2>Why Networking Skills Are More In-Demand Than Ever</h2>
 
-<p><strong>Everything now depends on connectivity.</strong> Cloud computing, remote work, video conferencing, IoT devices, mobile banking — all of it relies entirely on networks functioning properly. When networks fail, everything built on top of them fails too.</p>
+<p><strong>Everything now depends on connectivity.</strong> Cloud computing, remote work, video conferencing, IoT devices, mobile banking: all of it relies entirely on networks functioning properly. When networks fail, everything built on top of them fails too.</p>
 
 <p><strong>Businesses are expanding their infrastructure constantly.</strong> As companies grow, add offices, adopt cloud services, and support remote teams, their networks become more complex, and they need skilled people to design and maintain that complexity securely.</p>
 
@@ -112,7 +112,7 @@ tags: ["Beginners Guide", "Cisco CCNA", "Networking", "What is Networking"]
 
 <h2>Is Networking the Right Path for You?</h2>
 
-<p>Networking tends to suit people who enjoy understanding how systems fit together, and who find satisfaction in diagnosing and solving concrete, logical problems. It rewards patience and methodical thinking — a lot of the job is narrowing down exactly where in a complex system something has gone wrong.</p>
+<p>Networking tends to suit people who enjoy understanding how systems fit together, and who find satisfaction in diagnosing and solving concrete, logical problems. It rewards patience and methodical thinking: a lot of the job is narrowing down exactly where in a complex system something has gone wrong.</p>
 
 <p>It’s also one of the more stable long-term career paths in tech. Because networking underpins so much of the rest of the field, skilled network professionals rarely struggle to find relevance, whether they stay specialised in networking itself or use it as a foundation to move into cloud, security, or infrastructure architecture later.</p>
 

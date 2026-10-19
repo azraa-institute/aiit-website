@@ -6,7 +6,7 @@ import type { Advantage, EcosystemStep } from './types';
  */
 export const ROADMAP_HEADING = 'From Learning Today to Leading Tomorrow';
 export const ROADMAP_INTRO =
-  "At AIIT, we don't just teach skills — we build futures. Follow the proven pathway that transforms your potential into global opportunities.";
+  "At AIIT, we don't just teach skills; we build futures. Follow the proven pathway that transforms your potential into global opportunities.";
 
 export type StageAccent = 'red' | 'ink' | 'brass' | 'slate';
 export type StageIcon =

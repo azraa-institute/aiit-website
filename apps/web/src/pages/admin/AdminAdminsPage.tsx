@@ -23,7 +23,7 @@ function CredentialsPanel({ creds, onDone }: { creds: AdminCredentials; onDone: 
     <section className="adm-creds" role="alert" aria-label="Sign-in details">
       <h2>Sign-in details for {creds.admin.name}</h2>
       <p>
-        Give these to the new admin now. <strong>This is the only time the password is shown</strong> — if it is lost,
+        Give these to the new admin now. <strong>This is the only time the password is shown.</strong> If it is lost,
         they can reset their own password the same way any staff account does once signed in.
       </p>
       <dl className="adm-dl">
@@ -89,7 +89,7 @@ export default function AdminAdminsPage() {
           <p className="adm-eyebrow">People</p>
           <h1 className="adm-title">Admins</h1>
           <p className="adm-intro">
-            Administrator accounts, same as instructors — you create the login here and hand over a temporary password.
+            Administrator accounts, same as instructors: you create the login here and hand over a temporary password.
             They sign in at /staff/login and choose their own password straight away. An admin account can&apos;t be
             suspended from this screen, only created.
           </p>

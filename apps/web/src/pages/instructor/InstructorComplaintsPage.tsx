@@ -200,7 +200,7 @@ export default function InstructorComplaintsPage() {
 
       {sent ? (
         <p className="adm-muted" role="status">
-          Thank you — your report has been sent. The AIIT team will reply here.
+          Thank you. Your report has been sent. The AIIT team will reply here.
         </p>
       ) : null}
 

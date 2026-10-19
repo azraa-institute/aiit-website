@@ -62,7 +62,7 @@ export default function AffiliateLinkPage() {
     return (
       <section className="aff-card">
         <h2>Your referral tools</h2>
-        <p>Your referral link and/or coupon code unlock once your application is approved and activated -- head back to the Dashboard.</p>
+        <p>Your referral link and/or coupon code unlock once your application is approved and activated. Head back to the Dashboard.</p>
       </section>
     );
   }
@@ -82,7 +82,7 @@ export default function AffiliateLinkPage() {
       {data.affiliateCouponCode ? (
         <section className="aff-card">
           <h2>Affiliate-to-Affiliate Coupon Code</h2>
-          <p>Share this code with anyone you&apos;d like to bring into the AIIT affiliate program -- they enter it when they apply.</p>
+          <p>Share this code with anyone you&apos;d like to bring into the AIIT affiliate program; they enter it when they apply.</p>
           <CopyBox value={data.affiliateCouponCode} />
           <p className="aff-card__footnote">{(data.affiliateReferralCount ?? 0).toLocaleString()} people have applied with your coupon code so far.</p>
         </section>

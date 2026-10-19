@@ -37,12 +37,12 @@ export function webinarLabel(w: WebinarAnnouncement = WEBINAR_ANNOUNCEMENT): str
   const scheduled = [w.webinarTitle, w.webinarDate, w.webinarTime].filter(Boolean).join(' · ');
   switch (w.status) {
     case 'live':
-      return w.webinarTitle ? `Live now — ${w.webinarTitle}` : 'Live webinar in progress';
+      return w.webinarTitle ? `Live now: ${w.webinarTitle}` : 'Live webinar in progress';
     case 'scheduled':
-      return scheduled ? `Live webinar — ${scheduled}` : 'Live webinar scheduled';
+      return scheduled ? `Live webinar: ${scheduled}` : 'Live webinar scheduled';
     case 'ended':
-      return 'Live webinar — recording coming soon';
+      return 'Live webinar: recording coming soon';
     default:
-      return 'Live webinar — announcement coming soon';
+      return 'Live webinar: announcement coming soon';
   }
 }

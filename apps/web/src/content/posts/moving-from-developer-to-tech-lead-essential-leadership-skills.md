@@ -43,7 +43,7 @@ tags: ["engineering management", "senior developer to leadership", "software tea
 
 <p>Many new Tech Leads fall into the trap of taking all the hardest tasks for themselves and giving the tedious work to the team. This hurts team morale and guarantees burnout for the lead.</p>
 
-<p>Effective delegation means assigning tasks based on growth opportunities. Give challenging architectural problems to your mid-level developers to help them stretch into senior roles. Your job is to provide the guardrails—through clear architecture documents, code reviews, and pair programming—so they can fail safely and learn.</p>
+<p>Effective delegation means assigning tasks based on growth opportunities. Give challenging architectural problems to your mid-level developers to help them stretch into senior roles. Your job is to provide the guardrails (through clear architecture documents, code reviews, and pair programming) so they can fail safely and learn.</p>
 
 <p><em>(Building a team of highly capable engineers starts with the right training foundation. Equip your team with the modern tech skills they need through the <a href="/courses/">courses we offer at AIIT Network</a>.)</em></p>
 
@@ -56,7 +56,7 @@ tags: ["engineering management", "senior developer to leadership", "software tea
 <strong>Depersonalize Code:</strong> Teach your team that “you are not your code.” Foster an environment where code reviews are about improving the product, not criticizing the author.
 </li>
 <li>
-<strong>Commit and Disagree:</strong> When the team is deadlocked on a technical decision, you must step in, make the final call, and ensure everyone commits to the direction—even those who originally disagreed.
+<strong>Commit and Disagree:</strong> When the team is deadlocked on a technical decision, you must step in, make the final call, and ensure everyone commits to the direction, even those who originally disagreed.
 </li>
 </ul>
 

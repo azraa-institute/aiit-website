@@ -65,7 +65,7 @@ export function FeaturedCourses() {
         </header>
 
         <p className="courses-index__signature">
-          AIIT Course Index <span>01 — {String(indexCourses.length + 1).padStart(2, '0')}</span>
+          AIIT Course Index <span>01-{String(indexCourses.length + 1).padStart(2, '0')}</span>
         </p>
 
         <div className="courses-index__body">

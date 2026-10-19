@@ -88,7 +88,7 @@ export default function AdminAuditPage() {
           <h1 className="adm-title">Audit log</h1>
           <p className="adm-intro">
             A permanent record of who changed which account, and when. Entries cannot be edited or removed. Search
-            works even if you only half-remember what happened — it looks across the person&apos;s name and email,
+            works even if you only half-remember what happened: it looks across the person&apos;s name and email,
             the reason given, and any other detail on the entry.
           </p>
         </div>

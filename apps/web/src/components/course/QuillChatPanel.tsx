@@ -35,7 +35,7 @@ const GENERAL_OPENING_SUGGESTIONS = [
 
 function openingLine(courseTitle?: string): string {
   return courseTitle
-    ? `Hi there \u{1F44B} I'm Quill. Ask me anything about ${courseTitle} — curriculum, price, how long it takes, or what you'll walk away with.`
+    ? `Hi there \u{1F44B} I'm Quill. Ask me anything about ${courseTitle}: curriculum, price, how long it takes, or what you'll walk away with.`
     : `Hi there \u{1F44B} I'm Quill, AIIT's guide. Ask me about any of our courses, how enrollment works, certificates, or anything else about AIIT.`;
 }
 

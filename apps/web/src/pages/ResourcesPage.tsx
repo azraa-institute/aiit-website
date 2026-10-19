@@ -70,7 +70,7 @@ export default function ResourcesPage() {
   return (
     <Layout>
       <Seo
-        title={activeSection ? `${activeSection.name} — AIIT Resources` : 'AIIT Resources'}
+        title={activeSection ? `${activeSection.name} | AIIT Resources` : 'AIIT Resources'}
         description="Free guides and explainers from AIIT on AI, cloud, cybersecurity, networking and building a tech career."
         path="/resources"
       />

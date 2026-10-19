@@ -30,7 +30,7 @@ export function TechnologyDomains() {
           align="start"
           eyebrow="Our focus areas"
           title="Future-ready technologies, taught practically"
-          intro="We help learners build practical skills in Artificial Intelligence, Data Science, Cloud Computing, Quantum Computing and Edge Computing — the technologies shaping the next decade of work."
+          intro="We help learners build practical skills in Artificial Intelligence, Data Science, Cloud Computing, Quantum Computing and Edge Computing, the technologies shaping the next decade of work."
           className="tech-focus__heading"
         />
 

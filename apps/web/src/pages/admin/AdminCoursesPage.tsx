@@ -50,7 +50,7 @@ function CourseRow({
         <fieldset className="adm-checks">
           <legend className="visually-hidden">Instructors for {course.title}</legend>
           {instructors.length === 0 ? (
-            <p className="adm-muted">No active instructors yet — add one on the Instructors page.</p>
+            <p className="adm-muted">No active instructors yet. Add one on the Instructors page.</p>
           ) : (
             instructors.map((i) => (
               <label key={i.id} className="adm-check">

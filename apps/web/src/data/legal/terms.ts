@@ -108,7 +108,7 @@ export const TERMS_AND_CONDITIONS: LegalDoc = {
         'Material cannot be copied, reproduced, redistributed, sold or modified without our written permission.',
       ],
       clause:
-        'All content — including courses, videos, documents, graphics, logos, learning materials, assessments, software and website content — belongs to AIIT or its licensors.',
+        'All content, including courses, videos, documents, graphics, logos, learning materials, assessments, software and website content, belongs to AIIT or its licensors.',
     },
     {
       id: 'user-content',

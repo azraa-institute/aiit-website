@@ -130,7 +130,7 @@ export default function AdminTimetablesPage() {
       });
       setNotice(
         r.created === 0
-          ? 'Nothing new to schedule — every upcoming class already exists.'
+          ? 'Nothing new to schedule, every upcoming class already exists.'
           : `Scheduled ${r.created} new class${r.created === 1 ? '' : 'es'}${r.skipped ? ` (${r.skipped} already existed)` : ''}.`,
       );
       timetables.reload();
@@ -195,7 +195,7 @@ export default function AdminTimetablesPage() {
                 value={form.courseId}
                 onChange={(e) => {
                   const course = courseList.find((c) => c.id === e.target.value);
-                  patch({ courseId: e.target.value, title: form.title || (course ? `${course.title} — live class` : '') });
+                  patch({ courseId: e.target.value, title: form.title || (course ? `${course.title}: live class` : '') });
                 }}
               >
                 <option value="">Select a course…</option>

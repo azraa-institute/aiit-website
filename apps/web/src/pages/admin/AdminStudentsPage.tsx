@@ -184,7 +184,7 @@ function StudentPanel({ id, onChanged, onClose }: { id: string; onChanged: () =>
                       <>
                         <span className="adm-muted">
                           {' '}
-                          · Certificate revoked ({cert.credentialId}){cert.revokedReason ? ` — ${cert.revokedReason}` : ''}
+                          · Certificate revoked ({cert.credentialId}){cert.revokedReason ? `: ${cert.revokedReason}` : ''}
                         </span>
                         <button
                           type="button"

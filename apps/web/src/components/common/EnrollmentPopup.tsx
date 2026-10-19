@@ -100,7 +100,7 @@ export function EnrollmentPopup() {
         </button>
 
         <p id="enroll-pop-title" className="visually-hidden">
-          AIIT admissions are open — enrol now
+          AIIT admissions are open. Enrol now
         </p>
 
         <div className="enroll-pop__figure">

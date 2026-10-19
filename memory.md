@@ -206,7 +206,16 @@ on the registration page, not just silently stored — see §15) · `/privacy-po
 ### Auth
 `/login` · `/register` · `/forgot-password` · `/auth/callback` · `/reset-password` ·
 `/change-password` `[RequireAuth]` · `/staff/login` · `/staff/change-password`
-`[RequireAuth(staff) → RequireRole(admin|instructor, allowMustChangePassword)]`.
+`[RequireAuth(staff) → RequireRole(admin|instructor, allowMustChangePassword)]` ·
+`/affiliate/login` (new, 2026-10-15 — `AffiliateLoginPage.tsx`, mirrors
+`StaffLoginPage.tsx`'s shape: email/password only, no sign-up/OAuth/magic-link, turns
+away a non-affiliate account the same way staff turns away a learner). Google,
+Microsoft (`azure` provider id in Supabase, not `microsoft`) OAuth buttons on
+`/login`/`/register` (`AuthLayout.tsx`'s `GoogleAuthButton`/`MicrosoftAuthButton`).
+**Facebook is built (`FacebookAuthButton`, same file) but currently omitted from
+both pages' UI** — the Facebook app isn't through Meta's App Review yet, so sign-in
+would fail for anyone except the developer/testers on that app; re-adding it once
+Review completes is a one-line change in each page (see §12).
 
 ### Learner portal — `/portal/*`
 Wrapper: `RequireAuth → RequireRole(learner) → PortalLayout`. Most sub-routes also
@@ -217,7 +226,9 @@ actually be completed and support/settings stay reachable regardless).
 
 Sub-routes: `(index)` Dashboard · `courses` MyCourses · `courses/:slug`
 CourseWorkspace · `certificates` · `assignments` · `practice` (quizzes) · `resources`
-· `webinars` (UI exists, **no backend** — see §9) · `schedule` · `support` ·
+· `webinars` (**real backend now** — `GET /me/webinars`, matched by registrant email
+case-insensitively; see §5's Webinar entity row — this is no longer the `[]` stub
+documented in earlier versions of this file) · `schedule` · `support` ·
 `profile` · `notifications` · `settings` · `classes/:id` (legacy redirect →
 `/classroom/:id`).
 
@@ -238,13 +249,37 @@ guard: *"RequireRole is UX only — every `/admin` API endpoint enforces the adm
 itself."* `(index)` Dashboard · `students` · `instructors` · `admins` · `certificates`
 · `courses` · `timetables` · `classes` · `complaints` · `affiliates` ·
 `announcements` · `payments` · `reports` · `messages` · `audit` · `settings` ·
-`blog` / `blog/new` / `blog/:id` (new 2026-10-14 — see §5's Blog row).
+`blog` / `blog/new` / `blog/:id` (2026-10-14 — see §5's Blog row) · `webinars` /
+`webinars/new` / `webinars/:id` / `webinars/:id/registrants` (new since the last
+major update to this doc — full `Webinar` entity CRUD; registrants deliberately
+live on their **own page**, not inline on the edit form, reached from both the
+editor and the list — see §5's Webinar entity row).
+
+**Admin sidebar** (`StaffShell.tsx`, shared by admin/instructor/affiliate tones):
+restructured from one flat 18-link list into Dashboard + 6 collapsible groups
+(People/Academics/Content/Support/Finance/System) with hand-authored outline icons
+(`StaffNavIcons.tsx`) and a richer admin-only gold accent (`--shell-accent:
+#d6a857`). Group labels are sentence case (not uppercase — fixed after a reported
+regression), left-aligned (a `<button>`'s default `text-align: center` was
+overriding the flex layout). The sidebar collapse/expand control (desktop) and the
+student-portal rail use a shared `SidebarToggleIcon` component — redesigned this
+round from a "panel with a chevron" glyph to a minimal two-line-plus-accent-dot
+icon, per an explicit visual reference; this affects **all four portals** (admin,
+instructor, affiliate, student), not just admin.
 
 ### Affiliate — `/affiliate*`
-`/affiliate` (public, no guard) · `/affiliate-portal` `[RequireAuth → RequireAffiliate
-→ AffiliateLayout]` — `RequireAffiliate` gates on *having an Affiliate record at
+`/affiliate` (public, no guard) · `/affiliate/login` (new, see Auth section above) ·
+`/affiliate-portal` `[RequireAuth(to="/affiliate/login") → RequireAffiliate →
+AffiliateLayout]` — `RequireAffiliate` gates on *having an Affiliate record at
 all* (not role, not approval status); redirects to `/change-password` if a password
 change is required, or back to `/affiliate` if the account has no application on file.
+**`RequireAuth`'s `to` prop changed from the default `/login` to `/affiliate/login`
+this round** (previously an anonymous visit here bounced to the shared student
+login, which worked but was confusing — see §15 for the fuller story, including a
+real dead-end bug that existed in between). `/login` itself now **rejects** an
+affiliate account that tries to sign in there (turned away with a link to
+`/affiliate/login`, same pattern as a staff account being turned away from `/login`)
+— this is deliberate, not a regression, see §15.
 Split into 4 pages 2026-10-14 (was one page): `(index)` Dashboard (status/stepper,
 stats row, agreement download, quick-link cards into the two below) ·
 `link` (`AffiliateLinkPage.tsx`, the referral-link reveal box) ·
@@ -273,18 +308,18 @@ session · ⚠️ partial/known gap · ❌ not built.
 
 | Feature | Status | Key files | Notes |
 |---|---|---|---|
-| **Auth** (email/password, magic link, Google OAuth, TOTP 2FA) | 🟡 | `apps/api/src/modules/auth/` | JWT verified against Supabase JWKS (`JwtGuard`); app role always read from `profiles`, never trusted from the JWT claim. Apple sign-in **not built** (needs paid Apple Developer account — see §9). **Staff onboarding fixed this session** (2026-10-14, uncommitted — see §11): new instructor/admin accounts and password resets now actually email the temporary credentials (`AdminUsersService.sendCredentialsEmail`, reusing `EmailService`/`brandedEmailHtml`) instead of relying on the admin to copy/paste them; `StaffChangePasswordPage` now force-signs-out and redirects to `/staff/login` after a password change instead of carrying the temp-password session straight into the portal; the "Student sign-in" link was removed from `/staff/login` (`AuthLayout`'s `footer` prop is now optional). |
+| **Auth** (email/password, magic link, Google/Microsoft OAuth, TOTP 2FA) | 🟡 | `apps/api/src/modules/auth/`, `apps/web/src/pages/auth/` | JWT verified against Supabase JWKS (`JwtGuard`); app role always read from `profiles`, never trusted from the JWT claim. Apple sign-in **not built** (needs paid Apple Developer account, $99/yr — explicitly deprioritized by the project owner, not worth it for now). Staff onboarding: new instructor/admin accounts and password resets email the temporary credentials (`AdminUsersService.sendCredentialsEmail`); `StaffChangePasswordPage` force-signs-out and redirects to `/staff/login` after a password change. **Microsoft (`azure` provider id) and Facebook OAuth added this round** alongside the existing Google button — both are free to set up (unlike Apple); Facebook is coded but **hidden from the UI** pending Meta App Review (see the Auth routing note in §4). The `/login` page's post-sign-in logic (`LoginPage.tsx`'s `enterPortal()`) now rejects an affiliate account with a link to the new `/affiliate/login` page — see §15 for why this flipped twice in one round (route-to-portal, then back to turn-away, as `/affiliate/login` went from nonexistent → existing). Google's OAuth consent screen still shows the raw Supabase project domain (`oyngcwhziidaehpuisoi.supabase.co`) rather than `aiit.network` — fixable only via Supabase's paid Custom Domains add-on or Google app-verification, both outside this codebase; explained to the project owner, not actioned. |
 | **Catalogue / course discovery** | 🟡 | `apps/api/src/modules/courses/` | Location-based currency pricing. Curriculum tables (`CourseModule`/`Lesson`/`LessonResource`) exist in schema and are soft-deletable, but **seeded empty, not wired to any learner UI** — the real learner experience is live-class + assignments + quizzes, not a self-paced lesson browser. |
 | **Quill** (AI course-advisor chat assistant) | ✅ verified live this session | `apps/api/src/modules/quill/`, `apps/web/src/components/course/QuillChatPanel.tsx`, `apps/web/src/lib/QuillContext.tsx`, `quillHistory.ts` | **Just promoted to site-wide** (2026-10-11, commit `ec6db33`) — a persistent floating launcher button on every public page (not just the course page), with client-side (localStorage) multi-conversation history and a "New chat" action. `courseSlug` is now optional on the request; absent → general-assistant mode answering from the live course catalogue + a small curated fact file. Rule-based today (no LLM call); `XAI_API_KEY` is the documented seam to plug in a real model (x.ai Grok) later without changing the contract. **README.md's "Backend" section describing Quill is now stale** — still describes it as course-page-only; not yet updated to reflect the site-wide launcher/history work (see §9, §12). |
-| **Payments** (PayPal, Razorpay, Paystack) | 🟡 | `apps/api/src/modules/payments/{paypal,razorpay,paystack}/` | One provider-agnostic `Order` table. Every webhook verifies its signature. Charge amount always resolved server-side from `Course.priceUsdCents`, never trusted from the client. **No refund tooling** — `refunded` is a tracked `OrderStatus` but nothing calls a provider's refund API. Whether each provider is on Live vs. Test credentials in the actual deployed env is **not verifiable from code** — check Render's env vars directly if this matters. |
+| **Payments** (PayPal, Razorpay, Paystack) | 🟡 | `apps/api/src/modules/payments/{paypal,razorpay,paystack}/` | One provider-agnostic `Order` table. Every webhook verifies its signature. Charge amount always resolved server-side from `Course.priceUsdCents`, never trusted from the client. **Refund tooling now built** (full refund only, no partial): `PaymentsService.refundOrder()` dispatches per-provider — PayPal/Razorpay need a fresh capture/payment-id lookup first (`providerRef` only ever stored the order id), Paystack refunds directly against the stored transaction reference. Admin-triggered only, in-app double-click confirm (not `window.confirm`) in `AdminPaymentsPage.tsx`, `Order.refundedAt`/`refundRef` written only after the provider call actually succeeds. **Confirmed this is real/Live, not sandbox** — all 3 providers have been on Live credentials since 2026-10-08 per the project owner; clicking it moves real money. Also new this round: `PaymentsService.listBanksForCountry()` reuses the Paystack client for the affiliate payout form's bank-name dropdown (see the Affiliate program row) — Paystack's bank directory covers exactly Nigeria/Ghana/Kenya/South Africa, nowhere else, confirmed against its docs. Whether each provider is on Live vs. Test credentials in the actual deployed env is otherwise **not verifiable from code** — check Render's env vars directly if this matters. |
 | **Live classroom** (LiveKit) | 🟡 | `apps/api/src/modules/live-classes/`, `apps/web/src/pages/portal/LiveClassroomPage.tsx`, `apps/web/src/components/classroom/` | Mic-lock, raise-hand queue, real-time whiteboard, live reactions, pinned resources, polls, breakout rooms, instructor-reports-student flow, attendance tracking + CSV/XLSX export. **Gaps:** session recording still not built — the storage-bucket decision this was blocked on is now resolved (Cloudflare R2 is live, see the new R2 row below), but no LiveKit Egress API wiring/`Recording` model exists yet, so this is now a scoped build task, not a decision-blocked one; breakout-room instructor moderation currently reaches the main room only, not into individual breakout rooms. |
 | **Instructor portal** | 🟡 | `apps/api/src/modules/instructor/`, `apps/web/src/pages/instructor/` | Roster, grading (signed, ownership-checked private submission file links), practice-quiz authoring, announcements — all scoped server-side to `CourseInstructor` assignments, not just hidden in the UI. |
-| **Admin portal** | 🟡 | `apps/api/src/modules/admin/`, `apps/web/src/pages/admin/` | Student directory w/ manual enroll/unenroll, staff account management, course/instructor assignment, timetables, classes, complaints inbox, affiliate screening, announcements, payments/orders browse, certificate browse+revoke, attendance reports, internal messages, full audit log. **2026-10-15:** Students list/detail and Affiliates detail now cross-link each other (an affiliate is *never* a separate role — see the Affiliate program row below — so this was previously invisible); `GET /admin/students` also gained `includeAffiliates` (default false), which hides an affiliate-only account (never enrolled in anything) from the default Students view — an affiliate who *has* enrolled always still shows. `GET /admin/affiliates` gained a `q` (name/email) search param it never had, needed to make the cross-link's deep-link actually useful. |
-| **Affiliate program** | ✅ verified live this session | `apps/api/src/modules/affiliates/`, `apps/web/src/pages/AffiliatePage.tsx`, `apps/web/src/pages/affiliate/` | Public no-session application (server-creates the account with a one-time password), real e-signature flow (typed legal name + consent checkbox + versioned agreement text + IP/timestamp), admin approve/reject + reason, referral-link attribution (`/r/:slug` → `/register`, 30-day last-click, changed 2026-10-14 to show a visible "Referral applied: ⟨slug⟩" banner on `RegisterPage.tsx` instead of silently storing it). Commission: $5/creator-introduced student, $7/direct referral (→$10 after 500 direct referrals), `null` (count-only, no rate) for the undocumented affiliate-to-affiliate type — computed server-side once via `computeEarnings()`, shared by both the affiliate's own view and the admin view so the numbers can't drift. Manual-payout ledger (Phase 1, no live payout API): affiliate sets PayPal email or bank details (`PUT /affiliates/me/payout`, tightly throttled + IP-audited), admin pays by hand and records it (`POST /admin/affiliates/:id/payouts`), both sides see the same `AffiliatePayout` history. Affiliate can also self-edit the contact/context fields given at application time (`PUT /affiliates/me/contact`). **Portal split into 4 pages 2026-10-14** (Dashboard/Link/Payout/Settings — see §4) with a region-aware (India/Nigeria/generic) bank-transfer form, masked account number, and a confirm-before-overwrite step on an existing payout method. **2026-10-15 investigation (not a bug, confirmed):** the project owner flagged an affiliate's email showing up under admin Students as "overlap" — traced end to end and confirmed this is the deliberate, documented architecture (`Role` enum has no `affiliate` value; affiliate-ness is tracked purely by whether an `Affiliate` row exists for a `Profile`, never by role — see the schema comment on the `Affiliate` model and `AffiliatesService`'s own doc comment). No duplicate-account path exists either: `SupabaseAdminService.createUser()` surfaces Supabase's own "already registered" error as a clean `ConflictException` rather than ever creating a second account for one email. The real gap was the admin UI having zero visibility into this — fixed, see the Admin portal row above. |
+| **Admin portal** | 🟡 | `apps/api/src/modules/admin/`, `apps/web/src/pages/admin/` | Student directory w/ manual enroll/unenroll, staff account management, course/instructor assignment, timetables, classes, complaints inbox, affiliate screening, announcements, payments/orders browse, certificate browse+revoke, attendance reports, internal messages, full audit log, webinar CRUD (see §5's Webinar entity row). Students list/detail and Affiliates detail cross-link each other (an affiliate is *never* a separate role — see the Affiliate program row below); `GET /admin/students` has `includeAffiliates` (default false, hides a never-enrolled affiliate-only account) and `q` search on `GET /admin/affiliates`. **This round:** the affiliate detail panel's "view their student profile" link (true but useless — every affiliate *is* a learner account, that's not what an admin looking at an affiliate wants) was replaced with a link to the Students list filtered to **students that affiliate referred** (`GET /admin/students?referredByAffiliateId=…`, new param, always shown regardless of `includeAffiliates` — the whole point of the filter is a complete referral list). Also this round: the shared admin **detail drawer** (`.adm-drawer`/`.adm-dl`, used by Affiliates/Students/Instructors/Admins/Complaints — one CSS redesign, zero JSX changes, so it improved all five at once) widened (26rem→34rem; the Complaints `--wide` variant 34rem→42rem — the old width reliably wrapped a combined field like "Bank name (•••• 1234), India" into a ragged multi-line mess), gained a gradient header band in the shell's own accent color, and turned the flat label/value list into a bordered card with alternating-row tinting. The "Set status" button row (affiliate applications, complaints) now reads as one grouped control instead of loose floating buttons. None of this touched any consuming page's JSX. |
+| **Affiliate program** | ✅ verified live this session | `apps/api/src/modules/affiliates/`, `apps/web/src/pages/AffiliatePage.tsx`, `apps/web/src/pages/affiliate/` | Public no-session application (server-creates the account with a one-time password), real e-signature flow (typed legal name + consent checkbox + versioned agreement text + IP/timestamp), admin approve/reject + reason, referral-link attribution (`/r/:slug` → `/register`, 30-day last-click, changed 2026-10-14 to show a visible "Referral applied: ⟨slug⟩" banner on `RegisterPage.tsx` instead of silently storing it). Commission: $5/creator-introduced student, $7/direct referral (→$10 after 500 direct referrals), `null` (count-only, no rate) for the undocumented affiliate-to-affiliate type — computed server-side once via `computeEarnings()`, shared by both the affiliate's own view and the admin view so the numbers can't drift. Manual-payout ledger (Phase 1, no live payout API): affiliate sets PayPal email or bank details (`PUT /affiliates/me/payout`, tightly throttled + IP-audited), admin pays by hand and records it (`POST /admin/affiliates/:id/payouts`), both sides see the same `AffiliatePayout` history. Affiliate can also self-edit the contact/context fields given at application time (`PUT /affiliates/me/contact`). **Portal split into 4 pages 2026-10-14** (Dashboard/Link/Payout/Settings — see §4) with a region-aware (India/Nigeria/generic) bank-transfer form, masked account number, and a confirm-before-overwrite step on an existing payout method. **2026-10-15 investigation (not a bug, confirmed):** the project owner flagged an affiliate's email showing up under admin Students as "overlap" — traced end to end and confirmed this is the deliberate, documented architecture (`Role` enum has no `affiliate` value; affiliate-ness is tracked purely by whether an `Affiliate` row exists for a `Profile`, never by role — see the schema comment on the `Affiliate` model and `AffiliatesService`'s own doc comment). No duplicate-account path exists either: `SupabaseAdminService.createUser()` surfaces Supabase's own "already registered" error as a clean `ConflictException` rather than ever creating a second account for one email. The real gap was the admin UI having zero visibility into this — fixed, see the Admin portal row above. **Payout form overhauled this round:** "Bank country" was a 3-option select (India/Nigeria/Other with a free-text fallback) — replaced with the full ~170-country list already used for phone codes (`@/data/countries`), so every country is pickable, none typed by hand; "Bank name" was a hardcoded Nigeria-only list — Nigeria/Ghana/Kenya/South Africa now get a **live** dropdown from Paystack's real bank directory (`GET /affiliates/banks?country=`, new route), everywhere else still falls back to free text (no comparable directory exists for the rest of the world — confirmed with the project owner this is an acceptable permanent limitation, not a TODO). Account-holder-name/bank-name free-text fields previously accepted literally anything, including pure digits — now validated both client-side (`pattern`, must contain a letter) and server-side (`class-validator @Matches`, since a client check alone is bypassable for data an admin later wires real money against). The form also used to stay permanently open/editable even after saving — it now collapses to a read-only summary with an "Edit payout details" button once details exist. **Affiliate login moved to its own page this round** — see §4's Auth/Affiliate sections and §15 for the full story (a real dead-end bug was found and fixed along the way, before the dedicated page existed). |
 | **Certificates** | 🟡 | `apps/api/src/modules/certificates/` | Real server-rendered PDF (`pdf-lib`, no headless browser), public verification page/endpoint. Holder name **snapshotted at issuance** (`Certificate.holderName`), not joined live — stays accurate even if the learner later renames themselves. Admin can revoke without deleting the row (`revokedAt`/`revokedReason`); verify page shows "revoked, as of ⟨date⟩: ⟨reason⟩" instead of a bare 404. |
 | **Profile / avatar / assignment file uploads** | ✅ verified live this session | `apps/api/src/common/supabase-admin/supabase-admin.service.ts`, `apps/api/src/modules/auth/profile.{controller,service}.ts`, `apps/api/src/modules/assignments/`, `apps/web/src/pages/portal/ProfilePage.tsx`, `apps/web/src/pages/portal/AssignmentRow.tsx` | **Architecture changed this session** (2026-10-10/11, commits `854752c`+): uploads now go browser → NestJS API (multipart, `JwtGuard`-authenticated) → Supabase Storage via the service-role admin client — **not** direct browser-to-Storage. Root cause: Supabase Storage's RLS evaluation was failing to bridge the request JWT into the Postgres session context for this project (confirmed via extensive live debugging — a platform-level issue, not fixable from app code or migrations). Upload key is always derived server-side from the authenticated user's ID, never from client input — this is what replaces RLS's per-user isolation guarantee. `publicFileUrl()` (unauthenticated public-bucket read, for *displaying* an avatar) is unaffected and still goes direct to Storage. The since-unused `uploadFile()`/`removeFile()` in `apps/web/src/lib/storage.ts` were deleted 2026-10-13 (`publicFileUrl()` is now the file's only export). |
 | **Public forms** (contact, newsletter, webinar reg, affiliate application) | 🟡 | `apps/api/src/modules/forms/` (4 submodules) | All Turnstile-gated (`TurnstileService` fails **closed** if `TURNSTILE_SECRET_KEY` unset — refuses the request rather than silently accepting unprotected submissions), all send real email via Resend once `RESEND_API_KEY` set (fails **open** if unset — submission still saves, email just doesn't send). |
-| **Webinar registration (learner-facing list)** | ❌ not built | `apps/web/src/pages/portal/WebinarsPage.tsx` | `state.learner.webinars` is a hardcoded `[]` in `learnerData.ts` — no backend endpoint exists. Page renders its honest empty state today; the "populated list" UI code already exists and needs no changes once a real backend lands. |
+| **Webinar entity** (full backend + admin CRUD + reminders + refund-adjacent) | 🟡 | `apps/api/prisma/schema.prisma` (`Webinar` model), `apps/api/src/modules/webinars/`, `apps/api/src/modules/admin/admin-webinars.*`, `apps/web/src/pages/admin/AdminWebinar{s,Editor,Registrants}Page.tsx` | **Built since the last major update to this doc** — supersedes the old "hardcoded `[]`, no backend" state this row used to describe. Schedulable `Webinar` model (title, slug, agenda JSON, audience, image, video, joinUrl, status, featured); `WebinarRegistration` gained a nullable `webinarId` FK plus `confirmationSentAt`/`reminder24hSentAt`/`reminder30mSentAt`/`attendedAt`. Public `GET /webinars`, `GET /webinars/:slug`, `GET /me/webinars` (matched by registrant email, case-insensitive — registration itself is anonymous, no `userId`). `WebinarNotificationsService.sendReminders(webinarId, kind, {force})` powers both an automatic 5-minute cron sweep (`@nestjs/schedule`, bounded windows so a late-set join link never fires a confusing reminder) and the admin's manual "send now" button — **no-ops (returns 0 sent) if the webinar has no `joinUrl` set yet**, which initially looked like a silent bug when an admin clicked the button on a webinar with no join link; the admin UI now disables those buttons with an explanatory notice instead of letting that happen unexplained. Admin CRUD is full create/edit/delete + a registrants list that deliberately lives on its **own page**, not inline on the edit form (reached from both the editor and the list, per explicit request). `WebinarsModule` needed `EmailModule` imported — a real DI-wiring bug CI's e2e suite caught (unit tests with a mocked `EmailService` didn't) before this was fixed. `apps/web/src/pages/portal/WebinarsPage.tsx`'s list and `WebinarSpotlight.tsx` (homepage) both now read from this real API instead of the old static `data/webinars.ts` file, which was deleted. |
 | **Apple sign-in** | ❌ not built | — | Needs a paid Apple Developer Program membership ($99/yr) + Services ID/private key/JWT client secret setup that hasn't started. The button was removed from the UI rather than left showing a permanent error. Google sign-in **is** real and configured (Google Cloud project `aiit-auth`). |
 | **Error monitoring (Sentry)** | 🟡 | `main.ts`, `apps/web/vite.config.ts` | API: `SENTRY_DSN`. Web: `VITE_SENTRY_DSN` (statically eliminated from the bundle if unset — zero cost until configured), `VITE_VERCEL_ENV` tags events with the real Vercel environment. Source maps uploaded via `@sentry/vite-plugin` when `SENTRY_AUTH_TOKEN` is set, then deleted locally (never shipped alongside the built JS). |
 | **Portal "refetch" behavior** | ✅ verified live this session | `apps/web/src/pages/portal/learnerData.ts` | Fixed this session (commit `8418550`) — see §13. |
@@ -292,6 +327,8 @@ session · ⚠️ partial/known gap · ❌ not built.
 | **Webinar page redesign** (2026-10-14/15, new) | ✅ verified live | `apps/web/src/pages/WebinarPage.tsx`, `webinar-page.css`, `apps/web/src/data/webinars.ts`/`types.ts` | Rebuilt from a detailed premium-editorial spec, several iterations based on live feedback against the deployed page (not a one-shot). Order: `PageBanner` (title/eyebrow/intro) → a compact one-line meta strip (`MetaRow`) → a dedicated, independent full-width video section (capped at 920px on desktop so it doesn't dominate a laptop screen, full-width on mobile; **not** forced side-by-side with the flyer) → a primary "Reserve My Free Seat" CTA banner → the three-field agenda grid (unchanged content, restyled) → "Who should attend" / "What you'll gain" as plain hairline-divided lists (no pill badges — explicitly asked to avoid a "SaaS template" look) → the actual registration form (`#register`, unchanged backend/logic) with the event-details `dl`, countdown, and the flyer (a *separate*, properly-sized 300px image, own label — not squeezed into a 180px thumbnail, which is what prompted removing it once before re-adding it properly). Video hosted on R2 (see that row); has its own dedicated 16:9 `videoThumbnail` poster image, deliberately **not** the portrait flyer (wrong aspect, looked messy stretched). Title deliberately avoids implying AIIT only covers "three technologies" (it covers far more per `/courses` — the number describes this one session's agenda, not AIIT's scope). No autoplay (deliberate — browsers block autoplay-with-sound anyway, and the stated audience is explicitly bandwidth-conscious — "Africa & Asia friendly" per the webinar's own data). **Also fixed in the same round:** Quill's mobile chat panel was a true `100dvh` overlay with no way to see the page behind it short of closing it — capped at `min(80dvh, 100dvh - 6rem)` as a bottom sheet instead (site-wide fix, `quill-chat.css`, not webinar-specific); the public "Instructors" nav entry was hidden (`data/navigation.ts`, one commented-out array line) at the project owner's explicit request — the page/route/data are untouched, trivially reversible. |
 | **Blog admin CMS** (2026-10-14) | ✅ verified live, manual setup done | `apps/api/src/modules/admin/admin-blog.{controller,service}.ts`, `github-publisher.service.ts`, `dto/admin-blog.dto.ts`; `apps/web/src/pages/admin/AdminBlogPage.tsx`, `AdminBlogEditorPage.tsx`; `packages/shared/src/blog.ts`; `BlogPost` Prisma model + migration `20261014000000_blog_posts` | Admin can create/edit/preview a post in the DB (draft/scheduled/published/archived pipeline), then **Publish** commits a real `.md` file straight into `apps/web/src/content/posts/` via a hand-rolled GitHub Contents-API client (`GithubPublisherService` — no Octokit dependency, matching this codebase's "thin REST client, no SDK" house style). DB row is the authoring source of truth; the GitHub folder is still the *only* thing the live site actually renders from (`vite.config.ts`'s `buildPostsList()`, untouched). **Unpublish** deletes the live file via the same API before archiving the row. Cover images + the image/audio half of the media library still go through the backend-mediated Supabase Storage upload pattern (`blog-media` bucket, service-role write) — **video moved to Cloudflare R2, 2026-10-14/15** (see the new R2 row below): `POST /admin/blog/media/presign-video` returns a short-lived signed PUT URL, the browser uploads the file straight to R2 (never through this server — sidesteps the old flat 80MB multer ceiling), and `BlogMediaUploadResult`'s `kind: 'video'` case is now filled by that path instead. 10 curated "layout preset" CSS modifiers now exist (editorial/tutorial/news-brief/spotlight/data-deep-dive + listicle/case-study/visual-essay/magazine/video-feature) via a `preset` frontmatter key — engineer-authored CSS only, never admin-authored/free-form CSS. `GITHUB_TOKEN`/`GITHUB_REPO` set on Render and the `blog-media` bucket created (project owner confirmed). `ci.yml`/`deploy.yml` both got `paths-ignore` for the content/blog-asset folders. Scheduled publishing and draft autosave remain deliberate fast-follows, not gaps. |
 | **Cloudflare R2 (video storage)** (2026-10-14/15, new) | ✅ verified live | `apps/api/src/common/r2/r2.service.ts`, `apps/web/src/pages/admin/AdminBlogEditorPage.tsx`, `apps/web/src/pages/WebinarPage.tsx` | `R2Service` wraps `@aws-sdk/client-s3`/`@aws-sdk/s3-request-presigner` — the one deliberate exception to this codebase's "no SDK" house style, since SigV4 presigned-URL signing is cryptographic, not a simple bearer header. **`forcePathStyle: true` is required** — R2 doesn't support virtual-hosted-style bucket addressing (`bucket.account.r2.cloudflarestorage.com` isn't a real host), and the SDK's v3 default produces exactly that broken hostname otherwise; this was live-debugged and fixed this session. Env vars: `R2_ACCOUNT_ID`, `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY` (high-privilege), `R2_BUCKET_NAME` (`aiit-media`), `R2_PUBLIC_URL` (`https://media.aiit.network`, a Cloudflare custom domain, since this account's DNS is on Cloudflare — the alternative `pub-*.r2.dev` dev subdomain is explicitly not for production use). Two more layers had to be opened for this to actually work end-to-end, both easy to re-break by accident: the **R2 bucket's own CORS policy** (`AllowedOrigins` for `https://aiit.network`/`https://www.aiit.network`/local dev, `AllowedMethods: PUT`, `AllowedHeaders: content-type`) and **`apps/web/vercel.json`'s CSP** (`connect-src` needed `https://*.r2.cloudflarestorage.com` for the presigned PUT itself; a separate `media-src` directive — which didn't exist before — was needed for `<video>`/`<audio>` playback of anything hosted on R2 *or* the pre-existing Supabase-hosted audio/video, which was quietly broken by the same CSP gap and nobody had noticed yet since video embedding is brand new). First real file hosted: the webinar page's video, see the row below. |
+| **Internal admin-notification emails** | ✅ verified live | `apps/api/src/common/email/branded-email.ts` (new `fieldListHtml()`), `apps/api/src/modules/forms/{webinar,contact}/*.service.ts` | The webinar-registration and contact-message notifications to `info@aiit.network` were the only two transactional emails in the codebase still using bare hand-rolled `<p><strong>` HTML instead of `brandedEmailHtml()` — found while investigating an unrelated "message is bland" report. Both now use the shared template, with a new `fieldListHtml()` helper for the label/value rows and a CTA straight into the relevant admin page (the registrants list for a webinar signup, the messages inbox for a contact message). |
+| **Affiliate sign-in page** (new) | ✅ verified live | `apps/web/src/pages/auth/AffiliateLoginPage.tsx`, `AuthLayout.tsx` (`layout="hero"` mode, new), `auth.css` | Built from scratch this round after the project owner asked for affiliates to stop sharing the student `/login` page. Mirrors `StaffLoginPage.tsx`'s shape (email/password only, no sign-up/OAuth/magic-link, turns away a non-affiliate account). Visually distinct from every other auth page: a full-bleed cinematic background photo (the project owner's own asset, swapped twice for improved versions — **never regenerated or edited by this session**, only CSS positioning was touched) with the sign-in card floating on top, left-aligned, as a dark "glassmorphism" panel (blurred navy/charcoal gradient, thin gold border, restrained blue-to-gold tint, gold gradient button) rather than the site's usual white card — a new `layout="hero"` composition on the shared `AuthLayout` component, additive only (the existing `layout="split"` default, used by every other auth page, is byte-for-byte unchanged). Took several rounds of root-cause fixes against live screenshots, each a genuine bug not a style nitpick: (1) the heading rendered near-invisible — `.auth__title` never declared its own `color`, unlike every sibling element, so it never picked up the dark card's inverted token flip; (2) the background photo's own baked-in logo got cropped at some viewport sizes — fixed by anchoring `object-position` to the actual corner the logo sits in (top-left), not the default center; (3) the background looked "zoomed in" on a short viewport — the image was `position: absolute` relative to a box that could grow taller than the real viewport (a tall card on a short screen), forcing it to over-zoom to cover that inflated area; changed to `position: fixed` (always sized to the real viewport); (4) an "AFFILIATE PROGRAM" eyebrow label that was absolutely-positioned independently of the card drifted apart from it at different card heights/viewports — ultimately removed entirely per explicit request rather than kept fighting its positioning. The light-variant AIIT logo asset used inside the card (`azraa-institute-of-information-technology-official-logo.png`) was also replaced this round — the old file was literally 260×50px (its own display size), so any high-DPI/Retina screen upscaled it into visible blur; new source is 2151×731, luminance-keyed from a white-on-black supplied image to a transparent PNG. **Separately found and fixed in the same pass:** the main site header's "About Us"/"Courses"/"AIIT Resources" nav dropdowns only opened via `onMouseEnter` — broken on any touch-capable device wide enough to render the desktop nav instead of `MobileMenu`'s own accordion (tablets, smart displays, touchscreen laptops); first tap now opens the panel instead of navigating straight through. |
 
 ---
 
@@ -540,6 +577,26 @@ plausible-but-not-freshly-verified.
   *(README.md itself was not edited this session — out of scope for the memory-audit
   task; flagging here so a future session knows not to trust those two bullets.)*
 
+**Addendum, 2026-10-15, latest round (webinar/sidebar polish → affiliate login page
+build):** everything in this round's §5 rows (Webinar entity, Payments refunds,
+Admin portal sidebar/drawer redesign, Affiliate program payout overhaul, Auth
+social providers, Internal notification emails, Affiliate sign-in page) is
+**committed, pushed to `main`, and CI+Deploy confirmed green on every single push**
+— this round had an unusually high commit count (small, frequent commits against
+live screenshot feedback, same working style as the R2/webinar round before it),
+and every one was watched through to a green `gh run` conclusion before moving on,
+not just pushed and assumed. Most recent `main` HEAD at the time of this update:
+`b074064`. **Still no working Claude-in-Chrome this round either** (loaded the
+tool, `tabs_context_mcp` still reported "Browser extension is not connected") —
+every fix in this round was verified by (a) `tsc --noEmit` + `eslint` + relevant
+Jest suite + `npm run build` locally before each push, confirmed clean every time,
+and (b) the project owner's own screenshots of the live, deployed result, which is
+what actually drove most of the iteration (several "fix" commits exist specifically
+because a screenshot showed the previous fix didn't fully work — e.g. the
+background-crop/zoom issue took two separate root-cause passes). Nothing in this
+round's work was claimed "verified" from source-reading alone the way a couple of
+items in the R2/webinar round above were.
+
 **No inline TODO/FIXME/HACK/XXX markers exist anywhere in `apps/api/src` or
 `apps/web/src`** (verified via grep across both trees — the one surface hit, a
 placeholder string `"AIIT-AFF-XXXXXX"` in `AffiliateDashboardPage.tsx`, is not a
@@ -574,93 +631,114 @@ round's commits.
 | Footer hidden for an authenticated learner on a public page | Explicit product request ("footer isn't necessary for users already in") — portal/instructor/admin/affiliate areas already never rendered it (separate layouts), so this only affects the shared `<Layout>` on public pages. | `Layout.tsx` (`useAuth()` check) | Confirmed — this session |
 | Charge amount / role / storage path never trusted from the client | Core security invariant repeated across payments, auth, and file uploads. | Throughout `apps/api` | Confirmed, long-standing |
 | Curriculum tables (`CourseModule`/`Lesson`/`LessonResource`) exist but aren't wired to UI | Learner experience is live-class + assignments + quizzes, not a self-paced lesson browser, by current product direction. | `prisma/schema.prisma`, no corresponding frontend route | Standing — unclear if this is a future-phase decision or abandoned; not confirmable from code alone |
+| Affiliate bank-name dropdown only covers Nigeria/Ghana/Kenya/South Africa (Paystack's own directory), free text everywhere else | No free/comparable global bank-directory API exists; a paid one would be needed for true all-country coverage. Explicitly put to the project owner as a choice (keep as-is / hand-curate a few more countries / integrate a paid API) — they chose to keep as-is. | `apps/web/src/pages/affiliate/AffiliatePayoutPage.tsx`, `PaymentsService.listBanksForCountry()` | Confirmed — a deliberate permanent limitation, not a gap to chase |
+| Facebook sign-in built but hidden from the UI, not deleted | Meta requires App Review before anyone except the app's own developer/testers can use Facebook Login in production — shipping the button live would just error for real visitors. | `LoginPage.tsx`/`RegisterPage.tsx` (import + JSX removed), `AuthLayout.tsx`'s `FacebookAuthButton` (kept, exported, unused) | Confirmed — reversible in one line per page once Review completes |
+| Affiliate login page's full-bleed background is `position: fixed`, not `position: absolute` | A box sized by `min-height: 100svh` can still grow taller than the real viewport (a tall card on a short screen) — `absolute` cover-fit then has to zoom in to cover that inflated area instead of the actual visible viewport. `fixed` is always sized to the true viewport regardless of page content height. | `apps/web/src/pages/auth/auth.css` (`.auth__hero-band`) | Confirmed — fixed a real "background looks zoomed in" bug this way |
+| `/login` rejects an affiliate account (turned away with a link to `/affiliate/login`), same pattern as staff being turned away | Now that affiliates have their own dedicated sign-in page, there's no reason for an affiliate credential to work on the student page at all — matches how staff accounts have always been treated there. | `apps/web/src/pages/auth/LoginPage.tsx` (`enterPortal()`) | Confirmed — this reverses an interim fix from earlier the same round, made before `/affiliate/login` existed (see §15) |
 
 ---
 
 ## 11. Current development position
 
-**Last completed objective (this session, 2026-10-14→15, latest round):** starting
-from "where are blog videos stored, and should they go to R2 instead," this grew into
-a full Cloudflare R2 integration plus a complete webinar-page redesign, with several
-real bugs found and fixed live against production as the project owner actually used
-each feature. Net result, all **committed, pushed to `main`, and live-verified**
-(direct `curl` content-fetch of the actual deployed JS/CSS — see §9's addendum; CI
-and Deploy both green on every push except two Deploy runs that failed purely on the
-Render deploy-hook step, re-run successfully afterward with no code change):
+**Last completed objective (2026-10-15, most recent round):** this round ran long
+and touched a lot of surface area, arriving as a stream of individual bug
+reports/screenshots + a few bigger asks, addressed roughly in this order:
 
-1. **Direct-to-R2 presigned video upload** for the blog admin's media library
-   (`POST /admin/blog/media/presign-video`) — replacing the old 80MB
-   memory-buffered-through-this-server path for video specifically (image/audio
-   unchanged, still Supabase-backed). Took three real rounds to get fully working,
-   each a genuine bug found via the project owner's own live testing, not
-   hypothetical: (1) `forcePathStyle: true` missing on the S3 client — R2 doesn't
-   support virtual-hosted-style bucket addressing, (2) the R2 bucket's own CORS
-   policy (none existed), (3) `apps/web/vercel.json`'s CSP `connect-src` never
-   allowed R2's domain, and a `media-src` directive didn't exist at all (which
-   also means the *existing* Supabase-hosted audio/video embed feature was quietly
-   broken for playback this whole time — nobody had noticed because video embedding
-   in a published post is brand new). See §5's R2 row for full detail.
-2. **Affiliate/Student "overlap" investigated and resolved** — confirmed not a bug
-   (affiliate-ness has never been a `Profile.role`), but the admin UI genuinely had
-   no visibility into it. Added cross-links between the Students and Affiliates
-   admin views, an `includeAffiliates` filter (default: hide affiliate-only
-   accounts from Students), and a `q` search param on `GET /admin/affiliates` that
-   didn't exist before. See §5's Admin portal / Affiliate program rows.
-3. **Webinar page fully redesigned**, then iterated on live feedback several times
-   in the same session: video embed → full editorial restructure → poster-image
-   fix → flyer removed then re-added properly sized → Instructors nav hidden →
-   Quill's mobile full-screen overlay fixed → video width capped on desktop →
-   two rounds of excess-whitespace fixes (stacking `Section` paddings). See §5's
-   Webinar page redesign row for the complete current structure.
-4. The Render deploy-hook secret went stale partway through (`Trigger Render
-   deploy` failing with an HTTP error on the `deploy-api` job, migrations
-   themselves were fine) — the project owner re-pasted the same value from Render's
-   dashboard into the GitHub secret (no regeneration), and a `gh run rerun --failed`
-   on the last failed Deploy run confirmed it fixed. Root cause of *why* it went
-   stale was never determined — worth a note if it recurs.
+1. **Sidebar polish across all four portals** — minimal two-line toggle icon
+   (replacing a panel-with-chevron glyph), sentence-case group labels, a
+   left-align fix for a `<button>`'s default centering, admin sidebar grouped
+   into 6 collapsible sections with hand-authored icons and a richer gold accent.
+2. **A real `useApiFetch` bug fixed site-wide**: it returned a brand-new object
+   every render, so any consumer with `useEffect(() => setForm(...), [existing])`
+   (the Blog editor, the Webinar editor) was stuck in a tight re-render loop that
+   silently stomped local form edits back to loaded data on every render — every
+   button except Save looked broken. Fixed at the hook (memoized the return
+   value), fixing every consumer at once.
+3. **Webinar entity backend, built from nothing** (Prisma model, admin CRUD,
+   reminder cron, a registrants page split out from the editor per explicit
+   request) plus **payment refund tooling** for all 3 providers — see §5's
+   Webinar entity / Payments rows. A real DI-wiring bug (`WebinarsModule` missing
+   `EmailModule`) was caught by CI's e2e suite, not a unit test.
+4. **A long tail of live-reported bugs**, each fixed individually against a
+   screenshot: the webinar reminder "sent to 0" UX (no join link set — now
+   explained, not silently confusing), an admin CSS bug where `.adm-page__head >
+   div` painted *any* direct div child with the dark letterhead banner
+   (including an action-button wrapper div, making the buttons illegible — only
+   `AdminWebinarEditorPage` happened to use that pattern), the footer column
+   headings' casing/sizing, and the homepage webinar spotlight being invisible
+   forever (`HomePage`'s `useScrollReveal()` ran once at mount, before
+   `WebinarSpotlight`'s own async fetch resolved and its `[data-reveal]` div
+   existed — the standard fix elsewhere is a status-keyed dep array, which this
+   one component was missing).
+5. **Microsoft + Facebook OAuth added**, redesigned the provider buttons to a
+   glossy "mirror" look, then **Facebook was pulled from the UI** (not deleted)
+   pending Meta App Review.
+6. **Affiliate payout form overhauled**: full country picker, live Paystack bank
+   dropdown for 4 supported countries, input validation, collapse-to-summary
+   after saving. **Admin detail drawer redesigned** (one CSS change, 5 consuming
+   pages improved at once) plus a "view referred students" link fix.
+7. **A dedicated `/affiliate/login` page built from scratch**, and the single
+   biggest chunk of this round: an extended back-and-forth design pass on its
+   visual composition (full-bleed cinematic background + floating dark-glass
+   card), including real root-cause bugs (invisible heading, cropped logo,
+   over-zoomed background, a drifting eyebrow label eventually just removed) —
+   see §5's Affiliate sign-in page row for the complete list; don't re-attempt
+   any of those specific fixes from a hypothesis, the root causes are documented
+   there.
+8. **A touch-input bug in the main site header's nav dropdowns**, found while
+   checking general responsiveness per an explicit request — fixed alongside a
+   background-image crop refinement on the new login page.
 
-Also still true from earlier in the session and unaffected by the above: the
-affiliate Phase 1 build-out (payouts, portal split, referral-redirect fix), the 5
-original product asks (floating buttons, footer, staff auth fixes), and the Blog CMS
-build — all committed, pushed, and live-verified in earlier rounds of this same
-session (see §15's older entries for that detail, not repeated here).
+**Verification performed this round:** `tsc --noEmit` + `eslint` clean on every
+touched file after every commit (dozens of small commits, not one large one);
+`apps/api`'s relevant Jest suites green after each backend change (payments,
+paystack-client, affiliates.service, admin-users.service — not necessarily the
+*full* suite re-run after every single commit, unlike some earlier rounds — if
+precision matters, re-run the full suite fresh rather than trusting this); `npm
+run build` succeeded in `apps/web` before every push. CI + Deploy were watched to
+a green conclusion via `gh run watch`/`gh run view` after **every** push this
+round — confirmed, not assumed. **Claude-in-Chrome was still never connected**
+(loaded the tool, got "Browser extension is not connected" on the one attempt
+made) — all verification was build/test/CI-green plus the project owner's own
+screenshots of the live deployed result driving the iteration, not this session
+visually confirming anything itself.
 
-**Verification performed this round:** both workspaces `tsc --noEmit` clean, `eslint`
-clean on every touched file, after every single commit in this round (small,
-frequent commits rather than one large one, since several rounds were direct fixes
-to live-reported bugs); `apps/api` full Jest suite 61 suites / 483 tests green;
-`apps/web` production build succeeds every time. **No Claude-in-Chrome browser
-automation was available at any point this session** ("Browser extension is not
-connected" every attempt) — every live-verification claim above and in §5 is from
-direct `curl` fetches of the actual deployed bundle/CSS/API responses (confirming
-real content, not just that a same-named file/route exists), not from visually
-viewing the rendered page. The project owner was the one actually looking at the
-rendered page and screenshotting issues back — that's how the webinar-page iteration
-loop actually worked this round.
+**Not done this round, flagged for whoever picks this up next:**
+- The project owner reported being unable to scroll on a Chrome DevTools
+  "Surface Pro 10" device-emulation preset. Audited the full scroll chain
+  (`html`/`body`/`#root`/`StaffShell`/the affiliate portal CSS) and found no
+  code-level cause — most likely a DevTools touch-emulation quirk (mouse wheel
+  is known to stop working when a touch-device preset is active), not a real
+  bug, but **this was never confirmed against an actual device**, only
+  reasoned about. If a real Surface Pro (or other touch device) genuinely can't
+  scroll, that's still open.
+- Facebook sign-in needs Meta App Review before it can go back in the UI — purely
+  an external/account-side dependency now, not a code task.
+- The Google OAuth consent screen showing the raw Supabase domain instead of
+  `aiit.network` needs either Supabase's paid Custom Domains add-on or Google
+  app verification — explained to the project owner, no action taken (their
+  call to make, not a code fix).
+- The in-card affiliate-login logo swap and background-photo swaps happened
+  because the project owner supplied new image files directly in chat — if a
+  *third* round of visual asset swaps is needed, the same pattern applies (find
+  the newest file via `find . -type f -newermt`, since no explicit path is ever
+  given, convert with Pillow, replace under the same filename so no code
+  changes are needed).
+- Nothing from the earlier R2/webinar-page/affiliate-Phase-1 rounds' own
+  "not done" lists has been revisited this round — see the 2026-10-14→15 §15
+  entries below for that older, still-open list (referral end-to-end live test,
+  Render-hook-staleness root cause, LiveKit recording).
 
-**Not done this session, flagged for whoever picks this up next:**
-- No live browser test of the referral→register→signup→`registrationCount`
-  end-to-end path (carried over from the affiliate round, still unresolved — see
-  §15's older entry for detail).
-- *Why* the Render deploy-hook secret went stale was never root-caused (point 4
-  above) — if it recurs, worth checking Render's own deploy-hook rotation
-  behavior/logs, which this session had no access to.
-- LiveKit session recording is still not built — the storage-bucket *decision* that
-  blocked it is now resolved (R2 exists, is wired up, and works), but no Egress
-  API/`Recording` model work has started. This is now a scoped build task.
-- The retired legacy `affiliate_applications` table / admin-list-filter theory from
-  the original affiliate investigation was never confirmed either way with the
-  project owner — still an open question if "application not showing up" recurs.
-
-**Next verification step for whatever is picked up next:** the standard loop already
-established in this project — `npx tsc --noEmit` + `npx eslint` + relevant Jest suite
-+ `npm run build` in both workspaces, then push to `main` and watch `gh run list`/
-`gh run watch` for both the `CI` and `Deploy` workflows before considering it done;
-for anything user-facing, live-verify via Claude-in-Chrome against aiit.network itself
-if it's connected this time (it has not been, all session) — otherwise fall back to
-the `curl`-based deployed-chunk content check described in §9's addendum (browser
-automation is scoped to aiit.network only, never third-party dashboards like
-Supabase/Render/GCP/Cloudflare, which the project owner drives themselves).
+**Next verification step for whatever is picked up next:** same standing loop —
+`npx tsc --noEmit` + `npx eslint` + relevant Jest suite + `npm run build` in both
+workspaces, push to `main`, watch `gh run list`/`gh run watch` for both `CI` and
+`Deploy` to a green conclusion before considering anything done. Try
+Claude-in-Chrome again at the start of a fresh session (`tabs_context_mcp`) —
+it has not once connected across this project's history so far, but that's
+worth re-checking rather than assuming permanently; if it's still not connected,
+fall back to the `curl`-based deployed-chunk check (§9's earlier addendum) for
+anything checkable that way, and lean on the project owner's own screenshots for
+anything visual, the way this entire round actually worked.
 
 ---
 
@@ -674,17 +752,25 @@ here because it's dated 2026-09-12 and unverified against the current codebase �
 not "no outstanding work."
 
 **P1 — confirmed gaps, no workaround needed, real product features missing**
-- Webinar registration backend (`/portal/webinars` always empty). Files:
-  `apps/web/src/pages/portal/WebinarsPage.tsx`, `learnerData.ts`. Acceptance: a real
-  endpoint populating `LearnerRecord.webinars`, replacing the hardcoded `[]`.
+- ~~Webinar registration backend~~ — done, see §5's Webinar entity row. `/portal/webinars` and the homepage spotlight both read real data now.
 - Apple sign-in. Blocked on a paid Apple Developer Program membership + Services
-  ID/key setup — an external/account dependency, not a code task alone.
+  ID/key setup — an external/account dependency, not a code task alone. Explicitly
+  deprioritized by the project owner ("not worth it for now"), not forgotten.
 - Live-class session recording. The storage-bucket *decision* this was blocked on
   is now resolved (Cloudflare R2 is live and working, 2026-10-14/15 — see §5) — this
   is now a scoped code task (LiveKit Egress API wiring + a `Recording` model),
   not a decision dependency.
-- Payment refund tooling. `OrderStatus.refunded` exists but nothing calls a
-  provider's refund API yet.
+- ~~Payment refund tooling~~ — done, see §5's Payments row. Full refund only, admin-triggered, all 3 providers, confirmed Live not sandbox.
+
+**P1 — new this round, account-side dependencies, no code to write until then**
+- Facebook sign-in is built but hidden from the UI pending Meta App Review —
+  reversible by re-adding `<FacebookAuthButton onClick={() => onOAuthSignIn('facebook')} />`
+  to `LoginPage.tsx`/`RegisterPage.tsx` once Review completes. Nothing to do
+  until the project owner has that.
+- Google OAuth's consent screen shows `oyngcwhziidaehpuisoi.supabase.co` instead
+  of `aiit.network` — fixable only via Supabase's paid Custom Domains add-on or
+  Google app-verification (both outside this codebase, the project owner's
+  decision). Not actioned, just explained.
 
 **P2 — cleanup / accuracy, no user-facing impact**
 - ~~Delete unused `uploadFile()`/`removeFile()` in `apps/web/src/lib/storage.ts`~~ — done 2026-10-13.
@@ -692,6 +778,10 @@ not "no outstanding work."
   architecture (§9).
 - Breakout-room instructor moderation reaching individual breakout rooms, not just
   the main room.
+- Affiliate payout form's bank-name dropdown only covers Nigeria/Ghana/Kenya/South
+  Africa (Paystack's own coverage) — explicitly confirmed with the project owner
+  as an acceptable permanent limitation (free-text fallback everywhere else), not
+  a TODO to chase a paid global banking-data API for.
 
 **P1 — affiliate program, confirmed gap, not yet live-tested (2026-10-14, see §11)**
 - No live end-to-end test of a `/r/:slug` click → `/register` → signup →
@@ -719,6 +809,21 @@ not "no outstanding work."
 - `/instructors` nav entry is intentionally hidden (`data/navigation.ts`, one
   commented-out line, project owner's explicit request 2026-10-15) — not a bug,
   don't "fix" it back without being asked; the page/route/data are untouched.
+
+**P2 — unconfirmed report, from the most recent round (see §11)**
+- Project owner reported being unable to scroll on a Chrome DevTools
+  "Surface Pro 10" emulation preset. No code-level cause was found after
+  auditing the full scroll chain — most likely a DevTools touch-emulation
+  quirk, not confirmed against a real device either way. Re-open only if
+  confirmed on an actual touchscreen device, not just the emulator.
+
+**P3 — minor, from the most recent round**
+- ~~Main nav dropdowns didn't open on touch-capable tablets/smart displays~~ —
+  fixed (`Header.tsx`, first tap now opens the panel instead of navigating
+  through immediately).
+- ~~Affiliate login background photo cropped the baked-in logo on narrow/tall
+  viewports~~ — fixed (`object-position` anchored to the actual corner, not
+  centered).
 
 **P3 / needs a fresh audit, not fabricated here**
 - Everything in `docs/production-readiness.html` (content completeness, a11y, SEO,
@@ -836,6 +941,102 @@ export and is still live and correct.
 ---
 
 ## 15. Session handover log
+
+### 2026-10-15 — Sidebar/webinar polish, OAuth providers, affiliate payout overhaul, dedicated affiliate login page
+
+**Objective:** a long, high-volume round that started as a batch of small UI
+polish items and live-reported bugs, then grew to include two substantial
+features (full webinar backend, a dedicated affiliate sign-in page with an
+extended visual design pass) and a payments/admin-UI overhaul. Most of it arrived
+as individual screenshots/one-line reports rather than a single upfront spec —
+addressed as a continuous stream, not planned as one piece upfront.
+
+**What shipped, roughly in order (all committed + pushed to `main`, CI+Deploy
+watched green after every push via `gh run watch`):**
+1. Sidebar icon/label polish across all 4 portals (admin/instructor/affiliate/
+   student) — see §5's Admin portal row for detail.
+2. The `useApiFetch` infinite-re-render bug (new object every render) — fixed at
+   the hook, fixing every consumer (Blog editor, Webinar editor) at once.
+3. Full Webinar entity backend from scratch — Prisma model, admin CRUD, a
+   reminder cron, a registrants page split out from the editor on request,
+   plus full refund tooling for PayPal/Razorpay/Paystack. A real DI bug
+   (`WebinarsModule` missing `EmailModule`) was caught by CI's e2e suite.
+4. A run of individually-reported, individually-fixed bugs: webinar reminder
+   "sent to 0" with no explanation, an admin CSS rule painting the wrong div
+   with a dark banner (`.adm-page__head > div`, too broad a selector), footer
+   heading casing/sizing, and the homepage webinar spotlight being invisible
+   forever (a missing dep on `useScrollReveal()` — the component's own async
+   fetch resolved after the global reveal-scan had already run once).
+5. Microsoft + Facebook OAuth sign-in added, then visually redesigned (glossy
+   "mirror" buttons), then **Facebook pulled from the UI** (not deleted) pending
+   Meta App Review — see §5's Auth row, §12.
+6. Affiliate payout form overhaul: a full ~170-country picker replacing a
+   3-option select, a **live** Paystack bank-name dropdown for the 4 countries
+   it actually covers, input validation (was accepting pure-digit "names"),
+   collapse-to-read-only-summary after saving. Admin detail drawer
+   (`.adm-drawer`/`.adm-dl`) redesigned — one CSS change improved Affiliates/
+   Students/Instructors/Admins/Complaints at once, no JSX touched. A "view
+   their student profile" link on the affiliate detail panel (true but useless)
+   replaced with "view the students they referred" (new `referredByAffiliateId`
+   filter on `GET /admin/students`).
+7. **A dedicated `/affiliate/login` page built from scratch**, mirroring
+   `StaffLoginPage.tsx`'s shape. This surfaced (and then fixed) a real dead-end
+   bug along the way: before this page existed, an affiliate account signing in
+   anywhere but via `/affiliate-portal`'s own redirect got signed back out with
+   a link pointing at `/affiliate-portal` itself — which, for a signed-out
+   visitor, just bounced straight back to the same blank login page. The
+   interim fix (route them into the portal instead of turning them away) was
+   **superseded** once `/affiliate/login` was actually built — `/login` now
+   correctly rejects an affiliate account again, this time with a link that
+   actually goes somewhere (`/affiliate/login`). If this history is confusing
+   in `git log`, that's why: two fixes to the same symptom, the first one
+   correct only until the second feature (the dedicated page) existed.
+8. The affiliate login page's **visual design** took the most back-and-forth of
+   this entire round: a new `layout="hero"` composition on the shared
+   `AuthLayout` (full-bleed background photo + a floating dark-glassmorphism
+   card, instead of every other auth page's side-by-side light-card split) —
+   additive only, every existing auth page is byte-for-byte unchanged. Real
+   root-cause bugs found and fixed against the project owner's own screenshots,
+   each genuinely different from the last: an invisible heading (`.auth__title`
+   never declared its own `color`, unlike its siblings, so it never inherited
+   the dark card's inverted color tokens), a cropped baked-in logo in the
+   background photo (center `object-position` default cut into the corner it
+   actually sits in), an over-zoomed background (`position: absolute` relative
+   to a box that could grow taller than the real viewport on a tall card/short
+   screen — switched to `position: fixed`), and a drifting "AFFILIATE PROGRAM"
+   eyebrow label (independently absolutely-positioned from the card, so the two
+   tracked apart at different sizes) — eventually removed entirely rather than
+   kept fighting. The in-card logo asset and the background photo were both
+   swapped for higher-resolution/improved versions supplied directly in chat
+   (found via `find . -type f -newermt`, since no path is ever given) —
+   **never regenerated or edited by this session**, only the already-correct
+   CSS positioning logic carried over to each new asset.
+9. While checking general responsiveness per an explicit request, found and
+   fixed a real bug in the **main site header**, unrelated to the affiliate
+   work: "About Us"/"Courses"/"AIIT Resources" dropdowns only opened via
+   `onMouseEnter`, which never fires on a touch tap — broken on any
+   touch-capable device wide enough to render this desktop nav instead of
+   `MobileMenu`'s own accordion (tablets, smart displays like a Nest Hub Max,
+   touchscreen laptops). First tap now opens the panel; a second tap on the
+   same (now-open) label navigates, matching what a mouse click already did.
+
+**Verification methodology:** `tsc --noEmit` + `eslint` clean on every touched
+file after every commit; relevant Jest suites (not necessarily the full suite
+every time — payments/paystack-client/affiliates.service/admin-users.service
+were the ones actually touched) green after each backend change; `npm run
+build` succeeded before every push; CI + Deploy watched to a green conclusion
+via `gh run watch` after every single push, not assumed from a successful
+`git push` alone. **Claude-in-Chrome still never connected** (tried once this
+round, same "Browser extension is not connected" result as every prior
+session) — all visual verification came from the project owner's own
+screenshots of the live, deployed result, which is what actually drove most of
+the iteration in points 8 and 9 above.
+
+**Unresolved/handed back:** see §11's "Not done this round" list in full — in
+short, the Surface Pro scroll report (code audited, no cause found, not
+confirmed against a real device), Facebook App Review (external dependency),
+and the Google OAuth consent-screen domain question (project owner's call, two
+options explained, neither actioned).
 
 ### 2026-10-14 to 2026-10-15 — R2 video storage + affiliate/student admin visibility + webinar page redesign
 

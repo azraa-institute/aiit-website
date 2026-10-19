@@ -1,10 +1,22 @@
 # AIIT Platform — instructions for Claude Code
 
-At the beginning of every new session, read the root `memory.md` before planning or
-modifying code. Treat it as the project handover document — it is written to make a
-fresh session productive without needing prior conversation history. Verify specific
-details against the current source when precision matters; `memory.md` is updated on
-a best-effort basis and may lag the actual code.
+At the beginning of every new session — including a fresh session with no prior
+conversation history, and regardless of which account is signed in — read the root
+`memory.md` **in full** before planning or modifying code, or even answering a
+question about project state. Don't skim just §11/§12/§15 (current position/
+backlog/handover log); also read §3 (project architecture and directory map) and §4
+(routes) so you actually understand the codebase's topology before touching it, not
+just what changed most recently. Treat `memory.md` as the project handover
+document — it exists specifically so a fresh session (any account, any point after a
+conversation reset) can resume productively without needing prior conversation
+history or asking the project owner to re-explain what's already been built. After
+reading it, run `git log --oneline -15` and compare the top commit against whatever
+commit hash `memory.md` most recently cites as the last-known `main` HEAD (check the
+latest §9 addendum and the latest §15 entry — whichever is more recent) — if they
+differ, something happened after `memory.md` was last updated that isn't documented
+yet; account for that gap before proceeding rather than assuming the doc is fully
+current. Verify specific details against the current source when precision matters;
+`memory.md` is updated on a best-effort basis and may lag the actual code.
 
 Before ending a meaningful development session (a feature shipped, a bug fixed, a
 decision made, a milestone reached), update `memory.md`:

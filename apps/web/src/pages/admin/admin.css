@@ -681,10 +681,16 @@
   display: inline-flex;
   align-items: center;
   gap: var(--space-2);
-  flex-wrap: wrap;
+  max-width: 100%;
+  vertical-align: top;
 }
 .adm-copyrow .adm-code {
+  flex: 1 1 auto;
+  min-width: 0;
   overflow-wrap: anywhere;
+}
+.adm-copyrow .copy-btn {
+  flex-shrink: 0;
 }
 
 @media (max-width: 720px) {

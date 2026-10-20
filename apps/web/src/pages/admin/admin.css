@@ -608,8 +608,6 @@
 .adm-dl > div {
   display: grid;
   grid-template-columns: 11rem minmax(0, 1fr);
-  gap: var(--space-3);
-  padding: var(--space-3) var(--space-4);
   font-size: 0.88rem;
   border-bottom: 1px solid var(--line);
 }
@@ -620,11 +618,14 @@
   background: color-mix(in srgb, var(--shell-accent, var(--brass-tint)) 5%, transparent);
 }
 .adm-dl dt {
-  color: var(--ink-muted);
-  font-weight: 600;
+  padding: var(--space-3) var(--space-4);
+  border-right: 1px solid var(--line);
+  color: var(--ink);
+  font-weight: 700;
 }
 .adm-dl dd {
   margin: 0;
+  padding: var(--space-3) var(--space-4);
   overflow-wrap: anywhere;
 }
 .adm-plain {
@@ -688,6 +689,7 @@
   flex: 1 1 auto;
   min-width: 0;
   overflow-wrap: anywhere;
+  font-size: 0.85rem;
 }
 .adm-copyrow .copy-btn {
   flex-shrink: 0;
@@ -711,7 +713,11 @@
   }
   .adm-dl > div {
     grid-template-columns: minmax(0, 1fr);
-    gap: 2px;
+  }
+  .adm-dl dt {
+    border-right: none;
+    border-bottom: 1px solid var(--line);
+    padding-bottom: 4px;
   }
 }
 

@@ -151,7 +151,7 @@ function Detail({ id, onChanged, onClose }: { id: string; onChanged: () => void;
   }
 
   return (
-    <aside className="adm-drawer" aria-label="Affiliate application details">
+    <aside className="adm-drawer adm-drawer--wide" aria-label="Affiliate application details">
       <div className="adm-drawer__head">
         <h2>Affiliate application</h2>
         <button type="button" className="adm-btn adm-btn--ghost" onClick={onClose}>

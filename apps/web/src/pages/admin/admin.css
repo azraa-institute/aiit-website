@@ -697,14 +697,16 @@
 .adm-payout {
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: var(--space-2);
 }
 .adm-payout__method {
   font-weight: 700;
-  margin-bottom: 2px;
 }
 .adm-payout-field__label {
   color: var(--ink-muted);
+}
+.adm-payout-field__value {
+  font-weight: 700;
 }
 
 @media (max-width: 720px) {

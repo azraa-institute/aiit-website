@@ -61,7 +61,7 @@ function PayoutDetailField({ label, value }: { label: string; value?: string }) 
   if (!value) return null;
   return (
     <div className="adm-payout-field">
-      <span className="adm-payout-field__label">{label}:</span> {value}
+      <span className="adm-payout-field__label">{label}:</span> <span className="adm-payout-field__value">{value}</span>
     </div>
   );
 }

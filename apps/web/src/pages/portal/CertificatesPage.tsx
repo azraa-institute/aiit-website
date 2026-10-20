@@ -105,8 +105,8 @@ export default function CertificatesPage() {
                     Download PDF
                   </Button>
                   <Button as="button" variant="ghost" size="sm" onClick={() => handleCopyLink(c.id, c.credentialId)}>
-                    {copiedId === c.id ? <CheckIcon /> : <CopyIcon />}
                     {copiedId === c.id ? 'Link copied' : 'Copy verification link'}
+                    {copiedId === c.id ? <CheckIcon /> : <CopyIcon />}
                   </Button>
                 </div>
               </div>

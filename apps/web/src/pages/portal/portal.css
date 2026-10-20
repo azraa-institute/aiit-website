@@ -1620,6 +1620,10 @@
   gap: var(--space-3);
   margin-top: var(--space-3);
 }
+.cert__action .btn {
+  text-transform: none;
+  letter-spacing: normal;
+}
 @media (max-width: 560px) {
   .cert {
     grid-template-columns: 1fr;

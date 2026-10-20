@@ -56,11 +56,35 @@ function formatCents(cents: number): string {
 
 const PAYOUT_METHOD_LABEL: Record<string, string> = { paypal: 'PayPal', bank: 'Bank transfer' };
 
-function payoutDetailsSummary(details: AdminAffiliateDetail['payoutDetails']): string {
-  if (!details) return 'Not submitted yet';
-  const method = PAYOUT_METHOD_LABEL[details.method] ?? details.method;
-  if (details.method === 'paypal') return `${method}: ${details.paypalEmail ?? ''}`;
-  return `${method}: ${details.bankName ?? ''} (${details.bankAccountNumber ?? ''}), ${details.bankCountry ?? ''}`;
+/** One labelled line per field, stacked in the same cell, rather than one run-on sentence -- easier to scan when an admin is actually keying a transfer in. */
+function PayoutDetailField({ label, value }: { label: string; value?: string }) {
+  if (!value) return null;
+  return (
+    <div className="adm-payout-field">
+      <span className="adm-payout-field__label">{label}:</span> {value}
+    </div>
+  );
+}
+
+function PayoutDetails({ details }: { details: AdminAffiliateDetail['payoutDetails'] }) {
+  if (!details) return <>Not submitted yet</>;
+
+  return (
+    <div className="adm-payout">
+      <div className="adm-payout__method">{PAYOUT_METHOD_LABEL[details.method] ?? details.method}</div>
+      {details.method === 'paypal' ? (
+        <PayoutDetailField label="Email" value={details.paypalEmail} />
+      ) : (
+        <>
+          <PayoutDetailField label="Account name" value={details.bankAccountName} />
+          <PayoutDetailField label="Account number" value={details.bankAccountNumber} />
+          <PayoutDetailField label="Bank name" value={details.bankName} />
+          <PayoutDetailField label="Bank code" value={details.bankCode} />
+          <PayoutDetailField label="Country" value={details.bankCountry} />
+        </>
+      )}
+    </div>
+  );
 }
 
 /** An admin recording a payout they already sent themselves (PayPal/bank transfer, outside this system) -- never moves money, see AdminAffiliatesService.recordPayout(). */
@@ -266,7 +290,9 @@ function Detail({ id, onChanged, onClose }: { id: string; onChanged: () => void;
             ) : null}
             <div>
               <dt>Payout details</dt>
-              <dd>{payoutDetailsSummary(state.data.payoutDetails)}</dd>
+              <dd>
+                <PayoutDetails details={state.data.payoutDetails} />
+              </dd>
             </div>
             <div>
               <dt>Signature</dt>

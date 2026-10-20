@@ -155,6 +155,11 @@ export interface AdminAffiliateDetail extends AdminAffiliateSummary {
   referredBy: { id: string; name: string | null; email: string | null } | null;
 }
 
+/** USD -> currency multipliers (not a resolved price) -- lets the admin UI show a dollar figure alongside a couple of local currencies at once. See CurrencyService.getRates(). */
+export interface AdminFxRates {
+  rates: Record<string, number>;
+}
+
 /** Response to POST /admin/affiliates (manually adding someone who already has a relationship with AIIT outside the public application form). */
 export interface AdminAffiliateCredentials {
   affiliate: AdminAffiliateDetail;

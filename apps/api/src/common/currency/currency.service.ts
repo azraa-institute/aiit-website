@@ -70,6 +70,17 @@ export class CurrencyService {
     return cache?.rates[currency] ?? null;
   }
 
+  /** Raw USD -> currency multipliers (not a price conversion) -- for a display that shows a figure in several currencies at once rather than resolving one currency per request. */
+  async getRates(currencies: string[]): Promise<Record<string, number>> {
+    const cache = await this.ensureCache();
+    const result: Record<string, number> = {};
+    for (const currency of currencies) {
+      const rate = cache?.rates[currency];
+      if (rate !== undefined) result[currency] = rate;
+    }
+    return result;
+  }
+
   private async ensureCache(): Promise<FxCache | null> {
     if (this.cache && Date.now() - this.cache.fetchedAt < TTL_MS) {
       return this.cache;

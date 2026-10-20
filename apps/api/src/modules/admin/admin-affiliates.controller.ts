@@ -3,13 +3,17 @@ import type { Request } from 'express';
 import { Throttle } from '@nestjs/throttler';
 import { Transform } from 'class-transformer';
 import { ArrayNotEmpty, ArrayUnique, IsArray, IsEmail, IsIn, IsInt, IsOptional, IsPositive, IsString, MaxLength, Min, MinLength, ValidateIf } from 'class-validator';
-import type { AdminAffiliateCredentials, AdminAffiliateDetail, AdminAffiliateStats, AdminAffiliateSummary, AffiliateApplicationStatus, AffiliateType, Paginated } from '@aiit/shared';
+import type { AdminAffiliateCredentials, AdminAffiliateDetail, AdminAffiliateStats, AdminAffiliateSummary, AdminFxRates, AffiliateApplicationStatus, AffiliateType, Paginated } from '@aiit/shared';
 import { JwtGuard, type AuthenticatedUser } from '../../common/guards/jwt.guard';
 import { RolesGuard } from '../../common/guards/roles.guard';
 import { Roles } from '../../common/decorators/roles.decorator';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
+import { CurrencyService } from '../../common/currency/currency.service';
 import { AFFILIATE_TYPES } from '../affiliates/dto/apply-affiliate.dto';
 import { AdminAffiliatesService } from './admin-affiliates.service';
+
+/** Local currencies shown alongside a USD figure on the affiliate detail drawer -- the audiences this program actually pays into right now. */
+const DISPLAY_CURRENCIES = ['NGN', 'INR'];
 
 const AFFILIATE_STATUSES = ['pending', 'in_review', 'approved', 'rejected'] as const;
 
@@ -119,18 +123,26 @@ class RecordPayoutDto {
 @Roles('admin')
 @Throttle({ default: { limit: 60, ttl: 60_000 } })
 export class AdminAffiliatesController {
-  constructor(private readonly affiliates: AdminAffiliatesService) {}
+  constructor(
+    private readonly affiliates: AdminAffiliatesService,
+    private readonly currency: CurrencyService,
+  ) {}
 
   @Get()
   list(@Query() query: ListAffiliatesQuery): Promise<Paginated<AdminAffiliateSummary>> {
     return this.affiliates.list(query);
   }
 
-  // Declared before ':id' -- Nest matches routes in order, so this would
-  // otherwise be swallowed by the :id param route.
+  // Both declared before ':id' -- Nest matches routes in order, so these
+  // would otherwise be swallowed by the :id param route.
   @Get('stats')
   stats(): Promise<AdminAffiliateStats> {
     return this.affiliates.stats();
+  }
+
+  @Get('fx-rates')
+  async fxRates(): Promise<AdminFxRates> {
+    return { rates: await this.currency.getRates(DISPLAY_CURRENCIES) };
   }
 
   @Get(':id')

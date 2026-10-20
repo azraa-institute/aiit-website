@@ -694,19 +694,114 @@
 .adm-copyrow .copy-btn {
   flex-shrink: 0;
 }
-.adm-payout {
+.adm-linkbtn__icon {
+  display: inline-block;
+  margin-left: 4px;
+  vertical-align: middle;
+}
+
+/* ---- Detail drawer header (avatar + name) ---- */
+.adm-drawer__who {
   display: flex;
-  flex-direction: column;
-  gap: var(--space-2);
+  align-items: center;
+  gap: var(--space-3);
+  margin-bottom: var(--space-3);
 }
-.adm-payout__method {
+.adm-drawer__avatar.avatar--md {
+  width: 56px;
+  height: 56px;
+  font-size: 1.3rem;
+  background: var(--brass-tint);
+  color: var(--brass-deep);
+}
+.adm-drawer__who .adm-drawer__name {
+  margin: 0;
+}
+
+/* ---- Row label icons ---- */
+.adm-dl__label {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+.adm-dl__icon {
+  display: inline-flex;
+  flex-shrink: 0;
+  color: var(--brass);
+}
+
+/* ---- Stat row (signed up / onboarded / estimated, etc.) ---- */
+.adm-statrow {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(0, 1fr));
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  overflow: hidden;
+}
+.adm-stat2 {
+  padding: var(--space-3);
+  text-align: center;
+  border-right: 1px solid var(--line);
+}
+.adm-stat2:last-child {
+  border-right: none;
+}
+.adm-stat2__label {
+  display: block;
+  font-size: 0.74rem;
+  color: var(--ink-muted);
+  margin-bottom: 4px;
+}
+.adm-stat2__value {
+  display: block;
   font-weight: 700;
+  font-size: 1.05rem;
+  color: var(--ink);
+  font-variant-numeric: tabular-nums;
 }
-.adm-payout-field__label {
+.adm-stat2__sub {
+  display: block;
+  font-size: 0.72rem;
+  color: var(--ink-muted);
+  margin-top: 2px;
+}
+
+/* ---- Payout details mini-table ---- */
+.adm-paytable {
+  display: grid;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+  font-size: 0.85rem;
+}
+.adm-paytable__row {
+  display: grid;
+  grid-template-columns: 9rem minmax(0, 1fr);
+  border-bottom: 1px solid var(--line);
+}
+.adm-paytable__row:last-child {
+  border-bottom: none;
+}
+.adm-paytable__row--head {
+  background: color-mix(in srgb, var(--shell-accent, var(--brass-tint)) 20%, transparent);
+}
+.adm-paytable__label,
+.adm-paytable__value {
+  padding: 6px 10px;
+}
+.adm-paytable__label {
+  border-right: 1px solid var(--line);
   color: var(--ink-muted);
 }
-.adm-payout-field__value {
+.adm-paytable__row--head .adm-paytable__label {
+  color: var(--ink);
   font-weight: 700;
+}
+.adm-paytable__value {
+  font-weight: 700;
+  color: var(--ink);
+  overflow-wrap: anywhere;
 }
 
 @media (max-width: 720px) {

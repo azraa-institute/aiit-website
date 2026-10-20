@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import type { FormEvent } from 'react';
+import type { FormEvent, ReactNode } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import type {
   AdminAffiliateCredentials,
@@ -14,7 +14,57 @@ import { apiFetch } from '@/lib/api';
 import { cn } from '@/lib/cn';
 import { CheckboxGroupField } from '@/components/common/Field';
 import { CopyButton } from '@/components/common/CopyButton';
-import { formatWhen, useAdminFetch } from './adminData';
+import { Avatar } from '@/components/common/Avatar';
+import { formatWhen, useAdminFetch, useAdminFxRates } from './adminData';
+import {
+  UsersIcon,
+  ShieldCheckIcon,
+  CalendarIcon,
+  LinkIcon,
+  TagIcon,
+  TicketIcon,
+  BankIcon,
+  PencilIcon,
+  PhoneIcon,
+  PinIcon,
+  DocumentIcon,
+  BarChartIcon,
+  ExternalLinkIcon,
+} from './AdminAffiliatesIcons';
+
+/** FX symbols for the currencies CurrencyService converts for this drawer -- see DISPLAY_CURRENCIES on the API side. */
+const FX_SYMBOL: Record<string, string> = { NGN: '₦', INR: '₹' };
+
+function formatFx(usdCents: number, rates: Record<string, number>): string | null {
+  const parts = Object.entries(FX_SYMBOL)
+    .filter(([code]) => rates[code] !== undefined)
+    .map(([code, symbol]) => {
+      const amount = (usdCents / 100) * rates[code];
+      return `${symbol}${amount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+    });
+  return parts.length > 0 ? parts.join(' · ') : null;
+}
+
+/** A label cell with a small brass icon in front -- every row in the affiliate detail table gets one, matching the reference design. */
+function RowLabel({ icon, children }: { icon: ReactNode; children: ReactNode }) {
+  return (
+    <span className="adm-dl__label">
+      <span className="adm-dl__icon">{icon}</span>
+      {children}
+    </span>
+  );
+}
+
+/** One figure in a stat-row: a muted label on top, a bold value, and an optional smaller sub-line (a unit, or FX conversions). */
+function Stat({ label, value, sub }: { label: string; value: string; sub?: string | null }) {
+  return (
+    <div className="adm-stat2">
+      <span className="adm-stat2__label">{label}</span>
+      <span className="adm-stat2__value">{value}</span>
+      {sub ? <span className="adm-stat2__sub">{sub}</span> : null}
+    </div>
+  );
+}
 
 const TYPE_TAG_CLASS: Record<AffiliateType, string> = {
   creator: 'adm-tag--creator',
@@ -56,33 +106,35 @@ function formatCents(cents: number): string {
 
 const PAYOUT_METHOD_LABEL: Record<string, string> = { paypal: 'PayPal', bank: 'Bank transfer' };
 
-/** One labelled line per field, stacked in the same cell, rather than one run-on sentence -- easier to scan when an admin is actually keying a transfer in. */
-function PayoutDetailField({ label, value }: { label: string; value?: string }) {
-  if (!value) return null;
-  return (
-    <div className="adm-payout-field">
-      <span className="adm-payout-field__label">{label}:</span> <span className="adm-payout-field__value">{value}</span>
-    </div>
-  );
-}
-
+/** A real two-column mini-table (payment method as the header row, then one row per field) rather than a run-on sentence -- easier to scan when an admin is actually keying a transfer in. */
 function PayoutDetails({ details }: { details: AdminAffiliateDetail['payoutDetails'] }) {
   if (!details) return <>Not submitted yet</>;
 
+  const rows: [string, string | undefined][] =
+    details.method === 'paypal'
+      ? [['Email', details.paypalEmail]]
+      : [
+          ['Account name', details.bankAccountName],
+          ['Account number', details.bankAccountNumber],
+          ['Bank name', details.bankName],
+          ['Bank code', details.bankCode],
+          ['Country', details.bankCountry],
+        ];
+
   return (
-    <div className="adm-payout">
-      <div className="adm-payout__method">{PAYOUT_METHOD_LABEL[details.method] ?? details.method}</div>
-      {details.method === 'paypal' ? (
-        <PayoutDetailField label="Email" value={details.paypalEmail} />
-      ) : (
-        <>
-          <PayoutDetailField label="Account name" value={details.bankAccountName} />
-          <PayoutDetailField label="Account number" value={details.bankAccountNumber} />
-          <PayoutDetailField label="Bank name" value={details.bankName} />
-          <PayoutDetailField label="Bank code" value={details.bankCode} />
-          <PayoutDetailField label="Country" value={details.bankCountry} />
-        </>
-      )}
+    <div className="adm-paytable">
+      <div className="adm-paytable__row adm-paytable__row--head">
+        <div className="adm-paytable__label">Payment method</div>
+        <div className="adm-paytable__value">{PAYOUT_METHOD_LABEL[details.method] ?? details.method}</div>
+      </div>
+      {rows
+        .filter((row): row is [string, string] => Boolean(row[1]))
+        .map(([label, value]) => (
+          <div className="adm-paytable__row" key={label}>
+            <div className="adm-paytable__label">{label}</div>
+            <div className="adm-paytable__value">{value}</div>
+          </div>
+        ))}
     </div>
   );
 }
@@ -153,6 +205,8 @@ function Kpi({ label, value, active, onClick }: { label: string; value: number; 
 
 function Detail({ id, onChanged, onClose }: { id: string; onChanged: () => void; onClose: () => void }) {
   const state = useAdminFetch<AdminAffiliateDetail>(`/admin/affiliates/${id}`);
+  const fx = useAdminFxRates();
+  const fxRates = fx.status === 'ready' ? fx.data.rates : {};
   const [reason, setReason] = useState('');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string>();
@@ -186,23 +240,33 @@ function Detail({ id, onChanged, onClose }: { id: string; onChanged: () => void;
       {state.status === 'error' ? <p className="adm-error" role="alert">{state.message}</p> : null}
       {state.status === 'ready' ? (
         <>
-          <h3 className="adm-drawer__name">{state.data.name ?? 'No name yet'}</h3>
-          <p className="adm-muted">{state.data.email ?? 'No email on record'}</p>
-          <p className="adm-muted">
-            <Link to={`/admin/students?referredByAffiliateId=${state.data.id}`} className="adm-linkbtn">
-              View the students they referred ({state.data.registrationCount})
-            </Link>
-          </p>
+          <div className="adm-drawer__who">
+            <Avatar name={state.data.name} size="md" className="adm-drawer__avatar" />
+            <div>
+              <h3 className="adm-drawer__name">{state.data.name ?? 'No name yet'}</h3>
+              <p className="adm-muted">{state.data.email ?? 'No email on record'}</p>
+              <p className="adm-muted">
+                <Link to={`/admin/students?referredByAffiliateId=${state.data.id}`} className="adm-linkbtn">
+                  View the students they referred ({state.data.registrationCount})
+                  <ExternalLinkIcon className="adm-linkbtn__icon" />
+                </Link>
+              </p>
+            </div>
+          </div>
 
           <dl className="adm-dl">
             <div>
-              <dt>Type</dt>
+              <dt>
+                <RowLabel icon={<UsersIcon />}>Type</RowLabel>
+              </dt>
               <dd>
                 <TypeTags types={state.data.types} />
               </dd>
             </div>
             <div>
-              <dt>Status</dt>
+              <dt>
+                <RowLabel icon={<ShieldCheckIcon />}>Status</RowLabel>
+              </dt>
               <dd>
                 <span className={cn('adm-status', `adm-status--a-${state.data.applicationStatus}`)}>
                   {STATUS_LABEL[state.data.applicationStatus]}
@@ -210,38 +274,75 @@ function Detail({ id, onChanged, onClose }: { id: string; onChanged: () => void;
               </dd>
             </div>
             <div>
-              <dt>Applied</dt>
+              <dt>
+                <RowLabel icon={<CalendarIcon />}>Applied</RowLabel>
+              </dt>
               <dd>{formatWhen(state.data.createdAt)}</dd>
             </div>
             {state.data.earnings.studentReferrals ? (
               <div>
-                <dt>{state.data.studentReferralLinkLabel ?? 'Student referrals'}</dt>
+                <dt>
+                  <RowLabel icon={<UsersIcon />}>{state.data.studentReferralLinkLabel ?? 'Student referrals'}</RowLabel>
+                </dt>
                 <dd>
-                  {state.data.earnings.studentReferrals.totalCount} signed up,{' '}
-                  {state.data.earnings.studentReferrals.eligibleCount} onboarded (paid) ·{' '}
-                  {formatCents(state.data.earnings.studentReferrals.estimatedCents)} estimated
+                  <div className="adm-statrow">
+                    <Stat label="Signed up" value={String(state.data.earnings.studentReferrals.totalCount)} sub="students" />
+                    <Stat label="Onboarded (paid)" value={String(state.data.earnings.studentReferrals.eligibleCount)} sub="students" />
+                    <Stat
+                      label="Estimated earnings"
+                      value={formatCents(state.data.earnings.studentReferrals.estimatedCents)}
+                      sub={formatFx(state.data.earnings.studentReferrals.estimatedCents, fxRates)}
+                    />
+                  </div>
                 </dd>
               </div>
             ) : null}
             {state.data.earnings.affiliateReferrals ? (
               <div>
-                <dt>Affiliate referrals</dt>
+                <dt>
+                  <RowLabel icon={<UsersIcon />}>Affiliate referrals</RowLabel>
+                </dt>
                 <dd>
-                  {state.data.earnings.affiliateReferrals.totalCount} applied with their coupon,{' '}
-                  {state.data.earnings.affiliateReferrals.eligibleCount} successful ·{' '}
-                  {formatCents(state.data.earnings.affiliateReferrals.estimatedCents)} estimated
+                  <div className="adm-statrow">
+                    <Stat label="Applied with coupon" value={String(state.data.earnings.affiliateReferrals.totalCount)} />
+                    <Stat label="Successful" value={String(state.data.earnings.affiliateReferrals.eligibleCount)} />
+                    <Stat
+                      label="Estimated earnings"
+                      value={formatCents(state.data.earnings.affiliateReferrals.estimatedCents)}
+                      sub={formatFx(state.data.earnings.affiliateReferrals.estimatedCents, fxRates)}
+                    />
+                  </div>
                 </dd>
               </div>
             ) : null}
             <div>
-              <dt>Total estimated earned</dt>
+              <dt>
+                <RowLabel icon={<BarChartIcon />}>Total estimated earned</RowLabel>
+              </dt>
               <dd>
-                {formatCents(state.data.earnings.estimatedCents)} ({formatCents(state.data.earnings.paidCents)} paid,{' '}
-                {formatCents(state.data.earnings.owedCents)} owed)
+                <div className="adm-statrow">
+                  <Stat
+                    label="Total estimated"
+                    value={formatCents(state.data.earnings.estimatedCents)}
+                    sub={formatFx(state.data.earnings.estimatedCents, fxRates)}
+                  />
+                  <Stat
+                    label="Total paid"
+                    value={formatCents(state.data.earnings.paidCents)}
+                    sub={formatFx(state.data.earnings.paidCents, fxRates)}
+                  />
+                  <Stat
+                    label="Total owed"
+                    value={formatCents(state.data.earnings.owedCents)}
+                    sub={formatFx(state.data.earnings.owedCents, fxRates)}
+                  />
+                </div>
               </dd>
             </div>
             <div>
-              <dt>Referral link</dt>
+              <dt>
+                <RowLabel icon={<LinkIcon />}>Referral link</RowLabel>
+              </dt>
               <dd>
                 {state.data.referralLink ? (
                   <span className="adm-copyrow">
@@ -254,7 +355,9 @@ function Detail({ id, onChanged, onClose }: { id: string; onChanged: () => void;
               </dd>
             </div>
             <div>
-              <dt>Affiliate coupon code</dt>
+              <dt>
+                <RowLabel icon={<TagIcon />}>Affiliate coupon code</RowLabel>
+              </dt>
               <dd>
                 {state.data.affiliateCouponCode ? (
                   <span className="adm-copyrow">
@@ -267,7 +370,9 @@ function Detail({ id, onChanged, onClose }: { id: string; onChanged: () => void;
               </dd>
             </div>
             <div>
-              <dt>Reference code</dt>
+              <dt>
+                <RowLabel icon={<TicketIcon />}>Reference code</RowLabel>
+              </dt>
               <dd>
                 <span className="adm-copyrow">
                   {state.data.referenceCode ? (
@@ -284,53 +389,71 @@ function Detail({ id, onChanged, onClose }: { id: string; onChanged: () => void;
             </div>
             {state.data.referredBy ? (
               <div>
-                <dt>Referred by</dt>
+                <dt>
+                  <RowLabel icon={<UsersIcon />}>Referred by</RowLabel>
+                </dt>
                 <dd>{state.data.referredBy.name ?? state.data.referredBy.email ?? state.data.referredBy.id} (affiliate-to-affiliate coupon)</dd>
               </div>
             ) : null}
             <div>
-              <dt>Payout details</dt>
+              <dt>
+                <RowLabel icon={<BankIcon />}>Payout details</RowLabel>
+              </dt>
               <dd>
                 <PayoutDetails details={state.data.payoutDetails} />
               </dd>
             </div>
             <div>
-              <dt>Signature</dt>
+              <dt>
+                <RowLabel icon={<PencilIcon />}>Signature</RowLabel>
+              </dt>
               <dd>{state.data.signedName ? `${state.data.signedName}${state.data.signedAt ? ` · ${formatWhen(state.data.signedAt)}` : ''}` : 'Not on file (applied before e-signature)'}</dd>
             </div>
             {state.data.phone ? (
               <div>
-                <dt>Phone</dt>
+                <dt>
+                  <RowLabel icon={<PhoneIcon />}>Phone</RowLabel>
+                </dt>
                 <dd>{state.data.phone}</dd>
               </div>
             ) : null}
             {state.data.handle ? (
               <div>
-                <dt>Social handle</dt>
+                <dt>
+                  <RowLabel icon={<TagIcon />}>Social handle</RowLabel>
+                </dt>
                 <dd>{state.data.handle}</dd>
               </div>
             ) : null}
             {state.data.country || state.data.state || state.data.city ? (
               <div>
-                <dt>Location</dt>
+                <dt>
+                  <RowLabel icon={<PinIcon />}>Location</RowLabel>
+                </dt>
                 <dd>{[state.data.city, state.data.state, state.data.country].filter(Boolean).join(', ')}</dd>
               </div>
             ) : null}
             {state.data.source ? (
               <div>
-                <dt>Heard about us via</dt>
+                <dt>
+                  <RowLabel icon={<UsersIcon />}>Heard about us via</RowLabel>
+                </dt>
                 <dd>{state.data.source}</dd>
               </div>
             ) : null}
             {state.data.motivation ? (
               <div>
-                <dt>About them / their audience</dt>
+                <dt>
+                  <RowLabel icon={<DocumentIcon />}>About them / their audience</RowLabel>
+                </dt>
                 <dd>{state.data.motivation}</dd>
               </div>
             ) : null}
             {state.data.reviewedAt ? (
               <div>
-                <dt>Reviewed</dt>
+                <dt>
+                  <RowLabel icon={<DocumentIcon />}>Reviewed</RowLabel>
+                </dt>
                 <dd>
                   {formatWhen(state.data.reviewedAt)} {state.data.reviewedByName ? `by ${state.data.reviewedByName}` : ''}
                 </dd>
@@ -338,7 +461,9 @@ function Detail({ id, onChanged, onClose }: { id: string; onChanged: () => void;
             ) : null}
             {state.data.applicationStatus === 'rejected' && state.data.rejectionReason ? (
               <div>
-                <dt>Reason given</dt>
+                <dt>
+                  <RowLabel icon={<DocumentIcon />}>Reason given</RowLabel>
+                </dt>
                 <dd>{state.data.rejectionReason}</dd>
               </div>
             ) : null}

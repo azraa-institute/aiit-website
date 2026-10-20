@@ -1,4 +1,5 @@
 import { Module } from '@nestjs/common';
+import { CurrencyModule } from '../../common/currency/currency.module';
 import { EmailModule } from '../../common/email/email.module';
 import { EnrollmentsModule } from '../enrollments/enrollments.module';
 import { AffiliatesModule } from '../affiliates/affiliates.module';
@@ -23,7 +24,7 @@ import { AdminWebinarsController } from './admin-webinars.controller';
 import { AdminWebinarsService } from './admin-webinars.service';
 
 @Module({
-  imports: [EmailModule, EnrollmentsModule, AffiliatesModule, WebinarsModule, PaymentsModule],
+  imports: [EmailModule, EnrollmentsModule, AffiliatesModule, WebinarsModule, PaymentsModule, CurrencyModule],
   controllers: [
     AdminUsersController,
     AdminCoursesController,

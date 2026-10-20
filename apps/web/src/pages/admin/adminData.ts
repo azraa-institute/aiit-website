@@ -1,4 +1,4 @@
-import type { AdminAccountSummary, AdminCourse, AdminLiveClass, CourseListItem, InstructorSummary, Timetable } from '@aiit/shared';
+import type { AdminAccountSummary, AdminCourse, AdminFxRates, AdminLiveClass, CourseListItem, InstructorSummary, Timetable } from '@aiit/shared';
 
 import { useApiFetch } from '@/lib/useApiFetch';
 export type { FetchState } from '@/lib/useApiFetch';
@@ -12,6 +12,8 @@ export const useAdminCourseList = () => useAdminFetch<AdminCourse[]>('/admin/cou
 export const useAdminInstructors = () => useAdminFetch<InstructorSummary[]>('/admin/instructors');
 export const useAdminAdmins = () => useAdminFetch<AdminAccountSummary[]>('/admin/admins');
 export const useAdminTimetables = () => useAdminFetch<Timetable[]>('/admin/timetables');
+/** USD -> NGN/INR multipliers, cached server-side for 24h -- see CurrencyService. */
+export const useAdminFxRates = () => useAdminFetch<AdminFxRates>('/admin/affiliates/fx-rates');
 export const useAdminClasses = (courseId?: string) =>
   useAdminFetch<AdminLiveClass[]>(courseId ? `/admin/live-classes?courseId=${encodeURIComponent(courseId)}` : '/admin/live-classes');
 

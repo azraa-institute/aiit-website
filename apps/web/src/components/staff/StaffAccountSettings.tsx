@@ -5,6 +5,7 @@ import { supabase } from '@/lib/supabaseClient';
 import { useAuth } from '@/lib/AuthContext';
 import { TextField, PasswordField } from '@/components/common/Field';
 import { PASSWORD_HINT, passwordMeetsRequirements, PasswordRequirementsList } from '@/components/common/PasswordRequirements';
+import { CopyButton } from '@/components/common/CopyButton';
 
 /**
  * Account settings shared by the admin and instructor portals -- same
@@ -250,7 +251,10 @@ export function StaffAccountSettings() {
             <img src={pendingFactor.qrCode} alt="Authenticator QR code" width={180} height={180} />
             <div>
               <p className="adm-muted">Can&apos;t scan it? Enter this key manually:</p>
-              <code className="adm-code">{pendingFactor.secret}</code>
+              <span className="adm-copyrow">
+                <code className="adm-code">{pendingFactor.secret}</code>
+                <CopyButton value={pendingFactor.secret} title="Copy key" />
+              </span>
             </div>
             <TextField
               className="adm-field--wide"

@@ -3,6 +3,7 @@ import type { FormEvent } from 'react';
 import type { InstructorSummary, StaffCredentials, SuspendResult } from '@aiit/shared';
 import { apiFetch } from '@/lib/api';
 import { cn } from '@/lib/cn';
+import { CopyIcon, CheckIcon } from '@/components/common/CopyButton';
 import { useAdminInstructors } from './adminData';
 import { SuspendForm } from './SuspendForm';
 import { DeleteStaffForm } from './DeleteStaffForm';
@@ -47,6 +48,7 @@ function CredentialsPanel({ creds, onDone }: { creds: StaffCredentials; onDone: 
       </dl>
       <div className="adm-actions">
         <button type="button" className="adm-btn adm-btn--primary" onClick={copy}>
+          {copied ? <CheckIcon /> : <CopyIcon />}
           {copied ? 'Copied' : 'Copy details'}
         </button>
         <button type="button" className="adm-btn adm-btn--ghost" onClick={onDone}>

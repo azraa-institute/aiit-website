@@ -13,6 +13,7 @@ import type {
 import { apiFetch } from '@/lib/api';
 import { cn } from '@/lib/cn';
 import { CheckboxGroupField } from '@/components/common/Field';
+import { CopyButton } from '@/components/common/CopyButton';
 import { formatWhen, useAdminFetch } from './adminData';
 
 const TYPE_TAG_CLASS: Record<AffiliateType, string> = {
@@ -193,7 +194,7 @@ function Detail({ id, onChanged, onClose }: { id: string; onChanged: () => void;
                 <dt>{state.data.studentReferralLinkLabel ?? 'Student referrals'}</dt>
                 <dd>
                   {state.data.earnings.studentReferrals.totalCount} signed up,{' '}
-                  {state.data.earnings.studentReferrals.eligibleCount} onboarded (paid) --{' '}
+                  {state.data.earnings.studentReferrals.eligibleCount} onboarded (paid) ·{' '}
                   {formatCents(state.data.earnings.studentReferrals.estimatedCents)} estimated
                 </dd>
               </div>
@@ -203,7 +204,7 @@ function Detail({ id, onChanged, onClose }: { id: string; onChanged: () => void;
                 <dt>Affiliate referrals</dt>
                 <dd>
                   {state.data.earnings.affiliateReferrals.totalCount} applied with their coupon,{' '}
-                  {state.data.earnings.affiliateReferrals.eligibleCount} successful --{' '}
+                  {state.data.earnings.affiliateReferrals.eligibleCount} successful ·{' '}
                   {formatCents(state.data.earnings.affiliateReferrals.estimatedCents)} estimated
                 </dd>
               </div>
@@ -217,16 +218,43 @@ function Detail({ id, onChanged, onClose }: { id: string; onChanged: () => void;
             </div>
             <div>
               <dt>Referral link</dt>
-              <dd>{state.data.referralLink ?? 'Not unlocked yet (not approved, or reference code not activated)'}</dd>
+              <dd>
+                {state.data.referralLink ? (
+                  <span className="adm-copyrow">
+                    <code className="adm-code">{state.data.referralLink}</code>
+                    <CopyButton value={state.data.referralLink} title="Copy referral link" />
+                  </span>
+                ) : (
+                  'Not unlocked yet (not approved, or reference code not activated)'
+                )}
+              </dd>
             </div>
             <div>
               <dt>Affiliate coupon code</dt>
-              <dd>{state.data.affiliateCouponCode ?? 'Not unlocked yet (not approved, or reference code not activated)'}</dd>
+              <dd>
+                {state.data.affiliateCouponCode ? (
+                  <span className="adm-copyrow">
+                    <code className="adm-code">{state.data.affiliateCouponCode}</code>
+                    <CopyButton value={state.data.affiliateCouponCode} title="Copy coupon code" />
+                  </span>
+                ) : (
+                  'Not unlocked yet (not approved, or reference code not activated)'
+                )}
+              </dd>
             </div>
             <div>
               <dt>Reference code</dt>
               <dd>
-                {state.data.referenceCode ?? '—'}
+                <span className="adm-copyrow">
+                  {state.data.referenceCode ? (
+                    <>
+                      <code className="adm-code">{state.data.referenceCode}</code>
+                      <CopyButton value={state.data.referenceCode} title="Copy reference code" />
+                    </>
+                  ) : (
+                    '—'
+                  )}
+                </span>
                 {state.data.activatedAt ? ` · activated ${formatWhen(state.data.activatedAt)}` : ' · not yet activated'}
               </dd>
             </div>
@@ -409,7 +437,10 @@ function AddAffiliateForm({ onDone, onClose }: { onDone: () => void; onClose: ()
             <div>
               <dt>Temporary password</dt>
               <dd>
-                <code>{result.temporaryPassword}</code>
+                <span className="adm-copyrow">
+                  <code className="adm-code">{result.temporaryPassword}</code>
+                  <CopyButton value={result.temporaryPassword} title="Copy temporary password" />
+                </span>
               </dd>
             </div>
           </dl>

@@ -2,6 +2,7 @@ import { useState } from 'react';
 import type { FormEvent } from 'react';
 import type { AdminAccountSummary, AdminCredentials } from '@aiit/shared';
 import { apiFetch } from '@/lib/api';
+import { CopyIcon, CheckIcon } from '@/components/common/CopyButton';
 import { useAdminAdmins } from './adminData';
 
 /** The one moment the temporary password exists in the UI. It is not stored anywhere and can't be shown again. Same shape as AdminInstructorsPage.tsx's CredentialsPanel. */
@@ -44,6 +45,7 @@ function CredentialsPanel({ creds, onDone }: { creds: AdminCredentials; onDone: 
       </dl>
       <div className="adm-actions">
         <button type="button" className="adm-btn adm-btn--primary" onClick={copy}>
+          {copied ? <CheckIcon /> : <CopyIcon />}
           {copied ? 'Copied' : 'Copy details'}
         </button>
         <button type="button" className="adm-btn adm-btn--ghost" onClick={onDone}>

@@ -3,6 +3,7 @@ import { useSearchParams } from 'react-router-dom';
 import type { AdminCertificateRow, Paginated } from '@aiit/shared';
 import { apiFetch } from '@/lib/api';
 import { cn } from '@/lib/cn';
+import { CopyButton } from '@/components/common/CopyButton';
 import { useAdminFetch } from './adminData';
 import { RevokeCertificateForm } from './RevokeCertificateForm';
 
@@ -137,7 +138,10 @@ export default function AdminCertificatesPage() {
                         </td>
                         <td>{c.courseTitle}</td>
                         <td>
-                          <code className="adm-code">{c.credentialId}</code>
+                          <span className="adm-copyrow">
+                            <code className="adm-code">{c.credentialId}</code>
+                            <CopyButton value={c.credentialId} title="Copy credential ID" />
+                          </span>
                         </td>
                         <td>{new Date(c.issuedAt).toLocaleDateString()}</td>
                         <td>

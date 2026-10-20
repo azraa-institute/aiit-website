@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import type { AdminBlogPostSummary, BlogPostStatus } from '@aiit/shared';
+import { CopyButton } from '@/components/common/CopyButton';
 import { formatWhen, useAdminFetch } from './adminData';
 
 const STATUS_LABEL: Record<BlogPostStatus, string> = {
@@ -81,7 +82,11 @@ export default function AdminBlogPage() {
                 </p>
                 {p.lastCommitSha ? (
                   <p className="adm-muted">
-                    Live at <code>/resources/{p.slug}</code>
+                    Live at{' '}
+                    <span className="adm-copyrow">
+                      <code>/resources/{p.slug}</code>
+                      <CopyButton value={`${window.location.origin}/resources/${p.slug}`} title="Copy post link" />
+                    </span>
                   </p>
                 ) : null}
               </div>

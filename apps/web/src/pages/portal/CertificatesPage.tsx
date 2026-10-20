@@ -4,6 +4,7 @@ import { useScrollReveal } from '@/lib/useScrollReveal';
 import { formatDate } from '@/lib/format';
 import { apiFetchBlob, downloadBlob, ApiError } from '@/lib/api';
 import { Button } from '@/components/primitives/Button';
+import { CopyIcon, CheckIcon } from '@/components/common/CopyButton';
 import { useLearner } from './learnerData';
 import { PortalEmpty } from './PortalEmpty';
 import { PortalLoader } from './PortalLoader';
@@ -104,6 +105,7 @@ export default function CertificatesPage() {
                     Download PDF
                   </Button>
                   <Button as="button" variant="ghost" size="sm" onClick={() => handleCopyLink(c.id, c.credentialId)}>
+                    {copiedId === c.id ? <CheckIcon /> : <CopyIcon />}
                     {copiedId === c.id ? 'Link copied' : 'Copy verification link'}
                   </Button>
                 </div>

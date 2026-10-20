@@ -792,16 +792,15 @@
 }
 .adm-paytable__label {
   border-right: 1px solid var(--line);
-  color: var(--ink-muted);
-}
-.adm-paytable__row--head .adm-paytable__label {
   color: var(--ink);
   font-weight: 700;
 }
 .adm-paytable__value {
-  font-weight: 700;
   color: var(--ink);
   overflow-wrap: anywhere;
+}
+.adm-paytable__row--head .adm-paytable__value {
+  font-weight: 700;
 }
 
 @media (max-width: 720px) {

@@ -3,6 +3,21 @@ import { CopyButton } from '@/components/common/CopyButton';
 import { AffiliateResourceGate } from './affiliateResourceGate';
 import './affiliate-portal.css';
 
+/** Renders the swipe-copy body text with the referral link as a real, clickable, underlined <a> instead of plain text, so it actually reads as a link. */
+function BodyWithLink({ body, referralLink }: { body: string; referralLink: string }) {
+  const index = body.indexOf(referralLink);
+  if (index === -1) return <>{body}</>;
+  return (
+    <>
+      {body.slice(0, index)}
+      <a href={referralLink} target="_blank" rel="noopener noreferrer" className="aff-swipe-card__link">
+        {referralLink}
+      </a>
+      {body.slice(index + referralLink.length)}
+    </>
+  );
+}
+
 export default function AffiliateSwipeCopyPage() {
   return (
     <AffiliateResourceGate lockedTitle="Email &amp; social copy">
@@ -20,7 +35,9 @@ export default function AffiliateSwipeCopyPage() {
                   <article key={item.id} className="aff-swipe-card">
                     <p className="aff-swipe-card__kicker">{item.kicker}</p>
                     {item.subject ? <p className="aff-swipe-card__subject">Subject: {item.subject}</p> : null}
-                    <p className="aff-swipe-card__body">{body}</p>
+                    <p className="aff-swipe-card__body">
+                      <BodyWithLink body={body} referralLink={referralLink} />
+                    </p>
                     <CopyButton value={value} label="Copy" copiedLabel="Copied" className="aff-swipe-card__copy" />
                   </article>
                 );

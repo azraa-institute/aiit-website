@@ -7,6 +7,7 @@ import {
   resourceHtmlSnippet,
   resourceImagePath,
   type AffiliateResourceSize,
+  type AffiliateResourceStyle,
 } from '@/data/affiliateResources';
 import { useAffiliateMe } from './affiliateData';
 import './affiliate-portal.css';
@@ -18,6 +19,48 @@ const SIZE_FILTERS: Array<{ id: 'all' | AffiliateResourceSize['category']; label
   { id: 'Skyscraper', label: 'Skyscrapers' },
   { id: 'Mobile', label: 'Mobile' },
 ];
+
+/**
+ * A preview image with a visible fallback on load failure, instead of
+ * silently leaving the checkerboard placeholder blank -- a browser
+ * extension (ad-blocker/privacy) blocking the request client-side, or a
+ * transient network blip, both look identical to the affiliate otherwise.
+ * "Retry" re-points the src with a cache-busting query param so a transient
+ * failure isn't stuck forever. The Copy HTML code button works regardless
+ * of whether this preview ever loads.
+ */
+function ResourcePreview({ style, size }: { style: AffiliateResourceStyle; size: AffiliateResourceSize }) {
+  const basePath = resourceImagePath(style, size);
+  const [attempt, setAttempt] = useState(0);
+  const [failed, setFailed] = useState(false);
+
+  if (failed) {
+    return (
+      <div className="aff-resource-card__fallback">
+        <p>Preview didn&apos;t load — your browser may be blocking it. The code below still works.</p>
+        <button
+          type="button"
+          className="aff-resource-card__retry"
+          onClick={() => {
+            setFailed(false);
+            setAttempt((n) => n + 1);
+          }}
+        >
+          Retry
+        </button>
+      </div>
+    );
+  }
+
+  return (
+    <img
+      key={attempt}
+      src={attempt === 0 ? basePath : `${basePath}?retry=${attempt}`}
+      alt={`${size.label} (${size.width}×${size.height}) preview`}
+      onError={() => setFailed(true)}
+    />
+  );
+}
 
 export default function AffiliateResourcesPage() {
   const state = useAffiliateMe();
@@ -98,7 +141,7 @@ export default function AffiliateResourcesPage() {
         {sizes.map((size) => (
           <article key={size.id} className="aff-resource-card">
             <div className="aff-resource-card__preview">
-              <img src={resourceImagePath(style, size)} alt={`${size.label} (${size.width}×${size.height}) preview`} loading="lazy" />
+              <ResourcePreview style={style} size={size} />
             </div>
             <div className="aff-resource-card__meta">
               <p className="aff-resource-card__size">

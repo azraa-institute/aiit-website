@@ -111,7 +111,9 @@ const AdminSettingsPage = lazy(() => import('@/pages/admin/AdminSettingsPage'));
 const AffiliateLayout = lazy(() => import('@/pages/affiliate/AffiliateLayout'));
 const AffiliateDashboardPage = lazy(() => import('@/pages/affiliate/AffiliateDashboardPage'));
 const AffiliateLinkPage = lazy(() => import('@/pages/affiliate/AffiliateLinkPage'));
-const AffiliateResourcesPage = lazy(() => import('@/pages/affiliate/AffiliateResourcesPage'));
+const AffiliateTalkingPointsPage = lazy(() => import('@/pages/affiliate/AffiliateTalkingPointsPage'));
+const AffiliateSwipeCopyPage = lazy(() => import('@/pages/affiliate/AffiliateSwipeCopyPage'));
+const AffiliateGraphicsPage = lazy(() => import('@/pages/affiliate/AffiliateGraphicsPage'));
 const AffiliatePayoutPage = lazy(() => import('@/pages/affiliate/AffiliatePayoutPage'));
 const AffiliateSettingsPage = lazy(() => import('@/pages/affiliate/AffiliateSettingsPage'));
 const InstructorLayout = lazy(() => import('@/pages/instructor/InstructorLayout'));
@@ -314,7 +316,9 @@ export function App() {
               >
                 <Route index element={<AffiliateDashboardPage />} />
                 <Route path="link" element={<AffiliateLinkPage />} />
-                <Route path="resources" element={<AffiliateResourcesPage />} />
+                <Route path="resources/talking-points" element={<AffiliateTalkingPointsPage />} />
+                <Route path="resources/swipe-copy" element={<AffiliateSwipeCopyPage />} />
+                <Route path="resources/graphics" element={<AffiliateGraphicsPage />} />
                 <Route path="payout" element={<AffiliatePayoutPage />} />
                 <Route path="settings" element={<AffiliateSettingsPage />} />
               </Route>

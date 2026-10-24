@@ -25,6 +25,14 @@
   --shell-bg: #2a2118;
   --shell-accent: #c9a876;
 }
+/* The affiliate sidebar has several single-destination top-level entries
+   (Dashboard aside), unlike admin's near-entirely-grouped nav -- at the
+   shared 1rem .shell__link--top size they read noticeably larger/heavier
+   than the rest of the UI. Scaled down to match the admin sidebar's own
+   sub-nav item size (.shell__link's un-modified 0.92rem). */
+.shell--affiliate .shell__link--top {
+  font-size: 0.92rem;
+}
 
 .shell__side {
   position: fixed;

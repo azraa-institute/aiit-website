@@ -160,14 +160,15 @@
   overflow: hidden;
 }
 .aff-card h2 {
-  margin: 0 0 var(--space-2);
+  margin: 0 0 var(--space-3);
   font-family: var(--font-display);
   font-size: 1.05rem;
-  font-weight: 400;
+  font-weight: 600;
   color: var(--ink);
 }
 .aff-card p {
   margin: 0;
+  max-width: 48ch;
   color: var(--ink-muted);
   line-height: 1.6;
 }
@@ -484,7 +485,7 @@
    routinely block any URL/class containing "banner", which silently broke
    the images here the first time this shipped under that name. */
 .aff-eyebrow {
-  margin: 0 0 var(--space-1);
+  margin: 0 0 var(--space-2);
   font-size: var(--fs-eyebrow);
   font-weight: 700;
   letter-spacing: var(--tracking-eyebrow);

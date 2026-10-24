@@ -594,10 +594,24 @@
   white-space: nowrap;
 }
 
+/* Explicit 1/2/3-column steps rather than auto-fill -- auto-fill packs in
+   as many 260px columns as fit, which on a now-full-width content region
+   (see .aff-dash's own width fix) could mean 4-5 columns on a wide
+   monitor instead of the requested 3-column cap. */
 .aff-resource-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  grid-template-columns: 1fr;
   gap: var(--space-4);
+}
+@media (min-width: 640px) {
+  .aff-resource-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+@media (min-width: 1100px) {
+  .aff-resource-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
 }
 .aff-resource-card {
   display: flex;

@@ -513,6 +513,21 @@
   text-underline-offset: 2px;
 }
 
+/* ---------- Profile photo (instructor Profile page) ---------- */
+.adm-profile-identity {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+}
+.adm-profile-identity__actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+.adm-profile-identity__upload input {
+  display: none;
+}
+
 .adm-toolbar {
   display: flex;
   flex-wrap: wrap;

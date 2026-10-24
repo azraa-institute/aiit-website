@@ -212,7 +212,7 @@ export default function AffiliateSupportPage() {
         )}
       </section>
 
-      <section className="aff-card">
+      <section className="aff-card support-list">
         <h2>Your reports</h2>
         {list.status === 'error' ? (
           <p className="auth__alert" role="alert">
@@ -221,7 +221,7 @@ export default function AffiliateSupportPage() {
         ) : null}
         {list.status === 'ready' && list.data.length === 0 ? <p className="support-muted">You have not sent any reports.</p> : null}
         {list.status === 'ready' && list.data.length > 0 ? (
-          <ul className="support-list" role="list">
+          <ul role="list">
             {list.data.map((c) => (
               <li key={c.id} className="support-item">
                 <button

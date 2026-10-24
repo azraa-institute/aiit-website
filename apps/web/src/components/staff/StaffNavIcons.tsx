@@ -29,6 +29,34 @@ export function DashboardIcon({ className }: IconProps) {
   );
 }
 
+export function CalendarIcon({ className }: IconProps) {
+  return (
+    <svg {...common} className={className}>
+      <rect x="2.5" y="3.3" width="13" height="11.4" rx="1.3" />
+      <path d="M2.5 6.8h13M5.6 1.8v3M12.4 1.8v3" />
+    </svg>
+  );
+}
+
+export function GradingIcon({ className }: IconProps) {
+  return (
+    <svg {...common} className={className}>
+      <path d="M5 2.3h5.3L13.7 5.7V15a.8.8 0 0 1-.8.8H5a.8.8 0 0 1-.8-.8V3a.8.8 0 0 1 .8-.7Z" />
+      <path d="M10 2.3V6h3.7" />
+      <path d="m6 9.6 1.5 1.5L11.2 7.5" />
+    </svg>
+  );
+}
+
+export function FlagIcon({ className }: IconProps) {
+  return (
+    <svg {...common} className={className}>
+      <path d="M4 2v14" />
+      <path d="M4 3.2c1.4-.9 2.8-.9 4.2 0s2.8.9 4.2 0v6.4c-1.4.9-2.8.9-4.2 0s-2.8-.9-4.2 0Z" />
+    </svg>
+  );
+}
+
 export function ProfileIcon({ className }: IconProps) {
   return (
     <svg {...common} className={className}>

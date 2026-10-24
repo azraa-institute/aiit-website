@@ -125,6 +125,8 @@ const InstructorCoursePage = lazy(() => import('@/pages/instructor/InstructorCou
 const InstructorAssignmentPage = lazy(() => import('@/pages/instructor/InstructorAssignmentPage'));
 const InstructorGradingPage = lazy(() => import('@/pages/instructor/InstructorGradingPage'));
 const InstructorComplaintsPage = lazy(() => import('@/pages/instructor/InstructorComplaintsPage'));
+const InstructorProfilePage = lazy(() => import('@/pages/instructor/InstructorProfilePage'));
+const InstructorSupportPage = lazy(() => import('@/pages/instructor/InstructorSupportPage'));
 const InstructorSettingsPage = lazy(() => import('@/pages/instructor/InstructorSettingsPage'));
 const StaffLoginPage = lazy(() => import('@/pages/auth/StaffLoginPage'));
 const AffiliateLoginPage = lazy(() => import('@/pages/auth/AffiliateLoginPage'));
@@ -394,6 +396,8 @@ export function App() {
                 <Route path="assignments/:id" element={<InstructorAssignmentPage />} />
                 <Route path="grading" element={<InstructorGradingPage />} />
                 <Route path="complaints" element={<InstructorComplaintsPage />} />
+                <Route path="profile" element={<InstructorProfilePage />} />
+                <Route path="support" element={<InstructorSupportPage />} />
                 <Route path="settings" element={<InstructorSettingsPage />} />
               </Route>
 

@@ -8,10 +8,18 @@ import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import { SupportService } from './support.service';
 import { ComplaintMessageDto, CreateComplaintDto } from './dto/support.dto';
 
-/** A student's own reports. Staff have their own (admin) endpoints; instructors have none. */
+/**
+ * The caller's own reports. Staff (admin) have their own separate endpoints.
+ * Learner and instructor accounts share this one -- SupportService's own
+ * category/course/instructor checks already handle the difference (an
+ * instructor's technical-only report never touches the enrollment-scoped
+ * course/instructor branches, since those only trigger when courseId/
+ * instructorId is actually sent), so no service-level change was needed,
+ * just widening who's allowed to call it.
+ */
 @Controller('me/complaints')
 @UseGuards(JwtGuard, RolesGuard)
-@Roles('learner')
+@Roles('learner', 'instructor')
 @Throttle({ default: { limit: 30, ttl: 60_000 } })
 export class SupportController {
   constructor(private readonly support: SupportService) {}

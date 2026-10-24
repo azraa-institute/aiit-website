@@ -1,4 +1,15 @@
-/* Student support & reports, plus the small entry card on the Profile page. */
+/* Student support & reports, plus the small entry card on the Profile page.
+   Also imported by the affiliate and instructor portals' own technical-only
+   Support pages, which reuse this file's classes wholesale. */
+
+.support-link {
+  color: var(--brass-deep);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+.support-link:hover {
+  color: var(--brass);
+}
 
 .support-actions {
   margin-bottom: var(--space-6);

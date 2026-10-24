@@ -80,7 +80,7 @@ export default function AffiliateGraphicsPage() {
           <section className="aff-card">
             <p className="aff-eyebrow">Promote AIIT</p>
             <h2>Banners</h2>
-            <p>Pick the size that fits where you're posting: every banner already has your referral link baked into its code.</p>
+            <p>Choose a banner for your audience. Your referral tracking is already built in.</p>
 
             {AFFILIATE_RESOURCE_STYLES.length > 1 ? (
               <div className="aff-resources__filters" role="group" aria-label="Style">
@@ -98,42 +98,53 @@ export default function AffiliateGraphicsPage() {
               </div>
             ) : null}
 
-            <div className="aff-resources__filters" role="group" aria-label="Size">
-              {SIZE_FILTERS.map((f) => (
-                <button
-                  key={f.id}
-                  type="button"
-                  className={cn('chip', category === f.id && 'chip--active')}
-                  aria-pressed={category === f.id}
-                  onClick={() => setCategory(f.id)}
-                >
-                  {f.label}
-                </button>
-              ))}
+            <div className="aff-resources__filters-row">
+              <div className="aff-resources__filters" role="group" aria-label="Size">
+                {SIZE_FILTERS.map((f) => (
+                  <button
+                    key={f.id}
+                    type="button"
+                    className={cn('chip', category === f.id && 'chip--active')}
+                    aria-pressed={category === f.id}
+                    onClick={() => setCategory(f.id)}
+                  >
+                    {f.label}
+                  </button>
+                ))}
+              </div>
+              <p className="aff-resources__count">
+                {sizes.length} {sizes.length === 1 ? 'asset' : 'assets'}
+              </p>
             </div>
           </section>
 
           <div className="aff-resource-grid">
-            {sizes.map((size) => (
-              <article key={size.id} className="aff-resource-card">
-                <div className="aff-resource-card__preview">
-                  <ResourcePreview style={style} size={size} />
-                </div>
-                <div className="aff-resource-card__meta">
+            {sizes.map((size) => {
+              const imageUrl = resourceImagePath(style, size);
+              return (
+                <article key={size.id} className="aff-resource-card">
+                  <div className="aff-resource-card__preview">
+                    <ResourcePreview style={style} size={size} />
+                  </div>
+                  <p className="aff-resource-card__title">{size.label}</p>
                   <p className="aff-resource-card__size">
-                    {size.width} × {size.height}
+                    {size.width} × {size.height} px
                   </p>
-                  <p className="aff-resource-card__label">{size.label}</p>
-                </div>
-                <p className="aff-resource-card__context">{RESOURCE_CATEGORY_CONTEXT[size.category]}</p>
-                <CopyButton
-                  value={resourceHtmlSnippet(style, size, referralLink)}
-                  label="Copy HTML code"
-                  copiedLabel="Code copied"
-                  className="aff-resource-card__copy"
-                />
-              </article>
-            ))}
+                  <p className="aff-resource-card__context">{RESOURCE_CATEGORY_CONTEXT[size.category]}</p>
+                  <div className="aff-resource-card__actions">
+                    <button type="button" className="aff-resource-card__preview-btn" onClick={() => window.open(imageUrl, '_blank', 'noopener')}>
+                      Preview
+                    </button>
+                    <CopyButton
+                      value={resourceHtmlSnippet(style, size, referralLink)}
+                      label="Copy embed code"
+                      copiedLabel="Code copied"
+                      className="aff-resource-card__copy"
+                    />
+                  </div>
+                </article>
+              );
+            })}
           </div>
         </div>
       )}

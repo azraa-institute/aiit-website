@@ -1423,6 +1423,10 @@
   align-items: center;
   gap: var(--space-3);
 }
+.cpath__action .btn {
+  text-transform: none;
+  letter-spacing: normal;
+}
 @media (max-width: 560px) {
   .cpath {
     gap: var(--space-4);

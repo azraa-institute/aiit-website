@@ -88,3 +88,23 @@ export function SystemIcon({ className }: IconProps) {
     </svg>
   );
 }
+
+export function LinkIcon({ className }: IconProps) {
+  return (
+    <svg {...common} className={className}>
+      <path d="M7.2 10.8 10.8 7.2" />
+      <path d="M8.6 4.8 10 3.4a2.8 2.8 0 0 1 4 4L12.6 8.8" />
+      <path d="M9.4 13.2 8 14.6a2.8 2.8 0 0 1-4-4l1.4-1.4" />
+    </svg>
+  );
+}
+
+export function MegaphoneIcon({ className }: IconProps) {
+  return (
+    <svg {...common} className={className}>
+      <path d="M2.6 7.4h2.1l7-3.6v10.4l-7-3.6H2.6a.9.9 0 0 1-.9-.9V8.3a.9.9 0 0 1 .9-.9Z" />
+      <path d="M5.3 10.6v2.6c0 .6.5 1.1 1.1 1.1h.4c.6 0 1.1-.5 1.1-1.1v-1.4" />
+      <path d="M12.8 6.2c.9.6 1.5 1.6 1.5 2.8s-.6 2.2-1.5 2.8" />
+    </svg>
+  );
+}

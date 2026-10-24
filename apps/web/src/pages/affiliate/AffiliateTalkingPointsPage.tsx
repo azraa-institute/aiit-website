@@ -7,7 +7,7 @@ export default function AffiliateTalkingPointsPage() {
   return (
     <AffiliateResourceGate lockedTitle="Key talking points">
       {() => (
-        <div className="aff-dash">
+        <div className="aff-dash aff-dash--wide">
           <section className="aff-card">
             <p className="aff-eyebrow">Promote AIIT</p>
             <h2>Key talking points</h2>

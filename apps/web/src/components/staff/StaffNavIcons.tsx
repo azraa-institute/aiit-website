@@ -99,12 +99,48 @@ export function LinkIcon({ className }: IconProps) {
   );
 }
 
-export function MegaphoneIcon({ className }: IconProps) {
+export function FolderIcon({ className }: IconProps) {
   return (
     <svg {...common} className={className}>
-      <path d="M2.6 7.4h2.1l7-3.6v10.4l-7-3.6H2.6a.9.9 0 0 1-.9-.9V8.3a.9.9 0 0 1 .9-.9Z" />
-      <path d="M5.3 10.6v2.6c0 .6.5 1.1 1.1 1.1h.4c.6 0 1.1-.5 1.1-1.1v-1.4" />
-      <path d="M12.8 6.2c.9.6 1.5 1.6 1.5 2.8s-.6 2.2-1.5 2.8" />
+      <path d="M2.3 5.3c0-.7.6-1.3 1.3-1.3h3.1l1.4 1.6h6.3c.7 0 1.3.6 1.3 1.3v6.5c0 .7-.6 1.3-1.3 1.3H3.6c-.7 0-1.3-.6-1.3-1.3V5.3Z" />
+    </svg>
+  );
+}
+
+export function ChatIcon({ className }: IconProps) {
+  return (
+    <svg {...common} className={className}>
+      <path d="M3 4.2h12v7.6H8.4L5 14.3v-2.5H3V4.2Z" />
+    </svg>
+  );
+}
+
+export function SwipeCopyIcon({ className }: IconProps) {
+  return (
+    <svg {...common} className={className}>
+      <path d="M5.3 2.5h5.4l3 3v9.5a1 1 0 0 1-1 1H5.3a1 1 0 0 1-1-1v-11.5a1 1 0 0 1 1-1Z" />
+      <path d="M10.7 2.5v3h3" />
+      <path d="M6.3 9h5.4M6.3 11.3h5.4M6.3 13.6h3" />
+    </svg>
+  );
+}
+
+export function ImageIcon({ className }: IconProps) {
+  return (
+    <svg {...common} className={className}>
+      <rect x="2.5" y="3.5" width="13" height="11" rx="1.2" />
+      <circle cx="6.3" cy="7.3" r="1.3" />
+      <path d="M3.2 13.3 7.3 9l2.5 2.5 2-2 2.5 2.7" />
+    </svg>
+  );
+}
+
+export function CoinsIcon({ className }: IconProps) {
+  return (
+    <svg {...common} className={className}>
+      <ellipse cx="9" cy="4.6" rx="5" ry="2" />
+      <path d="M4 4.6v4c0 1.1 2.2 2 5 2s5-.9 5-2v-4" />
+      <path d="M4 8.6v4c0 1.1 2.2 2 5 2s5-.9 5-2v-4" />
     </svg>
   );
 }

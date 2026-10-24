@@ -15,7 +15,7 @@ export interface StaffNavEntry {
   to: string;
   label: string;
   end?: boolean;
-  /** Only meaningful at the top level (a direct link, or a group header) -- sub-items under an open group stay icon-less, matching the reference design. */
+  /** Optional at every level -- a top-level entry, a group header, or a sub-item under an open group (admin's own groups simply don't pass one, so they render exactly as before). */
   icon?: ReactNode;
 }
 
@@ -138,6 +138,7 @@ export function StaffShell({
                       {item.items.map((sub) => (
                         <li key={sub.to}>
                           <NavLink to={sub.to} end={sub.end} className={({ isActive }) => cn('shell__link', isActive && 'is-active')}>
+                            {sub.icon ? <span className="shell__link-icon">{sub.icon}</span> : null}
                             <span className="shell__link-label">{sub.label}</span>
                           </NavLink>
                         </li>

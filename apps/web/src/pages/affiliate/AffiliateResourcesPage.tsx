@@ -1,9 +1,12 @@
 import { useMemo, useState } from 'react';
 import { cn } from '@/lib/cn';
-import { CopyButton } from '@/components/common/CopyButton';
+import { CheckIcon, CopyButton } from '@/components/common/CopyButton';
 import {
   AFFILIATE_RESOURCE_SIZES,
   AFFILIATE_RESOURCE_STYLES,
+  AFFILIATE_SWIPE_COPY,
+  AFFILIATE_TALKING_POINTS,
+  RESOURCE_CATEGORY_CONTEXT,
   resourceHtmlSnippet,
   resourceImagePath,
   type AffiliateResourceSize,
@@ -100,11 +103,49 @@ export default function AffiliateResourcesPage() {
   return (
     <div className="aff-dash">
       <section className="aff-card">
+        <p className="aff-eyebrow">Promote AIIT</p>
         <h2>Affiliate resources</h2>
         <p>
-          Every image below already has your referral link baked into its code. Copy the HTML for the size you want and paste it
-          straight onto your blog or site — nothing to edit by hand.
+          Everything below is ready to use as-is, with your referral link already built in. Lead with the talking points, send the
+          swipe copy, or drop a banner into your site — whatever fits where you're posting.
         </p>
+      </section>
+
+      <section className="aff-card">
+        <h2>Key talking points</h2>
+        <p>Accurate, on-brand facts about AIIT — mention these when you talk or write about us, in your own words or theirs.</p>
+        <ul className="aff-points">
+          {AFFILIATE_TALKING_POINTS.map((point) => (
+            <li key={point}>
+              <CheckIcon className="aff-points__icon" />
+              <span>{point}</span>
+            </li>
+          ))}
+        </ul>
+      </section>
+
+      <section className="aff-card">
+        <h2>Email &amp; social copy</h2>
+        <p>Ready-to-paste swipe copy for an email, a post, or a quick DM — your referral link is already in every one.</p>
+        <div className="aff-swipe-grid">
+          {AFFILIATE_SWIPE_COPY.map((item) => {
+            const body = item.body(referralLink);
+            const value = item.subject ? `Subject: ${item.subject}\n\n${body}` : body;
+            return (
+              <article key={item.id} className="aff-swipe-card">
+                <p className="aff-swipe-card__kicker">{item.kicker}</p>
+                {item.subject ? <p className="aff-swipe-card__subject">Subject: {item.subject}</p> : null}
+                <p className="aff-swipe-card__body">{body}</p>
+                <CopyButton value={value} label="Copy" copiedLabel="Copied" className="aff-swipe-card__copy" />
+              </article>
+            );
+          })}
+        </div>
+      </section>
+
+      <section className="aff-card">
+        <h2>Display banners</h2>
+        <p>Pick the size that fits where you're posting — every banner already has your referral link baked into its code.</p>
 
         {AFFILIATE_RESOURCE_STYLES.length > 1 ? (
           <div className="aff-resources__filters" role="group" aria-label="Style">
@@ -149,6 +190,7 @@ export default function AffiliateResourcesPage() {
               </p>
               <p className="aff-resource-card__label">{size.label}</p>
             </div>
+            <p className="aff-resource-card__context">{RESOURCE_CATEGORY_CONTEXT[size.category]}</p>
             <CopyButton
               value={resourceHtmlSnippet(style, size, referralLink)}
               label="Copy HTML code"

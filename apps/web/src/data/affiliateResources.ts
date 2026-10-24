@@ -61,3 +61,57 @@ export function resourceHtmlSnippet(style: AffiliateResourceStyle, size: Affilia
   const src = `${window.location.origin}${resourceImagePath(style, size)}`;
   return `<a href="${referralLink}" target="_blank" rel="noopener sponsored">\n  <img src="${src}" alt="AIIT Network - Build Your Global Tech Career" width="${size.width}" height="${size.height}" style="border:0;">\n</a>`;
 }
+
+/** Short, factual context per IAB size category -- helps an affiliate pick the right one for where they're actually posting, instead of guessing from pixel dimensions alone. */
+export const RESOURCE_CATEGORY_CONTEXT: Record<AffiliateResourceSize['category'], string> = {
+  Leaderboard: 'Best for a blog header, footer, or between articles',
+  Rectangle: 'Best for in-content placements and sidebars',
+  Skyscraper: 'Best for a tall sidebar slot',
+  Mobile: 'Best for mobile-responsive placements',
+};
+
+/**
+ * Accurate, source-grounded talking points -- every claim here matches copy
+ * already published elsewhere on the site (apps/web/src/data/ecosystem.ts's
+ * WHY_JOIN_REASONS/HOW_IT_WORKS), so an affiliate repeating these stays
+ * consistent with AIIT's own marketing rather than improvising. No numbers
+ * (student counts, etc.) are invented here that aren't already public.
+ */
+export const AFFILIATE_TALKING_POINTS: string[] = [
+  'Live, instructor-led classes, not pre-recorded video, in AI Engineering, Data Science & Analytics, Generative AI & LLMs, Cybersecurity, Cloud Computing, Edge Computing & Blockchain, and Cisco CCNA.',
+  'Most programmes are priced between $128 and $250, genuinely accessible for students and professionals across Africa and Asia.',
+  'Learn on a PC or mobile, self-paced or structured, from anywhere in the world.',
+  'Every graduate earns a verifiable AIIT Certificate; select programmes also prepare learners for industry-recognised certifications like Cisco CCNA.',
+  "Support doesn't stop at the certificate: internship facilitation (including the UK and other destinations, best-efforts basis), scholarship and higher-education guidance, and ongoing career guidance.",
+  'A real, global learner community, not a solo video course.',
+];
+
+export interface AffiliateSwipeCopy {
+  id: string;
+  kicker: string;
+  subject?: string;
+  body: (referralLink: string) => string;
+}
+
+/** Ready-to-paste email/social copy with the referral link already filled in -- the affiliate never has to draft their own pitch from scratch. */
+export const AFFILIATE_SWIPE_COPY: AffiliateSwipeCopy[] = [
+  {
+    id: 'email',
+    kicker: 'Email',
+    subject: 'Build a global tech career, without the price tag',
+    body: (referralLink) =>
+      `Hi [Name],\n\nI wanted to share something that could be genuinely useful for you. AIIT (Azraa Institute of Information Technology) runs live, instructor-led courses in AI Engineering, Data Science, Generative AI & LLMs, Cybersecurity, Cloud Computing and Cisco CCNA, most priced between $128 and $250.\n\nYou get a verifiable AIIT Certificate on completion, the flexibility to learn on your phone or PC, and support with internships and further study afterward.\n\nTake a look here: ${referralLink}\n\n[Your name]`,
+  },
+  {
+    id: 'social',
+    kicker: 'Social post',
+    body: (referralLink) =>
+      `Thinking about a career in tech? AIIT runs live, project-based courses in AI, Data Science, Cybersecurity, Cloud Computing and more, most under $250, with a real certificate at the end. Check it out: ${referralLink}`,
+  },
+  {
+    id: 'dm',
+    kicker: 'Quick DM / WhatsApp',
+    body: (referralLink) =>
+      `Hey! Thought you'd like this: live, affordable tech courses (AI, Data Science, Cybersecurity, Cloud & more) with a real certificate at the end. ${referralLink}`,
+  },
+];

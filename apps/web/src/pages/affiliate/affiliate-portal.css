@@ -439,6 +439,91 @@
    Named "resources", not "banners", throughout -- ad-blocker filter lists
    routinely block any URL/class containing "banner", which silently broke
    the images here the first time this shipped under that name. */
+.aff-eyebrow {
+  margin: 0 0 var(--space-1);
+  font-size: var(--fs-eyebrow);
+  font-weight: 700;
+  letter-spacing: var(--tracking-eyebrow);
+  text-transform: uppercase;
+  color: var(--brass-deep);
+}
+
+/* ---------- Talking points ---------- */
+.aff-points {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  margin: var(--space-4) 0 0;
+  padding: 0;
+  list-style: none;
+}
+.aff-points li {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-3);
+  line-height: 1.55;
+  color: var(--ink);
+}
+.aff-points__icon {
+  flex-shrink: 0;
+  margin-top: 4px;
+  padding: 3px;
+  border-radius: 50%;
+  background: var(--accent-wash);
+  color: var(--brass-deep);
+}
+
+/* ---------- Email & social swipe copy ---------- */
+.aff-swipe-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: var(--space-4);
+  margin-top: var(--space-4);
+}
+.aff-swipe-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding: var(--space-4) var(--space-4) var(--space-4) calc(var(--space-4) + 3px);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+  background: var(--ivory);
+  overflow: hidden;
+}
+.aff-swipe-card::before {
+  content: '';
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 3px;
+  background: linear-gradient(180deg, transparent, var(--brass) 50%, transparent);
+}
+.aff-swipe-card__kicker {
+  margin: 0;
+  font-size: var(--fs-eyebrow);
+  font-weight: 700;
+  letter-spacing: var(--tracking-eyebrow);
+  text-transform: uppercase;
+  color: var(--brass-deep);
+}
+.aff-swipe-card__subject {
+  margin: 0;
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--ink);
+}
+.aff-swipe-card__body {
+  margin: 0;
+  flex: 1 1 auto;
+  white-space: pre-wrap;
+  font-size: 0.88rem;
+  line-height: 1.6;
+  color: var(--ink-muted);
+}
+.aff-swipe-card__copy {
+  align-self: flex-start;
+}
+
 .aff-resources__filters {
   display: flex;
   flex-wrap: wrap;
@@ -463,6 +548,12 @@
   border-radius: var(--radius-lg);
   background: var(--surface);
   box-shadow: var(--shadow-soft);
+  transition: transform var(--dur-fast) var(--ease-out), box-shadow var(--dur-fast) var(--ease-out), border-color var(--dur-fast) var(--ease-out);
+}
+.aff-resource-card:hover {
+  transform: translateY(-2px);
+  border-color: var(--brass);
+  box-shadow: var(--shadow-soft), 0 8px 20px -12px rgba(0, 0, 0, 0.25);
 }
 .aff-resource-card__preview {
   display: grid;
@@ -518,6 +609,11 @@
   margin: 0;
   font-size: 0.82rem;
   color: var(--ink-muted);
+}
+.aff-resource-card__context {
+  margin: calc(var(--space-2) * -1) 0 0;
+  font-size: 0.78rem;
+  color: var(--ink-faint);
 }
 .aff-resource-card__copy {
   align-self: flex-start;

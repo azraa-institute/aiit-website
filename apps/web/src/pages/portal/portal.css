@@ -17,6 +17,18 @@
   min-height: 100vh;
   background: var(--paper);
 }
+/* The shared Button primitive/.btn defaults to uppercase -- sentence case
+   everywhere in the learner portal instead (every eyebrow/label/table-header
+   use of uppercase elsewhere is untouched; this only targets actual
+   buttons). Two more roots cover GuidedTour.tsx and
+   ProfileCompletionWizard.tsx, both of which render via createPortal
+   straight to document.body, outside this .portal subtree entirely. */
+.portal .btn,
+.gt-root .btn,
+.pcw-shell .btn {
+  text-transform: none;
+  letter-spacing: normal;
+}
 
 /* Applied while the ProfileCompletionWizard is open -- the wizard itself is
    mounted via a DOM portal into document.body (see ProfileCompletionWizard.tsx),

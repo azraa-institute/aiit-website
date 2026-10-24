@@ -14,6 +14,15 @@
   flex-direction: column;
   gap: var(--space-6);
 }
+/* The shared Button primitive/.btn defaults to uppercase, same as every
+   other all-caps button fixed elsewhere this round (certificate card,
+   Review course) -- only the Profile and Support pages use it here
+   (everything else in this portal already uses the adm-btn/CopyButton
+   styles, which were never uppercase), so scoping to .aff-dash is safe. */
+.aff-dash .btn {
+  text-transform: none;
+  letter-spacing: normal;
+}
 
 /* ---------- Hero ---------- */
 .aff-hero {

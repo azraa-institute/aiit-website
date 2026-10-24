@@ -70,6 +70,16 @@ export const RESOURCE_CATEGORY_CONTEXT: Record<AffiliateResourceSize['category']
   Mobile: 'Best for mobile-responsive placements',
 };
 
+/** Which TalkingPointIcons.tsx component a point renders -- a string key, not the component itself, so this stays plain data. */
+export type AffiliateTalkingPointIcon = 'classes' | 'pricing' | 'flexible' | 'certificate' | 'support' | 'community';
+
+export interface AffiliateTalkingPoint {
+  id: string;
+  icon: AffiliateTalkingPointIcon;
+  title: string;
+  body: string;
+}
+
 /**
  * Accurate, source-grounded talking points -- every claim here matches copy
  * already published elsewhere on the site (apps/web/src/data/ecosystem.ts's
@@ -77,13 +87,43 @@ export const RESOURCE_CATEGORY_CONTEXT: Record<AffiliateResourceSize['category']
  * consistent with AIIT's own marketing rather than improvising. No numbers
  * (student counts, etc.) are invented here that aren't already public.
  */
-export const AFFILIATE_TALKING_POINTS: string[] = [
-  'Live, instructor-led classes, not pre-recorded video, in AI Engineering, Data Science & Analytics, Generative AI & LLMs, Cybersecurity, Cloud Computing, Edge Computing & Blockchain, and Cisco CCNA.',
-  'Most programmes are priced between $128 and $250, genuinely accessible for students and professionals across Africa and Asia.',
-  'Learn on a PC or mobile, self-paced or structured, from anywhere in the world.',
-  'Every graduate earns a verifiable AIIT Certificate; select programmes also prepare learners for industry-recognised certifications like Cisco CCNA.',
-  "Support doesn't stop at the certificate: internship facilitation (including the UK and other destinations, best-efforts basis), scholarship and higher-education guidance, and ongoing career guidance.",
-  'A real, global learner community, not a solo video course.',
+export const AFFILIATE_TALKING_POINTS: AffiliateTalkingPoint[] = [
+  {
+    id: 'classes',
+    icon: 'classes',
+    title: 'Live, instructor-led classes',
+    body: 'AIIT offers live, instructor-led classes, not pre-recorded videos, in AI Engineering, Data Science & Analytics, Generative AI & LLMs, Cybersecurity, Cloud Computing, Edge Computing & Blockchain, and Cisco CCNA.',
+  },
+  {
+    id: 'pricing',
+    icon: 'pricing',
+    title: 'Affordable and accessible',
+    body: 'Most programmes are priced between $128 and $250, genuinely accessible for students and professionals across Africa and Asia.',
+  },
+  {
+    id: 'flexible',
+    icon: 'flexible',
+    title: 'Learn from anywhere',
+    body: 'Learn on a PC or mobile, at your own pace or through a structured schedule, from anywhere in the world.',
+  },
+  {
+    id: 'certificate',
+    icon: 'certificate',
+    title: 'Verifiable AIIT Certificate',
+    body: 'Every graduate earns a verifiable AIIT Certificate; select programmes also prepare learners for industry-recognised certifications like Cisco CCNA.',
+  },
+  {
+    id: 'support',
+    icon: 'support',
+    title: 'Ongoing support',
+    body: "Support doesn't stop at the certificate: internship facilitation (including the UK and other destinations, best-efforts basis), scholarship and higher-education guidance, and ongoing career guidance.",
+  },
+  {
+    id: 'community',
+    icon: 'community',
+    title: 'A global learner community',
+    body: 'A real, global learner community, not a solo video course.',
+  },
 ];
 
 export interface AffiliateSwipeCopy {

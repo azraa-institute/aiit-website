@@ -458,37 +458,57 @@
 }
 
 /* ---------- Talking points ----------
-   A 2-column grid once there's room for it (the card itself is full-width
-   via .aff-dash--wide, see above), one column below that -- a single long
-   line per point reads better narrow than stretched edge-to-edge. */
-.aff-points {
+   A showcase grid of its own cards, not a plain bulleted list -- the page's
+   whole purpose is to be skimmed, so a bigger heading and an icon badge per
+   point earn their keep here even though every other .aff-card stays at
+   the compact size used elsewhere in the portal. */
+.aff-points-page h2 {
+  font-size: clamp(1.7rem, 1.4rem + 1.1vw, 2.3rem);
+  margin-bottom: var(--space-2);
+}
+
+.aff-points-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: var(--space-4) var(--space-6);
+  gap: var(--space-5);
   margin: var(--space-5) 0 0;
   padding-top: var(--space-5);
   border-top: 1px solid var(--line);
-  list-style: none;
 }
 @media (max-width: 760px) {
-  .aff-points {
+  .aff-points-grid {
     grid-template-columns: 1fr;
   }
 }
-.aff-points li {
+.aff-point-card {
   display: flex;
-  align-items: flex-start;
-  gap: var(--space-3);
-  line-height: 1.55;
-  color: var(--ink);
+  gap: var(--space-4);
+  padding: var(--space-5);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+  background: var(--ivory);
 }
-.aff-points__icon {
+.aff-point-card__icon {
+  display: grid;
   flex-shrink: 0;
-  margin-top: 4px;
-  padding: 3px;
+  place-items: center;
+  width: 48px;
+  height: 48px;
   border-radius: 50%;
   background: var(--accent-wash);
   color: var(--brass-deep);
+}
+.aff-point-card__title {
+  margin: 0 0 6px;
+  font-size: 1.02rem;
+  font-weight: 700;
+  color: var(--ink);
+}
+.aff-point-card__body {
+  margin: 0;
+  font-size: 0.92rem;
+  line-height: 1.55;
+  color: var(--ink-muted);
 }
 
 /* ---------- Email & social swipe copy ---------- */

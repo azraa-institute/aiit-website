@@ -5,7 +5,7 @@ import '@/pages/admin/admin.css';
 const AFFILIATE_NAV: StaffNavEntry[] = [
   { to: '/affiliate-portal', label: 'Dashboard', end: true },
   { to: '/affiliate-portal/link', label: 'Referral link' },
-  { to: '/affiliate-portal/banners', label: 'Banners' },
+  { to: '/affiliate-portal/resources', label: 'Resources' },
   { to: '/affiliate-portal/payout', label: 'Payout' },
   { to: '/affiliate-portal/settings', label: 'Settings' },
 ];

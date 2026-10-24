@@ -272,9 +272,9 @@ export default function AffiliateDashboardPage() {
               <span className="aff-card__cta">Open →</span>
             </Link>
             {data.referralLink ? (
-              <Link to="/affiliate-portal/banners" className="aff-card aff-card--link">
-                <h2>Promotional banners</h2>
-                <p>Ready-made banners for your blog or site, with your referral link already baked in.</p>
+              <Link to="/affiliate-portal/resources" className="aff-card aff-card--link">
+                <h2>Affiliate resources</h2>
+                <p>Ready-made promotional images for your blog or site, with your referral link already baked in.</p>
                 <span className="aff-card__cta">Open →</span>
               </Link>
             ) : null}

@@ -167,6 +167,39 @@
   font-size: 0.82rem;
   color: var(--ink-faint);
 }
+
+/* ---------- Profile (avatar + name/headline) ---------- */
+.aff-profile__identity {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  margin: var(--space-5) 0;
+}
+.aff-profile__actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+.aff-profile__upload input {
+  display: none;
+}
+.aff-profile__remove {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--ink-muted);
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+.aff-profile__remove:hover {
+  color: var(--red);
+}
+.aff-profile__hint {
+  margin: var(--space-2) 0 0;
+  font-size: 0.8rem;
+  color: var(--ink-faint);
+}
 .aff-card--rejected,
 .aff-card--status {
   padding-left: calc(var(--space-6) + 3px);

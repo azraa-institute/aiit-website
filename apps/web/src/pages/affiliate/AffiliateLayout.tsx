@@ -1,5 +1,16 @@
 import { StaffShell, type StaffNavItem } from '@/components/staff/StaffShell';
-import { ChatIcon, CoinsIcon, DashboardIcon, FolderIcon, ImageIcon, LinkIcon, SwipeCopyIcon, SystemIcon } from '@/components/staff/StaffNavIcons';
+import {
+  ChatIcon,
+  CoinsIcon,
+  DashboardIcon,
+  FolderIcon,
+  ImageIcon,
+  LinkIcon,
+  ProfileIcon,
+  SupportIcon,
+  SwipeCopyIcon,
+  SystemIcon,
+} from '@/components/staff/StaffNavIcons';
 // Reuses the admin area's tables, forms and buttons (`adm-*`); only the frame differs.
 import '@/pages/admin/admin.css';
 
@@ -24,7 +35,9 @@ const AFFILIATE_NAV: StaffNavItem[] = [
     ],
   },
   { to: '/affiliate-portal/payout', label: 'Payout', icon: <CoinsIcon /> },
-  { to: '/affiliate-portal/settings', label: 'Settings', icon: <SystemIcon /> },
+  { to: '/affiliate-portal/profile', label: 'Profile', icon: <ProfileIcon /> },
+  { to: '/affiliate-portal/support', label: 'Support', icon: <SupportIcon /> },
+  { to: '/affiliate-portal/settings', label: 'Account settings', icon: <SystemIcon /> },
 ];
 
 export default function AffiliateLayout() {

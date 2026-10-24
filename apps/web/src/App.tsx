@@ -115,6 +115,8 @@ const AffiliateTalkingPointsPage = lazy(() => import('@/pages/affiliate/Affiliat
 const AffiliateSwipeCopyPage = lazy(() => import('@/pages/affiliate/AffiliateSwipeCopyPage'));
 const AffiliateGraphicsPage = lazy(() => import('@/pages/affiliate/AffiliateGraphicsPage'));
 const AffiliatePayoutPage = lazy(() => import('@/pages/affiliate/AffiliatePayoutPage'));
+const AffiliateProfilePage = lazy(() => import('@/pages/affiliate/AffiliateProfilePage'));
+const AffiliateSupportPage = lazy(() => import('@/pages/affiliate/AffiliateSupportPage'));
 const AffiliateSettingsPage = lazy(() => import('@/pages/affiliate/AffiliateSettingsPage'));
 const InstructorLayout = lazy(() => import('@/pages/instructor/InstructorLayout'));
 const InstructorDashboardPage = lazy(() => import('@/pages/instructor/InstructorDashboardPage'));
@@ -320,6 +322,8 @@ export function App() {
                 <Route path="resources/swipe-copy" element={<AffiliateSwipeCopyPage />} />
                 <Route path="resources/graphics" element={<AffiliateGraphicsPage />} />
                 <Route path="payout" element={<AffiliatePayoutPage />} />
+                <Route path="profile" element={<AffiliateProfilePage />} />
+                <Route path="support" element={<AffiliateSupportPage />} />
                 <Route path="settings" element={<AffiliateSettingsPage />} />
               </Route>
 

@@ -29,6 +29,15 @@ export function DashboardIcon({ className }: IconProps) {
   );
 }
 
+export function ProfileIcon({ className }: IconProps) {
+  return (
+    <svg {...common} className={className}>
+      <circle cx="9" cy="6.3" r="2.9" />
+      <path d="M3.4 15.3c.5-3.1 2.7-5 5.6-5s5.1 1.9 5.6 5" />
+    </svg>
+  );
+}
+
 export function PeopleIcon({ className }: IconProps) {
   return (
     <svg {...common} className={className}>

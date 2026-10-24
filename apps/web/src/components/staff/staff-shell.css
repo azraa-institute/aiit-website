@@ -166,15 +166,16 @@
 }
 /* Icon-less sub-items (every admin group today) get padding simulating
    where a top-level icon+label would start, so the label aligns under the
-   group header's own label. A sub-item that supplies its own icon (e.g.
-   the affiliate Resources group) doesn't need that simulated indent -- the
-   icon itself does the job, at a slightly smaller size than the top-level/
-   group-header icons for a subtle hierarchy. */
+   group header's own label. A sub-item with its own icon (e.g. the
+   affiliate Resources group) needs less of that simulated space -- its own
+   icon fills some of it -- but still a real indent, otherwise it lines up
+   flush with the top-level entries above/below the group and no longer
+   reads as nested under it. */
 .shell__subnav .shell__link {
   padding-left: calc(var(--space-4) + 18px + var(--space-3));
 }
 .shell__subnav .shell__link:has(.shell__link-icon) {
-  padding-left: var(--space-4);
+  padding-left: calc(var(--space-4) + var(--space-5));
 }
 .shell__subnav .shell__link-icon {
   width: 15px;
@@ -280,19 +281,14 @@
     color: var(--ink);
   }
 }
+/* No max-width here on purpose -- every card in every staff portal
+   (admin/instructor/affiliate) fills the real remaining viewport width
+   next to the sidebar, not a narrower centered column with dead space
+   either side. Text-heavy elements that genuinely need a shorter line
+   length (e.g. .adm-intro) set their own max-width locally instead. */
 .shell__view {
-  max-width: 1120px;
   margin: 0 auto;
   padding: var(--space-6) var(--space-6) var(--space-9);
-}
-/* A page can opt out of the 1120px reading-width cap (e.g. a showcase grid
-   that should fill the real remaining viewport width next to the sidebar,
-   not sit centered with dead space either side) by rendering a
-   .aff-dash--wide descendant -- scoped per-page via :has() rather than
-   loosening this shared container for every admin/instructor/affiliate
-   page at once. */
-.shell__view:has(.aff-dash--wide) {
-  max-width: none;
 }
 
 .shell__topbar,

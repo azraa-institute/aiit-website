@@ -6,20 +6,13 @@
    display face, and a "reveal box" treatment for the referral link that
    reads like a developer dashboard's API key, not a form field. */
 
+/* No max-width here on purpose, same reasoning as .shell__view in
+   staff-shell.css -- every affiliate page fills the real content width
+   instead of sitting in a narrower centered column. */
 .aff-dash {
   display: flex;
   flex-direction: column;
   gap: var(--space-6);
-  max-width: 52rem;
-}
-/* Content that benefits from the full content-region width (a multi-column
-   grid, a long list) instead of the 52rem reading-width cap above, which is
-   right for the narrower forms/reveal-boxes elsewhere in this portal but
-   left the Talking points page an isolated narrow column with dead space
-   beside it. The outer bound is still .shell__view's own max-width/padding
-   (staff-shell.css) -- this only removes the extra, redundant inner cap. */
-.aff-dash--wide {
-  max-width: none;
 }
 
 /* ---------- Hero ---------- */

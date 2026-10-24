@@ -22,28 +22,44 @@ import { PortalLoader } from './PortalLoader';
 import { SidebarToggleIcon } from '@/components/common/SidebarToggleIcon';
 import './portal.css';
 
+type PortalIconName =
+  | 'home'
+  | 'courses'
+  | 'timetable'
+  | 'award'
+  | 'tasks'
+  | 'practice'
+  | 'resources'
+  | 'webinar'
+  | 'notifications'
+  | 'profile'
+  | 'support'
+  | 'settings'
+  | 'more';
+
 interface NavItem {
   to: string;
   label: string;
   end?: boolean;
   group: 'primary' | 'study' | 'account';
+  icon: PortalIconName;
   /** Matches a GuidedTour step's target id -- see GuidedTour.tsx's own doc comment on why these live on both the rail link and its BOTTOM_NAV counterpart. */
   tourId?: string;
 }
 
 const NAV: NavItem[] = [
-  { to: '/portal', label: 'Dashboard', end: true, group: 'primary', tourId: 'tour-dashboard' },
-  { to: '/portal/courses', label: 'My courses', group: 'primary', tourId: 'tour-courses' },
-  { to: '/portal/schedule', label: 'Timetable', group: 'primary' },
-  { to: '/portal/certificates', label: 'Certificates', group: 'primary', tourId: 'tour-certificates' },
-  { to: '/portal/assignments', label: 'Assignments', group: 'primary', tourId: 'tour-assignments' },
-  { to: '/portal/practice', label: 'Practice', group: 'primary' },
-  { to: '/portal/resources', label: 'Learning resources', group: 'study' },
-  { to: '/portal/webinars', label: 'Webinar registrations', group: 'study' },
-  { to: '/portal/notifications', label: 'Notifications', group: 'study' },
-  { to: '/portal/profile', label: 'Profile', group: 'account' },
-  { to: '/portal/support', label: 'Support', group: 'account' },
-  { to: '/portal/settings', label: 'Account settings', group: 'account' },
+  { to: '/portal', label: 'Dashboard', end: true, group: 'primary', icon: 'home', tourId: 'tour-dashboard' },
+  { to: '/portal/courses', label: 'My courses', group: 'primary', icon: 'courses', tourId: 'tour-courses' },
+  { to: '/portal/schedule', label: 'Timetable', group: 'primary', icon: 'timetable' },
+  { to: '/portal/certificates', label: 'Certificates', group: 'primary', icon: 'award', tourId: 'tour-certificates' },
+  { to: '/portal/assignments', label: 'Assignments', group: 'primary', icon: 'tasks', tourId: 'tour-assignments' },
+  { to: '/portal/practice', label: 'Practice', group: 'primary', icon: 'practice' },
+  { to: '/portal/resources', label: 'Learning resources', group: 'study', icon: 'resources' },
+  { to: '/portal/webinars', label: 'Webinar registrations', group: 'study', icon: 'webinar' },
+  { to: '/portal/notifications', label: 'Notifications', group: 'study', icon: 'notifications' },
+  { to: '/portal/profile', label: 'Profile', group: 'account', icon: 'profile' },
+  { to: '/portal/support', label: 'Support', group: 'account', icon: 'support' },
+  { to: '/portal/settings', label: 'Account settings', group: 'account', icon: 'settings' },
 ];
 
 const GROUP_LABEL: Record<NavItem['group'], string> = {
@@ -53,11 +69,11 @@ const GROUP_LABEL: Record<NavItem['group'], string> = {
 };
 
 /** Core destinations for the phone bottom nav, in priority order. */
-const BOTTOM_NAV = [
-  { to: '/portal', label: 'Home', end: true, icon: 'home' as const, tourId: 'tour-dashboard' },
-  { to: '/portal/courses', label: 'Courses', icon: 'courses' as const, tourId: 'tour-courses' },
-  { to: '/portal/certificates', label: 'Certificates', icon: 'award' as const, tourId: 'tour-certificates' },
-  { to: '/portal/assignments', label: 'Tasks', icon: 'tasks' as const, tourId: 'tour-assignments' },
+const BOTTOM_NAV: Array<{ to: string; label: string; end?: boolean; icon: PortalIconName; tourId: string }> = [
+  { to: '/portal', label: 'Home', end: true, icon: 'home', tourId: 'tour-dashboard' },
+  { to: '/portal/courses', label: 'Courses', icon: 'courses', tourId: 'tour-courses' },
+  { to: '/portal/certificates', label: 'Certificates', icon: 'award', tourId: 'tour-certificates' },
+  { to: '/portal/assignments', label: 'Tasks', icon: 'tasks', tourId: 'tour-assignments' },
 ];
 
 export default function PortalLayout() {
@@ -258,6 +274,7 @@ export default function PortalLayout() {
                       className={({ isActive }) => cn('portal-rail__link', isActive && 'is-active')}
                     >
                       <span className="portal-rail__link-line" aria-hidden="true" />
+                      <PortalNavIcon name={item.icon} className="portal-rail__link-icon" />
                       <span className="portal-rail__link-label">{item.label}</span>
                       {item.to === '/portal/notifications' && unread > 0 ? (
                         <span className="portal-rail__badge" aria-label={`${unread} unread`}>
@@ -409,7 +426,7 @@ export default function PortalLayout() {
               data-tour={item.tourId}
               className={({ isActive }) => cn('portal-bottomnav__item', isActive && 'is-active')}
             >
-              <BottomIcon name={item.icon} />
+              <PortalNavIcon name={item.icon} />
               <span className="portal-bottomnav__label">{item.label}</span>
             </NavLink>
           ))}
@@ -420,7 +437,7 @@ export default function PortalLayout() {
             aria-expanded={menuOpen}
             onClick={() => setMenuOpen(true)}
           >
-            <BottomIcon name="more" />
+            <PortalNavIcon name="more" />
             <span className="portal-bottomnav__label">Menu</span>
             {unread > 0 ? <span className="portal-bottomnav__dot" aria-hidden="true" /> : null}
           </button>
@@ -451,7 +468,8 @@ export default function PortalLayout() {
   );
 }
 
-function BottomIcon({ name }: { name: 'home' | 'courses' | 'award' | 'tasks' | 'more' }) {
+/** One icon per NAV/BOTTOM_NAV destination -- used by both the desktop rail and the phone bottom nav, same outline convention as StaffNavIcons.tsx. */
+function PortalNavIcon({ name, className }: { name: PortalIconName; className?: string }) {
   const common = {
     width: 20,
     height: 20,
@@ -462,6 +480,7 @@ function BottomIcon({ name }: { name: 'home' | 'courses' | 'award' | 'tasks' | '
     strokeLinecap: 'round' as const,
     strokeLinejoin: 'round' as const,
     'aria-hidden': true,
+    className,
   };
   switch (name) {
     case 'home':
@@ -476,6 +495,13 @@ function BottomIcon({ name }: { name: 'home' | 'courses' | 'award' | 'tasks' | '
           <path d="M4 3.5h9a2 2 0 0 1 2 2V16H6a2 2 0 0 1-2-2V3.5ZM4 14a2 2 0 0 1 2-2h9" />
         </svg>
       );
+    case 'timetable':
+      return (
+        <svg {...common}>
+          <rect x="3" y="4.5" width="14" height="12" rx="1.5" />
+          <path d="M3 8h14M7 2.5v3M13 2.5v3" />
+        </svg>
+      );
     case 'award':
       return (
         <svg {...common}>
@@ -487,6 +513,56 @@ function BottomIcon({ name }: { name: 'home' | 'courses' | 'award' | 'tasks' | '
       return (
         <svg {...common}>
           <path d="M4 4.5h12v11H4zM7 10l2 2 4-4.5" />
+        </svg>
+      );
+    case 'practice':
+      return (
+        <svg {...common}>
+          <circle cx="10" cy="10" r="6.5" />
+          <circle cx="10" cy="10" r="3" />
+          <circle cx="10" cy="10" r="0.6" fill="currentColor" stroke="none" />
+        </svg>
+      );
+    case 'resources':
+      return (
+        <svg {...common}>
+          <path d="M4 4.5c2-1 4.5-1 6 0v11c-1.5-1-4-1-6 0V4.5Z" />
+          <path d="M16 4.5c-2-1-4.5-1-6 0v11c1.5-1 4-1 6 0V4.5Z" />
+        </svg>
+      );
+    case 'webinar':
+      return (
+        <svg {...common}>
+          <rect x="2.5" y="5.5" width="10" height="9" rx="1.3" />
+          <path d="M12.5 8.5 17.5 6v8l-5-2.5Z" />
+        </svg>
+      );
+    case 'notifications':
+      return (
+        <svg {...common}>
+          <path d="M10 2a4.9 4.9 0 0 0-4.9 4.9c0 3.7-1.2 5.1-1.8 5.8-.2.2 0 .7.3.7h12.8c.3 0 .5-.5.3-.7-.6-.7-1.8-2.1-1.8-5.8A4.9 4.9 0 0 0 10 2ZM8 13.4a2 2 0 0 0 4 0" />
+        </svg>
+      );
+    case 'profile':
+      return (
+        <svg {...common}>
+          <circle cx="10" cy="7" r="3.2" />
+          <path d="M3.8 17c.6-3.4 3-5.5 6.2-5.5s5.6 2.1 6.2 5.5" />
+        </svg>
+      );
+    case 'support':
+      return (
+        <svg {...common}>
+          <circle cx="10" cy="10" r="7.2" />
+          <path d="M7.6 7.6a2.4 2.4 0 1 1 3.4 2.2c-.7.4-1 .9-1 1.7" />
+          <circle cx="10" cy="14.3" r="0.9" fill="currentColor" stroke="none" />
+        </svg>
+      );
+    case 'settings':
+      return (
+        <svg {...common}>
+          <circle cx="10" cy="10" r="2.6" />
+          <path d="M10 2.5v2.2M10 15.3v2.2M17.5 10h-2.2M4.7 10H2.5M15.3 4.7l-1.5 1.5M6.2 13.8l-1.5 1.5M15.3 15.3l-1.5-1.5M6.2 6.2 4.7 4.7" />
         </svg>
       );
     case 'more':

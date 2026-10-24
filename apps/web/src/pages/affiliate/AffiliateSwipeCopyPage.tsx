@@ -11,7 +11,7 @@ export default function AffiliateSwipeCopyPage() {
           <section className="aff-card">
             <p className="aff-eyebrow">Promote AIIT</p>
             <h2>Email &amp; social copy</h2>
-            <p>Ready-to-paste swipe copy for an email, a post, or a quick DM — your referral link is already in every one.</p>
+            <p>Ready-to-paste swipe copy for an email, a post, or a quick DM: your referral link is already in every one.</p>
             <div className="aff-swipe-grid">
               {AFFILIATE_SWIPE_COPY.map((item) => {
                 const body = item.body(referralLink);

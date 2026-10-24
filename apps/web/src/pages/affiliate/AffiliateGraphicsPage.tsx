@@ -38,7 +38,7 @@ function ResourcePreview({ style, size }: { style: AffiliateResourceStyle; size:
   if (failed) {
     return (
       <div className="aff-resource-card__fallback">
-        <p>Preview didn&apos;t load — your browser may be blocking it. The code below still works.</p>
+        <p>Preview didn&apos;t load; your browser may be blocking it. The code below still works.</p>
         <button
           type="button"
           className="aff-resource-card__retry"
@@ -80,7 +80,7 @@ export default function AffiliateGraphicsPage() {
           <section className="aff-card">
             <p className="aff-eyebrow">Promote AIIT</p>
             <h2>Banners</h2>
-            <p>Pick the size that fits where you're posting — every banner already has your referral link baked into its code.</p>
+            <p>Pick the size that fits where you're posting: every banner already has your referral link baked into its code.</p>
 
             {AFFILIATE_RESOURCE_STYLES.length > 1 ? (
               <div className="aff-resources__filters" role="group" aria-label="Style">

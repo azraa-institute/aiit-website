@@ -274,7 +274,7 @@ export default function AffiliateDashboardPage() {
             {data.referralLink ? (
               <Link to="/affiliate-portal/resources/talking-points" className="aff-card aff-card--link">
                 <h2>Affiliate resources</h2>
-                <p>Talking points, swipe copy, and ready-made banners — everything you need to promote AIIT, with your referral link already built in.</p>
+                <p>Talking points, swipe copy, and ready-made banners: everything you need to promote AIIT, with your referral link already built in.</p>
                 <span className="aff-card__cta">Open →</span>
               </Link>
             ) : null}

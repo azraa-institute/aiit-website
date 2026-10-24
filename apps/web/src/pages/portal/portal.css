@@ -8,7 +8,6 @@
   --portal-rail-w: 276px;
   --portal-topbar-h: 60px;
   --portal-bottomnav-h: 58px;
-  --portal-max: 1180px;
   --portal-pad-x: clamp(1.25rem, 0.5rem + 3vw, 3.5rem);
   --portal-pad-y: clamp(1.25rem, 1rem + 1.2vw, 2.25rem);
 }
@@ -423,11 +422,35 @@
     opacity var(--dur-fast) var(--ease-out);
   opacity: 0;
 }
+.portal-rail__link-icon {
+  flex-shrink: 0;
+  color: inherit;
+  opacity: 0.75;
+}
 .portal-rail__link-label {
   transition: transform var(--dur-fast) var(--ease-out);
 }
+/* The same gradient wash the active state uses below, faded in on hover
+   instead of just the flat color change -- a dedicated pseudo-element
+   (not reusing ::after, which the active state owns) so the two can stack
+   when a link is both active and hovered. */
+.portal-rail__link::before {
+  content: '';
+  position: absolute;
+  inset: 0 -0.6rem 0 -0.75rem;
+  background: linear-gradient(90deg, rgba(216, 201, 176, 0.08), transparent 72%);
+  opacity: 0;
+  transition: opacity var(--dur-fast) var(--ease-out);
+  z-index: -1;
+}
 .portal-rail__link:hover {
   color: var(--fg-soft);
+}
+.portal-rail__link:hover::before {
+  opacity: 1;
+}
+.portal-rail__link:hover .portal-rail__link-icon {
+  opacity: 1;
 }
 .portal-rail__link:hover .portal-rail__link-line {
   height: 14px;
@@ -444,6 +467,9 @@
 }
 .portal-rail__link.is-active {
   color: var(--ivory);
+}
+.portal-rail__link.is-active .portal-rail__link-icon {
+  opacity: 1;
 }
 .portal-rail__link.is-active .portal-rail__link-line {
   height: 22px;
@@ -726,7 +752,6 @@
   }
 }
 .portal__view-inner {
-  max-width: var(--portal-max);
   margin-inline: auto;
   animation: portal-view-in var(--dur-base) var(--ease-out) both;
 }

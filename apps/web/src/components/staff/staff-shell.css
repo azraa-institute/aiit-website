@@ -92,7 +92,7 @@
     color var(--dur-fast) var(--ease-out);
 }
 .shell__link:hover {
-  background: rgba(244, 239, 231, 0.08);
+  background: linear-gradient(90deg, rgba(244, 239, 231, 0.1), transparent 75%);
   color: var(--ivory);
 }
 .shell__link--top {

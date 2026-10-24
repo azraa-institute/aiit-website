@@ -20,7 +20,7 @@ export default function AffiliateTalkingPointsPage() {
           <section className="aff-card aff-points-page">
             <p className="aff-eyebrow">Promote AIIT</p>
             <h2>Key talking points</h2>
-            <p>Accurate, on-brand facts about AIIT — mention these when you talk or write about us, in your own words or theirs.</p>
+            <p>Accurate, on-brand facts about AIIT: mention these when you talk or write about us, in your own words or theirs.</p>
 
             <div className="aff-points-grid">
               {AFFILIATE_TALKING_POINTS.map((point) => {

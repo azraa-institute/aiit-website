@@ -513,6 +513,17 @@
   text-underline-offset: 2px;
 }
 
+/* The shared Button primitive/.btn defaults to uppercase -- every other
+   admin/instructor button already uses adm-btn (never uppercase), but the
+   instructor Support page is the first thing in this portal to use the
+   shared Button component (Report a technical problem / Send report /
+   Cancel), so it needs the same sentence-case override the other 3
+   portals already have scoped to their own root. */
+.adm-page .btn {
+  text-transform: none;
+  letter-spacing: normal;
+}
+
 /* ---------- Profile photo (instructor Profile page) ---------- */
 .adm-profile-identity {
   display: flex;

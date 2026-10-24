@@ -111,6 +111,7 @@ const AdminSettingsPage = lazy(() => import('@/pages/admin/AdminSettingsPage'));
 const AffiliateLayout = lazy(() => import('@/pages/affiliate/AffiliateLayout'));
 const AffiliateDashboardPage = lazy(() => import('@/pages/affiliate/AffiliateDashboardPage'));
 const AffiliateLinkPage = lazy(() => import('@/pages/affiliate/AffiliateLinkPage'));
+const AffiliateBannersPage = lazy(() => import('@/pages/affiliate/AffiliateBannersPage'));
 const AffiliatePayoutPage = lazy(() => import('@/pages/affiliate/AffiliatePayoutPage'));
 const AffiliateSettingsPage = lazy(() => import('@/pages/affiliate/AffiliateSettingsPage'));
 const InstructorLayout = lazy(() => import('@/pages/instructor/InstructorLayout'));
@@ -313,6 +314,7 @@ export function App() {
               >
                 <Route index element={<AffiliateDashboardPage />} />
                 <Route path="link" element={<AffiliateLinkPage />} />
+                <Route path="banners" element={<AffiliateBannersPage />} />
                 <Route path="payout" element={<AffiliatePayoutPage />} />
                 <Route path="settings" element={<AffiliateSettingsPage />} />
               </Route>

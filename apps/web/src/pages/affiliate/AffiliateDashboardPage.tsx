@@ -271,6 +271,13 @@ export default function AffiliateDashboardPage() {
               <p>Get your referral link and/or coupon code, and copy them for sharing.</p>
               <span className="aff-card__cta">Open →</span>
             </Link>
+            {data.referralLink ? (
+              <Link to="/affiliate-portal/banners" className="aff-card aff-card--link">
+                <h2>Promotional banners</h2>
+                <p>Ready-made banners for your blog or site, with your referral link already baked in.</p>
+                <span className="aff-card__cta">Open →</span>
+              </Link>
+            ) : null}
             <Link to="/affiliate-portal/payout" className="aff-card aff-card--link">
               <h2>Payout details</h2>
               <p>{data.payoutDetails ? 'Review or update where AIIT sends your earnings.' : 'Set up where AIIT should send your earnings.'}</p>

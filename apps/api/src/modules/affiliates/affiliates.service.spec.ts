@@ -19,19 +19,23 @@ describe('AffiliatesService', () => {
   let audit: { record: jest.Mock };
   let email: { send: jest.Mock };
   let supabase: { createUser: jest.Mock };
+  let youtube: { fetchSubscriberCount: jest.Mock };
+  let brevo: { upsertContact: jest.Mock };
 
   beforeEach(() => {
     prisma = {
       affiliate: { create: jest.fn(), findUnique: jest.fn(), update: jest.fn(), count: jest.fn().mockResolvedValue(0) },
       affiliatePayout: { aggregate: jest.fn().mockResolvedValue({ _sum: { amountCents: null } }), findMany: jest.fn().mockResolvedValue([]) },
-      profile: { count: jest.fn().mockResolvedValue(0), findMany: jest.fn(), upsert: jest.fn() },
+      profile: { count: jest.fn().mockResolvedValue(0), findMany: jest.fn().mockResolvedValue([]), upsert: jest.fn() },
       // Default: countOnboardedReferrals()/countSuccessfulAffiliateReferrals() both see 0 unless a test overrides.
       $queryRaw: jest.fn().mockResolvedValue([{ count: 0n }]),
     };
     audit = { record: jest.fn() };
     email = { send: jest.fn().mockResolvedValue(undefined) };
     supabase = { createUser: jest.fn() };
-    service = new AffiliatesService(prisma as never, audit as never, email as never, supabase as never);
+    youtube = { fetchSubscriberCount: jest.fn().mockResolvedValue(null) };
+    brevo = { upsertContact: jest.fn().mockResolvedValue(undefined) };
+    service = new AffiliatesService(prisma as never, audit as never, email as never, supabase as never, youtube as never, brevo as never);
   });
 
   it('creates a pending application, capturing the signature, and audits it', async () => {
@@ -126,6 +130,7 @@ describe('AffiliatesService', () => {
       state: null,
       city: null,
       motivation: null,
+      socialLinks: [],
     });
   });
 
@@ -414,7 +419,7 @@ describe('AffiliatesService', () => {
       agreedToTerms: true,
     };
 
-    it('creates the Supabase account, upserts a learner profile flagged mustChangePassword, creates the Affiliate row, and emails the credentials', async () => {
+    it('creates the Supabase account, upserts a learner profile flagged mustChangePassword, creates the Affiliate row, and sends only an acknowledgment email (no credentials yet)', async () => {
       supabase.createUser.mockResolvedValue(USER);
       prisma.affiliate.create.mockResolvedValue({
         id: AFFILIATE_ID,
@@ -435,11 +440,15 @@ describe('AffiliatesService', () => {
       });
       expect(audit.record).toHaveBeenCalledWith(USER, 'affiliate.apply_new', 'affiliate', AFFILIATE_ID, { types: ['creator'], email: 'ada@example.com' });
 
+      // Real login credentials only go out once an admin approves (see
+      // AdminAffiliatesService.notifyApplicant()) -- this submission-time
+      // email is acknowledgment-only, never containing the password or
+      // reference code.
       expect(email.send).toHaveBeenCalledTimes(1);
       const sent = email.send.mock.calls[0][0];
       expect(sent.to).toBe('ada@example.com');
-      expect(sent.html).toContain('ada@example.com');
-      expect(sent.html).toContain('AIIT-AFF-ABC123');
+      expect(sent.html).not.toContain('Temporary password');
+      expect(sent.html).not.toContain('AIIT-AFF-ABC123');
     });
 
     it('passes a pending referral slug through as Supabase user_metadata, so the handle_new_user() trigger can attribute the profile', async () => {

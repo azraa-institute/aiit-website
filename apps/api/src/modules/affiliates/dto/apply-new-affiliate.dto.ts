@@ -1,6 +1,8 @@
-import { ArrayNotEmpty, ArrayUnique, Equals, IsArray, IsBoolean, IsEmail, IsIn, IsOptional, IsString, MaxLength, MinLength } from 'class-validator';
+import { ArrayMaxSize, ArrayNotEmpty, ArrayUnique, Equals, IsArray, IsBoolean, IsEmail, IsIn, IsOptional, IsString, MaxLength, MinLength, ValidateNested } from 'class-validator';
+import { Type } from 'class-transformer';
 import type { AffiliateType } from '@aiit/shared';
 import { AFFILIATE_TYPES } from './apply-affiliate.dto';
+import { SocialLinkDto } from './social-link.dto';
 
 /**
  * The public, no-session application -- an anonymous visitor applying for
@@ -69,6 +71,13 @@ export class ApplyNewAffiliateDto {
   @IsString()
   @MaxLength(1000)
   motivation?: string;
+
+  @IsOptional()
+  @IsArray()
+  @ArrayMaxSize(5)
+  @ValidateNested({ each: true })
+  @Type(() => SocialLinkDto)
+  socialLinks?: SocialLinkDto[];
 
   /** A pending /r/:slug click (getPendingReferralSlug()), if the applicant arrived via one -- see AffiliatesService.applyNew(). Attributes the new PROFILE (student-side), distinct from affiliateCouponCode below. */
   @IsOptional()

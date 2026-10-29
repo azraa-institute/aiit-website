@@ -17,6 +17,7 @@ describe('AdminAffiliatesService', () => {
   let audit: { record: jest.Mock };
   let email: { send: jest.Mock };
   let affiliatesService: { createManually: jest.Mock };
+  let supabase: { setPassword: jest.Mock };
 
   const row = (status = 'pending') => ({
     id: AFFILIATE,
@@ -54,7 +55,8 @@ describe('AdminAffiliatesService', () => {
     audit = { record: jest.fn() };
     email = { send: jest.fn() };
     affiliatesService = { createManually: jest.fn() };
-    service = new AdminAffiliatesService(prisma as never, audit as never, email as never, affiliatesService as never);
+    supabase = { setPassword: jest.fn().mockResolvedValue(undefined) };
+    service = new AdminAffiliatesService(prisma as never, audit as never, email as never, affiliatesService as never, supabase as never);
   });
 
   it('createManually() delegates to AffiliatesService and returns the resulting detail + temp password', async () => {
@@ -87,6 +89,24 @@ describe('AdminAffiliatesService', () => {
     );
     expect(email.send).toHaveBeenCalledWith(expect.objectContaining({ to: 'ada@example.com' }));
     expect(audit.record).toHaveBeenCalledWith(ADMIN, 'affiliate.status', 'affiliate', AFFILIATE, { from: 'in_review', to: 'approved' });
+
+    // Approval is the only moment a public applicant actually gets working
+    // login credentials -- see AffiliatesService.applyNew()'s doc comment.
+    // A fresh password is set server-side (the original was never persisted)
+    // and the email body contains it, not just a generic "you're approved".
+    expect(supabase.setPassword).toHaveBeenCalledWith(APPLICANT, expect.any(String));
+    const sentHtml = email.send.mock.calls[0][0].html as string;
+    expect(sentHtml).toContain('Temporary password');
+    expect(sentHtml).toContain('AIIT-AFF-ABC123');
+  });
+
+  it('rejecting does not set a new password or send credentials', async () => {
+    prisma.affiliate.findUnique.mockResolvedValue(row('pending'));
+    await service.setStatus(ADMIN, AFFILIATE, 'rejected', 'Incomplete profile information.');
+
+    expect(supabase.setPassword).not.toHaveBeenCalled();
+    const sentHtml = email.send.mock.calls[0][0].html as string;
+    expect(sentHtml).not.toContain('Temporary password');
   });
 
   it('a no-op status (same as current) skips the notification', async () => {

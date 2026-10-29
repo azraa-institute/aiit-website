@@ -209,6 +209,19 @@ model Affiliate {
   // referredByAffiliateId powers the student-referral one.
   referredByAffiliateId  String?               @map("referred_by_affiliate_id") @db.Uuid
 
+  // Self-reported social profiles + follower counts, collected on the
+  // application form so an admin has something real to screen "serious"
+  // applicants on. A JSON array, not a relational table -- same convention
+  // as Profile.preferences/LiveClass's whiteboard state, since the set of
+  // platforms is expected to grow and each entry is small/self-contained.
+  // Shape per entry: { platform, url, followersReported?, followersFetched?,
+  // fetchStatus?: 'fetched'|'unsupported'|'failed', fetchedAt? }. Only
+  // YouTube's followersFetched/fetchStatus/fetchedAt are ever populated
+  // server-side today (YoutubeClientService) -- every other platform stays
+  // self-reported only, since none of them offer a free, no-OAuth public
+  // lookup (see AffiliatesService.verifyYoutubeFollowers()'s doc comment).
+  socialLinks            Json?                 @map("social_links")
+
   @@map("affiliates")
   @@schema("public")
 }

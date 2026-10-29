@@ -1,12 +1,14 @@
 import { randomBytes } from 'node:crypto';
-import { BadRequestException, ConflictException, Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, ConflictException, Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { Prisma, type Affiliate } from '@prisma/client';
-import type { AffiliateApplicationStatus, AffiliateEarnings, AffiliateMe, AffiliatePayoutDetails, AffiliatePayoutInput, AffiliateType } from '@aiit/shared';
+import type { AffiliateApplicationStatus, AffiliateEarnings, AffiliateMe, AffiliatePayoutDetails, AffiliatePayoutInput, AffiliateSocialLink, AffiliateType } from '@aiit/shared';
 import { PrismaService } from '../../common/prisma/prisma.service';
 import { AuditService } from '../../common/audit/audit.service';
 import { EmailService } from '../../common/email/email.service';
 import { brandedEmailHtml } from '../../common/email/branded-email';
 import { SupabaseAdminService, generateTemporaryPassword } from '../../common/supabase-admin/supabase-admin.service';
+import { YoutubeClientService } from '../../common/youtube/youtube-client.service';
+import { BrevoClientService } from '../../common/brevo/brevo-client.service';
 import { AFFILIATE_AGREEMENT_VERSION } from './affiliate-agreement';
 import type { ApplyNewAffiliateDto } from './dto/apply-new-affiliate.dto';
 
@@ -18,6 +20,12 @@ export interface ApplyContext {
   city?: string;
   source?: string;
   motivation?: string;
+  socialLinks?: AffiliateSocialLink[];
+}
+
+/** Prisma's Json column round-trips as `JsonValue` -- this is just that cast, with "missing/not an array" normalized to `[]` rather than left as `null`/`undefined` for every caller to handle. */
+export function normalizeSocialLinks(value: Prisma.JsonValue | null): AffiliateSocialLink[] {
+  return Array.isArray(value) ? (value as unknown as AffiliateSocialLink[]) : [];
 }
 
 /** Duck-typed against AdminCreateAffiliateDto (apps/api/src/modules/admin/admin-affiliates.controller.ts) -- kept as a plain interface here, same precedent as ApplyContext above, so this module doesn't import from the admin module. */
@@ -48,6 +56,7 @@ const EMPTY_ME: AffiliateMe = {
   state: null,
   city: null,
   motivation: null,
+  socialLinks: [],
 };
 
 // Published on the public site (apps/web/src/data/blueprint.ts's
@@ -174,11 +183,15 @@ export function studentReferralLinkLabel(types: AffiliateType[]): 'Direct Studen
  */
 @Injectable()
 export class AffiliatesService {
+  private readonly logger = new Logger(AffiliatesService.name);
+
   constructor(
     private readonly prisma: PrismaService,
     private readonly audit: AuditService,
     private readonly email: EmailService,
     private readonly supabase: SupabaseAdminService,
+    private readonly youtube: YoutubeClientService,
+    private readonly brevo: BrevoClientService,
   ) {}
 
   /** An already-logged-in account applying -- no password to issue, they already have one. */
@@ -192,6 +205,7 @@ export class AffiliatesService {
   ): Promise<AffiliateMe> {
     const affiliate = await this.createRow(userId, types, signedName, signedIp, context, affiliateCouponCode);
     await this.audit.record(userId, 'affiliate.apply', 'affiliate', affiliate.id, { types });
+    this.enrichInBackground(affiliate, types);
     return this.toMe(affiliate);
   }
 
@@ -199,16 +213,23 @@ export class AffiliatesService {
    * A brand-new, anonymous applicant -- no session, no password of their
    * own choosing. Creates the Supabase account server-side (pre-confirmed,
    * via the admin API -- no email-confirmation-link detour) with a random
-   * one-time password, flags it mustChangePassword, then emails that
-   * password plus a separate reference code (see activate()) to the
-   * address they gave us. Mirrors AdminUsersService.createInstructor()'s
-   * shape -- same "upsert the Profile the on_auth_user_created trigger
-   * already inserted" pattern. If they arrived via a /r/:slug referral
-   * link, dto.referralSlug carries that through to the trigger too (as
-   * `referral_slug` in Supabase's own user_metadata), the same way
-   * RegisterPage.tsx's client-side signUp() already does -- so the new
-   * Profile.referredByAffiliateId still gets set even though this account
-   * is created server-side, not via the client signUp() path.
+   * one-time password, flags it mustChangePassword. Mirrors
+   * AdminUsersService.createInstructor()'s shape -- same "upsert the
+   * Profile the on_auth_user_created trigger already inserted" pattern.
+   * If they arrived via a /r/:slug referral link, dto.referralSlug carries
+   * that through to the trigger too (as `referral_slug` in Supabase's own
+   * user_metadata), the same way RegisterPage.tsx's client-side signUp()
+   * already does -- so the new Profile.referredByAffiliateId still gets
+   * set even though this account is created server-side, not via the
+   * client signUp() path.
+   *
+   * The temporary password generated here is used once (to create the
+   * account) and then discarded -- it is deliberately never emailed. Real
+   * login credentials only go out once an admin approves the application
+   * (see AdminAffiliatesService.notifyApplicant()), which regenerates a
+   * fresh password at that point via SupabaseAdminService.setPassword(),
+   * the same method AdminUsersService.resetInstructorPassword() already
+   * uses for staff. This applicant only gets an acknowledgment email here.
    */
   async applyNew(dto: ApplyNewAffiliateDto, signedIp: string | undefined): Promise<void> {
     const email = dto.email.trim().toLowerCase();
@@ -229,41 +250,28 @@ export class AffiliatesService {
       update: { name, mustChangePassword: true },
     });
 
-    const { types, signedName, phone, handle, country, state, city, source, motivation, affiliateCouponCode } = dto;
+    const { types, signedName, phone, handle, country, state, city, source, motivation, affiliateCouponCode, socialLinks } = dto;
     const affiliate = await this.createRow(
       userId,
       types,
       signedName,
       signedIp,
-      { phone, handle, country, state, city, source, motivation },
+      { phone, handle, country, state, city, source, motivation, socialLinks },
       affiliateCouponCode,
     );
     await this.audit.record(userId, 'affiliate.apply_new', 'affiliate', affiliate.id, { types, email });
+    this.enrichInBackground(affiliate, types, { name, email });
 
-    // Deliberately /affiliate-portal, not /login: that route's own
-    // RequireAuth (default `to="/login"`) bounces an anonymous visit there
-    // to /login with `state.from.pathname` preserved, so LoginPage's own
-    // post-sign-in navigate(state?.from?.pathname ?? '/portal') lands them
-    // back on the affiliate dashboard -- not the learner portal, which is
-    // what a bare /login link here used to do (no `from` state on a fresh
-    // page load from an email, so it always fell through to '/portal').
-    const portalUrl = `${webOrigin()}/affiliate-portal`;
     await this.email.send({
       to: email,
-      subject: 'Your AIIT affiliate login',
+      subject: 'Your AIIT affiliate application is in',
       html: brandedEmailHtml({
-        heading: 'Your AIIT affiliate login',
+        heading: 'Your application is in',
         intro:
-          "Your application is in. Here's what you need to sign in -- you'll be asked to set your own password the moment you do.",
-        bodyHtml: credentialsBlockHtml([
-          { label: 'Email', value: email },
-          { label: 'Temporary password', value: password },
-          { label: 'Reference code', value: affiliate.referenceCode ?? '' },
-        ]),
-        ctaLabel: 'Log in to AIIT',
-        ctaUrl: portalUrl,
-        footerNote:
-          "You're receiving this because you applied to the AIIT affiliate program. Keep your reference code -- you'll use it to activate your referral link once your application is approved.",
+          "Thanks for applying to the AIIT affiliate program. We're reviewing it now -- you'll get another email with your login details as soon as it's approved.",
+        ctaLabel: 'Visit AIIT',
+        ctaUrl: webOrigin(),
+        footerNote: "You're receiving this because you applied to the AIIT affiliate program.",
       }),
     });
   }
@@ -322,28 +330,44 @@ export class AffiliatesService {
       });
     await this.audit.record(adminId, 'affiliate.create_manual', 'affiliate', affiliate.id, { types: dto.types, email, status });
 
-    // See applyNew()'s matching comment -- /affiliate-portal, not /login,
-    // so RequireAuth's `from`-preserving redirect lands them on the
-    // affiliate dashboard after signing in, not the learner portal.
+    // See applyNew()'s matching comment on why credentials are withheld
+    // until approval -- createManually() defaults to 'approved' (the whole
+    // point of this path is skipping the review queue), so the common
+    // case still emails credentials immediately. Only the rare explicit
+    // non-terminal status an admin can still choose on this form holds
+    // them back, the same as the public application flow does.
     const portalUrl = `${webOrigin()}/affiliate-portal`;
-    await this.email.send({
-      to: email,
-      subject: 'Your AIIT affiliate account is ready',
-      html: brandedEmailHtml({
-        heading: 'Your AIIT affiliate account is ready',
-        intro:
-          "An AIIT administrator added you to the affiliate program. Use the temporary password below to sign in -- you'll be asked to set your own password right away.",
-        bodyHtml: credentialsBlockHtml([
-          { label: 'Email', value: email },
-          { label: 'Temporary password', value: password },
-          { label: 'Reference code', value: affiliate.referenceCode ?? '' },
-        ]),
-        ctaLabel: 'Log in to AIIT',
-        ctaUrl: portalUrl,
-        footerNote:
-          "You're receiving this because an AIIT administrator added you to the affiliate program. Keep your reference code -- you'll use it to activate your referral link once your account shows approved.",
-      }),
-    });
+    if (status === 'approved') {
+      await this.email.send({
+        to: email,
+        subject: 'Your AIIT affiliate account is ready',
+        html: brandedEmailHtml({
+          heading: 'Your AIIT affiliate account is ready',
+          intro:
+            "An AIIT administrator added you to the affiliate program. Use the temporary password below to sign in -- you'll be asked to set your own password right away.",
+          bodyHtml: credentialsBlockHtml([
+            { label: 'Email', value: email },
+            { label: 'Temporary password', value: password },
+            { label: 'Reference code', value: affiliate.referenceCode ?? '' },
+          ]),
+          ctaLabel: 'Log in to AIIT',
+          ctaUrl: portalUrl,
+          footerNote: "You're receiving this because an AIIT administrator added you to the affiliate program. Keep your reference code -- you'll use it to activate your referral link.",
+        }),
+      });
+    } else {
+      await this.email.send({
+        to: email,
+        subject: 'Your AIIT affiliate application is in',
+        html: brandedEmailHtml({
+          heading: 'Your application is in',
+          intro: "An AIIT administrator added you to the affiliate program. We're finishing your review now -- you'll get another email with your login details as soon as it's approved.",
+          ctaLabel: 'Visit AIIT',
+          ctaUrl: webOrigin(),
+          footerNote: "You're receiving this because an AIIT administrator added you to the affiliate program.",
+        }),
+      });
+    }
 
     return { affiliate, temporaryPassword: password };
   }
@@ -404,6 +428,7 @@ export class AffiliatesService {
   ): Promise<Affiliate> {
     if (types.length === 0) throw new BadRequestException('Select at least one affiliate type.');
     const referredByAffiliateId = await this.resolveAffiliateCouponCode(affiliateCouponCode);
+    const { socialLinks, ...rest } = context;
     return this.prisma.affiliate
       .create({
         data: {
@@ -416,7 +441,8 @@ export class AffiliatesService {
           agreementVersion: AFFILIATE_AGREEMENT_VERSION,
           signedAt: new Date(),
           referredByAffiliateId,
-          ...context,
+          ...rest,
+          socialLinks: socialLinks ? (socialLinks as unknown as Prisma.InputJsonValue) : undefined,
         },
       })
       .catch((err: unknown) => {
@@ -500,7 +526,76 @@ export class AffiliatesService {
       state: affiliate.state,
       city: affiliate.city,
       motivation: affiliate.motivation,
+      socialLinks: normalizeSocialLinks(affiliate.socialLinks),
     };
+  }
+
+  /**
+   * Fires the YouTube-verification + Brevo-sync enrichment without
+   * blocking the caller's response -- a slow/down third party must never
+   * delay an application submission. Errors are logged, never rethrown;
+   * there's no queue backing this (a fetch in flight during a process
+   * restart is simply lost), an accepted tradeoff for a non-critical
+   * enrichment signal the admin can always check by hand.
+   */
+  private enrichInBackground(affiliate: Affiliate, types: AffiliateType[], identity?: { name: string; email: string }): void {
+    const socialLinks = normalizeSocialLinks(affiliate.socialLinks);
+    void Promise.all([this.verifyYoutubeFollowers(affiliate.id, socialLinks), this.syncToBrevo(affiliate, types, socialLinks, identity)]).catch((err) =>
+      this.logger.warn(`Affiliate enrichment failed for ${affiliate.id}: ${(err as Error).message}`),
+    );
+  }
+
+  /**
+   * Best-effort: re-fetches each YouTube entry's real subscriber count and
+   * patches it back into the JSON array. Every other platform's entries
+   * are left as self-reported only (fetchStatus: 'unsupported') -- see
+   * YoutubeClientService's doc comment for why only YouTube gets a real
+   * check.
+   */
+  private async verifyYoutubeFollowers(affiliateId: string, socialLinks: AffiliateSocialLink[]): Promise<void> {
+    if (socialLinks.length === 0) return;
+    const updated = await Promise.all(
+      socialLinks.map(async (link): Promise<AffiliateSocialLink> => {
+        if (link.platform !== 'youtube') return { ...link, fetchStatus: link.fetchStatus ?? 'unsupported' };
+        const followersFetched = await this.youtube.fetchSubscriberCount(link.url);
+        return {
+          ...link,
+          followersFetched,
+          fetchStatus: followersFetched == null ? 'failed' : 'fetched',
+          fetchedAt: new Date().toISOString(),
+        };
+      }),
+    );
+    await this.prisma.affiliate.update({ where: { id: affiliateId }, data: { socialLinks: updated as unknown as Prisma.InputJsonValue } });
+  }
+
+  /**
+   * Pushes a privacy-minimal lead record to Brevo for the project owner's
+   * own outreach -- every application, regardless of eventual outcome, no
+   * status-based segmentation. Deliberately excludes phone/motivation/
+   * signature evidence/payout details -- only what's needed for outreach.
+   */
+  private async syncToBrevo(affiliate: Affiliate, types: AffiliateType[], socialLinks: AffiliateSocialLink[], identity?: { name: string; email: string }): Promise<void> {
+    let name = identity?.name ?? null;
+    let email = identity?.email ?? null;
+    if (!email) {
+      const person = (await this.namesAndEmails([affiliate.userId])).get(affiliate.userId);
+      name = person?.name ?? null;
+      email = person?.email ?? null;
+    }
+    if (!email) return;
+    const listId = process.env.BREVO_AFFILIATE_LIST_ID ? Number(process.env.BREVO_AFFILIATE_LIST_ID) : undefined;
+    await this.brevo.upsertContact({
+      email,
+      attributes: {
+        FIRSTNAME: name ?? '',
+        COUNTRY: affiliate.country ?? '',
+        APPLICATION_TYPES: types.join(', '),
+        SOCIAL_LINKS: socialLinks.map((l) => `${l.platform}: ${l.url}`).join(' | '),
+        FOLLOWERS_REPORTED_MAX: Math.max(0, ...socialLinks.map((l) => l.followersReported ?? 0)),
+      },
+      listIds: listId != null && !Number.isNaN(listId) ? [listId] : undefined,
+    });
   }
 
   /**
@@ -582,7 +677,7 @@ export function webOrigin(): string {
   return process.env.APP_URL ?? 'https://aiit.network';
 }
 
-function credentialsBlockHtml(rows: { label: string; value: string }[]): string {
+export function credentialsBlockHtml(rows: { label: string; value: string }[]): string {
   const cells = rows
     .map(
       ({ label, value }) => `

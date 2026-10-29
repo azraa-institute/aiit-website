@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import type { FormEvent } from 'react';
 import { Link } from 'react-router-dom';
-import type { AffiliateAgreement, AffiliateType, GeoCity, GeoState } from '@aiit/shared';
+import type { AffiliateAgreement, AffiliateSocialPlatform, AffiliateType, GeoCity, GeoState } from '@aiit/shared';
 import { Layout } from '@/components/layout/Layout';
 import { Seo } from '@/lib/Seo';
 import { useScrollReveal } from '@/lib/useScrollReveal';
@@ -44,6 +44,27 @@ const AFFILIATE_TYPE_OPTIONS: { value: AffiliateType; label: string }[] = [
   { value: 'creator', label: 'Creator (introduces content creators to AIIT)' },
   { value: 'affiliate_to_affiliate', label: 'Affiliate-to-affiliate (brings in other affiliates)' },
 ];
+
+const SOCIAL_PLATFORM_OPTIONS: { value: AffiliateSocialPlatform; label: string }[] = [
+  { value: 'instagram', label: 'Instagram' },
+  { value: 'tiktok', label: 'TikTok' },
+  { value: 'youtube', label: 'YouTube' },
+  { value: 'x', label: 'X (Twitter)' },
+  { value: 'linkedin', label: 'LinkedIn' },
+  { value: 'facebook', label: 'Facebook' },
+  { value: 'other', label: 'Other' },
+];
+const MAX_SOCIAL_LINKS = 5;
+
+interface SocialLinkRow {
+  platform: AffiliateSocialPlatform;
+  url: string;
+  followers: string;
+}
+
+function emptySocialLinkRow(): SocialLinkRow {
+  return { platform: 'instagram', url: '', followers: '' };
+}
 
 function MailIcon() {
   return (
@@ -132,6 +153,7 @@ export default function AffiliatePage() {
   const [phoneCountry, setPhoneCountry] = useState('');
   const [phoneNational, setPhoneNational] = useState('');
   const [handle, setHandle] = useState('');
+  const [socialLinks, setSocialLinks] = useState<SocialLinkRow[]>([emptySocialLinkRow()]);
   const [country, setCountry] = useState('');
   const [state, setState] = useState('');
   const [city, setCity] = useState('');
@@ -228,17 +250,40 @@ export default function AffiliatePage() {
   const stepRefs = [step1Ref, step2Ref, step3Ref, step4Ref];
   const stepOn = [step1On, step2On, step3On, step4On];
 
+  function updateSocialLink(index: number, patch: Partial<SocialLinkRow>) {
+    setSocialLinks((rows) => rows.map((row, i) => (i === index ? { ...row, ...patch } : row)));
+  }
+  function addSocialLink() {
+    setSocialLinks((rows) => (rows.length >= MAX_SOCIAL_LINKS ? rows : [...rows, emptySocialLinkRow()]));
+  }
+  function removeSocialLink(index: number) {
+    setSocialLinks((rows) => rows.filter((_, i) => i !== index));
+  }
+
   async function onSubmit(e: FormEvent) {
     e.preventDefault();
     setError(undefined);
     setSubmitting(true);
     try {
+      // Only rows with a URL actually filled in are sent -- an added-then-
+      // abandoned row (or the default empty first row, for an applicant who
+      // never touches this section) is just dropped, not sent as an empty
+      // entry for the backend to reject.
+      const socialLinksPayload = socialLinks
+        .filter((row) => row.url.trim())
+        .map((row) => ({
+          platform: row.platform,
+          url: row.url.trim(),
+          ...(row.followers.trim() ? { followersReported: Number(row.followers.trim()) } : {}),
+        }));
+
       const shared = {
         types,
         signedName: signedName.trim(),
         agreedToTerms: agreed,
         phone: combinePhone(phoneCountry, phoneNational) || undefined,
         handle: handle || undefined,
+        socialLinks: socialLinksPayload.length > 0 ? socialLinksPayload : undefined,
         country: country || undefined,
         state: state || undefined,
         city: city || undefined,
@@ -648,6 +693,50 @@ export default function AffiliatePage() {
                     value={handle}
                     onChange={(e) => setHandle(e.target.value)}
                   />
+                  <div className="affiliate__social-links field--wide">
+                    <p className="field__hint affiliate__social-links-hint">
+                      Add your social profiles (optional) -- follower counts help us review your application faster.
+                      Add up to {MAX_SOCIAL_LINKS}.
+                    </p>
+                    {socialLinks.map((row, i) => (
+                      <div className="affiliate__social-row" key={i}>
+                        <SelectField
+                          label="Platform"
+                          options={SOCIAL_PLATFORM_OPTIONS}
+                          value={row.platform}
+                          onChange={(e) => updateSocialLink(i, { platform: e.target.value as AffiliateSocialPlatform })}
+                        />
+                        <TextField
+                          label="Profile URL"
+                          type="url"
+                          placeholder="https://instagram.com/yourhandle"
+                          value={row.url}
+                          onChange={(e) => updateSocialLink(i, { url: e.target.value })}
+                        />
+                        <TextField
+                          label="Followers (optional)"
+                          type="number"
+                          min={0}
+                          value={row.followers}
+                          onChange={(e) => updateSocialLink(i, { followers: e.target.value })}
+                        />
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          className="affiliate__social-remove"
+                          onClick={() => removeSocialLink(i)}
+                        >
+                          Remove
+                        </Button>
+                      </div>
+                    ))}
+                    {socialLinks.length < MAX_SOCIAL_LINKS && (
+                      <Button type="button" variant="ghost" size="sm" onClick={addSocialLink}>
+                        Add another platform
+                      </Button>
+                    )}
+                  </div>
                   <SelectField
                     label="Country"
                     name="country"

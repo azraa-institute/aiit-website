@@ -5,6 +5,8 @@ import { AffiliatesController } from './affiliates.controller';
 import { AffiliateAgreementController } from './affiliate-agreement.controller';
 import { AffiliatesService } from './affiliates.service';
 import { AffiliateAgreementPdfService } from './affiliate-agreement-pdf.service';
+import { YoutubeClientService } from '../../common/youtube/youtube-client.service';
+import { BrevoClientService } from '../../common/brevo/brevo-client.service';
 
 @Module({
   // PaymentsModule is here only for PaymentsService.listBanksForCountry() --
@@ -13,7 +15,7 @@ import { AffiliateAgreementPdfService } from './affiliate-agreement-pdf.service'
   // talks to, rather than standing up a second one.
   imports: [EmailModule, PaymentsModule],
   controllers: [AffiliatesController, AffiliateAgreementController],
-  providers: [AffiliatesService, AffiliateAgreementPdfService],
+  providers: [AffiliatesService, AffiliateAgreementPdfService, YoutubeClientService, BrevoClientService],
   // AdminAffiliatesService calls AffiliatesService.createManually() so the
   // admin "add affiliate manually" flow reuses the exact same row-creation
   // logic as the public application form, instead of a second copy of it.

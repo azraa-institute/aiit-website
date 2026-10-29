@@ -1,5 +1,7 @@
-import { ArrayNotEmpty, ArrayUnique, Equals, IsArray, IsBoolean, IsIn, IsOptional, IsString, MaxLength, MinLength } from 'class-validator';
+import { ArrayMaxSize, ArrayNotEmpty, ArrayUnique, Equals, IsArray, IsBoolean, IsIn, IsOptional, IsString, MaxLength, MinLength, ValidateNested } from 'class-validator';
+import { Type } from 'class-transformer';
 import type { AffiliateType } from '@aiit/shared';
+import { SocialLinkDto } from './social-link.dto';
 
 export const AFFILIATE_TYPES = ['creator', 'student', 'affiliate_to_affiliate'] as const;
 
@@ -69,4 +71,11 @@ export class ApplyAffiliateDto {
   @IsString()
   @MaxLength(1000)
   motivation?: string;
+
+  @IsOptional()
+  @IsArray()
+  @ArrayMaxSize(5)
+  @ValidateNested({ each: true })
+  @Type(() => SocialLinkDto)
+  socialLinks?: SocialLinkDto[];
 }

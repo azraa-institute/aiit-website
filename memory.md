@@ -241,7 +241,11 @@ nested under `PortalLayout`.
 Wrapper: `RequireAuth(staff) → RequireRole(instructor) → InstructorLayout`.
 `(index)` Dashboard · `classes` (reuses the learner portal's `SchedulePage` component)
 · `courses` · `courses/:courseId` · `assignments/:id` · `grading` · `complaints` ·
-`settings`.
+`profile` (new 2026-10-24 — `InstructorProfilePage.tsx`) · `support` (new 2026-10-24 —
+`InstructorSupportPage.tsx`, technical-only) · `settings` (relabeled "Account
+settings" to match the other portals, same round). See §5's new "Instructor portal:
+Profile + Support" row for what these actually do and the one real backend change
+(`SupportController`'s `@Roles` widened) they required.
 
 ### Admin portal — `/admin/*`
 Wrapper: `RequireAuth(staff) → RequireRole(admin) → AdminLayout`. Code comment on the
@@ -280,23 +284,48 @@ real dead-end bug that existed in between). `/login` itself now **rejects** an
 affiliate account that tries to sign in there (turned away with a link to
 `/affiliate/login`, same pattern as a staff account being turned away from `/login`)
 — this is deliberate, not a regression, see §15.
-Split into 4 pages 2026-10-14 (was one page), then **5 pages 2026-10-24** (added
-`banners`): `(index)` Dashboard (status/stepper, stats row, agreement download,
-quick-link cards into the pages below) ·
-`link` (`AffiliateLinkPage.tsx` — **now multi-type aware, see §5's Affiliate
+Split into 4 pages 2026-10-14 (was one page), **5 pages 2026-10-24 morning** (added
+`banners`), then **restructured again later the same day (2026-10-24)** — the
+"banners" naming was found to silently trigger ad-blocker filter lists (any URL/
+class/id containing the literal word "banner" is a classic EasyList rule), so
+everything was renamed to "resources" throughout, and Resources itself was split
+out of one long page into a collapsible nav group with three real sub-routes. The
+portal is now 7 routed pages, one of them a 3-page group: `(index)` Dashboard
+(status/stepper, stats row, agreement download, quick-link cards into the pages
+below) ·
+`link` (`AffiliateLinkPage.tsx` — **multi-type aware, see §5's Affiliate
 program row**: renders one titled `.aff-card` per tool the affiliate actually
 holds — a "Direct Student Referral Link"/"Creator Referral Link" box if
 `referralLink` is set, a separate "Affiliate-to-Affiliate Coupon Code" box if
-`affiliateCouponCode` is set, both, or neither yet) ·
-`banners` (`AffiliateBannersPage.tsx`, new 2026-10-24 — ready-made promotional
-banner images with the affiliate's own `referralLink` baked into a copyable
-`<a><img></a>` snippet; see §5's new Affiliate promotional banners row; only
-reachable/useful once `referralLink` is unlocked, same gate as the link page) ·
+`affiliateCouponCode` is set, both, or neither yet; the referral link inside each
+swipe-copy body — see below — is now rendered as a real styled `<a>`, not plain
+text) ·
+**Resources group** (collapsible nav group, same `StaffShell` pattern the admin
+sidebar already used; see §5's "Affiliate resources: marketing toolkit" row) —
+`resources/talking-points` (`AffiliateTalkingPointsPage.tsx`, icon-card grid of
+on-brand facts sourced from the public site's own copy, not invented stats),
+`resources/swipe-copy` (`AffiliateSwipeCopyPage.tsx`, ready-to-paste email/social/
+DM copy with the affiliate's own referral link already filled in), `resources/
+graphics` (`AffiliateGraphicsPage.tsx` — the renamed former `AffiliateBannersPage`,
+nav label still "Banners" since the *word* is fine in UI text, only URLs/classes/
+ids needed to avoid it — ready-made promotional images with the affiliate's own
+`referralLink` baked into a copyable `<a><img></a>` snippet, now with a "best for"
+placement hint per size and an `onError` retry fallback instead of a silent blank
+tile) — all three gated behind a shared `AffiliateResourceGate` component (loading/
+error/locked-until-`referralLink`-unlocked, written once instead of three times) ·
 `payout` (`AffiliatePayoutPage.tsx`, region-aware PayPal/bank form — India (IFSC) /
 Nigeria (NUBAN + bank-name dropdown) / generic-other, masked account number with a
 show/hide toggle, confirm-before-overwrite on an existing saved method, own payout
-history) · `settings` (`AffiliateSettingsPage.tsx`, change password + edit the
-contact/context fields given at application time via `PUT /affiliates/me/contact`).
+history) ·
+`profile` (new 2026-10-24 — `AffiliateProfilePage.tsx`, avatar + name + headline via
+the generic `PATCH /me`/`POST,DELETE /me/avatar`, deliberately leaner than the
+learner portal's own profile form) ·
+`support` (new 2026-10-24 — `AffiliateSupportPage.tsx`, technical-assistance-only
+report form/thread, reuses `/me/complaints` with `category` hardcoded to
+`'technical'`, no course/instructor picker) ·
+`settings` (`AffiliateSettingsPage.tsx`, relabeled "Account settings" to match the
+other portals — change password + edit the contact/context fields given at
+application time via `PUT /affiliates/me/contact`).
 
 ### Portal data dependency
 The whole learner-portal shell hangs off one hook, `useLearner()` in
@@ -317,15 +346,18 @@ session · ⚠️ partial/known gap · ❌ not built.
 
 | Feature | Status | Key files | Notes |
 |---|---|---|---|
+| **Affiliate seriousness screening + deferred credentials + Brevo lead sync** (new, 2026-10-28) | 🟡 build/test-verified, not live-verified | `apps/api/prisma/schema.prisma` (`Affiliate.socialLinks`, migration `20261028000000_affiliate_social_links`), `packages/shared/src/affiliate.ts` (`AffiliateSocialLink`/`AffiliateSocialPlatform`), `apps/api/src/modules/affiliates/{affiliates.service.ts,dto/social-link.dto.ts}`, `apps/api/src/modules/admin/admin-affiliates.service.ts`, `apps/api/src/common/{youtube,brevo}/*-client.service.ts`, `apps/web/src/pages/AffiliatePage.tsx`, `apps/web/src/pages/admin/AdminAffiliatesPage.tsx` | Built from a project-owner-approved plan (reasoning turn → plan-mode → build, same session). The public application form now collects up to 5 social platform/URL/follower-count entries (`Affiliate.socialLinks`, a JSON array — additive, the old single `handle` field is untouched). A new `YoutubeClientService` best-effort verifies the real subscriber count server-side, fire-and-forget, for YouTube links only — confirmed during planning that Instagram/TikTok/X/LinkedIn have no free, no-OAuth public lookup (paid tiers, app-review gates, or ToS-violating scraping only), so every other platform stays self-reported with `fetchStatus: 'unsupported'`; the admin drawer (`AdminAffiliatesPage.tsx`) now shows reported-vs-verified counts per link so a human still makes the call, not an automated gate. **Registration flow changed**: `AffiliatesService.applyNew()` no longer emails login credentials at submission — only an acknowledgment email. Real credentials (a freshly-generated password, via `SupabaseAdminService.setPassword()`, the same method staff password resets already use — the original temp password is never persisted, by design) only go out from `AdminAffiliatesService.notifyApplicant()` when an admin sets status to `approved`. `createManually()`'s existing immediate-credentials behavior is preserved for its default `'approved'` case, but withholds credentials the same way if an admin explicitly sets a non-terminal status there. New `BrevoClientService` (thin REST client, same house style as Paystack/GitHub) pushes a privacy-minimal lead record (name/email/social links/reported follower counts/country/types — explicitly never phone/motivation/signature/payout data) to Brevo on every application (`apply()`/`applyNew()`), no status-based segmentation (explicitly decided against a "come back" nurture distinction). New env vars: `BREVO_API_KEY`, `BREVO_AFFILIATE_LIST_ID`, `YOUTUBE_API_KEY` (all optional, fail-soft/no-op when unset — nothing else is affected). **Deliberately not built this round** (separable phase, flagged in the plan as sequence-after): a newsletter-sending feature on Brevo — confirmed during planning that no campaign/broadcast code exists anywhere in this codebase today, `NewsletterService` is capture-only. **Verification performed**: `tsc --noEmit` + `eslint` clean in all three workspaces (api/web/shared); full API Jest suite green (66 suites/540 tests, including two new client specs with mocked `fetch` and updated/new affiliate-flow assertions); both production builds succeed. **Not yet done**: nothing committed/pushed (not asked to); no live submission test (no real `BREVO_API_KEY`/`YOUTUBE_API_KEY` in this session); the project owner still needs to create the Brevo list + API key, a Google Cloud YouTube Data API v3 key, and set all three env vars on Render before any of this does anything beyond no-op gracefully. |
 | **Auth** (email/password, magic link, Google/Microsoft OAuth, TOTP 2FA) | 🟡 | `apps/api/src/modules/auth/`, `apps/web/src/pages/auth/` | JWT verified against Supabase JWKS (`JwtGuard`); app role always read from `profiles`, never trusted from the JWT claim. Apple sign-in **not built** (needs paid Apple Developer account, $99/yr — explicitly deprioritized by the project owner, not worth it for now). Staff onboarding: new instructor/admin accounts and password resets email the temporary credentials (`AdminUsersService.sendCredentialsEmail`); `StaffChangePasswordPage` force-signs-out and redirects to `/staff/login` after a password change. **Microsoft (`azure` provider id) and Facebook OAuth added this round** alongside the existing Google button — both are free to set up (unlike Apple); Facebook is coded but **hidden from the UI** pending Meta App Review (see the Auth routing note in §4). The `/login` page's post-sign-in logic (`LoginPage.tsx`'s `enterPortal()`) now rejects an affiliate account with a link to the new `/affiliate/login` page — see §15 for why this flipped twice in one round (route-to-portal, then back to turn-away, as `/affiliate/login` went from nonexistent → existing). Google's OAuth consent screen still shows the raw Supabase project domain (`oyngcwhziidaehpuisoi.supabase.co`) rather than `aiit.network` — fixable only via Supabase's paid Custom Domains add-on or Google app-verification, both outside this codebase; explained to the project owner, not actioned. |
 | **Catalogue / course discovery** | 🟡 | `apps/api/src/modules/courses/` | Location-based currency pricing. Curriculum tables (`CourseModule`/`Lesson`/`LessonResource`) exist in schema and are soft-deletable, but **seeded empty, not wired to any learner UI** — the real learner experience is live-class + assignments + quizzes, not a self-paced lesson browser. |
 | **Quill** (AI course-advisor chat assistant) | ✅ verified live this session | `apps/api/src/modules/quill/`, `apps/web/src/components/course/QuillChatPanel.tsx`, `apps/web/src/lib/QuillContext.tsx`, `quillHistory.ts` | **Just promoted to site-wide** (2026-10-11, commit `ec6db33`) — a persistent floating launcher button on every public page (not just the course page), with client-side (localStorage) multi-conversation history and a "New chat" action. `courseSlug` is now optional on the request; absent → general-assistant mode answering from the live course catalogue + a small curated fact file. Rule-based today (no LLM call); `XAI_API_KEY` is the documented seam to plug in a real model (x.ai Grok) later without changing the contract. **README.md's "Backend" section describing Quill is now stale** — still describes it as course-page-only; not yet updated to reflect the site-wide launcher/history work (see §9, §12). |
 | **Payments** (PayPal, Razorpay, Paystack) | 🟡 | `apps/api/src/modules/payments/{paypal,razorpay,paystack}/` | One provider-agnostic `Order` table. Every webhook verifies its signature. Charge amount always resolved server-side from `Course.priceUsdCents`, never trusted from the client. **Refund tooling now built** (full refund only, no partial): `PaymentsService.refundOrder()` dispatches per-provider — PayPal/Razorpay need a fresh capture/payment-id lookup first (`providerRef` only ever stored the order id), Paystack refunds directly against the stored transaction reference. Admin-triggered only, in-app double-click confirm (not `window.confirm`) in `AdminPaymentsPage.tsx`, `Order.refundedAt`/`refundRef` written only after the provider call actually succeeds. **Confirmed this is real/Live, not sandbox** — all 3 providers have been on Live credentials since 2026-10-08 per the project owner; clicking it moves real money. Also new this round: `PaymentsService.listBanksForCountry()` reuses the Paystack client for the affiliate payout form's bank-name dropdown (see the Affiliate program row) — Paystack's bank directory covers exactly Nigeria/Ghana/Kenya/South Africa, nowhere else, confirmed against its docs. Whether each provider is on Live vs. Test credentials in the actual deployed env is otherwise **not verifiable from code** — check Render's env vars directly if this matters. |
 | **Live classroom** (LiveKit) | 🟡 | `apps/api/src/modules/live-classes/`, `apps/web/src/pages/portal/LiveClassroomPage.tsx`, `apps/web/src/components/classroom/` | Mic-lock, raise-hand queue, real-time whiteboard, live reactions, pinned resources, polls, breakout rooms, instructor-reports-student flow, attendance tracking + CSV/XLSX export. **Gaps:** session recording still not built — the storage-bucket decision this was blocked on is now resolved (Cloudflare R2 is live, see the new R2 row below), but no LiveKit Egress API wiring/`Recording` model exists yet, so this is now a scoped build task, not a decision-blocked one; breakout-room instructor moderation currently reaches the main room only, not into individual breakout rooms. |
-| **Instructor portal** | 🟡 | `apps/api/src/modules/instructor/`, `apps/web/src/pages/instructor/` | Roster, grading (signed, ownership-checked private submission file links), practice-quiz authoring, announcements — all scoped server-side to `CourseInstructor` assignments, not just hidden in the UI. |
+| **Instructor portal** | 🟡 | `apps/api/src/modules/instructor/`, `apps/web/src/pages/instructor/` | Roster, grading (signed, ownership-checked private submission file links), practice-quiz authoring, announcements — all scoped server-side to `CourseInstructor` assignments, not just hidden in the UI. **Gained Profile and Support pages 2026-10-24** (`735c4c1`'s affiliate version was shipped first the same day; the instructor version, `7b3471f`, followed once the project owner confirmed instructors should get the same treatment) — see the new row below for detail; the one real backend change this required (`SupportController`'s `@Roles` widened from `learner`-only to `learner`/`instructor`) was checked safe by reading `SupportService`'s own ownership/category logic first, not assumed. Instructor sidebar got icons for the first time in the same round (previously the only one of the four portals with none); `settings` relabeled "Account settings" to match the other three portals. |
+| **Instructor portal: Profile + Support** (new, 2026-10-24) | 🟡 not independently re-verified live this round (reconstructed from commit messages — see §9/§15) | `apps/web/src/pages/instructor/{InstructorProfilePage,InstructorSupportPage}.tsx`, `apps/api/src/modules/support/support.controller.ts` | Same generic backend endpoints the affiliate version (below) uses: Profile is avatar+name+headline via `PATCH /me`/`POST,DELETE /me/avatar`; Support is a technical-assistance-only report form/thread reusing `/me/complaints` with `category` hardcoded to `'technical'` (no course/instructor picker — this is "report a problem with the platform," not the existing separate "report a student" flow instructors already had). Full API suite reported green at 64 suites/528 tests immediately after this commit (`7b3471f`'s own message) — not independently re-run this reconciliation pass. A real, independently-found CSS bug was fixed in the same commit: both the affiliate's and instructor's "Your reports" list had the `.support-list` class on the wrong element (the `<ul>` itself instead of its wrapping section), so the intended divider/spacing styling silently never applied; a new shared `.support-link` style was added to `support.css` (now imported by 3 portals) for the "email us" link. |
+| **Affiliate portal: Profile + Support** (new, 2026-10-24) | 🟡 not independently re-verified live this round (reconstructed from commit messages — see §9/§15) | `apps/web/src/pages/affiliate/{AffiliateProfilePage,AffiliateSupportPage}.tsx` | Shipped first (`735c4c1`), same day as the instructor version above and via the exact same generic backend endpoints — no API changes needed, since an affiliate account is a regular learner-role account under the hood. Profile is deliberately lean (avatar/name/headline only), not a copy of the learner portal's much larger profile form (qualification, university, learning goals, ...), which is genuinely student-specific and doesn't apply to an affiliate. Contact details (phone/country/city/etc.) already lived on the existing Settings page, relabeled "Account settings" to match the other portals in the same round. Both routed under `/affiliate-portal/{profile,support}` with their own sidebar entries/icons. |
 | **Admin portal** | 🟡 | `apps/api/src/modules/admin/`, `apps/web/src/pages/admin/` | Student directory w/ manual enroll/unenroll, staff account management, course/instructor assignment, timetables, classes, complaints inbox, affiliate screening, announcements, payments/orders browse, certificate browse+revoke, attendance reports, internal messages, full audit log, webinar CRUD (see §5's Webinar entity row). Students list/detail and Affiliates detail cross-link each other (an affiliate is *never* a separate role — see the Affiliate program row below); `GET /admin/students` has `includeAffiliates` (default false, hides a never-enrolled affiliate-only account) and `q` search on `GET /admin/affiliates`. **2026-10-15:** the affiliate detail panel's "view their student profile" link (true but useless — every affiliate *is* a learner account, that's not what an admin looking at an affiliate wants) was replaced with a link to the Students list filtered to **students that affiliate referred** (`GET /admin/students?referredByAffiliateId=…`, new param, always shown regardless of `includeAffiliates` — the whole point of the filter is a complete referral list). Also that round: the shared admin **detail drawer** (`.adm-drawer`/`.adm-dl`, used by Affiliates/Students/Instructors/Admins/Complaints — one CSS redesign, zero JSX changes, so it improved all five at once) widened (26rem→34rem; the Complaints `--wide` variant 34rem→42rem — the old width reliably wrapped a combined field like "Bank name (•••• 1234), India" into a ragged multi-line mess), gained a gradient header band in the shell's own accent color, and turned the flat label/value list into a bordered card with alternating-row tinting. The "Set status" button row (affiliate applications, complaints) now reads as one grouped control instead of loose floating buttons. None of this touched any consuming page's JSX. **2026-10-20, a second drawer pass specific to Affiliates** (commits `29ea2c2`→`974480d`): `.adm-dl`'s padding moved from the shared row onto `dt`/`dd` themselves with a `border-right` on `dt`, so the label/value divider now runs the full height of every row (previously just a shared-padding grid with no way to draw a continuous line) — this widened the drawer further and shrank the copy-row code font so the referral-link URL stops wrapping into most label widths; `.adm-copyrow` switched from `flex-wrap: wrap` (which dropped the copy button onto its own line below a long value, e.g. the referral link) to a single-row flex layout where the code shrinks/wraps its own text and the button stays fixed-width beside it. The affiliate-specific drawer then got a full visual rework to match a supplied reference layout: an avatar-initials circle + name/email/"view referrals" header, a small brass icon in front of every row label, signed-up/onboarded/estimated and total-estimated/paid/owed numbers as bordered stat cards instead of run-on sentences, payout details as a real two-column mini-table (payment method as a shaded header row, one row per field — account name/number/bank name/bank code/country, previously a single run-on sentence that never even showed the account name), and **live NGN/INR conversions next to every dollar figure** (reuses the existing `CurrencyService`, same one that localizes course prices — added `getRates()` for raw USD multipliers + `GET /admin/affiliates/fx-rates`). **Not independently re-verified live in a browser this round** (admin credentials weren't available in this session — only the affiliate-side multi-type UI was visually confirmed, see the Affiliate program row); confirmed only via `tsc`/`eslint`/build/CI+Deploy green at the time each commit landed. |
 | **Affiliate program** | ✅ verified live 2026-10-24 | `apps/api/src/modules/affiliates/`, `apps/web/src/pages/AffiliatePage.tsx`, `apps/web/src/pages/affiliate/` | Public no-session application (server-creates the account with a one-time password), real e-signature flow (typed legal name + consent checkbox + versioned agreement text + IP/timestamp), admin approve/reject + reason, referral-link attribution (`/r/:slug` → `/register`, 30-day last-click, changed 2026-10-14 to show a visible "Referral applied: ⟨slug⟩" banner on `RegisterPage.tsx` instead of silently storing it). **Multi-type since 2026-10-19 (commit `8fe76af`) — this replaced the old single-`type` model described in earlier versions of this doc.** `Affiliate.type` → `Affiliate.types: AffiliateType[]`; the public application form (`AffiliatePage.tsx`) is now a checklist, not a single-select, so one applicant can hold any combination of `creator`/`student`/`affiliate_to_affiliate`. Earnings are gated on the referral being **"fully onboarded"** (the referred person has a `paid` `Order`), not merely registered, for every type — `AffiliatesService.countOnboardedReferrals()`/`countSuccessfulAffiliateReferrals()` (raw SQL, no Prisma relation from `Order.userId`/`Profile.id`). Commission, computed once server-side via `computeEarnings()` (shared `packages/shared/src/affiliate.ts#AffiliateEarnings`, two independent buckets `studentReferrals`/`affiliateReferrals` so the dashboard can show each distinctly) and reused by both the affiliate's own view and the admin view so the numbers can't drift: **$7/onboarded direct-student referral, rising to $10/referral past the 501st** (the *only* type that escalates), flat **$5/onboarded creator-introduced referral** (no milestone), flat **$2.50/successful affiliate-to-affiliate referral** (no milestone — a deliberate, explicitly-confirmed correction from an earlier draft of this feature that had wrongly mirrored the $7→$10 tier onto this type). A new `Affiliate.referredByAffiliateId` tracks who referred an affiliate-to-affiliate applicant (their own coupon code, typed in at application time, resolved to the referrer's row) — surfaced on `AdminAffiliateDetail.referredBy` (name/email) so admin can trace a referral chain. Portal link page (`AffiliateLinkPage.tsx`) now renders **one titled section per tool actually held** — "Direct Student Referral Link"/"Creator Referral Link" (student wins the shared label when both are held, since they share one link/pool) if `referralLink` is set, a separate "Affiliate-to-Affiliate Coupon Code" box (same slug, surfaced as a bare code — typed into another applicant's form, not clicked) if `affiliateCouponCode` is set — see §4. Same fields (`referralLink`/`affiliateCouponCode`/`studentReferralLinkLabel`, plus the raw `referenceCode`/`activatedAt`) were added to `AdminAffiliateDetail` so admin isn't blind to which tools/links/coupons each affiliate holds. Manual-payout ledger (Phase 1, no live payout API): affiliate sets PayPal email or bank details (`PUT /affiliates/me/payout`, tightly throttled + IP-audited), admin pays by hand and records it (`POST /admin/affiliates/:id/payouts`), both sides see the same `AffiliatePayout` history. Affiliate can also self-edit the contact/context fields given at application time (`PUT /affiliates/me/contact`). **Portal split into 4 pages 2026-10-14, then 5 pages 2026-10-24** (Dashboard/Link/Banners/Payout/Settings — see §4 and the new Affiliate promotional banners row below) with a region-aware (India/Nigeria/generic) bank-transfer form, masked account number, and a confirm-before-overwrite step on an existing payout method. **2026-10-15 investigation (not a bug, confirmed):** the project owner flagged an affiliate's email showing up under admin Students as "overlap" — traced end to end and confirmed this is the deliberate, documented architecture (`Role` enum has no `affiliate` value; affiliate-ness is tracked purely by whether an `Affiliate` row exists for a `Profile`, never by role — see the schema comment on the `Affiliate` model and `AffiliatesService`'s own doc comment). No duplicate-account path exists either: `SupabaseAdminService.createUser()` surfaces Supabase's own "already registered" error as a clean `ConflictException` rather than ever creating a second account for one email. The real gap was the admin UI having zero visibility into this — fixed, see the Admin portal row above. **Payout form overhauled 2026-10-15:** "Bank country" was a 3-option select (India/Nigeria/Other with a free-text fallback) — replaced with the full ~170-country list already used for phone codes (`@/data/countries`), so every country is pickable, none typed by hand; "Bank name" was a hardcoded Nigeria-only list — Nigeria/Ghana/Kenya/South Africa now get a **live** dropdown from Paystack's real bank directory (`GET /affiliates/banks?country=`, new route), everywhere else still falls back to free text (no comparable directory exists for the rest of the world — confirmed with the project owner this is an acceptable permanent limitation, not a TODO). Account-holder-name/bank-name free-text fields previously accepted literally anything, including pure digits — now validated both client-side (`pattern`, must contain a letter) and server-side (`class-validator @Matches`, since a client check alone is bypassable for data an admin later wires real money against). The form also used to stay permanently open/editable even after saving — it now collapses to a read-only summary with an "Edit payout details" button once details exist. **Affiliate login moved to its own page 2026-10-15** — see §4's Auth/Affiliate sections and §15 for the full story (a real dead-end bug was found and fixed along the way, before the dedicated page existed). **Live-verified 2026-10-24** (this round): signed in as a `student`-type affiliate via Claude-in-Chrome (working this round, see §11) and confirmed the Dashboard's titled stats bucket, the Link page's "Direct Student Referral Link" box, and the new Banners quicklink all render correctly against the real deployed `main` HEAD — the first time in this project's history this doc can cite a direct visual confirmation rather than build/test/CI-green plus the project owner's own screenshots. |
-| **Affiliate promotional banners** (new, 2026-10-24) | ✅ verified live this session | `apps/web/src/data/affiliateBanners.ts`, `apps/web/src/pages/affiliate/AffiliateBannersPage.tsx`, `apps/web/public/assets/affiliate/banners/classic/` | New `/affiliate-portal/banners` page (see §4): the project owner supplied 9 banner images (standard IAB ad sizes — 970×250, 970×90, 728×90, 336×280, 300×250, 300×600, 160×600, 320×100, 320×50), organized into `public/assets/affiliate/banners/classic/<WxH>.png` (dimensions verified against each PNG's real `IHDR` chunk, not just trusted from the filename). `affiliateBanners.ts` is a small registry keying banners by **style** (a folder of same-named PNGs, currently just `classic`) × **size** (`AFFILIATE_BANNER_SIZES`, shared across every style) — the project owner explicitly asked for room to add more styles later; that's a new `AFFILIATE_BANNER_STYLES` entry plus a new folder, no other code change. The page gates on `data.referralLink` (same unlock condition as the Link page's student/creator box — banners link out to a URL, so they're meaningless for an affiliate who only holds `affiliate_to_affiliate`), offers size/category filter chips, and a "Copy HTML code" button per banner (reuses the shared `CopyButton` component) that builds `<a href="{referralLink}" target="_blank" rel="noopener sponsored"><img src="{absolute PNG url}" ...></a>` client-side via `window.location.origin` — the affiliate's own link is already filled in, nothing for them to edit. Linked from the portal nav and a new Dashboard quicklink card (shown only once `referralLink` is unlocked). |
+| **Affiliate resources: marketing toolkit** (renamed/expanded from "promotional banners", 2026-10-24 later rounds) | 🟡 not independently re-verified live this specific round (reconstructed from commit messages — see §9/§15) | `apps/web/src/data/affiliateResources.ts` (renamed from `affiliateBanners.ts`), `apps/web/src/pages/affiliate/{AffiliateGraphicsPage,AffiliateTalkingPointsPage,AffiliateSwipeCopyPage,affiliateResourceGate}.tsx`, `apps/web/public/assets/affiliate/resources/classic/` (renamed from `banners/classic/`) | **The whole feature was renamed "banners"→"resources" the same day it shipped** (commit `248bcff`): the project owner reported some banner images silently not loading, which the usual checks (200 OK, correct bytes, no load failure reproducible in testing) couldn't explain — the actual cause is almost certainly ad-blocker filter lists, which routinely block any URL/class/id containing the literal word "banner" (a classic EasyList-style rule) client-side with no visible error. Every route/component/data-file/CSS-class/asset-folder name was swept from "banner(s)"/"Banner" to "resource(s)"/"Resource" (`/affiliate-portal/banners`→`/affiliate-portal/resources/graphics`, `.aff-banner-*`→`.aff-resource-*`, etc.) — the nav **label** still reads "Banners" (the word itself is fine in visible UI text; only identifiers an ad-blocker pattern-matches needed to change). A real, independently-found bug was fixed in the same area right after (`ca51eb1`): each preview image now has a real `onError` fallback (explanatory message + cache-busting "Retry" button) instead of silently showing a blank checkerboard tile forever. The feature then grew well beyond banners (`e3a2ab1`, `4c29328`) into a real 3-page **Resources** toolkit, split out of one long scrolling page into a collapsible sidebar group (same `StaffShell` group pattern the admin sidebar already used) with its own sub-routes: **Talking points** (`AffiliateTalkingPointsPage.tsx` — on-brand facts sourced directly from the public site's own copy, `ecosystem.ts`'s `WHY_JOIN_REASONS`/`HOW_IT_WORKS`, so nothing drifts from AIIT's real marketing; redesigned as an icon-card grid with a 48px brass icon badge per point, `TalkingPointIcons.tsx`), **Swipe copy** (`AffiliateSwipeCopyPage.tsx` — ready-to-paste email/social/DM copy with the affiliate's own referral link pre-filled and one-click copy; the link substring inside each body is now rendered as a real styled, underlined `<a>`, not plain text — `3d03523`), and **Banners** (`AffiliateGraphicsPage.tsx`, the renamed original feature — each size now shows a "best for" placement hint, e.g. blog header/sidebar/mobile, instead of just raw pixel dimensions; a "Preview" button opens the real image in a new tab alongside the renamed "Copy embed code" button). All three sub-pages share one `AffiliateResourceGate` component for the loading/error/locked-until-`referralLink`-unlocked logic instead of repeating it three times, and still gate the same way the old single page did. Linked from the portal's collapsible "Resources" nav group and the Dashboard quicklink card. |
 | **Certificates** | 🟡 | `apps/api/src/modules/certificates/` | Real server-rendered PDF (`pdf-lib`, no headless browser), public verification page/endpoint. Holder name **snapshotted at issuance** (`Certificate.holderName`), not joined live — stays accurate even if the learner later renames themselves. Admin can revoke without deleting the row (`revokedAt`/`revokedReason`); verify page shows "revoked, as of ⟨date⟩: ⟨reason⟩" instead of a bare 404. |
 | **Profile / avatar / assignment file uploads** | ✅ verified live this session | `apps/api/src/common/supabase-admin/supabase-admin.service.ts`, `apps/api/src/modules/auth/profile.{controller,service}.ts`, `apps/api/src/modules/assignments/`, `apps/web/src/pages/portal/ProfilePage.tsx`, `apps/web/src/pages/portal/AssignmentRow.tsx` | **Architecture changed this session** (2026-10-10/11, commits `854752c`+): uploads now go browser → NestJS API (multipart, `JwtGuard`-authenticated) → Supabase Storage via the service-role admin client — **not** direct browser-to-Storage. Root cause: Supabase Storage's RLS evaluation was failing to bridge the request JWT into the Postgres session context for this project (confirmed via extensive live debugging — a platform-level issue, not fixable from app code or migrations). Upload key is always derived server-side from the authenticated user's ID, never from client input — this is what replaces RLS's per-user isolation guarantee. `publicFileUrl()` (unauthenticated public-bucket read, for *displaying* an avatar) is unaffected and still goes direct to Storage. The since-unused `uploadFile()`/`removeFile()` in `apps/web/src/lib/storage.ts` were deleted 2026-10-13 (`publicFileUrl()` is now the file's only export). |
 | **Public forms** (contact, newsletter, webinar reg, affiliate application) | 🟡 | `apps/api/src/modules/forms/` (4 submodules) | All Turnstile-gated (`TurnstileService` fails **closed** if `TURNSTILE_SECRET_KEY` unset — refuses the request rather than silently accepting unprotected submissions), all send real email via Resend once `RESEND_API_KEY` set (fails **open** if unset — submission still saves, email just doesn't send). |
@@ -333,6 +365,7 @@ session · ⚠️ partial/known gap · ❌ not built.
 | **Apple sign-in** | ❌ not built | — | Needs a paid Apple Developer Program membership ($99/yr) + Services ID/private key/JWT client secret setup that hasn't started. The button was removed from the UI rather than left showing a permanent error. Google sign-in **is** real and configured (Google Cloud project `aiit-auth`). |
 | **Error monitoring (Sentry)** | 🟡 | `main.ts`, `apps/web/vite.config.ts` | API: `SENTRY_DSN`. Web: `VITE_SENTRY_DSN` (statically eliminated from the bundle if unset — zero cost until configured), `VITE_VERCEL_ENV` tags events with the real Vercel environment. Source maps uploaded via `@sentry/vite-plugin` when `SENTRY_AUTH_TOKEN` is set, then deleted locally (never shipped alongside the built JS). |
 | **Portal "refetch" behavior** | ✅ verified live this session | `apps/web/src/pages/portal/learnerData.ts` | Fixed this session (commit `8418550`) — see §13. |
+| **Site-wide UI polish: full-width staff portals, sidebar icons, sentence-case buttons** (2026-10-24, later rounds) | 🟡 not independently re-verified live this round (reconstructed from commit messages — see §9/§15) | `StaffShell.tsx`/`AdminLayout.tsx`-adjacent shell CSS, `apps/web/src/pages/affiliate/AffiliateLayout.tsx`, `apps/web/src/pages/portal/` sidebar/nav files, `apps/web/src/components/primitives/Button.tsx`'s consuming CSS | A cluster of layout/consistency fixes across all four portals in one afternoon, each starting from a narrower single-page fix then generalized once the same shape of bug showed up elsewhere: (1) **width** — admin/instructor/affiliate's shared `.shell__view` had a 1120px cap plus affiliate's own extra `.aff-dash` 52rem cap; first lifted per-page for just the Talking-points page (`.aff-dash--wide`, `bdbae8e`), then generalized to every page in all three staff portals (`2d7d27b`), then matched in the student/learner portal by removing `.portal__view-inner`'s own 1180px cap (`f2731d4`) — every card in every portal now fills the real remaining viewport width next to its sidebar instead of sitting in a narrower centered column. (2) **sidebar icons** — the affiliate sidebar had none at all (`bdbae8e` added them, reusing `StaffNavIcons.tsx`'s existing 18px outline set), then sub-nav items under a collapsible group got icons too (`c8f7f63` — this briefly collapsed the sub-item left-indent to match top-level entries, losing the nested look, fixed same day in `2d7d27b`), then the student/learner portal's desktop rail got one icon per nav entry for the first time, not just its 4-item mobile bottom nav (`f2731d4`, `PortalNavIcon` — renamed from `BottomIcon`, same icon set now shared by both navs so the bottom nav's existing 4 icons are pixel-for-pixel unchanged), and finally the instructor sidebar (previously the only one of the four portals with zero icons) got them in the Profile/Support round above. (3) **sentence-case buttons** — audited every portal for the shared `Button`/`.btn` component's uppercase default; admin/instructor use a separate `adm-btn` class that was never uppercase, so the real fix was one broad rule, `.portal .btn { text-transform: none }`, covering every remaining all-caps button across the student portal at once (`493c11e`) rather than continuing to scope one file at a time, plus the two new affiliate Profile/Support buttons via `.aff-dash .btn`, and later the instructor portal's first-ever `Button`-primitive usage via a new `.adm-page .btn` rule (`ea01690`, since nothing existed to scope that selector to before this round's Profile/Support pages). Eyebrow labels/badges/table headers were explicitly left alone throughout — those are a deliberate small-caps editorial convention, not an action button. (4) **hover** — sidebar links across all four portals now show the same left-to-right gradient wash on hover that the student portal's own active-state already used, instead of a flat tint (`f2731d4`). Also in this cluster: affiliate card headers (eyebrow→heading→intro spacing, heading weight) widened for visual hierarchy (`daf86ec`), and a fresh em-dash sweep on the brand-new Resources copy this same cluster introduced (`f2731d4` — the project's standing no-em-dash convention, see the 2026-10-19/20 round, applies to all new copy going forward, not just a one-time historical cleanup). |
 | **Site-wide UI polish** (2026-10-14) | ✅ verified live | `FloatingActions.tsx`/`floating-actions.css`, `Footer.tsx`/`footer.css`, `Layout.tsx` | Floating buttons reordered so Quill is bottom-most/most prominent, WhatsApp next, scroll-to-top topmost with extra margin; Footer's "Learning now" column lost its course thumbnails + "By AIIT Network" byline and the whole `<Footer>` is now hidden for an authenticated learner browsing a public page (portal/instructor/admin/affiliate areas never rendered it anyway — they use their own layouts). The original webinar-page CTA-button pass this same day was superseded hours later by the full redesign below — see that row instead of this one for `/webinar`'s current state. |
 | **Webinar page redesign** (2026-10-14/15, new) | ✅ verified live | `apps/web/src/pages/WebinarPage.tsx`, `webinar-page.css`, `apps/web/src/data/webinars.ts`/`types.ts` | Rebuilt from a detailed premium-editorial spec, several iterations based on live feedback against the deployed page (not a one-shot). Order: `PageBanner` (title/eyebrow/intro) → a compact one-line meta strip (`MetaRow`) → a dedicated, independent full-width video section (capped at 920px on desktop so it doesn't dominate a laptop screen, full-width on mobile; **not** forced side-by-side with the flyer) → a primary "Reserve My Free Seat" CTA banner → the three-field agenda grid (unchanged content, restyled) → "Who should attend" / "What you'll gain" as plain hairline-divided lists (no pill badges — explicitly asked to avoid a "SaaS template" look) → the actual registration form (`#register`, unchanged backend/logic) with the event-details `dl`, countdown, and the flyer (a *separate*, properly-sized 300px image, own label — not squeezed into a 180px thumbnail, which is what prompted removing it once before re-adding it properly). Video hosted on R2 (see that row); has its own dedicated 16:9 `videoThumbnail` poster image, deliberately **not** the portrait flyer (wrong aspect, looked messy stretched). Title deliberately avoids implying AIIT only covers "three technologies" (it covers far more per `/courses` — the number describes this one session's agenda, not AIIT's scope). No autoplay (deliberate — browsers block autoplay-with-sound anyway, and the stated audience is explicitly bandwidth-conscious — "Africa & Asia friendly" per the webinar's own data). **Also fixed in the same round:** Quill's mobile chat panel was a true `100dvh` overlay with no way to see the page behind it short of closing it — capped at `min(80dvh, 100dvh - 6rem)` as a bottom sheet instead (site-wide fix, `quill-chat.css`, not webinar-specific); the public "Instructors" nav entry was hidden (`data/navigation.ts`, one commented-out array line) at the project owner's explicit request — the page/route/data are untouched, trivially reversible. |
 | **Blog admin CMS** (2026-10-14) | ✅ verified live, manual setup done | `apps/api/src/modules/admin/admin-blog.{controller,service}.ts`, `github-publisher.service.ts`, `dto/admin-blog.dto.ts`; `apps/web/src/pages/admin/AdminBlogPage.tsx`, `AdminBlogEditorPage.tsx`; `packages/shared/src/blog.ts`; `BlogPost` Prisma model + migration `20261014000000_blog_posts` | Admin can create/edit/preview a post in the DB (draft/scheduled/published/archived pipeline), then **Publish** commits a real `.md` file straight into `apps/web/src/content/posts/` via a hand-rolled GitHub Contents-API client (`GithubPublisherService` — no Octokit dependency, matching this codebase's "thin REST client, no SDK" house style). DB row is the authoring source of truth; the GitHub folder is still the *only* thing the live site actually renders from (`vite.config.ts`'s `buildPostsList()`, untouched). **Unpublish** deletes the live file via the same API before archiving the row. Cover images + the image/audio half of the media library still go through the backend-mediated Supabase Storage upload pattern (`blog-media` bucket, service-role write) — **video moved to Cloudflare R2, 2026-10-14/15** (see the new R2 row below): `POST /admin/blog/media/presign-video` returns a short-lived signed PUT URL, the browser uploads the file straight to R2 (never through this server — sidesteps the old flat 80MB multer ceiling), and `BlogMediaUploadResult`'s `kind: 'video'` case is now filled by that path instead. 10 curated "layout preset" CSS modifiers now exist (editorial/tutorial/news-brief/spotlight/data-deep-dive + listicle/case-study/visual-essay/magazine/video-feature) via a `preset` frontmatter key — engineer-authored CSS only, never admin-authored/free-form CSS. `GITHUB_TOKEN`/`GITHUB_REPO` set on Render and the `blog-media` bucket created (project owner confirmed). `ci.yml`/`deploy.yml` both got `paths-ignore` for the content/blog-asset folders. Scheduled publishing and draft autosave remain deliberate fast-follows, not gaps. |
@@ -593,7 +626,31 @@ plausible-but-not-freshly-verified.
   *(README.md itself was not edited this session — out of scope for the memory-audit
   task; flagging here so a future session knows not to trust those two bullets.)*
 
-**Addendum, 2026-10-24 (latest):** **Claude-in-Chrome connected and worked this
+**Addendum, 2026-10-24, memory-reconciliation pass (latest — no new code written
+this pass):** a fresh session opened, read this document in full per `CLAUDE.md`,
+then ran the mandated HEAD-comparison check and found `main` had moved 17 commits
+(`248bcff`..`ea01690`) past the last commit this document cited (`f508f09`, itself
+the previous round's memory-catch-up commit) with **none of it written up** — a
+repeat of exactly the failure mode the 2026-10-19/20 addendum below already
+describes once. Per the project owner's explicit choice when asked, this pass
+reconstructed that gap from `git log`'s full commit messages (this codebase's
+"explain why" convention made this possible without guessing) rather than
+re-deriving it from a live session — **the same lower-confidence caveat the
+2026-10-19/20 entry already states applies here too**: this is inferred from
+commit messages and the one `gh run list` check below, not from this session
+having watched the work happen. What was reconciled: §4 (affiliate + instructor
+route trees), §5 (Affiliate resources/marketing-toolkit row rewritten, two new
+Profile+Support rows, one new site-wide UI-polish row), this §9 entry, §11, and
+§12. Confirmed independently this pass (not just inferred): `git rev-parse HEAD`
+matches `ea01690`; `gh run list --branch main` shows the last 3 pushes (`ea01690`,
+`7b3471f`, `daf86ec`) each green on both `CI` and `Deploy`; the current affiliate
+and instructor route trees in `App.tsx` were read directly, not assumed from the
+commit messages alone. **No live browser verification was performed this pass**
+(this was a documentation-only session) — flagging the full 17-commit round as
+**not independently re-verified live**, same status every item in it already
+carries below.
+
+**Addendum, 2026-10-24 (earlier the same day):** **Claude-in-Chrome connected and worked this
 round** — a real change from every single prior round logged in this document,
 which repeatedly noted "never once connected across this project's history."
 Screenshots occasionally hit `Page.captureScreenshot` timeouts (worked around via
@@ -683,12 +740,86 @@ round's commits.
 | Facebook sign-in built but hidden from the UI, not deleted | Meta requires App Review before anyone except the app's own developer/testers can use Facebook Login in production — shipping the button live would just error for real visitors. | `LoginPage.tsx`/`RegisterPage.tsx` (import + JSX removed), `AuthLayout.tsx`'s `FacebookAuthButton` (kept, exported, unused) | Confirmed — reversible in one line per page once Review completes |
 | Affiliate login page's full-bleed background is `position: fixed`, not `position: absolute` | A box sized by `min-height: 100svh` can still grow taller than the real viewport (a tall card on a short screen) — `absolute` cover-fit then has to zoom in to cover that inflated area instead of the actual visible viewport. `fixed` is always sized to the true viewport regardless of page content height. | `apps/web/src/pages/auth/auth.css` (`.auth__hero-band`) | Confirmed — fixed a real "background looks zoomed in" bug this way |
 | `/login` rejects an affiliate account (turned away with a link to `/affiliate/login`), same pattern as staff being turned away | Now that affiliates have their own dedicated sign-in page, there's no reason for an affiliate credential to work on the student page at all — matches how staff accounts have always been treated there. | `apps/web/src/pages/auth/LoginPage.tsx` (`enterPortal()`) | Confirmed — this reverses an interim fix from earlier the same round, made before `/affiliate/login` existed (see §15) |
+| Renamed the entire affiliate "banners" feature to "resources" (routes, components, data file, CSS classes, asset folder) | The project owner reported images silently failing to load with no reproducible server-side cause (200 OK, correct bytes) — the likely explanation is ad-blocker filter lists, which routinely block any URL/class/id containing the literal word "banner" (a classic EasyList-style rule). Only identifiers changed; the nav **label** still reads "Banners" since the word itself is fine in visible UI text. | `apps/web/src/pages/affiliate/AffiliateGraphicsPage.tsx` (renamed from `AffiliateBannersPage.tsx`), `affiliateResources.ts`, `public/assets/affiliate/resources/` | Confirmed — 2026-10-24, see §5 |
+| `SupportController`'s `@Roles` widened from `learner`-only to `learner`/`instructor`, rather than adding a separate instructor-support endpoint | Checked `SupportService`'s own ownership/category logic first: its enrollment-ownership and category checks only run when `courseId`/`instructorId`/`category='instructor'` are actually sent, none of which the technical-only instructor form ever sends — so widening the guard was confirmed safe without a service-level change. | `apps/api/src/modules/support/support.controller.ts` | Confirmed — 2026-10-24, full API suite green afterward |
+| Full-width content region for every staff-portal page, not just the ones that explicitly need it | Generalized from a single-page opt-in (`.aff-dash--wide`, added for just the Talking Points page) once the same "card reads centered with dead space" shape of complaint recurred across other pages — removing the shared cap outright was simpler and more consistent than tracking a growing opt-in list. Pages that still want a shorter line length (`.adm-intro`, etc.) set their own `max-width` locally and are unaffected. | `StaffShell`'s `.shell__view` CSS, `.aff-dash`, `.portal__view-inner` | Confirmed — 2026-10-24, see §5's new UI-polish row |
 
 ---
 
 ## 11. Current development position
 
-**Last completed objective (2026-10-24, most recent round):** continuing a session
+**Last completed objective (2026-10-28, most recent):** built the affiliate
+seriousness-screening + deferred-credentials + Brevo-lead-sync feature described
+in §5's new top row, from a project-owner-approved plan (reasoning discussion →
+`EnterPlanMode`/`ExitPlanMode` → build, all in one session). Schema, shared types,
+backend (two new thin-REST clients, DTOs, the `applyNew()`/`notifyApplicant()`
+credential-timing change), and frontend (the public form's new social-links block,
+the admin drawer's reported-vs-verified display) are all done and verified
+(`tsc`/`eslint` clean across all three workspaces, full API Jest suite green at
+66 suites/540 tests, both production builds succeed). **Nothing committed or
+pushed this round** (not asked to) — working tree has the changes, uncommitted.
+**Not live-tested**: no real `BREVO_API_KEY`/`YOUTUBE_API_KEY` existed in this
+session, so the actual third-party calls were only exercised via mocked `fetch`
+in Jest, never against the real APIs. See §12's new P1 item for the exact manual
+setup (Brevo account/list/key, Google Cloud YouTube API key, env vars on Render,
+then deploy to actually run the new migration) standing between this and a
+working feature in production.
+
+**Not done this round, flagged for whoever picks this up next:**
+- The separable "Phase 5" from the same plan (newsletter-sending built on Brevo,
+  since this codebase has no newsletter-broadcast feature at all today) was
+  deliberately not built — see §12.
+- Nothing from the 2026-10-24 reconciliation round below was touched or
+  re-verified; its own "not done" list is still exactly as open as it describes.
+
+**Next verification step for whatever is picked up next:** review the uncommitted
+diff, commit if it looks right, then once the three new env vars are set on
+Render: push, watch `gh run list`/`gh run watch` for `CI`+`Deploy` green (this
+round's migration needs to actually run against production), then submit one
+real test application with a real YouTube link and confirm `followersFetched`
+populates in the admin drawer, no credentials email arrives at submission, and
+approving sends a working login — none of that was possible to check this round
+without live credentials.
+
+---
+
+**Last completed objective (2026-10-24, memory-reconciliation pass, superseded by
+the round above — no new code):** this document had fallen behind `main` by 17
+commits (see §9's
+newest addendum for the full account) — a dedicated-development-feature round that
+renamed the affiliate "banners" feature to "resources" (ad-blocker filter-list
+collision), grew it into a 3-page marketing toolkit (talking points/swipe copy/
+banners under a collapsible nav group), added Profile+Support pages to both the
+affiliate and instructor portals, and did a site-wide full-width/sidebar-icon/
+sentence-case/gradient-hover consistency pass across all four portals. All of it
+is already committed, pushed, and CI+Deploy-green (confirmed this pass via
+`gh run list`) — nothing from that round is pending or half-done. This pass itself
+only updated `memory.md` (§4/§5/§9/§11/§12) to reflect that already-shipped work;
+see §15 for the full handover entry.
+
+**Not done this round, flagged for whoever picks this up next:**
+- None of the 17-commit round was independently re-verified live in a browser —
+  this pass was documentation-only (reconstructed from `git log` messages). A
+  live-browser pass through the renamed Resources pages, the two new Profile/
+  Support pages (both portals), and the full-width layout change across all four
+  portals is worth doing next time Claude-in-Chrome is connected or the project
+  owner is available to screenshot it.
+- Everything already flagged in the 2026-10-24 (earlier) and 2026-10-19/20 rounds
+  below (admin portal not re-opened live, no real `/r/:slug`→signup click yet) is
+  still exactly as open as those entries describe — this pass did not touch any
+  of it.
+
+**Next verification step for whatever is picked up next:** same standing loop —
+`npx tsc --noEmit` + `npx eslint` + relevant Jest suite + `npm run build` in both
+workspaces before any new push (not run this pass, since no code changed); try
+Claude-in-Chrome at the start of the session and live-verify the 17-commit round
+above if it connects, otherwise lean on the project owner's own screenshots.
+
+---
+
+### Superseded — kept for history only
+
+**Last completed objective (2026-10-24, prior round):** continuing a session
 that spanned 2026-10-20→2026-10-24 (context was compacted partway through, this is
 the resumed continuation): (1) visually verified, via Claude-in-Chrome — **now
 connected and working**, a first for this project, see §9's new addendum — that the
@@ -763,7 +894,24 @@ not "no outstanding work."
   not a decision dependency.
 - ~~Payment refund tooling~~ — done, see §5's Payments row. Full refund only, admin-triggered, all 3 providers, confirmed Live not sandbox.
 
-**P1 — new this round, account-side dependencies, no code to write until then**
+**P1 — new 2026-10-28, account-side dependencies, no code to write until then**
+- The new affiliate seriousness-screening/Brevo feature (§5) is fully built and
+  test-verified but does nothing live yet: the project owner needs to (1) create a
+  Brevo account + API key + a list for affiliate leads, set `BREVO_API_KEY`/
+  `BREVO_AFFILIATE_LIST_ID` on Render; (2) create a Google Cloud API key with
+  YouTube Data API v3 enabled, set `YOUTUBE_API_KEY` on Render; (3) push/deploy so
+  the new migration (`20261028000000_affiliate_social_links`) actually runs
+  against production. Until then everything no-ops gracefully (confirmed by
+  design, not just hoped) — nothing breaks, the new fields just stay empty/
+  unverified.
+- Newsletter-sending on Brevo (the separable "Phase 5" from that same plan) was
+  deliberately not built this round — still genuinely no campaign/broadcast
+  feature anywhere in this codebase, `NewsletterService` is capture-only. Next
+  logical step once someone wants it: `NewsletterService.confirm()` syncs to a
+  second Brevo list, plus a new admin compose/send page — reuses the same
+  `BrevoClientService`, no new vendor needed.
+
+**P1 — account-side dependencies, no code to write until then**
 - Facebook sign-in is built but hidden from the UI pending Meta App Review —
   reversible by re-adding `<FacebookAuthButton onClick={() => onOAuthSignIn('facebook')} />`
   to `LoginPage.tsx`/`RegisterPage.tsx` once Review completes. Nothing to do
@@ -798,6 +946,15 @@ not "no outstanding work."
   earnings display have not been visually confirmed against the deployed admin UI
   since before that redesign landed — quick sanity check worth doing once an admin
   session is available (today's round only had an affiliate-level login).
+
+**P2 — new this round (2026-10-24 reconciliation), not yet live-verified**
+- The entire 17-commit round reconciled into this document this pass (affiliate
+  "resources" rename/toolkit, affiliate + instructor Profile/Support pages,
+  site-wide full-width/sidebar-icon/sentence-case/gradient-hover sweep — see §5/
+  §9/§11) was reconstructed from commit messages only; none of it has been
+  clicked through live yet. Worth a live-browser pass (or project-owner
+  screenshots) through: the renamed `/affiliate-portal/resources/*` pages, both
+  new Profile/Support pages, and the full-width layout on all four portals.
 
 **P3 — Blog CMS, deliberate fast-follows (not gaps, scoped out of this round)**
 - Draft autosave (debounced save while editing).
@@ -947,6 +1104,128 @@ export and is still live and correct.
 ---
 
 ## 15. Session handover log
+
+### 2026-10-28 — Affiliate seriousness screening, deferred credentials, Brevo lead sync
+
+**Objective:** continuing the same session as the 2026-10-24 memory-reconciliation
+entry below. The project owner wanted to stop approving every affiliate applicant
+automatically — collect social handles + follower counts, verify what can
+realistically be verified, and only hand out real login credentials once an admin
+actually approves. Also wanted a privacy-minimal lead record synced to Brevo for
+their own outreach, and asked (as a separate, contingent question) whether Brevo
+could also replace Resend for a newsletter-sending feature — researched live
+(WebSearch + WebFetch against Brevo's/Resend's own pricing pages), confirmed
+Resend's marketing/broadcast tier isn't free the way its transactional tier is but
+Brevo's is, and confirmed via code search that AIIT has **no newsletter-sending
+feature at all** today (just double-opt-in capture) — so that would be new work on
+either vendor, not a migration.
+
+**Method:** reasoning-only discussion first (explicitly asked not to implement),
+then asked to draft an implementation plan. Used `EnterPlanMode` properly: 3
+parallel Explore agents (affiliate backend flow, affiliate frontend form + admin
+drawer, newsletter/migration/env-var conventions) before writing anything, plus
+direct follow-up reads of `schema.prisma` and `supabase-admin.service.ts` once the
+explore reports surfaced two load-bearing facts the plan needed to get right: a
+genuinely unused legacy `AffiliateApplication` table (not touched), and the exact
+precedent (`AdminUsersService.resetInstructorPassword()`'s `supabase.setPassword()`
+call) that makes "defer credentials to approval" clean instead of requiring a new
+mechanism. Plan wrote to `idempotent-soaring-nautilus.md`, approved via
+`ExitPlanMode`, then implemented directly (not delegated to a subagent).
+
+**What shipped (see §5's new top row for full detail):** `Affiliate.socialLinks`
+(new JSON column + migration); `AffiliateSocialLink`/`AffiliateSocialPlatform` in
+`packages/shared`; a new `SocialLinkDto` wired into both apply DTOs; a new
+`YoutubeClientService` (the only platform with a free, no-OAuth public follower
+lookup) and `BrevoClientService` (privacy-minimal lead sync), both thin REST
+clients matching the Paystack/GitHub house style, both fail-soft/never-throw since
+neither must ever block an application; `AffiliatesService.applyNew()` now sends
+only an acknowledgment email, not credentials; `AdminAffiliatesService.
+notifyApplicant()` now issues a fresh password + the real credentials email only
+on the `approved` transition; the public form (`AffiliatePage.tsx`) gained a
+repeatable up-to-5 social-profile block; the admin drawer (`AdminAffiliatesPage.
+tsx`) now shows reported-vs-verified follower counts per link. One plan detail was
+revised mid-build after reading the actual code: the plan's proposed
+`credentialsBlockHtml()`/`fieldListHtml()` consolidation was dropped once direct
+inspection showed the two render visibly different styles — reusing the *existing*
+`credentialsBlockHtml()` (exported instead of file-private) for the new
+approval-time email was the better call, not a blind merge that would have
+silently restyled every other credentials email in the codebase.
+
+**Verification performed:** `tsc --noEmit` + `eslint` clean across `apps/api`,
+`apps/web`, and `packages/shared`; full API Jest suite green (66 suites/540
+tests — includes new `brevo-client.service.spec.ts`/`youtube-client.service.spec.
+ts` with mocked `fetch`, plus updated assertions in `affiliates.service.spec.ts`/
+`admin-affiliates.service.spec.ts` for the new credential-timing behavior); both
+`apps/web` and `apps/api` production builds succeed.
+
+**Unresolved/handed back:** nothing committed or pushed this round (not asked to
+— working tree has the changes). No live third-party calls were possible (no real
+`BREVO_API_KEY`/`YOUTUBE_API_KEY` in this session) — see §11/§12 for the exact
+manual setup needed before this does anything beyond no-op gracefully. The
+separable newsletter-on-Brevo phase from the same plan was deliberately not
+built this round.
+
+**Next action:** see §11.
+
+### 2026-10-24 — Memory-reconciliation pass (no new code)
+
+**Objective:** the project owner opened a fresh session and asked to "load the
+contents of `memory.md` and be updated." Per `CLAUDE.md`'s mandated routine, read
+the document in full (§1–§15, not just the usual §11/§12/§15), then ran
+`git log --oneline -15` and compared the top commit against the last HEAD this
+document cited — and found `main` had moved 17 commits past it (`f508f09`, itself
+the previous catch-up commit, to the then-current `ea01690`), none of it written
+up here. Flagged the gap to the project owner and asked whether to reconcile the
+document now or defer; they chose to reconcile now.
+
+**What was done:** read every commit's full message in the `f508f09..ea01690`
+range (this codebase's "explain why" convention made this precise enough to work
+from directly, without reading every diff line-by-line) and reconciled:
+- §4 — rewrote the Affiliate route tree (banners→resources rename, the new
+  3-page Resources collapsible group, new Profile/Support sub-routes) and the
+  Instructor route tree (new Profile/Support sub-routes).
+- §5 — rewrote the "Affiliate promotional banners" row into "Affiliate resources:
+  marketing toolkit" covering the ad-blocker-driven rename and the toolkit's
+  growth into talking points + swipe copy + banners; added two new rows for the
+  affiliate and instructor Profile/Support pages (including the one real backend
+  change, `SupportController`'s widened `@Roles`); added a new row for the
+  cross-portal full-width/sidebar-icon/sentence-case/gradient-hover consistency
+  sweep; extended the existing Instructor portal row with a pointer to the new
+  Profile/Support row.
+- §9 — added a new addendum describing this reconciliation pass itself and what
+  was independently confirmed (`git rev-parse HEAD`, `gh run list` showing the
+  last 3 pushes green on both CI and Deploy, `App.tsx`'s actual current route
+  tree read directly) versus what's reconstructed-from-commit-messages only.
+- §11 — replaced the "current position" summary with this pass, demoted the
+  prior (2026-10-20→2026-10-24) round's summary to a "superseded, kept for
+  history" subsection rather than deleting it.
+- §12 — added a new P2 item flagging the whole reconciled round as not yet
+  live-verified.
+
+**Verification performed:** `git rev-parse HEAD` (confirmed `ea01690`),
+`gh run list --branch main --limit 6` (confirmed the last 3 pushes green on both
+`CI` and `Deploy`), direct `grep`/`Read` of `apps/web/src/App.tsx`'s current
+affiliate and instructor route blocks (confirmed against source, not assumed
+from commit messages), and a directory listing of
+`apps/web/src/pages/{affiliate,instructor}/` (confirmed the actual current file
+names: `AffiliateGraphicsPage.tsx`, `AffiliateTalkingPointsPage.tsx`,
+`AffiliateSwipeCopyPage.tsx`, `affiliateResourceGate.tsx`,
+`InstructorProfilePage.tsx`, `InstructorSupportPage.tsx`, etc.). **No live
+browser testing was performed** — this was a documentation-only pass, no
+application code was read beyond what's listed above, and nothing was committed
+to the app itself (only `memory.md` changed).
+
+**Unresolved/handed back:** everything the 17-commit round shipped is
+build/CI/Deploy-green per the project owner's own prior workflow but has not
+been independently re-verified live by any session, this one included — see
+§12's new P2 item. All backlog items carried from earlier rounds (admin portal
+live-recheck, `/r/:slug` end-to-end signup test, Apple/Facebook/Google OAuth
+account-side dependencies) are untouched and exactly as open as before.
+
+**Next action:** whatever the project owner asks for next; if it touches the
+affiliate Resources pages, the new Profile/Support pages, or portal-wide layout,
+treat this round's §5 entries as accurate-per-commit-message but not yet
+eyeballed live, and verify against current source before extending them.
 
 ### 2026-10-24 — Certificate copy-icon live verification, affiliate promotional banners, memory.md catch-up
 

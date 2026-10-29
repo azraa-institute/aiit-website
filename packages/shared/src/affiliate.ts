@@ -10,6 +10,26 @@ export type AffiliateType = 'creator' | 'student' | 'affiliate_to_affiliate';
 export type AffiliateApplicationStatus = 'pending' | 'in_review' | 'approved' | 'rejected';
 export type AffiliatePayoutMethod = 'paypal' | 'bank';
 
+export type AffiliateSocialPlatform = 'instagram' | 'tiktok' | 'youtube' | 'x' | 'linkedin' | 'facebook' | 'other';
+
+/**
+ * One social profile given on the application, for admin screening. Only
+ * `platform`/`url`/`followersReported` are ever set by the applicant;
+ * `followersFetched`/`fetchStatus`/`fetchedAt` are filled in server-side,
+ * best-effort, after submission -- see AffiliatesService.
+ * verifyYoutubeFollowers(). Today that only actually happens for
+ * `platform: 'youtube'` (the one platform with a free, no-OAuth public
+ * lookup); every other platform's fetchStatus stays 'unsupported'.
+ */
+export interface AffiliateSocialLink {
+  platform: AffiliateSocialPlatform;
+  url: string;
+  followersReported?: number;
+  followersFetched?: number | null;
+  fetchStatus?: 'fetched' | 'unsupported' | 'failed' | null;
+  fetchedAt?: string | null;
+}
+
 /**
  * One referral pool's contribution to AffiliateEarnings -- either the
  * shared creator/student referral-link pool, or the affiliate-to-affiliate
@@ -102,6 +122,7 @@ export interface AffiliateMe {
   state: string | null;
   city: string | null;
   motivation: string | null;
+  socialLinks: AffiliateSocialLink[];
 }
 
 export interface AdminAffiliateSummary {
@@ -135,6 +156,7 @@ export interface AdminAffiliateDetail extends AdminAffiliateSummary {
   city: string | null;
   source: string | null;
   motivation: string | null;
+  socialLinks: AffiliateSocialLink[];
   /** Electronic signature evidence -- see Affiliate.signedName/signedAt and affiliate-agreement.ts. Null for the handful of rows that predate e-signature. */
   signedName: string | null;
   signedAt: string | null;

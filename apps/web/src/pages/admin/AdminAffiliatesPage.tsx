@@ -7,6 +7,7 @@ import type {
   AdminAffiliateStats,
   AdminAffiliateSummary,
   AffiliateApplicationStatus,
+  AffiliateSocialLink,
   AffiliateType,
   Paginated,
 } from '@aiit/shared';
@@ -31,6 +32,35 @@ import {
   BarChartIcon,
   ExternalLinkIcon,
 } from './AdminAffiliatesIcons';
+
+const SOCIAL_PLATFORM_LABELS: Record<AffiliateSocialLink['platform'], string> = {
+  instagram: 'Instagram',
+  tiktok: 'TikTok',
+  youtube: 'YouTube',
+  x: 'X (Twitter)',
+  linkedin: 'LinkedIn',
+  facebook: 'Facebook',
+  other: 'Other profile',
+};
+
+function socialPlatformLabel(platform: AffiliateSocialLink['platform']): string {
+  return SOCIAL_PLATFORM_LABELS[platform] ?? 'Profile';
+}
+
+/**
+ * Only YouTube ever gets a real server-side check (see YoutubeClientService's
+ * doc comment for why) -- every other platform's `fetchStatus` stays
+ * 'unsupported', so this always has something honest to say rather than
+ * implying a check happened when it didn't.
+ */
+function describeFollowerVerification(link: AffiliateSocialLink): string {
+  const reported = link.followersReported != null ? `${link.followersReported.toLocaleString()} reported` : 'No follower count given';
+  if (link.fetchStatus === 'fetched' && link.followersFetched != null) {
+    return `${reported} · ${link.followersFetched.toLocaleString()} verified`;
+  }
+  if (link.fetchStatus === 'failed') return `${reported} · verification failed, check manually`;
+  return `${reported} · verification not available for this platform`;
+}
 
 /** FX symbols for the currencies CurrencyService converts for this drawer -- see DISPLAY_CURRENCIES on the API side. */
 const FX_SYMBOL: Record<string, string> = { NGN: '₦', INR: '₹' };
@@ -425,6 +455,21 @@ function Detail({ id, onChanged, onClose }: { id: string; onChanged: () => void;
                 <dd>{state.data.handle}</dd>
               </div>
             ) : null}
+            {state.data.socialLinks.map((link, i) => (
+              <div key={`${link.platform}-${i}`}>
+                <dt>
+                  <RowLabel icon={<TagIcon />}>{socialPlatformLabel(link.platform)}</RowLabel>
+                </dt>
+                <dd>
+                  <a href={link.url} target="_blank" rel="noopener noreferrer" className="adm-linkbtn">
+                    {link.url}
+                    <ExternalLinkIcon className="adm-linkbtn__icon" />
+                  </a>
+                  <br />
+                  <span className="adm-muted">{describeFollowerVerification(link)}</span>
+                </dd>
+              </div>
+            ))}
             {state.data.country || state.data.state || state.data.city ? (
               <div>
                 <dt>

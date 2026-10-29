@@ -32,6 +32,7 @@ const BASE_AFFILIATE = {
   payoutBankName: null,
   payoutBankCode: null,
   payoutUpdatedAt: null,
+  socialLinks: null,
 };
 
 // Several pages of body text across 4 embedded fonts take noticeably longer

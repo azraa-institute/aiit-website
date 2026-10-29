@@ -14,9 +14,12 @@ import { PrismaService } from '../../common/prisma/prisma.service';
 import { AuditService } from '../../common/audit/audit.service';
 import { EmailService } from '../../common/email/email.service';
 import { brandedEmailHtml } from '../../common/email/branded-email';
+import { SupabaseAdminService, generateTemporaryPassword } from '../../common/supabase-admin/supabase-admin.service';
 import {
   AffiliatesService,
   computeEarnings,
+  credentialsBlockHtml,
+  normalizeSocialLinks,
   payoutDetailsFrom,
   studentReferralLinkLabel,
   webOrigin,
@@ -40,6 +43,7 @@ export class AdminAffiliatesService {
     private readonly audit: AuditService,
     private readonly email: EmailService,
     private readonly affiliatesService: AffiliatesService,
+    private readonly supabase: SupabaseAdminService,
   ) {}
 
   async stats(): Promise<AdminAffiliateStats> {
@@ -124,6 +128,7 @@ export class AdminAffiliatesService {
       signedAt: row.signedAt?.toISOString() ?? null,
       source: row.source,
       motivation: row.motivation,
+      socialLinks: normalizeSocialLinks(row.socialLinks),
       rejectionReason: row.rejectionReason,
       reviewedAt: row.reviewedAt?.toISOString() ?? null,
       reviewedByName: row.reviewedBy ? (reviewerName.get(row.reviewedBy)?.name ?? null) : null,
@@ -198,6 +203,16 @@ export class AdminAffiliatesService {
 
   // ---- helpers ----
 
+  /**
+   * Approval is the only moment a public applicant (AffiliatesService.
+   * applyNew()) actually receives working login credentials -- that
+   * method deliberately only sends an acknowledgment email at submission
+   * time, see its own doc comment. The original temp password generated
+   * there was used once to create the account and then discarded, so
+   * approval regenerates a fresh one via SupabaseAdminService.setPassword(),
+   * the exact method AdminUsersService.resetInstructorPassword() already
+   * uses for staff password resets -- not new API surface.
+   */
   private async notifyApplicant(row: Affiliate, status: AffiliateApplicationStatus, rejectionReason?: string): Promise<void> {
     const approved = status === 'approved';
     const title = approved ? 'Your affiliate application was approved' : 'Your affiliate application was not approved';
@@ -208,14 +223,37 @@ export class AdminAffiliatesService {
     const email = (await this.namesAndEmails([row.userId])).get(row.userId)?.email;
     if (!email) return;
     const portalUrl = `${webOrigin()}/affiliate-portal`;
+
+    if (approved) {
+      const password = generateTemporaryPassword();
+      await this.supabase.setPassword(row.userId, password);
+      await this.email.send({
+        to: email,
+        subject: title,
+        html: brandedEmailHtml({
+          heading: title,
+          intro:
+            "You're approved. Here's what you need to sign in -- you'll be asked to set your own password the moment you do. Your personal referral link and dashboard are ready whenever you are.",
+          bodyHtml: credentialsBlockHtml([
+            { label: 'Email', value: email },
+            { label: 'Temporary password', value: password },
+            { label: 'Reference code', value: row.referenceCode ?? '' },
+          ]),
+          ctaLabel: 'Log in to AIIT',
+          ctaUrl: `${webOrigin()}/affiliate/login`,
+          footerNote:
+            "You're receiving this because you applied to the AIIT affiliate program. Keep your reference code -- you'll use it to activate your referral link.",
+        }),
+      });
+      return;
+    }
+
     await this.email.send({
       to: email,
       subject: title,
       html: brandedEmailHtml({
         heading: title,
-        intro: approved
-          ? "You're approved. Your personal referral link and dashboard are ready whenever you are."
-          : `We can't move forward with this application right now.${rejectionReason ? ` ${rejectionReason.trim()}` : ''}`,
+        intro: `We can't move forward with this application right now.${rejectionReason ? ` ${rejectionReason.trim()}` : ''}`,
         ctaLabel: 'Open your affiliate dashboard',
         ctaUrl: portalUrl,
         footerNote: "You're receiving this because you applied to the AIIT affiliate program.",

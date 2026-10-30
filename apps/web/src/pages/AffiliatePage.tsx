@@ -656,13 +656,20 @@ export default function AffiliatePage() {
     (isLoggedIn || (name.trim().length > 0 && email.trim().length > 0));
 
   return (
-    <Layout>
+    <Layout heroPage>
       <Seo title="Affiliate" description={a.intro} path="/affiliate" />
 
       {/* ---------- 01 · Hero ---------- */}
-      <Section tone="ink" size="lg" className="affiliate-hero">
-        <div className="affiliate-hero__band">
-          <div className="affiliate-hero__atmosphere" aria-hidden="true" />
+      <Section tone="ink" className="affiliate-hero">
+        <div className="affiliate-hero__photo">
+          <div className="affiliate-hero__stage" aria-hidden="true">
+            <img
+              src="/assets/affiliate/aiit-affiliate-hero-network.png"
+              alt=""
+              className="affiliate-hero__bg"
+            />
+          </div>
+          <div className="affiliate-hero__scrim" aria-hidden="true" />
           <div className="container container--wide affiliate-hero__inner" ref={heroRef}>
             <div className="affiliate-hero__copy" data-reveal>
               <p className="affiliate-hero__eyebrow eyebrow">{a.kicker}</p>

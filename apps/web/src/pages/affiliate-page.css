@@ -39,27 +39,37 @@
 /* ============================================================
    01 · HERO
    ============================================================ */
+/* Same floating-header-over-hero system the homepage slideshow uses
+   (<Layout heroPage>, .hero__stage/.hero__bg there) -- the header is
+   transparent over this section instead of sitting on its own solid bar,
+   so .affiliate-hero__photo supplies the top offset by hand instead of
+   relying on .section's own padding-block. */
 .affiliate-hero {
   position: relative;
   overflow: hidden;
+  padding-block: 0 clamp(2.5rem, 5vw, 4rem);
 }
-/* Full-bleed band: the graphic is the hero's actual background (not a
-   boxed/pasted inset) -- pulled up to cancel .section--lg's own top
-   padding so the image starts flush under the header, edge to edge. */
-.affiliate-hero__band {
+.affiliate-hero__photo {
   position: relative;
-  margin-top: calc(-1 * var(--section-y-lg));
-  padding-top: var(--section-y-lg);
-  padding-bottom: clamp(2.5rem, 5vw, 3.5rem);
   min-height: clamp(30rem, 51vw, 44rem);
   display: flex;
   align-items: center;
-  background-image: url('/assets/affiliate/aiit-affiliate-hero-network.png');
-  background-repeat: no-repeat;
-  background-position: right center;
-  background-size: cover;
+  padding-top: calc(var(--ab-h) + var(--header-h) + var(--space-8));
+  padding-bottom: clamp(2.5rem, 5vw, 3.5rem);
 }
-.affiliate-hero__atmosphere {
+.affiliate-hero__stage {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+}
+.affiliate-hero__bg {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: right center;
+  display: block;
+}
+.affiliate-hero__scrim {
   position: absolute;
   inset: 0;
   z-index: 0;
@@ -80,11 +90,12 @@
    text rather than beside it, hurting legibility -- drop back to a plain
    dark hero there instead of fighting the overlap. */
 @media (max-width: 760px) {
-  .affiliate-hero__band {
-    background-image: none;
+  .affiliate-hero__photo {
     min-height: 0;
+    padding-top: calc(var(--ab-h) + var(--header-h) + var(--space-6));
   }
-  .affiliate-hero__atmosphere {
+  .affiliate-hero__stage,
+  .affiliate-hero__scrim {
     display: none;
   }
 }
@@ -156,7 +167,6 @@
 .affiliate-hero__highlights-wrap {
   position: relative;
   z-index: 1;
-  padding-bottom: clamp(2rem, 4vw, 3rem);
 }
 .affiliate-hero__highlights {
   display: grid;

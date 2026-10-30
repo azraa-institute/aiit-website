@@ -2448,14 +2448,31 @@
   }
 }
 
-/* ---- Settings: section cards ---- */
+/* ---- Settings: section cards ----
+   Same card language as the staff portals' .adm-form (admin.css): same
+   padding/radius/shadow, the same white gradient surface instead of a flat
+   tint, and the same brass accent line along the top edge -- account
+   settings should read as one consistent design across every portal, not
+   three different visual systems. */
 .settings-section {
+  position: relative;
   padding: var(--space-6);
   border: 1px solid var(--line);
   border-radius: var(--radius-lg);
-  background: rgba(255, 255, 255, 0.55);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.8), rgba(255, 255, 255, 0.45));
   box-shadow: var(--shadow-soft);
+  overflow: hidden;
   scroll-margin-top: calc(var(--header-h) + var(--space-4));
+}
+.settings-section::before {
+  content: '';
+  position: absolute;
+  inset: 0 0 auto 0;
+  height: 3px;
+  background: linear-gradient(90deg, transparent, var(--brass) 50%, transparent);
+}
+.settings-section--danger::before {
+  background: linear-gradient(90deg, transparent, var(--red) 50%, transparent);
 }
 .settings-section--danger {
   border-color: var(--red-tint);

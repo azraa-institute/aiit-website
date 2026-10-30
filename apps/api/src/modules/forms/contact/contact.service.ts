@@ -33,7 +33,7 @@ export class ContactService {
           `<p style="margin:16px 0 0;padding:14px;border:1px solid rgba(20,17,15,0.1);border-radius:6px;font-family:Arial,Helvetica,sans-serif;font-size:14px;line-height:1.6;color:#14110f;white-space:pre-wrap;">${escapeHtml(dto.message)}</p>`,
         ctaLabel: 'View in admin',
         ctaUrl: `${process.env.APP_URL ?? 'https://aiit.network'}/admin/messages`,
-        footerNote: 'Automated notification from the AIIT website -- new contact message.',
+        footerNote: 'Automated notification from the AIIT website: new contact message.',
       }),
     });
   }

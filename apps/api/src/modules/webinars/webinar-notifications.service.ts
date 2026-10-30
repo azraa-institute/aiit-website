@@ -33,7 +33,7 @@ export class WebinarNotificationsService {
         subject: `You're registered: ${webinar.title}`,
         html: brandedEmailHtml({
           heading: "You're registered!",
-          intro: `Thanks for registering for "${webinar.title}" -- ${when}. We'll email the join link and a reminder before it starts.`,
+          intro: `Thanks for registering for "${webinar.title}", ${when}. We'll email the join link and a reminder before it starts.`,
           ctaLabel,
           ctaUrl,
           footerNote: `You're receiving this because you registered for an AIIT webinar with ${registration.email}.`,

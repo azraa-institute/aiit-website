@@ -222,7 +222,7 @@ describe('AssignmentsService', () => {
         'user-1',
         'assignment',
         'Your assignment was graded: Set up your first cloud account',
-        'Grade: B+ -- Good, but check part 2.',
+        'Grade: B+ — Good, but check part 2.',
         '/portal/assignments',
       );
     });

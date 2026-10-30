@@ -319,7 +319,7 @@ export class InstructorService {
         userId: submission.userId,
         kind: 'assignment',
         title: `Your assignment was graded: ${submission.assignment.title}`,
-        body: updated.feedback ? `Grade: ${updated.grade} -- ${updated.feedback}` : `Grade: ${updated.grade}`,
+        body: updated.feedback ? `Grade: ${updated.grade} — ${updated.feedback}` : `Grade: ${updated.grade}`,
         href: '/portal/assignments',
       },
     });

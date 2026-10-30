@@ -91,7 +91,7 @@ export class SupabaseAdminService {
       throw new ConflictException('An account with that email address already exists.');
     }
     this.logger.error(`Supabase createUser failed (${res.status}): ${body.slice(0, 300)}`);
-    throw new ServiceUnavailableException('Could not create the login right now -- try again shortly.');
+    throw new ServiceUnavailableException('Could not create the login right now. Try again shortly.');
   }
 
   async setPassword(userId: string, password: string): Promise<void> {
@@ -117,7 +117,7 @@ export class SupabaseAdminService {
     });
     if (!res.ok) {
       this.logger.error(`Could not sign ${bucket}/${key} (${res.status})`);
-      throw new ServiceUnavailableException('Could not open that file right now -- try again shortly.');
+      throw new ServiceUnavailableException('Could not open that file right now. Try again shortly.');
     }
     const { signedURL } = (await res.json()) as { signedURL: string };
     // signedURL is relative to /storage/v1 (e.g. "/object/sign/bucket/key?token=...").
@@ -169,7 +169,7 @@ export class SupabaseAdminService {
     if (!res.ok) {
       const text = await res.text().catch(() => '');
       this.logger.error(`Could not upload to ${bucket}/${key} (${res.status}): ${text.slice(0, 300)}`);
-      throw new ServiceUnavailableException('Could not upload that file right now -- try again shortly.');
+      throw new ServiceUnavailableException('Could not upload that file right now. Try again shortly.');
     }
   }
 
@@ -193,7 +193,7 @@ export class SupabaseAdminService {
     if (!res.ok) {
       const text = await res.text().catch(() => '');
       this.logger.error(`Could not delete ${bucket}/${key} (${res.status}): ${text.slice(0, 300)}`);
-      throw new ServiceUnavailableException('Could not remove that file right now -- try again shortly.');
+      throw new ServiceUnavailableException('Could not remove that file right now. Try again shortly.');
     }
   }
 
@@ -224,7 +224,7 @@ export class SupabaseAdminService {
     if (!res.ok) {
       const text = await res.text().catch(() => '');
       this.logger.error(`Supabase update ${userId} failed (${res.status}): ${text.slice(0, 300)}`);
-      throw new ServiceUnavailableException('Could not update the login right now -- try again shortly.');
+      throw new ServiceUnavailableException('Could not update the login right now. Try again shortly.');
     }
   }
 }

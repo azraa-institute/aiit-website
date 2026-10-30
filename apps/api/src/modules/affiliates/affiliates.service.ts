@@ -268,7 +268,7 @@ export class AffiliatesService {
       html: brandedEmailHtml({
         heading: 'Your application is in',
         intro:
-          "Thanks for applying to the AIIT affiliate program. We're reviewing it now -- you'll get another email with your login details as soon as it's approved.",
+          "Thanks for applying to the AIIT affiliate program. We're reviewing it now; you'll get another email with your login details as soon as it's approved.",
         ctaLabel: 'Visit AIIT',
         ctaUrl: webOrigin(),
         footerNote: "You're receiving this because you applied to the AIIT affiliate program.",
@@ -344,7 +344,7 @@ export class AffiliatesService {
         html: brandedEmailHtml({
           heading: 'Your AIIT affiliate account is ready',
           intro:
-            "An AIIT administrator added you to the affiliate program. Use the temporary password below to sign in -- you'll be asked to set your own password right away.",
+            "An AIIT administrator added you to the affiliate program. Use the temporary password below to sign in; you'll be asked to set your own password right away.",
           bodyHtml: credentialsBlockHtml([
             { label: 'Email', value: email },
             { label: 'Temporary password', value: password },
@@ -352,7 +352,7 @@ export class AffiliatesService {
           ]),
           ctaLabel: 'Log in to AIIT',
           ctaUrl: portalUrl,
-          footerNote: "You're receiving this because an AIIT administrator added you to the affiliate program. Keep your reference code -- you'll use it to activate your referral link.",
+          footerNote: "You're receiving this because an AIIT administrator added you to the affiliate program. Keep your reference code; you'll use it to activate your referral link.",
         }),
       });
     } else {
@@ -361,7 +361,7 @@ export class AffiliatesService {
         subject: 'Your AIIT affiliate application is in',
         html: brandedEmailHtml({
           heading: 'Your application is in',
-          intro: "An AIIT administrator added you to the affiliate program. We're finishing your review now -- you'll get another email with your login details as soon as it's approved.",
+          intro: "An AIIT administrator added you to the affiliate program. We're finishing your review now; you'll get another email with your login details as soon as it's approved.",
           ctaLabel: 'Visit AIIT',
           ctaUrl: webOrigin(),
           footerNote: "You're receiving this because an AIIT administrator added you to the affiliate program.",

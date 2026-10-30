@@ -169,5 +169,5 @@ function toHttpException(err: unknown): HttpException {
     return new HttpException({ code: err.code, message: err.message, retryable: err.retryable }, GITHUB_ERROR_STATUS[err.code]);
   }
   if (err instanceof HttpException) return err;
-  return new HttpException({ code: 'unknown', message: 'Something went wrong -- try again.', retryable: true }, 500);
+  return new HttpException({ code: 'unknown', message: 'Something went wrong. Try again.', retryable: true }, 500);
 }

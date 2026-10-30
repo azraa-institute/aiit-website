@@ -27,7 +27,7 @@ export const QUILL_ARTICLES: QuillArticle[] = [
   {
     slug: 'what-is-artificial-intelligence-a-complete-beginners-guide',
     title: "What Is Artificial Intelligence? A Complete Beginner's Guide",
-    excerpt: 'How AI went from a futuristic idea to part of everyday life -- the concepts under the hood, in plain language.',
+    excerpt: 'How AI went from a futuristic idea to part of everyday life: the concepts under the hood, in plain language.',
     categories: ['artificial-intelligence-intelligent-systems'],
   },
   {
@@ -39,7 +39,7 @@ export const QUILL_ARTICLES: QuillArticle[] = [
   {
     slug: 'vector-databases-explained-search-by-meaning-not-keywords',
     title: 'Vector Databases Explained: Search by Meaning, Not Keywords',
-    excerpt: 'How embeddings and vector search actually work -- the backbone of every modern RAG/LLM application.',
+    excerpt: 'How embeddings and vector search actually work: the backbone of every modern RAG/LLM application.',
     categories: ['artificial-intelligence-intelligent-systems', 'data-science-analytics'],
     hasVideo: true,
   },
@@ -76,7 +76,7 @@ export const QUILL_ARTICLES: QuillArticle[] = [
   {
     slug: 'what-is-cybersecurity-a-beginners-guide-to-one-of-the-most-in-demand-skills-in-tech',
     title: "What Is Cybersecurity? A Beginner's Guide to One of the Most In-Demand Skills in Tech",
-    excerpt: 'Why cybersecurity is one of the hardest tech roles to fill right now -- and where to start.',
+    excerpt: 'Why cybersecurity is one of the hardest tech roles to fill right now, and where to start.',
     categories: ['cybersecurity-networking'],
   },
   {
@@ -88,7 +88,7 @@ export const QUILL_ARTICLES: QuillArticle[] = [
   {
     slug: 'moving-from-developer-to-tech-lead-essential-leadership-skills',
     title: 'Moving from Developer to Tech Lead: Essential Leadership Skills',
-    excerpt: 'What actually changes -- and what to learn -- when you move from writing code to leading the team that does.',
+    excerpt: 'What actually changes, and what to learn, when you move from writing code to leading the team that does.',
     categories: ['technology-management-business'],
   },
   {

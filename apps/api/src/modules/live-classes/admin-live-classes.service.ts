@@ -218,7 +218,7 @@ export class AdminLiveClassesService {
     const host = await this.pickInstructor(course.id, dto.hostUserId);
     const upcoming = planSessions(startsOn, endsOn, slots, dto.timeZone).filter((p) => p.startsAt.getTime() > Date.now());
     if (upcoming.length === 0) {
-      throw new BadRequestException('Those dates are all in the past -- choose a start date in the future.');
+      throw new BadRequestException('Those dates are all in the past. Choose a start date in the future.');
     }
     const first = upcoming[0].startsAt;
     const last = upcoming[upcoming.length - 1].endsAt;

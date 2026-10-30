@@ -64,7 +64,7 @@ export class WebinarService {
         ]),
         ctaLabel: 'View registrants',
         ctaUrl: adminUrl,
-        footerNote: 'Automated notification from the AIIT website -- new webinar registration.',
+        footerNote: 'Automated notification from the AIIT website: new webinar registration.',
       }),
     });
   }

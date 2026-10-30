@@ -85,7 +85,7 @@ export class R2Service {
       return { uploadUrl, publicUrl };
     } catch (err) {
       this.logger.error('Could not create R2 presigned URL', err instanceof Error ? err.stack : String(err));
-      throw new ServiceUnavailableException('Could not prepare the video upload right now -- try again shortly.');
+      throw new ServiceUnavailableException('Could not prepare the video upload right now. Try again shortly.');
     }
   }
 

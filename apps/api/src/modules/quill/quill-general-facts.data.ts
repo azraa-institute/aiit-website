@@ -24,12 +24,12 @@ export const QUILL_GENERAL_FACTS: QuillFact[] = [
   {
     pattern: /\b(where.*(based|located)|head ?office|based in)\b/i,
     reply:
-      "AIIT's head office is in Coimbatore, Tamil Nadu, India, with an active expansion focus across Africa -- but since everything's online, you can enroll and learn from anywhere.",
+      "AIIT's head office is in Coimbatore, Tamil Nadu, India, with an active expansion focus across Africa, but since everything's online, you can enroll and learn from anywhere.",
   },
   {
     pattern: /\b(beginner|new to tech|no experience|never coded|is this for me)\b/i,
     reply:
-      "AIIT welcomes complete beginners as well as working professionals looking to upskill -- course tracks range from absolute-beginner digital literacy up to advanced, industry-aligned certifications.",
+      "AIIT welcomes complete beginners as well as working professionals looking to upskill: course tracks range from absolute-beginner digital literacy up to advanced, industry-aligned certifications.",
   },
   {
     pattern: /\b(leadership|learnum|soft skills?|non.?technical)\b/i,
@@ -39,6 +39,6 @@ export const QUILL_GENERAL_FACTS: QuillFact[] = [
   {
     pattern: /\b(legit|real|accredit|trust|scam)\b/i,
     reply:
-      "Every AIIT certificate is independently verifiable -- anyone (an employer, a university) can confirm a credential is real from its ID. Happy to point you to a specific course's certification details too.",
+      "Every AIIT certificate is independently verifiable: anyone (an employer, a university) can confirm a credential is real from its ID. Happy to point you to a specific course's certification details too.",
   },
 ];

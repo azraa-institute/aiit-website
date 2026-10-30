@@ -128,7 +128,7 @@ export class AssignmentsService {
       submission.userId,
       'assignment',
       `Your assignment was graded: ${submission.assignment.title}`,
-      dto.feedback ? `Grade: ${dto.grade} -- ${dto.feedback}` : `Grade: ${dto.grade}`,
+      dto.feedback ? `Grade: ${dto.grade} — ${dto.feedback}` : `Grade: ${dto.grade}`,
       '/portal/assignments',
     );
 

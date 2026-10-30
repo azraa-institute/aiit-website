@@ -18,7 +18,7 @@ export class PaystackCheckoutController {
 
   @Post('orders')
   async createOrder(@Body() dto: CreateOrderDto, @CurrentUser() user: AuthenticatedUser): Promise<CreatePaystackOrderResponse> {
-    if (!user.email) throw new ConflictException('Your account has no email on file -- cannot start a Paystack payment.');
+    if (!user.email) throw new ConflictException('Your account has no email on file, so this Paystack payment cannot start.');
     const { order } = await this.payments.createPendingOrder(user.userId, dto.courseSlug, 'paystack', 'NGN');
     const { accessCode, reference } = await this.paystack.initializeTransaction(order.amountCents, order.currency, user.email, order.id);
     await this.payments.attachProviderRef(order.id, reference);

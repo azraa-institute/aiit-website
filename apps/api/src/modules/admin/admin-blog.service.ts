@@ -139,7 +139,7 @@ export class AdminBlogService {
   async deleteDraft(adminId: string, id: string): Promise<void> {
     const post = await this.findOrThrow(id);
     if (post.status !== 'draft') {
-      throw new ConflictException('Only a draft that has never been published can be deleted -- unpublish it instead.');
+      throw new ConflictException('Only a draft that has never been published can be deleted. Unpublish it instead.');
     }
     await this.prisma.blogPost.delete({ where: { id } });
     await this.audit.record(adminId, 'blog.delete', 'blog_post', id, { slug: post.slug });
@@ -169,7 +169,7 @@ export class AdminBlogService {
     // never created (e.g. hand-added to the repo).
     const currentSha = await this.github.getFileSha(filePath);
     if (currentSha && existing.filePath !== filePath && existing.status !== 'published') {
-      throw new ConflictException(`A file already exists at ${filePath} that this post didn't create -- rename the slug.`);
+      throw new ConflictException(`A file already exists at ${filePath} that this post didn't create. Rename the slug.`);
     }
 
     const result = await this.github.putFile(

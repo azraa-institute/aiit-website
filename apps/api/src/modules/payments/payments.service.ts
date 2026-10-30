@@ -101,7 +101,7 @@ export class PaymentsService {
       await this.notifications.create(
         order.userId,
         'course',
-        `Payment received -- you're enrolled in ${enrollment.course.title}`,
+        `Payment received — you're enrolled in ${enrollment.course.title}`,
         undefined,
         `/courses/${enrollment.course.slug}`,
       );

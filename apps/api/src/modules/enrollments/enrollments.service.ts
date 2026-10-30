@@ -50,7 +50,7 @@ export class EnrollmentsService {
     if (!course) throw new NotFoundException('Course not found.');
     if (course.pricing !== 'free') {
       throw new ForbiddenException(
-        'This course requires payment, which is not available yet -- enrollment is currently open for free courses only.',
+        'This course requires payment, which is not available yet: enrollment is currently open for free courses only.',
       );
     }
 

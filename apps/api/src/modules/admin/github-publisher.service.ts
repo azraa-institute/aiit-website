@@ -63,7 +63,7 @@ export class GithubPublisherService {
       });
     } catch (err) {
       this.logger.error('Could not reach GitHub', err instanceof Error ? err.stack : String(err));
-      throw new GithubPublishError('network', 'Could not reach GitHub -- check the connection and try again.', true);
+      throw new GithubPublishError('network', 'Could not reach GitHub. Check the connection and try again.', true);
     }
   }
 
@@ -112,13 +112,13 @@ export class GithubPublisherService {
     const text = await res.text().catch(() => '');
     this.logger.error(`GitHub API ${res.status}: ${text.slice(0, 300)}`);
     if (res.status === 401 || res.status === 403) {
-      throw new GithubPublishError('auth', 'GitHub rejected the request -- check GITHUB_TOKEN permissions.', false);
+      throw new GithubPublishError('auth', 'GitHub rejected the request. Check GITHUB_TOKEN permissions.', false);
     }
     if (res.status === 409) {
-      throw new GithubPublishError('conflict', 'That file changed on GitHub since this was last loaded here -- reload and try again.', true);
+      throw new GithubPublishError('conflict', 'That file changed on GitHub since this was last loaded here. Reload and try again.', true);
     }
     if (res.status === 429) {
-      throw new GithubPublishError('rate_limited', 'GitHub rate-limited this request -- try again in a minute.', true);
+      throw new GithubPublishError('rate_limited', 'GitHub rate-limited this request. Try again in a minute.', true);
     }
     throw new GithubPublishError('unknown', 'GitHub rejected the request.', true);
   }

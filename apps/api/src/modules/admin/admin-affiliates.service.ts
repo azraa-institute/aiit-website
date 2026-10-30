@@ -233,7 +233,7 @@ export class AdminAffiliatesService {
         html: brandedEmailHtml({
           heading: title,
           intro:
-            "You're approved. Here's what you need to sign in -- you'll be asked to set your own password the moment you do. Your personal referral link and dashboard are ready whenever you are.",
+            "You're approved. Here's what you need to sign in. You'll be asked to set your own password the moment you do. Your personal referral link and dashboard are ready whenever you are.",
           bodyHtml: credentialsBlockHtml([
             { label: 'Email', value: email },
             { label: 'Temporary password', value: password },
@@ -242,7 +242,7 @@ export class AdminAffiliatesService {
           ctaLabel: 'Log in to AIIT',
           ctaUrl: `${webOrigin()}/affiliate/login`,
           footerNote:
-            "You're receiving this because you applied to the AIIT affiliate program. Keep your reference code -- you'll use it to activate your referral link.",
+            "You're receiving this because you applied to the AIIT affiliate program. Keep your reference code; you'll use it to activate your referral link.",
         }),
       });
       return;

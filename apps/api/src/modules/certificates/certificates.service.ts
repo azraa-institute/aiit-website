@@ -87,7 +87,7 @@ export class CertificatesService {
     const holderName = profile?.name?.trim();
     if (!holderName) {
       throw new BadRequestException(
-        'This learner has no name on their profile yet -- ask them to set one before issuing a certificate.',
+        'This learner has no name on their profile yet. Ask them to set one before issuing a certificate.',
       );
     }
 

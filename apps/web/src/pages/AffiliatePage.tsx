@@ -23,7 +23,6 @@ import { combinePhone } from '@/lib/phone';
 import { getPendingReferralSlug, clearPendingReferralSlug } from '@/lib/referralAttribution';
 import { PhoneCountrySelect } from './portal/PhoneCountrySelect';
 import { useAffiliateMe } from './affiliate/affiliateData';
-import { AffiliateNetwork } from './AffiliateNetwork';
 import { cn } from '@/lib/cn';
 import './affiliate-page.css';
 
@@ -109,6 +108,62 @@ function ClipboardIcon() {
     </svg>
   );
 }
+
+function CoinsIcon() {
+  return (
+    <svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true">
+      <ellipse cx="9" cy="7" rx="6" ry="3" fill="none" stroke="currentColor" strokeWidth="1.5" />
+      <path d="M3 7v4c0 1.7 2.7 3 6 3s6-1.3 6-3V7" fill="none" stroke="currentColor" strokeWidth="1.5" />
+      <path d="M3 11v4c0 1.7 2.7 3 6 3s6-1.3 6-3v-4" fill="none" stroke="currentColor" strokeWidth="1.5" />
+      <ellipse cx="17" cy="13" rx="4.2" ry="2.2" fill="none" stroke="currentColor" strokeWidth="1.5" />
+      <path d="M12.8 13v3.2c0 1.2 1.9 2.2 4.2 2.2s4.2-1 4.2-2.2V13" fill="none" stroke="currentColor" strokeWidth="1.5" />
+    </svg>
+  );
+}
+
+function GlobeIcon() {
+  return (
+    <svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true">
+      <circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" strokeWidth="1.5" />
+      <path d="M3 12h18M12 3c2.8 2.6 4.3 5.7 4.3 9s-1.5 6.4-4.3 9c-2.8-2.6-4.3-5.7-4.3-9S9.2 5.6 12 3Z" fill="none" stroke="currentColor" strokeWidth="1.5" />
+    </svg>
+  );
+}
+
+function LaptopIcon() {
+  return (
+    <svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true">
+      <rect x="4" y="5" width="16" height="10.5" rx="1.2" fill="none" stroke="currentColor" strokeWidth="1.5" />
+      <path d="M2.5 19h19l-1.8-3.5H4.3Z" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
+function HeartIcon() {
+  return (
+    <svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true">
+      <path
+        d="M12 20.2 4.6 13c-2-2-2-5 .2-6.9 2-1.7 4.8-1.3 6.4.6L12 7.6l.8-.9c1.6-1.9 4.4-2.3 6.4-.6 2.2 1.9 2.2 4.9.2 6.9L12 20.2Z"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.5"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
+
+function PlayGlyph() {
+  return (
+    <span className="affiliate-hero__play" aria-hidden="true">
+      <svg width="12" height="12" viewBox="0 0 12 12">
+        <path d="M3 2.2v7.6l6.5-3.8Z" fill="currentColor" />
+      </svg>
+    </span>
+  );
+}
+
+const HIGHLIGHT_ICONS = { coins: CoinsIcon, globe: GlobeIcon, laptop: LaptopIcon, heart: HeartIcon } as const;
 
 function DocumentIcon() {
   return (
@@ -499,7 +554,11 @@ export default function AffiliatePage() {
   const estimate = useAnimatedNumber(rawEstimate, 350);
   const CALCULATOR_MAX = 1000;
 
-  const [heroRef, heroActive] = useInView<HTMLDivElement>(0.3);
+  const heroAccentMatch = a.title.match(/(through you\.?)\s*$/i);
+  const heroTitleLead = heroAccentMatch ? a.title.slice(0, heroAccentMatch.index) : a.title;
+  const heroTitleAccent = heroAccentMatch ? heroAccentMatch[1] : '';
+
+  const [heroRef] = useInView<HTMLDivElement>(0.3);
   const [ratesRef, ratesActive] = useInView<HTMLDivElement>(0.4);
   const [step1Ref, step1On] = useInView<HTMLLIElement>(0.5);
   const [step2Ref, step2On] = useInView<HTMLLIElement>(0.5);
@@ -602,17 +661,22 @@ export default function AffiliatePage() {
 
       {/* ---------- 01 · Hero ---------- */}
       <Section tone="ink" size="lg" className="affiliate-hero">
+        <div className="affiliate-hero__bg" aria-hidden="true" />
         <div className="affiliate-hero__atmosphere" aria-hidden="true" />
-        <div className="container container--wide affiliate-hero__grid" ref={heroRef}>
+        <div className="container container--wide affiliate-hero__inner" ref={heroRef}>
           <div className="affiliate-hero__copy" data-reveal>
             <p className="affiliate-hero__eyebrow eyebrow">{a.kicker}</p>
-            <h1 className="affiliate-hero__title">{a.title}</h1>
+            <h1 className="affiliate-hero__title">
+              {heroTitleLead}
+              {heroTitleAccent ? <span className="affiliate-hero__title-accent">{heroTitleAccent}</span> : null}
+            </h1>
             <p className="affiliate-hero__intro">{a.intro}</p>
             <div className="affiliate-hero__cta-row">
-              <Button as="link" to={a.primaryCta.to} size="lg" arrow>
+              <Button as="link" to={a.primaryCta.to} size="lg" arrow className="affiliate-hero__cta affiliate-hero__cta--primary">
                 {a.primaryCta.label}
               </Button>
-              <Button as="link" to={a.secondaryCta.to} variant="secondary">
+              <Button as="link" to={a.secondaryCta.to} variant="secondary" className="affiliate-hero__cta affiliate-hero__cta--secondary">
+                <PlayGlyph />
                 {a.secondaryCta.label}
               </Button>
             </div>
@@ -620,8 +684,21 @@ export default function AffiliatePage() {
               Already applied? <Link to="/affiliate-portal">Sign in to your affiliate dashboard</Link>.
             </p>
           </div>
-          <div className="affiliate-hero__visual">
-            <AffiliateNetwork active={heroActive} />
+        </div>
+        <div className="container container--wide affiliate-hero__highlights-wrap">
+          <div className="affiliate-hero__highlights">
+            {a.heroHighlights.map((item) => {
+              const Icon = HIGHLIGHT_ICONS[item.icon];
+              return (
+                <div className="affiliate-hero__highlight" key={item.title}>
+                  <span className="affiliate-hero__highlight-icon" aria-hidden="true">
+                    <Icon />
+                  </span>
+                  <p className="affiliate-hero__highlight-title">{item.title}</p>
+                  <p className="affiliate-hero__highlight-body">{item.body}</p>
+                </div>
+              );
+            })}
           </div>
         </div>
       </Section>

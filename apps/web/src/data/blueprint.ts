@@ -64,9 +64,17 @@ export const AFFILIATE = {
   kicker: 'AIIT Affiliate Program',
   title: 'Earn every time someone starts their tech career through you.',
   intro:
-    "Refer students to AIIT's globally recognised tech programmes, introduce creators who'll promote us to their audience, or bring other affiliates into the program, and get paid per successful, fully-onboarded enrolment.",
+    "Refer students to AIIT's globally recognised technology programmes, introduce creators who'll promote our courses to their audience, or bring other affiliates into the programme, and get paid for every successful, fully-onboarded enrolment.",
   primaryCta: { label: 'Apply as an Affiliate', to: '#apply' },
-  secondaryCta: { label: 'See how you earn', to: '#earn' },
+  secondaryCta: { label: 'See How You Earn', to: '#earn' },
+  // The hero's bottom highlight strip -- four short, scannable reasons to
+  // apply, shown as icon + title + line beneath the hero's headline/CTAs.
+  heroHighlights: [
+    { icon: 'coins', title: 'Competitive Commissions', body: 'Earn for every successful enrolment' },
+    { icon: 'globe', title: 'Global Reach', body: 'Refer learners from Africa, Asia and beyond' },
+    { icon: 'laptop', title: 'World-Class Programmes', body: 'AI, Data, Cloud, Cybersecurity and more' },
+    { icon: 'heart', title: 'Make an Impact', body: 'Help others build real opportunities' },
+  ] as { icon: 'coins' | 'globe' | 'laptop' | 'heart'; title: string; body: string }[],
   rates: [
     { label: 'Per student you refer directly', value: '$7' },
     { label: 'Per student via a creator you introduce', value: '$5' },

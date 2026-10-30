@@ -661,34 +661,30 @@ export default function AffiliatePage() {
 
       {/* ---------- 01 · Hero ---------- */}
       <Section tone="ink" size="lg" className="affiliate-hero">
-        <div className="affiliate-hero__atmosphere" aria-hidden="true" />
-        <div className="container container--wide affiliate-hero__inner" ref={heroRef}>
-          <div className="affiliate-hero__copy" data-reveal>
-            <p className="affiliate-hero__eyebrow eyebrow">{a.kicker}</p>
-            <h1 className="affiliate-hero__title">
-              {heroTitleLead}
-              {heroTitleAccent ? <span className="affiliate-hero__title-accent">{heroTitleAccent}</span> : null}
-            </h1>
-            <p className="affiliate-hero__intro">{a.intro}</p>
-            <div className="affiliate-hero__cta-row">
-              <Button as="link" to={a.primaryCta.to} size="lg" arrow className="affiliate-hero__cta affiliate-hero__cta--primary">
-                {a.primaryCta.label}
-              </Button>
-              <Button as="link" to={a.secondaryCta.to} variant="secondary" className="affiliate-hero__cta affiliate-hero__cta--secondary">
-                <PlayGlyph />
-                {a.secondaryCta.label}
-              </Button>
+        <div className="affiliate-hero__band">
+          <div className="affiliate-hero__atmosphere" aria-hidden="true" />
+          <div className="container container--wide affiliate-hero__inner" ref={heroRef}>
+            <div className="affiliate-hero__copy" data-reveal>
+              <p className="affiliate-hero__eyebrow eyebrow">{a.kicker}</p>
+              <h1 className="affiliate-hero__title">
+                {heroTitleLead}
+                {heroTitleAccent ? <span className="affiliate-hero__title-accent">{heroTitleAccent}</span> : null}
+              </h1>
+              <p className="affiliate-hero__intro">{a.intro}</p>
+              <div className="affiliate-hero__cta-row">
+                <Button as="link" to={a.primaryCta.to} size="lg" arrow className="affiliate-hero__cta affiliate-hero__cta--primary">
+                  {a.primaryCta.label}
+                </Button>
+                <Button as="link" to={a.secondaryCta.to} variant="secondary" className="affiliate-hero__cta affiliate-hero__cta--secondary">
+                  <PlayGlyph />
+                  {a.secondaryCta.label}
+                </Button>
+              </div>
+              <p className="affiliate-hero__signin">
+                Already applied? <Link to="/affiliate-portal">Sign in to your affiliate dashboard</Link>.
+              </p>
             </div>
-            <p className="affiliate-hero__signin">
-              Already applied? <Link to="/affiliate-portal">Sign in to your affiliate dashboard</Link>.
-            </p>
           </div>
-          <img
-            src="/assets/affiliate/aiit-affiliate-hero-network.png"
-            alt=""
-            aria-hidden="true"
-            className="affiliate-hero__art"
-          />
         </div>
         <div className="container container--wide affiliate-hero__highlights-wrap">
           <div className="affiliate-hero__highlights">

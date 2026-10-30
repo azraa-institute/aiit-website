@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import type { FormEvent } from 'react';
+import { createPortal } from 'react-dom';
 import { Link } from 'react-router-dom';
 import type { AffiliateAgreement, AffiliateSocialPlatform, AffiliateType, GeoCity, GeoState } from '@aiit/shared';
 import { Layout } from '@/components/layout/Layout';
@@ -213,6 +214,35 @@ function formatAgreementDate(version: string): string {
   const date = new Date(version);
   if (Number.isNaN(date.getTime())) return version;
   return date.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+}
+
+/**
+ * The "Print / Save as PDF" button's actual printable content, rendered via
+ * a portal straight onto <body> (outside #root) rather than printed in
+ * place. The interactive document panel sits inside several nested
+ * scroll/overflow containers (.affiliate-agreement__text's own scrollbar,
+ * card radii, etc.) -- asking the browser to print that subtree in place
+ * produced a blank page, since those ancestors' box/overflow rules don't
+ * resolve the same way under print layout. A sibling of #root, hidden by
+ * default and shown only in @media print (which also hides #root), sidesteps
+ * all of that: what prints is simple, independent, top-level flow content.
+ */
+function AgreementPrintSheet({ agreement }: { agreement: AffiliateAgreement }) {
+  return createPortal(
+    <div className="affiliate-agreement__print-sheet">
+      <h1>AIIT Affiliate Agreement</h1>
+      <p className="affiliate-agreement__print-meta">Last updated: {formatAgreementDate(agreement.version)}</p>
+      {agreement.sections.map((section) => (
+        <div key={section.heading}>
+          <h2>{section.heading}</h2>
+          {section.paragraphs.map((paragraph, i) => (
+            <p key={i}>{paragraph}</p>
+          ))}
+        </div>
+      ))}
+    </div>,
+    document.body,
+  );
 }
 
 /** One rate figure with a count-up-on-reveal animated number. */
@@ -682,6 +712,7 @@ export default function AffiliatePage() {
                     <span className="affiliate-agreement__updated">Last updated: {formatAgreementDate(agreement.version)}</span>
                   </div>
                 ) : null}
+                {agreement ? <AgreementPrintSheet agreement={agreement} /> : null}
               </div>
 
               <div className="affiliate-agreement__text" tabIndex={0} aria-label="Affiliate Agreement, full text">

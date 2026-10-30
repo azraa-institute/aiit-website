@@ -915,23 +915,47 @@
 /* Printing via the toolbar's "Print / Save as PDF" button -- every browser's
    native print dialog offers Save-as-PDF as a destination, so this gives a
    real downloadable PDF from the agreement text already loaded on the page,
-   without a new backend endpoint or a client-side PDF dependency. Isolates
-   just the clause text (the scroll container's 26rem cap is lifted so the
-   full agreement prints, not just the visible scroll window). */
+   without a new backend endpoint or a client-side PDF dependency.
+   AgreementPrintSheet (AffiliatePage.tsx) portals a plain, independent copy
+   of the agreement onto <body>, outside #root entirely -- printing the
+   interactive panel in place (via visibility tricks) produced a blank page,
+   since its nested scroll/overflow/radius ancestors don't resolve the same
+   way under print layout. This sidesteps that: hide the whole app, show
+   only this flat, unstyled-by-the-rest-of-the-page sheet. */
+.affiliate-agreement__print-sheet {
+  display: none;
+}
 @media print {
-  body * {
-    visibility: hidden;
+  #root {
+    display: none !important;
   }
-  .affiliate-agreement__text,
-  .affiliate-agreement__text * {
-    visibility: visible;
+  .affiliate-agreement__print-sheet {
+    display: block;
+    padding: 2rem;
+    font-family: var(--font-ui);
+    color: #000;
   }
-  .affiliate-agreement__text {
-    position: absolute;
-    inset: 0;
-    width: 100%;
-    max-height: none;
-    overflow: visible;
+  .affiliate-agreement__print-sheet h1 {
+    font-family: var(--font-accent);
+    font-size: 1.4rem;
+    margin: 0 0 0.25rem;
+  }
+  .affiliate-agreement__print-meta {
+    font-size: 0.85rem;
+    color: #444;
+    margin: 0 0 1.5rem;
+  }
+  .affiliate-agreement__print-sheet h2 {
+    font-family: var(--font-accent);
+    font-size: 1.02rem;
+    margin: 1.5rem 0 0.5rem;
+    break-after: avoid;
+  }
+  .affiliate-agreement__print-sheet p {
+    font-size: 0.9rem;
+    line-height: 1.55;
+    margin: 0 0 0.6rem;
+    break-inside: avoid;
   }
 }
 
@@ -1314,9 +1338,12 @@
 /* field.css's .field__checkbox-option never set a font-family of its own
    (it just inherited the sitewide sans), so the "what kind of affiliate are
    you" option text was the one spot that slipped through the earlier
-   Source Serif 4 pass. */
+   Source Serif 4 pass. Its font-size (var(--fs-sm), 15px) was sitewide-
+   default too, and read larger than this form's own question label (0.75rem)
+   and hint text (0.78rem) above it -- sized down to sit under both. */
 .affiliate__form .field__checkbox-option {
   font-family: 'Source Serif 4', var(--font-display);
+  font-size: 0.75rem;
 }
 .affiliate__disclaimer {
   font-family: 'Source Serif 4', var(--font-display);

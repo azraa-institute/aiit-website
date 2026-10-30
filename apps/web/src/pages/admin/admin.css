@@ -149,16 +149,6 @@
   border-color: var(--line);
 }
 
-/* Account settings (StaffAccountSettings, shared by admin + instructor) --
-   capped to a readable form width. .adm-form itself stays uncapped for
-   other admin pages (webinar/blog editors etc. genuinely need the width),
-   but a lone full-width field here was stretching edge-to-edge across the
-   whole dashboard content area -- a 600px+ text input reads as a layout
-   bug, not a design choice. */
-.adm-settings {
-  max-width: 42rem;
-}
-
 /* Form */
 .adm-form {
   position: relative;

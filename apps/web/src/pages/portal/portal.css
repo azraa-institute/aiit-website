@@ -2373,16 +2373,13 @@
 }
 
 /* ---- Settings: shell + secondary nav ---- */
-/* No side nav -- a plain stacked list of section cards, same flat layout
-   as the admin/instructor account-settings forms (StaffAccountSettings),
-   capped to the same readable width (.adm-settings, admin.css) instead of
-   stretching edge-to-edge with a lone field floating in the leftover
-   space. */
+/* No side nav -- a plain stacked list of section cards, same flat,
+   full-width layout as the admin/instructor account-settings forms
+   (StaffAccountSettings). */
 .settings-panels {
   display: grid;
   gap: var(--space-5);
   min-width: 0;
-  max-width: 42rem;
 }
 
 /* ---- Settings: section cards ----

@@ -150,20 +150,31 @@
 }
 
 /* ---------- Cards ---------- */
+/* Same card language as admin/instructor's .adm-form -- the white
+   gradient surface and brass top accent line -- since this form used to
+   nest .adm-form (same border/radius/shadow/gradient again) inside this
+   card, doubling up two near-identical frames around one form. */
 .aff-card {
   position: relative;
   padding: var(--space-5) var(--space-6);
   border: 1px solid var(--line);
   border-radius: var(--radius-lg);
-  background: var(--surface);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.8), rgba(255, 255, 255, 0.45));
   box-shadow: var(--shadow-soft);
   overflow: hidden;
 }
+.aff-card::before {
+  content: '';
+  position: absolute;
+  inset: 0 0 auto 0;
+  height: 3px;
+  background: linear-gradient(90deg, transparent, var(--brass) 50%, transparent);
+}
 .aff-card h2 {
   margin: 0 0 var(--space-3);
-  font-family: var(--font-display);
-  font-size: 1.05rem;
-  font-weight: 600;
+  font-family: var(--font-ui);
+  font-size: 1.1rem;
+  font-weight: 700;
   color: var(--ink);
 }
 .aff-card p {

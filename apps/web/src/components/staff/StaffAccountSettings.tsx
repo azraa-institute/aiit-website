@@ -179,7 +179,7 @@ export function StaffAccountSettings() {
   }
 
   return (
-    <div className="adm-settings">
+    <>
       <form className="adm-form" onSubmit={handleEmailChange}>
         <h2 className="adm-form__title">Email address</h2>
         <p className="adm-muted">Current email <strong>{email ?? 'Signed in'}</strong></p>
@@ -287,6 +287,6 @@ export function StaffAccountSettings() {
           </button>
         </div>
       </form>
-    </div>
+    </>
   );
 }

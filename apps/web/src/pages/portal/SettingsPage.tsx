@@ -232,7 +232,7 @@ function SignInSecuritySection() {
               onChange={(e) => setNewEmail(e.target.value)}
               required
             />
-            <Button as="button" type="submit" variant="secondary" size="sm" loading={emailSaving}>
+            <Button as="button" type="submit" variant="primary" size="sm" loading={emailSaving}>
               Update email
             </Button>
           </div>
@@ -267,7 +267,7 @@ function SignInSecuritySection() {
               />
             </div>
             <PasswordRequirementsList password={newPassword} />
-            <Button as="button" type="submit" variant="secondary" size="sm" loading={passwordSaving}>
+            <Button as="button" type="submit" variant="primary" size="sm" loading={passwordSaving}>
               Update password
             </Button>
           </div>
@@ -370,7 +370,7 @@ function RegionLanguageSection() {
           />
           <SelectField label="Preferred language" value={language} onChange={(e) => setLanguage(e.target.value)} options={LANGUAGE_OPTIONS} />
         </div>
-        <Button as="button" type="submit" variant="secondary" size="sm" loading={saving}>
+        <Button as="button" type="submit" variant="primary" size="sm" loading={saving}>
           Save preferences
         </Button>
       </form>

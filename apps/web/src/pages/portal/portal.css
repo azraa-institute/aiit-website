@@ -2550,6 +2550,15 @@
   max-width: 28rem;
   margin-top: var(--space-3);
 }
+/* The shared .btn primitive is SHOUT-CASE by default (built for marketing
+   CTAs) -- account settings reads as a plain utility form, same sentence-
+   case convention admin/instructor's .adm-btn already uses, so the submit
+   buttons here (Update email, Update password, Save preferences) are
+   reset to match instead of shouting at the user to update their password. */
+.settings-section .btn {
+  text-transform: none;
+  letter-spacing: normal;
+}
 .settings-section__row {
   display: flex;
   align-items: center;

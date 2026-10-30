@@ -2374,11 +2374,15 @@
 
 /* ---- Settings: shell + secondary nav ---- */
 /* No side nav -- a plain stacked list of section cards, same flat layout
-   as the admin/instructor account-settings forms (StaffAccountSettings). */
+   as the admin/instructor account-settings forms (StaffAccountSettings),
+   capped to the same readable width (.adm-settings, admin.css) instead of
+   stretching edge-to-edge with a lone field floating in the leftover
+   space. */
 .settings-panels {
   display: grid;
   gap: var(--space-5);
   min-width: 0;
+  max-width: 42rem;
 }
 
 /* ---- Settings: section cards ----
@@ -2484,7 +2488,6 @@
 .settings-section__form {
   display: grid;
   gap: var(--space-3);
-  max-width: 28rem;
   margin-top: var(--space-3);
 }
 /* The shared .btn primitive is SHOUT-CASE by default (built for marketing

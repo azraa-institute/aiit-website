@@ -43,32 +43,40 @@
   position: relative;
   overflow: hidden;
 }
-.affiliate-hero__bg {
-  position: absolute;
-  inset: 0;
-  z-index: 0;
-  pointer-events: none;
-  background-image: url('/assets/affiliate/aiit-affiliate-hero-network.png');
-  background-repeat: no-repeat;
-  background-position: right center;
-  background-size: cover;
-}
 .affiliate-hero__atmosphere {
   position: absolute;
   inset: 0;
   z-index: 0;
   pointer-events: none;
   background:
-    linear-gradient(90deg, rgba(20, 17, 15, 0.94) 0%, rgba(20, 17, 15, 0.78) 42%, rgba(20, 17, 15, 0.32) 72%, rgba(20, 17, 15, 0.08) 100%),
-    linear-gradient(0deg, rgba(20, 17, 15, 0.55) 0%, transparent 28%);
+    radial-gradient(50% 65% at 82% 38%, rgba(154, 123, 79, 0.14), transparent 70%),
+    radial-gradient(46% 60% at 6% 12%, rgba(192, 43, 35, 0.1), transparent 70%);
 }
 .affiliate-hero__inner {
   position: relative;
   z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: clamp(2rem, 4vw, 4rem);
   padding-bottom: clamp(2.5rem, 5vw, 3.5rem);
 }
 .affiliate-hero__copy {
+  position: relative;
+  z-index: 1;
   max-width: 38rem;
+}
+.affiliate-hero__art {
+  flex-shrink: 0;
+  width: clamp(24rem, 42vw, 42rem);
+  height: auto;
+  pointer-events: none;
+  user-select: none;
+}
+@media (max-width: 960px) {
+  .affiliate-hero__art {
+    display: none;
+  }
 }
 
 .affiliate-hero__eyebrow {

@@ -661,7 +661,6 @@ export default function AffiliatePage() {
 
       {/* ---------- 01 · Hero ---------- */}
       <Section tone="ink" size="lg" className="affiliate-hero">
-        <div className="affiliate-hero__bg" aria-hidden="true" />
         <div className="affiliate-hero__atmosphere" aria-hidden="true" />
         <div className="container container--wide affiliate-hero__inner" ref={heroRef}>
           <div className="affiliate-hero__copy" data-reveal>
@@ -684,6 +683,12 @@ export default function AffiliatePage() {
               Already applied? <Link to="/affiliate-portal">Sign in to your affiliate dashboard</Link>.
             </p>
           </div>
+          <img
+            src="/assets/affiliate/aiit-affiliate-hero-network.png"
+            alt=""
+            aria-hidden="true"
+            className="affiliate-hero__art"
+          />
         </div>
         <div className="container container--wide affiliate-hero__highlights-wrap">
           <div className="affiliate-hero__highlights">

@@ -372,7 +372,13 @@
   color: var(--fg-faint);
 }
 
-/* ---- Toggle switch ---- */
+/* ---- Toggle switch -- compact and flat on purpose: a 40x22 pill, an
+   18px thumb, no shadow/gradient bulk. The thumb is absolutely positioned
+   (top: 50% + translateY(-50%), not a margin-based center) specifically so
+   it can never drift off-center regardless of what the track's own
+   display/line-height resolves to -- a fixed, explicit center instead of
+   one that happens to add up right. Slides via `left`, not transform, so
+   "where it sits" and "how far it travels" are the same number. ---- */
 .cookie-toggle {
   flex-shrink: 0;
   padding: 0;
@@ -386,28 +392,32 @@
   cursor: default;
 }
 .cookie-toggle__track {
+  position: relative;
   display: block;
-  width: 38px;
-  height: 21px;
+  width: 40px;
+  height: 22px;
   border-radius: var(--radius-pill);
   background: var(--line-strong);
+  box-sizing: border-box;
   transition: background var(--dur-fast) var(--ease-out);
 }
 .cookie-toggle__thumb {
-  display: block;
-  width: 15px;
-  height: 15px;
-  margin: 3px;
+  position: absolute;
+  top: 50%;
+  left: 2px;
+  width: 18px;
+  height: 18px;
   border-radius: 50%;
   background: var(--surface);
-  box-shadow: 0 1px 2px rgba(20, 17, 15, 0.25);
-  transition: transform var(--dur-fast) var(--ease-out);
+  transform: translateY(-50%);
+  box-sizing: border-box;
+  transition: left var(--dur-fast) var(--ease-out);
 }
 .cookie-toggle.is-on .cookie-toggle__track {
   background: var(--brass);
 }
 .cookie-toggle.is-on .cookie-toggle__thumb {
-  transform: translateX(17px);
+  left: 20px;
 }
 .cookie-toggle.is-locked {
   opacity: 0.6;

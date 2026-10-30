@@ -2,6 +2,7 @@ import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { useLockBodyScroll } from '@/lib/useLockBodyScroll';
 import { Button } from '@/components/primitives/Button';
+import { cn } from '@/lib/cn';
 import './guided-tour.css';
 
 type StepIndex = 0 | 1 | 2 | 3 | 4;
@@ -202,13 +203,16 @@ export function GuidedTour({ open, onClose }: GuidedTourProps) {
     <div className="gt-root">
       {(phase === 'intro' || phase === 'done') && (
         <div className="gt-scrim">
-          <div className="gt-card gt-panel on-ink" role="dialog" aria-modal="true" aria-labelledby="gt-title">
+          <div className="gt-card gt-panel" role="dialog" aria-modal="true" aria-labelledby="gt-title">
             <button type="button" className="gt-close" aria-label="Close tour" ref={closeRef} onClick={() => onClose('skipped')}>
               <CloseGlyph />
             </button>
 
             {phase === 'intro' ? (
               <>
+                <span className="gt-badge" aria-hidden="true">
+                  <CompassIcon />
+                </span>
                 <p className="gt-eyebrow">Your AIIT.NETWORK portal</p>
                 <h2 id="gt-title" className="gt-title">
                   Welcome to your learning space.
@@ -226,6 +230,9 @@ export function GuidedTour({ open, onClose }: GuidedTourProps) {
               </>
             ) : (
               <>
+                <span className="gt-badge gt-badge--done" aria-hidden="true">
+                  <FlagIcon />
+                </span>
                 <p className="gt-eyebrow">Orientation complete</p>
                 <h2 id="gt-title" className="gt-title">
                   You&apos;re all set.
@@ -283,7 +290,7 @@ export function GuidedTour({ open, onClose }: GuidedTourProps) {
 
           <div
             ref={tooltipRef}
-            className="gt-panel gt-tooltip on-ink"
+            className="gt-panel gt-tooltip"
             data-mobile={isMobile || undefined}
             data-side={!isMobile ? tooltipPos?.side : undefined}
             style={
@@ -296,8 +303,9 @@ export function GuidedTour({ open, onClose }: GuidedTourProps) {
             <button type="button" className="gt-close" aria-label="Close tour" ref={closeRef} onClick={() => onClose('skipped')}>
               <CloseGlyph />
             </button>
+            <ProgressDots current={phase} total={STEPS.length} />
             <p className="gt-tooltip__count">
-              {String(phase + 1).padStart(2, '0')} / 05
+              Step {phase + 1} of {STEPS.length}
             </p>
             <p className="gt-eyebrow">{STEPS[phase].eyebrow}</p>
             <h2 id="gt-step-title" className="gt-tooltip__title">
@@ -327,6 +335,37 @@ function CloseGlyph() {
     <svg width="14" height="14" viewBox="0 0 15 15" aria-hidden="true">
       <path d="M3 3l9 9M12 3 3 12" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
     </svg>
+  );
+}
+
+function CompassIcon() {
+  return (
+    <svg width="22" height="22" viewBox="0 0 24 24" aria-hidden="true">
+      <circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" strokeWidth="1.6" />
+      <path d="M15 9l-2 6-4-1.5L11 7.5 15 9Z" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
+function FlagIcon() {
+  return (
+    <svg width="22" height="22" viewBox="0 0 24 24" aria-hidden="true">
+      <path d="M6 3v18" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+      <path d="M6 4h11l-2.5 3.5L17 11H6" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
+/** Step N of 5, shown as filled/current/upcoming dots -- the visual
+ * complement to .gt-tooltip__count's "01 / 05" text (kept for screen
+ * readers and anyone who prefers a number over dots). */
+function ProgressDots({ current, total }: { current: number; total: number }) {
+  return (
+    <div className="gt-dots" aria-hidden="true">
+      {Array.from({ length: total }, (_, i) => (
+        <span key={i} className={cn('gt-dot', i === current && 'is-current', i < current && 'is-done')} />
+      ))}
+    </div>
   );
 }
 

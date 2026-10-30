@@ -30,22 +30,54 @@
   }
 }
 
+/* Light paper/brass card, not the old dark-ink block -- same surface
+   language the rest of the portal (and the agreement/cookie-consent
+   panels) now uses: a white gradient, a hairline border, a brass accent
+   line along the top edge. Against the scrim's dark dimmed backdrop, a
+   bright card reads with more contrast and warmth than ink-on-ink did. */
 .gt-card {
   position: relative;
-  width: min(360px, 92vw);
+  width: min(380px, 92vw);
   padding: var(--space-6) var(--space-6) var(--space-5);
-  background: var(--ink);
-  color: var(--ivory);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.95), rgba(255, 255, 255, 0.8)), var(--paper);
+  color: var(--ink);
+  border: 1px solid var(--line);
   border-radius: var(--radius-lg);
   box-shadow: var(--shadow-lift);
   text-align: center;
+  overflow: hidden;
   animation: gt-card-in var(--dur-slow) var(--ease-out) both;
+}
+.gt-card::before {
+  content: '';
+  position: absolute;
+  inset: 0 0 auto 0;
+  height: 3px;
+  background: linear-gradient(90deg, transparent, var(--brass) 50%, transparent);
 }
 @keyframes gt-card-in {
   from {
     opacity: 0;
     transform: translateY(10px) scale(0.97);
   }
+}
+
+/* A small icon badge atop the intro/done bookend cards -- same rounded
+   circular treatment used across the rest of the site's recent redesign
+   (agreement panel, cookie consent). */
+.gt-badge {
+  display: grid;
+  place-items: center;
+  width: 2.75rem;
+  height: 2.75rem;
+  margin: 0 auto var(--space-4);
+  border-radius: 50%;
+  background: var(--accent-wash-strong);
+  color: var(--brass-deep);
+}
+.gt-badge--done {
+  background: color-mix(in srgb, var(--green, #2f7a4f) 14%, transparent);
+  color: var(--green, #2f7a4f);
 }
 
 /* ---- Shared editorial typography (both the card and the step tooltip) ---- */
@@ -56,14 +88,14 @@
   font-weight: 700;
   letter-spacing: var(--tracking-eyebrow);
   text-transform: uppercase;
-  color: var(--brass-tint);
+  color: var(--brass-deep);
 }
 .gt-title {
   margin: 0 0 var(--space-3);
   font-family: var(--font-display);
   font-size: var(--fs-subhead);
   line-height: var(--lh-snug);
-  color: var(--ivory);
+  color: var(--ink);
 }
 .gt-body {
   margin: 0 0 var(--space-2);
@@ -98,16 +130,16 @@
   width: 28px;
   height: 28px;
   border-radius: var(--radius-pill);
-  background: rgba(244, 239, 231, 0.08);
+  background: rgba(20, 17, 15, 0.05);
   color: var(--fg-muted);
   transition: background var(--dur-fast) var(--ease-out);
 }
 .gt-close:hover {
-  background: rgba(244, 239, 231, 0.16);
-  color: var(--ivory);
+  background: rgba(20, 17, 15, 0.1);
+  color: var(--ink);
 }
 .gt-close:focus-visible {
-  outline: 2px solid var(--brass-tint);
+  outline: 2px solid var(--brass-deep);
   outline-offset: 2px;
 }
 
@@ -124,20 +156,49 @@
   pointer-events: none;
 }
 
-/* ---- Step tooltip ---- */
+/* ---- Step tooltip -- same light paper surface as .gt-card. Its brass
+   accent comes from the spotlight ring + connector tick below, not a
+   repeated top line (the tick already occupies ::before here). ---- */
 .gt-tooltip {
   position: fixed;
   z-index: var(--z-modal);
   width: min(320px, 92vw);
   padding: var(--space-5);
-  background: var(--ink);
-  color: var(--ivory);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.95), rgba(255, 255, 255, 0.8)), var(--paper);
+  color: var(--ink);
+  border: 1px solid var(--line);
   border-radius: var(--radius-lg);
   box-shadow: var(--shadow-lift);
   transition:
     left var(--dur-base) var(--ease-out),
     top var(--dur-base) var(--ease-out),
     opacity var(--dur-fast) var(--ease-out);
+}
+/* ---- Step progress -- a row of dots (the visual indicator) plus the
+   "Step N of 5" text (kept for screen readers/anyone who prefers a
+   number) -- Appcues' and Canva's tours both lead with a step count, not
+   just a lone label, so a reader always knows how much is left. ---- */
+.gt-dots {
+  display: flex;
+  justify-content: center;
+  gap: 6px;
+  margin-bottom: var(--space-3);
+}
+.gt-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--line-strong);
+  transition:
+    background var(--dur-fast) var(--ease-out),
+    transform var(--dur-fast) var(--ease-out);
+}
+.gt-dot.is-done {
+  background: var(--brass-tint);
+}
+.gt-dot.is-current {
+  background: var(--brass);
+  transform: scale(1.4);
 }
 .gt-tooltip__count {
   margin: 0 0 var(--space-2);
@@ -151,7 +212,7 @@
   margin: 0 0 var(--space-3);
   font-family: var(--font-display);
   font-size: var(--fs-lead);
-  color: var(--ivory);
+  color: var(--ink);
 }
 
 /* Short brass connector "tick" from the tooltip's edge toward the target --

@@ -1478,3 +1478,127 @@
   text-decoration: underline;
   text-underline-offset: 3px;
 }
+
+/* ============================================================
+   SUCCESS NOTIFICATION — a one-time celebratory overlay shown right when
+   a submission succeeds (AffiliateSuccessNotification in AffiliatePage.tsx),
+   separate from the permanent inline status card. Same card language as
+   the rest of the site's recent redesign work (white gradient surface,
+   brass accent line, shadow-lift) -- "premium", not a confetti popup.
+   ============================================================ */
+.affiliate-success__scrim {
+  position: fixed;
+  inset: 0;
+  z-index: var(--z-modal);
+  display: grid;
+  place-items: center;
+  padding: clamp(1rem, 4vw, 2.5rem);
+  background: rgba(20, 17, 15, 0.55);
+  animation: affiliate-success-fade var(--dur-base) var(--ease-out);
+}
+@keyframes affiliate-success-fade {
+  from {
+    opacity: 0;
+  }
+}
+.affiliate-success__card {
+  position: relative;
+  width: min(420px, 92vw);
+  padding: var(--space-7) var(--space-6) var(--space-6);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.95), rgba(255, 255, 255, 0.82)), var(--paper);
+  color: var(--ink);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-lift);
+  text-align: center;
+  overflow: hidden;
+  animation: affiliate-success-card-in var(--dur-slow) var(--ease-out) both;
+}
+.affiliate-success__card::before {
+  content: '';
+  position: absolute;
+  inset: 0 0 auto 0;
+  height: 3px;
+  background: linear-gradient(90deg, transparent, var(--brass) 50%, transparent);
+}
+@keyframes affiliate-success-card-in {
+  from {
+    opacity: 0;
+    transform: translateY(14px) scale(0.96);
+  }
+}
+/* The badge "pops" in with a gentle overshoot, then the checkmark draws
+   itself a beat later -- restrained enough to read as delightful rather
+   than a confetti burst. */
+.affiliate-success__badge {
+  display: grid;
+  place-items: center;
+  width: 4rem;
+  height: 4rem;
+  margin: 0 auto var(--space-4);
+  border-radius: 50%;
+  background: var(--accent-wash-strong);
+  color: var(--brass-deep);
+  animation: affiliate-success-bounce 640ms var(--ease-out) both;
+}
+@keyframes affiliate-success-bounce {
+  0% {
+    transform: scale(0.4);
+    opacity: 0;
+  }
+  65% {
+    transform: scale(1.12);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+.affiliate-success__check {
+  stroke-dasharray: 28;
+  stroke-dashoffset: 28;
+  animation: affiliate-success-draw 420ms 360ms var(--ease-out) forwards;
+}
+@keyframes affiliate-success-draw {
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+.affiliate-success__title {
+  margin: 0 0 var(--space-3);
+  font-family: 'Source Serif 4', var(--font-display);
+  font-size: var(--fs-subhead);
+  color: var(--ink);
+}
+.affiliate-success__body {
+  margin: 0 0 var(--space-3);
+  font-family: var(--font-ui);
+  font-size: var(--fs-sm);
+  line-height: 1.6;
+  color: var(--ink-soft);
+}
+.affiliate-success__body:last-of-type {
+  margin-bottom: var(--space-5);
+}
+.affiliate-success__card .btn {
+  text-transform: none;
+  letter-spacing: normal;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .affiliate-success__scrim,
+  .affiliate-success__card,
+  .affiliate-success__badge {
+    animation: none;
+  }
+  .affiliate-success__check {
+    animation: none;
+    stroke-dashoffset: 0;
+  }
+}
+
+@media (max-width: 480px) {
+  .affiliate-success__card {
+    padding: var(--space-6) var(--space-5) var(--space-5);
+  }
+}

@@ -216,6 +216,79 @@ function formatAgreementDate(version: string): string {
   return date.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
 }
 
+function SuccessCheckIcon() {
+  return (
+    <svg width="34" height="34" viewBox="0 0 34 34" aria-hidden="true">
+      <circle cx="17" cy="17" r="16" fill="none" stroke="currentColor" strokeWidth="1.6" />
+      <path
+        className="affiliate-success__check"
+        d="M10 17.5 15 22.5 24.5 11.5"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2.2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
+
+/**
+ * A one-time celebratory overlay shown right when a submission succeeds --
+ * separate from (and in addition to) the permanent inline status card below
+ * it, which still carries the fuller explanation (reference code, dashboard
+ * link, etc.) and stays exactly as it was. Portaled onto <body> so it isn't
+ * affected by the form's own layout, dismissible via the button, Escape, or
+ * clicking outside -- same pattern as GuidedTour.tsx's dialog panels.
+ */
+function AffiliateSuccessNotification({ open, emailSent, onClose }: { open: boolean; emailSent: boolean; onClose: () => void }) {
+  const closeRef = useRef<HTMLButtonElement>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    closeRef.current?.focus();
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose();
+    };
+    document.addEventListener('keydown', onKey);
+    return () => document.removeEventListener('keydown', onKey);
+  }, [open, onClose]);
+
+  if (!open) return null;
+
+  return createPortal(
+    <div className="affiliate-success__scrim" onClick={onClose}>
+      <div
+        className="affiliate-success__card"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="affiliate-success-title"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <span className="affiliate-success__badge" aria-hidden="true">
+          <SuccessCheckIcon />
+        </span>
+        <h2 id="affiliate-success-title" className="affiliate-success__title">
+          Application submitted successfully!
+        </h2>
+        <p className="affiliate-success__body">
+          Welcome to the AIIT Affiliate Programme! Your application has been received successfully.
+        </p>
+        {emailSent ? (
+          <p className="affiliate-success__body">
+            Please check your email for a confirmation message and further instructions from AIIT. If you
+            don&apos;t see it in your inbox, kindly check your spam or junk folder.
+          </p>
+        ) : null}
+        <Button as="button" type="button" ref={closeRef} onClick={onClose}>
+          Got it
+        </Button>
+      </div>
+    </div>,
+    document.body,
+  );
+}
+
 /**
  * The "Print / Save as PDF" button's actual printable content, rendered via
  * a portal straight onto <body> (outside #root) rather than printed in
@@ -390,6 +463,16 @@ export default function AffiliatePage() {
       .finally(() => setCitiesLoading(false));
   }, [state, states]);
   const [done, setDone] = useState(false);
+  // Shown once, right at the moment of a successful submit -- driven by its
+  // own state rather than derived from `done` (which stays true across
+  // re-renders/remounts), so it can only ever fire the one time the request
+  // actually succeeds, never again just because the component re-rendered.
+  const [showSuccessNotice, setShowSuccessNotice] = useState(false);
+  // apply-new() sends an acknowledgment email (see AffiliatesService's own
+  // doc comment); apply() -- an already-signed-in learner applying -- does
+  // not. The notice's copy only promises an email for the path that
+  // actually sends one.
+  const [successEmailSent, setSuccessEmailSent] = useState(false);
 
   // The agreement's legal text, fetched fresh rather than hardcoded on this
   // page -- apps/api's affiliate-agreement.ts is the one place it's
@@ -483,12 +566,16 @@ export default function AffiliatePage() {
           }),
         });
         clearPendingReferralSlug();
+        setSuccessEmailSent(true);
+        setShowSuccessNotice(true);
         setDone(true);
         return;
       }
 
       await apiFetch('/affiliates/apply', { method: 'POST', body: JSON.stringify(shared) });
       affiliateMe.refetch();
+      setSuccessEmailSent(false);
+      setShowSuccessNotice(true);
       setDone(true);
     } catch (err) {
       if (err instanceof ApiError && err.status === 409) {
@@ -1076,6 +1163,12 @@ export default function AffiliatePage() {
           </div>
         </div>
       </Section>
+
+      <AffiliateSuccessNotification
+        open={showSuccessNotice}
+        emailSent={successEmailSent}
+        onClose={() => setShowSuccessNotice(false)}
+      />
     </Layout>
   );
 }

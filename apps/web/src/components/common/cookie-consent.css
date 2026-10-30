@@ -30,7 +30,8 @@
   overflow: hidden;
 }
 .cookie-panel__card.is-expanded {
-  width: min(700px, calc(100vw - 32px));
+  width: min(820px, calc(100vw - 32px));
+  border-radius: 20px;
 }
 
 /* A thin champagne/gold spine along the left edge -- the one accent
@@ -157,12 +158,12 @@
   color: var(--brass-deep);
 }
 
-/* ---- Decorative sprig -- a thin hand-drawn line mark, never a literal
-   cookie glyph or emoji. ---- */
-.cookie-panel__leaf {
+/* ---- Decorative mark -- a thin hand-drawn cookie/shield line mark,
+   never a literal cookie emoji. ---- */
+.cookie-panel__mark {
   flex-shrink: 0;
   width: 20px;
-  height: 22px;
+  height: 16px;
   margin-top: 1px;
   fill: none;
   stroke: var(--brass);
@@ -171,10 +172,37 @@
   stroke-linejoin: round;
   opacity: 0.85;
 }
-.cookie-panel__side .cookie-panel__leaf {
-  width: 24px;
-  height: 26px;
+.cookie-panel__side .cookie-panel__mark {
+  width: 46px;
+  height: 36px;
   margin: var(--space-5) 0 0;
+}
+
+/* ---- Letterhead mark + "learn more" link -- the expanded panel's side
+   column reads as a small letterhead (logo, heading, body, decorative
+   mark) with the policy link pinned to the column's bottom edge. ---- */
+.cookie-panel__logo {
+  width: 108px;
+  height: auto;
+  margin-bottom: var(--space-4);
+}
+.cookie-panel__policy-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: auto;
+  padding-top: var(--space-5);
+  font-family: var(--font-ui);
+  font-size: var(--fs-xs);
+  font-weight: 700;
+  color: var(--brass-deep);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+.cookie-panel__policy-link:hover,
+.cookie-panel__policy-link:focus-visible {
+  color: var(--ink);
+  outline: none;
 }
 
 /* ---- Buttons -- normal case, moderate radius: a quieter register than
@@ -184,6 +212,15 @@
   display: flex;
   gap: 10px;
   margin-top: 18px;
+}
+/* The expanded panel's own action row -- content-sized and right-aligned,
+   not stretched full-width like the compact notice's pair. */
+.cookie-panel__actions--end {
+  justify-content: flex-end;
+}
+.cookie-panel__actions--end .cookie-panel__btn {
+  flex: none;
+  padding: 11px 26px;
 }
 .cookie-panel__btn {
   flex: 1 1 auto;
@@ -199,22 +236,27 @@
     color var(--dur-fast) var(--ease-out),
     border-color var(--dur-fast) var(--ease-out);
 }
+/* Accept and reject carry equal visual weight (same border thickness,
+   same full-strength ink, filled vs. outlined as the only difference) --
+   current GDPR-banner guidance treats a bold filled Accept next to a
+   faint, muted-text Reject as a dark pattern, nudging consent rather than
+   presenting a genuine choice. */
 .cookie-panel__btn--primary {
-  background: var(--ink);
+  background: var(--brass-deep);
   color: var(--paper);
-  border: 1px solid var(--ink);
+  border: 1.5px solid var(--brass-deep);
 }
 .cookie-panel__btn--primary:hover {
-  background: var(--brass-deep);
-  border-color: var(--brass-deep);
+  background: var(--ink);
+  border-color: var(--ink);
 }
 .cookie-panel__btn--secondary {
   background: transparent;
-  color: var(--ink-soft);
-  border: 1px solid var(--line-strong);
+  color: var(--ink);
+  border: 1.5px solid var(--ink);
 }
 .cookie-panel__btn--secondary:hover {
-  border-color: var(--brass);
+  border-color: var(--brass-deep);
   color: var(--brass-deep);
   background: var(--accent-wash);
 }
@@ -224,10 +266,11 @@
 }
 
 /* ============================================================
-   EXPANDED (preferences) -- two columns from ~640px: a narrow side
-   column carrying the same eyebrow/heading language, and the toggle
-   list + actions on the right. Below that width it stacks to one
-   column, same as the compact notice.
+   EXPANDED (preferences) -- two columns from ~640px: a letterhead-style
+   side column (logo, heading, body, mark, policy link pinned to the
+   bottom) separated by a vertical rule from the toggle list + actions on
+   the right. Below that width it stacks to one column, same as the
+   compact notice.
    ============================================================ */
 .cookie-panel__expanded {
   display: flex;
@@ -240,7 +283,11 @@
     gap: var(--space-6);
   }
   .cookie-panel__side {
-    flex: 0 0 190px;
+    flex: 0 0 240px;
+    display: flex;
+    flex-direction: column;
+    padding-right: var(--space-6);
+    border-right: 1px solid var(--line);
   }
   .cookie-panel__main {
     flex: 1 1 auto;
@@ -256,18 +303,27 @@
 }
 .cookie-panel__row {
   display: flex;
-  align-items: flex-start;
+  /* Centered, not top-aligned -- the icon and toggle are both shorter than
+     the two-line title+description text, so flex-start pinned them to the
+     row's top edge instead of the text block's vertical middle. */
+  align-items: center;
   gap: var(--space-3);
   padding-block: var(--space-4);
   border-bottom: 1px solid var(--line);
 }
-.cookie-panel__row-dot {
+/* A circular icon badge per category (essential/analytics/preferences) --
+   same icon-badge treatment as the Affiliate Agreement panel's toolbar/
+   notice icons, just round rather than rounded-square to match this
+   panel's own reference, replacing the earlier plain dot marker. */
+.cookie-panel__row-icon {
   flex-shrink: 0;
-  width: 7px;
-  height: 7px;
-  margin-top: 5px;
+  display: grid;
+  place-items: center;
+  width: 2.75rem;
+  height: 2.75rem;
   border-radius: 50%;
-  border: 1px solid var(--brass-deep);
+  background: var(--accent-wash-strong);
+  color: var(--brass-deep);
 }
 .cookie-panel__row-text {
   flex: 1 1 auto;
@@ -276,10 +332,24 @@
   flex-direction: column;
   gap: 2px;
 }
+.cookie-panel__row-title-line {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
 .cookie-panel__row-title {
   font-size: var(--fs-sm);
   font-weight: 600;
   color: var(--ink);
+}
+.cookie-panel__row-pill {
+  padding: 2px 10px;
+  border-radius: var(--radius-pill);
+  background: var(--accent-wash-strong);
+  font-family: var(--font-ui);
+  font-size: 10.5px;
+  font-weight: 700;
+  color: var(--brass-deep);
 }
 .cookie-panel__row-body {
   font-size: var(--fs-xs);

@@ -74,7 +74,6 @@
   line-height: 1.06;
   letter-spacing: -0.01em;
   color: var(--ivory);
-  text-wrap: balance;
 }
 .affiliate-hero__intro {
   margin-top: var(--space-5);
@@ -921,7 +920,12 @@
    interactive panel in place (via visibility tricks) produced a blank page,
    since its nested scroll/overflow/radius ancestors don't resolve the same
    way under print layout. This sidesteps that: hide the whole app, show
-   only this flat, unstyled-by-the-rest-of-the-page sheet. */
+   only this flat, unstyled-by-the-rest-of-the-page sheet.
+   Styled to match the real, generated PDF an approved affiliate downloads
+   from their dashboard (affiliate-agreement-pdf.service.ts) -- same
+   letterhead block, serif title and brass clause headings, justified serif
+   body text -- short of that PDF's signature block and seal, which this
+   pre-signature reference copy has no need for. */
 .affiliate-agreement__print-sheet {
   display: none;
 }
@@ -931,31 +935,79 @@
   }
   .affiliate-agreement__print-sheet {
     display: block;
-    padding: 2rem;
+    max-width: 44rem;
+    margin: 0 auto;
+    padding: 2.25rem 1.5rem 3rem;
     font-family: var(--font-ui);
-    color: #000;
+    color: var(--ink);
+  }
+  .affiliate-agreement__print-letterhead {
+    text-align: center;
+    margin-bottom: 2rem;
+  }
+  .affiliate-agreement__print-logo {
+    width: 7rem;
+    height: auto;
+    margin: 0 auto 0.75rem;
+  }
+  .affiliate-agreement__print-org {
+    font-family: var(--font-accent);
+    font-weight: 700;
+    font-size: 1.05rem;
+    color: var(--ink);
+    margin: 0 0 0.3rem;
+  }
+  .affiliate-agreement__print-rule {
+    height: 1px;
+    background: var(--brass-deep);
+    margin: 0.9rem 0 1.1rem;
   }
   .affiliate-agreement__print-sheet h1 {
     font-family: var(--font-accent);
-    font-size: 1.4rem;
-    margin: 0 0 0.25rem;
+    font-weight: 700;
+    font-size: 1.3rem;
+    color: var(--ink);
+    margin: 0 0 0.3rem;
+  }
+  .affiliate-agreement__print-subtitle {
+    font-family: var(--font-accent);
+    font-size: 0.85rem;
+    color: var(--ink-muted);
+    margin: 0 0 0.5rem;
   }
   .affiliate-agreement__print-meta {
-    font-size: 0.85rem;
-    color: #444;
-    margin: 0 0 1.5rem;
+    font-size: 0.75rem;
+    color: var(--ink-muted);
+    margin: 0 0 0.2rem;
   }
-  .affiliate-agreement__print-sheet h2 {
+  .affiliate-agreement__print-clause {
+    break-inside: avoid-page;
+  }
+  .affiliate-agreement__print-clause h2 {
     font-family: var(--font-accent);
-    font-size: 1.02rem;
-    margin: 1.5rem 0 0.5rem;
+    font-weight: 700;
+    font-size: 0.95rem;
+    color: var(--brass-deep);
+    margin: 1.4rem 0 0.4rem;
     break-after: avoid;
   }
-  .affiliate-agreement__print-sheet p {
-    font-size: 0.9rem;
+  .affiliate-agreement__print-clause p {
+    font-family: var(--font-accent);
+    font-size: 0.82rem;
     line-height: 1.55;
-    margin: 0 0 0.6rem;
+    text-align: justify;
+    color: var(--ink);
+    margin: 0 0 0.55rem;
     break-inside: avoid;
+  }
+  .affiliate-agreement__print-footer {
+    margin-top: 2rem;
+    padding-top: 1rem;
+    border-top: 1px solid var(--brass);
+    font-size: 0.72rem;
+    font-style: italic;
+    text-align: center;
+    color: var(--ink-muted);
   }
 }
 

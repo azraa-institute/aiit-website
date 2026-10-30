@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
+import { Logo } from '@/components/layout/Logo';
 import { useCookieConsent } from '@/lib/CookieConsentContext';
 import type { CookieConsentChoices } from '@/lib/CookieConsentContext';
 import { cn } from '@/lib/cn';
@@ -25,25 +26,32 @@ const CATEGORIES: CategoryInfo[] = [
   {
     key: 'analytics',
     title: 'Analytics cookies',
-    body: 'Help us understand how visitors use the platform.',
+    body: 'Help us understand how visitors use the platform so we can improve our content and services.',
   },
   {
     key: 'preferences',
     title: 'Preference cookies',
-    body: 'Remember your settings and choices.',
+    body: 'Remember your settings and choices, such as language and region.',
   },
 ];
 
-/** A restrained, hand-drawn line-art sprig -- the panel's one decorative
- * touch, echoing the site's other thin-stroke abstract marks (the terms
- * book's RuledMark, the homepage globe) rather than a literal cookie
- * icon or emoji. */
-function LeafMark() {
+/** A restrained, hand-drawn line-art mark -- a cookie with a shield-check
+ * overlapping it, plus a sparkle -- the panel's one decorative touch,
+ * echoing the site's other thin-stroke abstract marks (the terms book's
+ * RuledMark, the homepage globe) rather than a literal cookie emoji. */
+function CookieShieldMark() {
   return (
-    <svg className="cookie-panel__leaf" viewBox="0 0 40 44" aria-hidden="true" focusable="false">
-      <path d="M20 42V6" />
-      <path d="M20 8c-7 0-11.5 5-12.5 10.5C14.5 18.5 20 13.5 20 8Z" />
-      <path d="M20 17c7.5 0 12.5 5.5 13.5 11.5C26 28.5 20 23 20 17Z" />
+    <svg className="cookie-panel__mark" viewBox="0 0 90 68" aria-hidden="true" focusable="false">
+      <circle cx="30" cy="38" r="22" />
+      <circle cx="22" cy="30" r="1.6" fill="currentColor" stroke="none" />
+      <circle cx="35" cy="27" r="1.6" fill="currentColor" stroke="none" />
+      <circle cx="19" cy="44" r="1.6" fill="currentColor" stroke="none" />
+      <circle cx="37" cy="46" r="1.6" fill="currentColor" stroke="none" />
+      <circle cx="29" cy="39" r="1.6" fill="currentColor" stroke="none" />
+      <path d="M58 18 70 22v12c0 9-5 15-12 17-7-2-12-8-12-17V22l12-4Z" />
+      <path d="M52 35.5 57 40.5 66 30.5" />
+      <path d="M10 18l1.4 4 4 1.4-4 1.4L10 29l-1.4-4-4-1.4 4-1.4Z" />
+      <circle cx="76" cy="6" r="1.6" fill="currentColor" stroke="none" />
     </svg>
   );
 }
@@ -56,12 +64,58 @@ function ArrowIcon() {
   );
 }
 
+/** The diagonal "opens elsewhere" arrow for the Cookie Policy link --
+ * distinct from ArrowIcon's horizontal "proceed" chevron above. */
+function ExternalArrowIcon() {
+  return (
+    <svg width="10" height="10" viewBox="0 0 12 12" aria-hidden="true">
+      <path d="M3.5 8.5 8.5 3.5M4.3 3.5h4.2v4.2" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
 function BackArrowIcon() {
   return (
     <svg width="13" height="10" viewBox="0 0 13 10" aria-hidden="true">
       <path d="M5 1.2 1 5l4 3.8M1 5h12" fill="none" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round" />
     </svg>
   );
+}
+
+function GearIcon() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true">
+      <circle cx="12" cy="12" r="3.2" fill="none" stroke="currentColor" strokeWidth="1.6" />
+      <path
+        d="M12 3.5v2.3M12 18.2v2.3M20.5 12h-2.3M5.8 12H3.5M17.7 6.3l-1.6 1.6M7.9 16.1l-1.6 1.6M17.7 17.7l-1.6-1.6M7.9 7.9 6.3 6.3"
+        stroke="currentColor"
+        strokeWidth="1.6"
+        strokeLinecap="round"
+      />
+    </svg>
+  );
+}
+
+function ChartIcon() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 24 24" aria-hidden="true">
+      <path d="M4.5 19V10M10.5 19V5M16.5 19v-7M4.5 19h16" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
+function SlidersIcon() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 24 24" aria-hidden="true">
+      <path d="M4 7h9.5M18.5 7H20M4 17h2M8.5 17H20" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+      <circle cx="16" cy="7" r="2.1" fill="var(--ivory)" stroke="currentColor" strokeWidth="1.6" />
+      <circle cx="6" cy="17" r="2.1" fill="var(--ivory)" stroke="currentColor" strokeWidth="1.6" />
+    </svg>
+  );
+}
+
+function categoryIcon(key: keyof CookieConsentChoices) {
+  return key === 'analytics' ? <ChartIcon /> : <SlidersIcon />;
 }
 
 function Toggle({
@@ -159,21 +213,30 @@ function CookiePanel({ expanded }: { expanded: boolean }) {
                   Back
                 </button>
               )}
-              <Eyebrow />
+              <Logo variant="dark" className="cookie-panel__logo" />
               <h2 className="cookie-panel__heading">Cookie preferences</h2>
               <p className="cookie-panel__body">
-                Choose how we use cookies on AIIT.NETWORK. You can update your preferences at any time from the
-                footer.
+                We use cookies to improve your experience on AIIT.NETWORK. You can choose which cookies you&apos;d
+                like to allow and update your preferences at any time from the footer.
               </p>
-              <LeafMark />
+              <CookieShieldMark />
+              <Link to="/privacy-policy" className="cookie-panel__policy-link" onClick={closeAction}>
+                Learn more about our Cookie Policy
+                <ExternalArrowIcon />
+              </Link>
             </div>
 
             <div className="cookie-panel__main">
               <ul className="cookie-panel__list">
                 <li className="cookie-panel__row">
-                  <span className="cookie-panel__row-dot" aria-hidden="true" />
+                  <span className="cookie-panel__row-icon" aria-hidden="true">
+                    <GearIcon />
+                  </span>
                   <div className="cookie-panel__row-text">
-                    <span className="cookie-panel__row-title">Essential cookies</span>
+                    <span className="cookie-panel__row-title-line">
+                      <span className="cookie-panel__row-title">Essential cookies</span>
+                      <span className="cookie-panel__row-pill">Required</span>
+                    </span>
                     <span className="cookie-panel__row-body">Required for the website to function properly.</span>
                   </div>
                   <div className="cookie-panel__row-control">
@@ -183,7 +246,9 @@ function CookiePanel({ expanded }: { expanded: boolean }) {
                 </li>
                 {CATEGORIES.map((c) => (
                   <li className="cookie-panel__row" key={c.key}>
-                    <span className="cookie-panel__row-dot" aria-hidden="true" />
+                    <span className="cookie-panel__row-icon" aria-hidden="true">
+                      {categoryIcon(c.key)}
+                    </span>
                     <div className="cookie-panel__row-text">
                       <span className="cookie-panel__row-title">{c.title}</span>
                       <span className="cookie-panel__row-body">{c.body}</span>
@@ -199,9 +264,9 @@ function CookiePanel({ expanded }: { expanded: boolean }) {
                 ))}
               </ul>
 
-              <div className="cookie-panel__actions">
-                <button type="button" className="cookie-panel__btn cookie-panel__btn--secondary" onClick={closeAction}>
-                  Cancel
+              <div className="cookie-panel__actions cookie-panel__actions--end">
+                <button type="button" className="cookie-panel__btn cookie-panel__btn--secondary" onClick={rejectNonEssential}>
+                  Reject all
                 </button>
                 <button
                   type="button"
@@ -217,7 +282,7 @@ function CookiePanel({ expanded }: { expanded: boolean }) {
           <>
             <div className="cookie-panel__header">
               <Eyebrow />
-              <LeafMark />
+              <CookieShieldMark />
             </div>
             <h2 className="cookie-panel__heading">Your privacy matters.</h2>
             <p className="cookie-panel__body">

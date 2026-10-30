@@ -226,20 +226,44 @@ function formatAgreementDate(version: string): string {
  * resolve the same way under print layout. A sibling of #root, hidden by
  * default and shown only in @media print (which also hides #root), sidesteps
  * all of that: what prints is simple, independent, top-level flow content.
+ *
+ * Styled to match the letterhead of the real, generated PDF an approved
+ * affiliate downloads from their dashboard (see
+ * apps/api/.../affiliate-agreement-pdf.service.ts's drawLetterhead()) --
+ * same institute letterhead block, title and clause treatment -- but this
+ * is the pre-signature reference copy a visitor reads before applying, so
+ * it stops short of that PDF's signature block, seal and per-affiliate
+ * reference code: there's nothing to sign or stamp yet.
  */
 function AgreementPrintSheet({ agreement }: { agreement: AffiliateAgreement }) {
   return createPortal(
     <div className="affiliate-agreement__print-sheet">
-      <h1>AIIT Affiliate Agreement</h1>
-      <p className="affiliate-agreement__print-meta">Last updated: {formatAgreementDate(agreement.version)}</p>
+      <div className="affiliate-agreement__print-letterhead">
+        <Logo variant="dark" className="affiliate-agreement__print-logo" />
+        <p className="affiliate-agreement__print-org">Azraa Institute of Information Technology (AIIT)</p>
+        <p className="affiliate-agreement__print-meta">AIIT Academy · www.aiit.network</p>
+        <p className="affiliate-agreement__print-meta">
+          36, Farook Nagar 1st Cross, Kovaipudur, Coimbatore – 641042, Tamil Nadu, India
+        </p>
+        <div className="affiliate-agreement__print-rule" />
+        <h1>Individual Partner Referral Agreement</h1>
+        <p className="affiliate-agreement__print-subtitle">Student Acquisition, Content Creator &amp; Affiliate Partnership</p>
+        <p className="affiliate-agreement__print-meta">
+          Reference copy for review · Version {formatAgreementDate(agreement.version)} · Unsigned
+        </p>
+      </div>
       {agreement.sections.map((section) => (
-        <div key={section.heading}>
+        <div key={section.heading} className="affiliate-agreement__print-clause">
           <h2>{section.heading}</h2>
           {section.paragraphs.map((paragraph, i) => (
             <p key={i}>{paragraph}</p>
           ))}
         </div>
       ))}
+      <p className="affiliate-agreement__print-footer">
+        This is a reference copy for your own review, not a signed agreement. You sign electronically, by typed
+        name and the agreement checkbox, as part of the application itself.
+      </p>
     </div>,
     document.body,
   );

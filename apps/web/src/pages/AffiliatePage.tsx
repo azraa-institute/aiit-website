@@ -3,6 +3,7 @@ import type { FormEvent } from 'react';
 import { Link } from 'react-router-dom';
 import type { AffiliateAgreement, AffiliateSocialPlatform, AffiliateType, GeoCity, GeoState } from '@aiit/shared';
 import { Layout } from '@/components/layout/Layout';
+import { Logo } from '@/components/layout/Logo';
 import { Seo } from '@/lib/Seo';
 import { useScrollReveal } from '@/lib/useScrollReveal';
 import { useInView } from '@/lib/useInView';
@@ -56,6 +57,10 @@ const SOCIAL_PLATFORM_OPTIONS: { value: AffiliateSocialPlatform; label: string }
 ];
 const MAX_SOCIAL_LINKS = 5;
 
+function socialPlatformLabel(platform: AffiliateSocialPlatform): string {
+  return SOCIAL_PLATFORM_OPTIONS.find((o) => o.value === platform)?.label ?? platform;
+}
+
 interface SocialLinkRow {
   platform: AffiliateSocialPlatform;
   url: string;
@@ -92,6 +97,112 @@ function ClipboardIcon() {
       <path d="M8.5 12.5h7M8.5 16h7" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
     </svg>
   );
+}
+
+function DocumentIcon() {
+  return (
+    <svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true">
+      <path d="M7 3h7l4 4v14a1 1 0 0 1-1 1H7a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1Z" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinejoin="round" />
+      <path d="M14 3v4h4" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinejoin="round" />
+      <path d="M8.5 12h7M8.5 15.5h7M8.5 19h4" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
+    </svg>
+  );
+}
+
+function ShieldCheckIcon() {
+  return (
+    <svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true">
+      <path
+        d="M12 3.5l6.5 2.6v5.4c0 4.4-2.8 7.9-6.5 9-3.7-1.1-6.5-4.6-6.5-9V6.1L12 3.5Z"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.6"
+        strokeLinejoin="round"
+      />
+      <path d="M8.6 12.4l2.3 2.3 4.5-5" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
+function DownloadIcon() {
+  return (
+    <svg width="15" height="15" viewBox="0 0 24 24" aria-hidden="true">
+      <path d="M12 3v12m0 0l-5-5m5 5l5-5" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+      <path d="M5 20h14" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+    </svg>
+  );
+}
+
+/** Subtle decorative mark for the agreement header -- a signed page and a
+    verified-partner badge, echoing the shield used in the notice panel
+    below. Purely ornamental (aria-hidden), hidden on narrow screens where
+    there's no room for it beside the heading (see affiliate-page.css). */
+function AgreementArt() {
+  return (
+    <svg className="affiliate-agreement__art" viewBox="0 0 200 170" aria-hidden="true">
+      <g transform="rotate(-7 75 90)">
+        <rect x="32" y="18" width="92" height="124" rx="9" fill="var(--ivory-deep)" stroke="var(--line)" />
+      </g>
+      <g transform="rotate(5 110 90)">
+        <rect x="72" y="12" width="96" height="128" rx="9" fill="var(--surface)" stroke="var(--line-strong)" />
+        <line x1="87" y1="38" x2="152" y2="38" stroke="var(--line-strong)" strokeWidth="2" />
+        <line x1="87" y1="52" x2="152" y2="52" stroke="var(--line)" strokeWidth="2" />
+        <line x1="87" y1="66" x2="142" y2="66" stroke="var(--line)" strokeWidth="2" />
+        <line x1="87" y1="80" x2="152" y2="80" stroke="var(--line)" strokeWidth="2" />
+        <line x1="87" y1="94" x2="132" y2="94" stroke="var(--line)" strokeWidth="2" />
+        <path d="M87 116q8-13 16 0t16 0t16-5" fill="none" stroke="var(--brass-deep)" strokeWidth="2.2" strokeLinecap="round" />
+      </g>
+      <g transform="translate(142 120)">
+        <circle r="23" fill="var(--brass)" />
+        <path d="M-8.5 -1.5l5.5 6 12-13" fill="none" stroke="#fff" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
+      </g>
+      <g fill="var(--brass-tint)">
+        <path d="M24 28l2 6 6 2-6 2-2 6-2-6-6-2 6-2Z" />
+        <circle cx="176" cy="44" r="2.5" />
+        <circle cx="28" cy="104" r="2" />
+      </g>
+    </svg>
+  );
+}
+
+/** "1. Parties" -> { number: "1", title: "Parties" }; "6A. Affiliate-to-
+    Affiliate Commission" -> { number: "6A", title: "..." }. The backend's
+    AFFILIATE_AGREEMENT_SECTIONS headings already carry their own clause
+    number as plain text (see affiliate-agreement.ts) -- this only splits it
+    out for the circular marker, it doesn't change what's sent or stored. */
+function splitClauseHeading(heading: string): { number: string; title: string } {
+  const match = heading.match(/^(\S+)\.\s+(.+)$/);
+  return match ? { number: match[1], title: match[2] } : { number: '', title: heading };
+}
+
+type ClauseBlock = { type: 'p'; text: string } | { type: 'list'; items: string[] };
+
+/** Groups consecutive "• ..." paragraphs (the agreement source's own plain-
+    text bullet convention, e.g. Clause 3's eligible-categories list) into a
+    real list block so they render as proper <li> bullets instead of a
+    literal "•" character -- same words, same order, just a cleaner marker. */
+function groupClauseParagraphs(paragraphs: string[]): ClauseBlock[] {
+  const blocks: ClauseBlock[] = [];
+  for (const para of paragraphs) {
+    if (para.startsWith('• ')) {
+      const item = para.slice(2);
+      const last = blocks[blocks.length - 1];
+      if (last?.type === 'list') last.items.push(item);
+      else blocks.push({ type: 'list', items: [item] });
+    } else {
+      blocks.push({ type: 'p', text: para });
+    }
+  }
+  return blocks;
+}
+
+/** agreement.version is the ISO date the legal text was last revised (see
+    AFFILIATE_AGREEMENT_VERSION in affiliate-agreement.ts) -- real metadata
+    from the API response, not a placeholder. */
+function formatAgreementDate(version: string): string {
+  const date = new Date(version);
+  if (Number.isNaN(date.getTime())) return version;
+  return date.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
 }
 
 /** One rate figure with a count-up-on-reveal animated number. */
@@ -523,27 +634,92 @@ export default function AffiliatePage() {
       <Section id="agreement" tone="paper" size="default">
         <div className="container container--wide">
           <div className="affiliate-agreement" data-reveal>
-            <p className="eyebrow">Affiliate agreement</p>
-            <h2 className="affiliate-section-title affiliate-agreement__title">Read the Affiliate Agreement</h2>
-            <p className="affiliate-section-intro">
-              This is what you&apos;re agreeing to below: commission structure, eligibility, obligations,
-              payment terms, and the rest. You&apos;ll sign it electronically as part of applying, and can download
-              your own signed copy afterwards from your affiliate dashboard.
-            </p>
+            <div className="affiliate-agreement__intro">
+              <div className="affiliate-agreement__intro-head">
+                <span className="affiliate-agreement__intro-icon" aria-hidden="true">
+                  <DocumentIcon />
+                </span>
+                <div className="affiliate-agreement__intro-copy">
+                  <p className="eyebrow">Affiliate agreement</p>
+                  <h2 className="affiliate-section-title affiliate-agreement__title">Read the Affiliate Agreement</h2>
+                </div>
+              </div>
+              <p className="affiliate-section-intro affiliate-agreement__intro-text">
+                This is what you&apos;re agreeing to below: commission structure, eligibility, obligations,
+                payment terms, and the rest. You&apos;ll sign it electronically as part of applying, and can download
+                your own signed copy afterwards from your affiliate dashboard.
+              </p>
+              <AgreementArt />
+            </div>
+
             {agreementError ? <p className="affiliate-agreement__error">{agreementError}</p> : null}
-            <div className="affiliate-agreement__text" tabIndex={0} aria-label="Affiliate Agreement, full text">
-              {agreement ? (
-                agreement.sections.map((section) => (
-                  <div key={section.heading} className="affiliate-agreement__clause">
-                    <h3>{section.heading}</h3>
-                    {section.paragraphs.map((paragraph, i) => (
-                      <p key={i}>{paragraph}</p>
-                    ))}
+
+            <div className="affiliate-agreement__panel">
+              <div className="affiliate-agreement__toolbar">
+                <span className="affiliate-agreement__toolbar-icon" aria-hidden="true">
+                  <DocumentIcon />
+                </span>
+                <div className="affiliate-agreement__toolbar-body">
+                  <p className="affiliate-agreement__toolbar-title">AIIT Affiliate Agreement</p>
+                  <p className="affiliate-agreement__toolbar-hint">Please read the full agreement carefully before proceeding.</p>
+                </div>
+                {agreement ? (
+                  <div className="affiliate-agreement__toolbar-actions">
+                    <button type="button" className="affiliate-agreement__print" onClick={() => window.print()}>
+                      <DownloadIcon /> Print / Save as PDF
+                    </button>
+                    <span className="affiliate-agreement__updated">Last updated: {formatAgreementDate(agreement.version)}</span>
                   </div>
-                ))
-              ) : !agreementError ? (
-                <p className="affiliate-agreement__loading">Loading the agreement…</p>
-              ) : null}
+                ) : null}
+              </div>
+
+              <div className="affiliate-agreement__text" tabIndex={0} aria-label="Affiliate Agreement, full text">
+                {agreement ? (
+                  agreement.sections.map((section) => {
+                    const { number, title } = splitClauseHeading(section.heading);
+                    return (
+                      <div key={section.heading} className="affiliate-agreement__clause">
+                        <div className="affiliate-agreement__clause-head">
+                          {number ? (
+                            <span className="affiliate-agreement__clause-num" aria-hidden="true">
+                              {number}
+                            </span>
+                          ) : null}
+                          <h3>{title}</h3>
+                          <span className="affiliate-agreement__clause-rule" aria-hidden="true" />
+                        </div>
+                        {groupClauseParagraphs(section.paragraphs).map((block, i) =>
+                          block.type === 'list' ? (
+                            <ul key={i}>
+                              {block.items.map((item, j) => (
+                                <li key={j}>{item}</li>
+                              ))}
+                            </ul>
+                          ) : (
+                            <p key={i}>{block.text}</p>
+                          ),
+                        )}
+                      </div>
+                    );
+                  })
+                ) : !agreementError ? (
+                  <p className="affiliate-agreement__loading">Loading the agreement…</p>
+                ) : null}
+              </div>
+            </div>
+
+            <div className="affiliate-agreement__notice">
+              <span className="affiliate-agreement__notice-icon" aria-hidden="true">
+                <ShieldCheckIcon />
+              </span>
+              <div>
+                <p className="affiliate-agreement__notice-title">Important</p>
+                <p>
+                  Please review the entire Affiliate Agreement carefully. By signing below, you confirm that you
+                  understand and agree to all terms and conditions, including the commission structure, referral
+                  terms, confidentiality requirements and your obligations as an affiliate partner.
+                </p>
+              </div>
             </div>
           </div>
         </div>
@@ -553,9 +729,7 @@ export default function AffiliatePage() {
       <Section id="apply" tone="ink" size="lg">
         <div className="container container--wide">
           <p className="affiliate-close-statement" data-reveal>
-            Turn your network
-            <br />
-            into opportunity.
+            Turn your network into opportunity.
           </p>
 
           <div className="affiliate__apply" data-reveal>
@@ -619,6 +793,7 @@ export default function AffiliatePage() {
               </div>
             ) : !(isLoggedIn && affiliateMe.status === 'loading') ? (
               <form className="affiliate__form" onSubmit={onSubmit}>
+                <Logo variant="dark" className="affiliate__form-logo" />
                 {error ? (
                   <p className="auth__alert" role="alert">
                     {error}
@@ -689,19 +864,21 @@ export default function AffiliatePage() {
                   <TextField
                     label="Platform or profile link (optional)"
                     name="handle"
+                    className="field--wide"
                     hint="Instagram, YouTube, TikTok, a website, wherever we can see your work."
                     value={handle}
                     onChange={(e) => setHandle(e.target.value)}
                   />
                   <div className="affiliate__social-links field--wide">
                     <p className="field__hint affiliate__social-links-hint">
-                      Add your social profiles (optional) -- follower counts help us review your application faster.
+                      Add your social profiles (optional). Follower counts help us review your application faster.
                       Add up to {MAX_SOCIAL_LINKS}.
                     </p>
                     {socialLinks.map((row, i) => (
                       <div className="affiliate__social-row" key={i}>
                         <SelectField
                           label="Platform"
+                          className="affiliate__social-platform"
                           options={SOCIAL_PLATFORM_OPTIONS}
                           value={row.platform}
                           onChange={(e) => updateSocialLink(i, { platform: e.target.value as AffiliateSocialPlatform })}
@@ -709,6 +886,7 @@ export default function AffiliatePage() {
                         <TextField
                           label="Profile URL"
                           type="url"
+                          className="affiliate__social-url"
                           placeholder="https://instagram.com/yourhandle"
                           value={row.url}
                           onChange={(e) => updateSocialLink(i, { url: e.target.value })}
@@ -717,6 +895,7 @@ export default function AffiliatePage() {
                           label="Followers (optional)"
                           type="number"
                           min={0}
+                          className="affiliate__social-followers"
                           value={row.followers}
                           onChange={(e) => updateSocialLink(i, { followers: e.target.value })}
                         />
@@ -725,6 +904,7 @@ export default function AffiliatePage() {
                           variant="ghost"
                           size="sm"
                           className="affiliate__social-remove"
+                          aria-label={`Remove this ${socialPlatformLabel(row.platform)} profile`}
                           onClick={() => removeSocialLink(i)}
                         >
                           Remove

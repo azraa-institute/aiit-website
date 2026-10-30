@@ -651,26 +651,141 @@
 
 /* ============================================================
    06 · READ THE AGREEMENT
+   A premium document-viewer treatment: warm ivory card, a toolbar'd panel
+   for the scrollable legal text, circular clause markers with trailing gold
+   rules, and a highlighted notice panel below -- built to a supplied
+   reference (a institutional legal-document viewer), not this site's
+   earlier plain scroll box.
    ============================================================ */
 .affiliate-agreement {
   padding: clamp(1.75rem, 1rem + 3vw, 2.75rem);
-  border: 1px solid var(--line-strong);
-  border-left: 3px solid var(--red);
+  border: 1px solid var(--line);
   border-radius: var(--radius-lg);
-  background: var(--surface-raised);
+  background: linear-gradient(155deg, var(--ivory), var(--surface-raised));
+  box-shadow: var(--shadow-soft);
 }
 .affiliate-agreement__title {
-  margin-top: var(--space-2);
+  margin-top: 0;
   max-width: none;
 }
-.affiliate-agreement .affiliate-section-intro {
+.affiliate-agreement__intro {
+  position: relative;
+}
+.affiliate-agreement__intro-head {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  max-width: 68%;
+}
+.affiliate-agreement__intro-icon {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 3.25rem;
+  height: 3.25rem;
+  border-radius: var(--radius-md);
+  background: var(--accent-wash-strong);
+  color: var(--brass-deep);
+}
+.affiliate-agreement__intro-copy {
+  min-width: 0;
+}
+.affiliate-agreement__intro-text {
+  margin-top: var(--space-4);
   max-width: 62ch;
 }
+/* The decorative signed-page + verified-badge mark, floating top-right over
+   the intro copy -- hidden below ~760px where there's no room beside the
+   heading without crowding it (see media query at file's end). */
+.affiliate-agreement__art {
+  position: absolute;
+  top: -0.5rem;
+  right: 0;
+  width: clamp(6.5rem, 4rem + 9vw, 10.5rem);
+  height: auto;
+  pointer-events: none;
+}
 .affiliate-agreement__error {
-  margin-top: var(--space-3);
+  margin-top: var(--space-4);
   color: var(--red);
   font-size: var(--fs-sm);
 }
+
+/* ---- The document panel: toolbar + scrollable clause text ---- */
+.affiliate-agreement__panel {
+  margin-top: var(--space-6);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
+  background: var(--surface);
+  box-shadow: var(--shadow-soft);
+  overflow: hidden;
+}
+.affiliate-agreement__toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-3) var(--space-4);
+  padding: var(--space-4) clamp(1.25rem, 1rem + 1.5vw, 2rem);
+  border-bottom: 1px solid var(--line);
+  background: var(--ivory);
+}
+.affiliate-agreement__toolbar-icon {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: var(--radius-sm);
+  background: var(--accent-wash-strong);
+  color: var(--brass-deep);
+}
+.affiliate-agreement__toolbar-body {
+  flex: 1 1 14rem;
+  min-width: 0;
+}
+.affiliate-agreement__toolbar-title {
+  font-family: var(--font-accent);
+  font-weight: 700;
+  color: var(--fg);
+}
+.affiliate-agreement__toolbar-hint {
+  margin-top: 2px;
+  font-size: var(--fs-xs);
+  color: var(--fg-muted);
+}
+.affiliate-agreement__toolbar-actions {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+}
+.affiliate-agreement__print {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-family: var(--font-ui);
+  font-size: var(--fs-sm);
+  font-weight: 600;
+  color: var(--brass-deep);
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+}
+.affiliate-agreement__print:hover,
+.affiliate-agreement__print:focus-visible {
+  color: var(--brass);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+.affiliate-agreement__updated {
+  padding-left: var(--space-4);
+  border-left: 1px solid var(--line-strong);
+  font-size: var(--fs-xs);
+  color: var(--fg-faint);
+  white-space: nowrap;
+}
+
 /* A real "document viewer" -- the full agreement text, scrollable in place
    rather than forcing the whole page to scroll past 21 clauses, same way
    the terminal section of most e-signature flows presents the contract
@@ -678,44 +793,146 @@
    keyboard-reachable, since nothing inside it is otherwise focusable until
    a reader reaches the form below. */
 .affiliate-agreement__text {
-  margin-top: var(--space-5);
   max-height: 26rem;
   overflow-y: auto;
   padding: var(--space-5) clamp(1.25rem, 1rem + 1.5vw, 2rem);
-  border: 1px solid var(--line);
-  border-radius: var(--radius-sm);
-  /* Same "official document" watermark as the signed PDF itself (and the
-     certificate before it) -- a near-opaque wash of --paper layered over
-     the logo fades it to a faint impression rather than a loud image, and
-     background-attachment's default (`scroll`, not `local`) keeps it fixed
-     in the box as the clause text scrolls inside it. */
-  background-image:
-    linear-gradient(rgba(251, 248, 242, 0.94), rgba(251, 248, 242, 0.94)),
-    url('/assets/brand/azraa-institute-of-information-technology-official-logo-black.png');
-  background-repeat: no-repeat;
-  background-position: center;
-  background-size: cover, 60% auto;
 }
 .affiliate-agreement__loading {
   color: var(--fg-muted);
 }
 .affiliate-agreement__clause + .affiliate-agreement__clause {
-  margin-top: var(--space-5);
+  margin-top: var(--space-6);
 }
-.affiliate-agreement__clause h3 {
-  margin: 0 0 var(--space-2);
+/* Circular clause marker + heading + a trailing gold rule filling the rest
+   of the row -- the "numbered circular marker" + "subtle gold divider"
+   requirements, combined into one row instead of two separate elements. */
+.affiliate-agreement__clause-head {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+.affiliate-agreement__clause-num {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 2rem;
+  height: 2rem;
+  border-radius: 50%;
+  background: var(--accent-wash-strong);
+  color: var(--brass-deep);
   font-family: var(--font-accent);
+  font-weight: 700;
+  font-size: 0.85rem;
+}
+.affiliate-agreement__clause-head h3 {
+  flex: none;
+  margin: 0;
+  font-family: var(--font-accent);
+  font-weight: 700;
   font-size: 1.05rem;
+  color: var(--fg);
+}
+.affiliate-agreement__clause-rule {
+  flex: 1 1 auto;
+  height: 1px;
+  background: var(--brass-tint);
+}
+/* Body copy stays on the sitewide sans (var(--font-ui)) -- only headings and
+   the clause-number badge use the serif accent, matching the reference's
+   serif-heading/sans-body pairing. */
+.affiliate-agreement__clause p,
+.affiliate-agreement__clause ul {
+  margin: var(--space-3) 0 0;
+  font-family: var(--font-ui);
+  font-size: var(--fs-sm);
+  line-height: 1.75;
+  color: var(--fg-soft);
+}
+.affiliate-agreement__clause ul {
+  list-style: none;
+  padding-left: 1.1rem;
+}
+.affiliate-agreement__clause li {
+  position: relative;
+  margin-top: var(--space-2);
+}
+.affiliate-agreement__clause li:first-child {
+  margin-top: 0;
+}
+.affiliate-agreement__clause li::before {
+  content: '';
+  position: absolute;
+  left: -1.1rem;
+  top: 0.6em;
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--brass);
+}
+
+/* ---- The "Important" notice panel below the document ---- */
+.affiliate-agreement__notice {
+  margin-top: var(--space-6);
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-4);
+  padding: var(--space-4) clamp(1.25rem, 1rem + 1.5vw, 1.75rem);
+  border: 1px solid var(--brass-tint);
+  border-radius: var(--radius-md);
+  background: var(--accent-wash);
+}
+.affiliate-agreement__notice-icon {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 2.75rem;
+  height: 2.75rem;
+  border-radius: 50%;
+  background: var(--accent-wash-strong);
   color: var(--brass-deep);
 }
-.affiliate-agreement__clause p {
-  margin: 0 0 var(--space-3);
+.affiliate-agreement__notice-title {
+  font-family: var(--font-accent);
+  font-weight: 700;
+  color: var(--brass-deep);
+  margin-bottom: var(--space-1);
+}
+.affiliate-agreement__notice p:last-child {
   font-size: var(--fs-sm);
   line-height: 1.6;
   color: var(--fg-soft);
 }
-.affiliate-agreement__clause p:last-child {
-  margin-bottom: 0;
+
+@media (max-width: 760px) {
+  .affiliate-agreement__art {
+    display: none;
+  }
+  .affiliate-agreement__intro-head {
+    max-width: none;
+  }
+}
+
+/* Printing via the toolbar's "Print / Save as PDF" button -- every browser's
+   native print dialog offers Save-as-PDF as a destination, so this gives a
+   real downloadable PDF from the agreement text already loaded on the page,
+   without a new backend endpoint or a client-side PDF dependency. Isolates
+   just the clause text (the scroll container's 26rem cap is lifted so the
+   full agreement prints, not just the visible scroll window). */
+@media print {
+  body * {
+    visibility: hidden;
+  }
+  .affiliate-agreement__text,
+  .affiliate-agreement__text * {
+    visibility: visible;
+  }
+  .affiliate-agreement__text {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    max-height: none;
+    overflow: visible;
+  }
 }
 
 /* ============================================================
@@ -727,7 +944,6 @@
   line-height: 1.05;
   letter-spacing: -0.01em;
   color: var(--ivory);
-  text-transform: uppercase;
   margin-bottom: clamp(2.5rem, 4vw, 4rem);
 }
 
@@ -749,6 +965,7 @@
 }
 .affiliate__apply > div > p {
   margin-top: var(--space-4);
+  font-family: 'Source Serif 4', var(--font-display);
   color: var(--fg-soft);
 }
 .affiliate__code strong {
@@ -783,6 +1000,17 @@
   border: 1px solid var(--line);
   background: var(--paper);
 }
+/* The card's own letterhead mark, centered at the top -- modestly sized, not
+   a large banner (that was tried and reverted: it forced the whole section
+   into a single centered column instead of this card's usual place beside
+   the heading). The grid gap above already spaces it from the fieldsets
+   below. */
+.affiliate__form-logo {
+  display: block;
+  width: clamp(7rem, 6rem + 3vw, 8.5rem);
+  height: auto;
+  margin: 0 auto;
+}
 /* This page never imports auth/auth.css (the error banner's real home) --
    without this, `.auth__alert` carried no color/background at all here and
    fell back to the ambient .on-ink text tint this card resets everywhere
@@ -814,13 +1042,36 @@
    field inputs/selects/PhoneCountrySelect's trigger (also a .field__control)
    need their own explicit light-mode values, at higher specificity than
    that two-class selector, to actually win the cascade. */
+/* Denser, more deliberate field sizing than the sitewide default (field.css's
+   17px/0.85rem padding reads oversized once a form has this many fields on
+   one page) -- 15px text and tighter padding land each control around
+   40-42px tall, in line with standard form-field sizing, with a slightly
+   larger radius so boxes read as considered UI rather than browser default. */
 .affiliate__form .field .field__control {
   background: var(--surface);
   border-color: var(--line-strong);
+  padding: 0.6rem 0.85rem;
+  font-family: 'Source Serif 4', var(--font-display);
+  font-size: var(--fs-sm);
+  border-radius: var(--radius-md);
 }
 .affiliate__form .field .field__control option {
   background-color: var(--surface);
   color: var(--fg);
+}
+.affiliate__form .field__select-wrap select.field__control {
+  padding-right: 2.25rem;
+}
+.affiliate__form .field__icon-wrap .field__control {
+  padding-left: 2.5rem;
+}
+/* field.css's shared textarea min-height (110px) is tuned for short notes
+   elsewhere on the site (contact, webinar) -- "tell us about yourself and
+   your audience" is the one thing this application is actually reviewed
+   on, so it gets more room to encourage a real answer, scoped to this form
+   only. */
+.affiliate__form .field__control--area {
+  min-height: 140px;
 }
 .affiliate__form .field .field__control:-webkit-autofill,
 .affiliate__form .field .field__control:-webkit-autofill:hover,
@@ -828,19 +1079,22 @@
   -webkit-text-fill-color: var(--fg);
   -webkit-box-shadow: 0 0 0 1000px var(--surface) inset;
 }
+/* Every button in this form (the ghost "Remove"/"Add another platform"
+   controls as well as the primary submit) reads as part of the same signed
+   document as the fields around it -- button.css's sitewide SHOUT-CASE
+   interface-chrome treatment (and its default sans) is reset here, not just
+   on the submit button. */
+.affiliate__form .btn {
+  font-family: 'Source Serif 4', var(--font-display);
+  text-transform: none;
+  letter-spacing: 0;
+}
 /* Same problem as the fields above: button.css's `.on-ink .btn--primary`
    would otherwise paint the submit button ivory-on-ivory against this card. */
 .affiliate__form .btn.btn--primary {
   --btn-bg: var(--ink);
   --btn-fg: var(--paper);
   --btn-border: var(--ink);
-  /* This card reads as a physical document the applicant signs, not an
-     interface chrome button -- SHOUT-CASE "SUBMIT APPLICATION" undercuts
-     that. Same text-transform/letter-spacing reset button.css's own
-     .btn--link already does for the same reason, just scoped to this one
-     button instead of a whole variant. */
-  text-transform: none;
-  letter-spacing: 0;
 }
 /* field.css's `.field__label` is uppercase site-wide by design (interface
    chrome), but this form reads as a signed document -- its labels (down to
@@ -848,8 +1102,16 @@
    prose, not interface labels, so they're scoped back to normal case here
    rather than changing the shared component for every other form. */
 .affiliate__form .field__label {
+  font-family: 'Source Serif 4', var(--font-display);
   text-transform: none;
   letter-spacing: normal;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--fg-muted);
+}
+.affiliate__form .field__hint {
+  font-family: 'Source Serif 4', var(--font-display);
+  font-size: 0.82rem;
 }
 .affiliate__form-section {
   display: grid;
@@ -865,15 +1127,21 @@
 .affiliate__form-section > legend {
   grid-column: 1 / -1;
   padding: 0 0 var(--space-1);
-  font-family: var(--font-accent);
+  font-family: 'Source Serif 4', var(--font-display);
   font-size: 0.95rem;
-  letter-spacing: 0.02em;
+  font-weight: 700;
+  letter-spacing: 0.01em;
   color: var(--brass-deep);
 }
 /* One repeatable social-profile entry (platform/url/followers/remove) --
-   a plain bordered card so a row visually reads as one unit, the same way
+   a tinted, bordered card so a row visually reads as one unit, the same way
    .affiliate__social-links-hint/row below keep it from blending into the
-   surrounding fields. */
+   surrounding fields. Mobile-first: platform + remove share a top row (named
+   grid areas, not DOM order, so Remove can sit beside Platform without
+   reordering the underlying fields/tab order), URL and followers each get a
+   full-width row beneath. The ≥560px override just reflows the same four
+   areas into one row at a 1.1fr/1.7fr/0.8fr/auto ratio -- enough room for a
+   platform name, most of a profile URL, and a follower count side by side. */
 .affiliate__social-links {
   display: grid;
   gap: var(--space-3);
@@ -883,18 +1151,39 @@
 }
 .affiliate__social-row {
   display: grid;
-  gap: var(--space-2);
-  padding: var(--space-3);
+  gap: var(--space-3) var(--space-2);
+  grid-template-columns: 1fr auto;
+  grid-template-areas:
+    'platform remove'
+    'url url'
+    'followers followers';
+  padding: var(--space-4);
   border: 1px solid var(--line);
-  border-radius: var(--radius-sm);
+  border-radius: var(--radius-md);
+  background: var(--ivory);
+}
+.affiliate__social-platform {
+  grid-area: platform;
+}
+.affiliate__social-url {
+  grid-area: url;
+}
+.affiliate__social-followers {
+  grid-area: followers;
 }
 .affiliate__social-remove {
-  justify-self: start;
+  grid-area: remove;
+  align-self: center;
+  margin-top: var(--space-5);
 }
 @media (min-width: 560px) {
   .affiliate__social-row {
-    grid-template-columns: 1fr 1.6fr 0.8fr auto;
+    grid-template-columns: 1.1fr 1.7fr 0.8fr auto;
+    grid-template-areas: 'platform url followers remove';
     align-items: end;
+  }
+  .affiliate__social-remove {
+    margin-top: 0;
   }
 }
 @media (min-width: 560px) {
@@ -924,7 +1213,7 @@
   font-family: 'Source Serif 4', var(--font-display);
   font-style: italic;
   font-weight: 500;
-  font-size: 1.15rem;
+  font-size: 1.05rem;
   letter-spacing: 0.01em;
 }
 /* Same handwritten italic Source Serif 4 treatment as .affiliate__signature-field
@@ -946,27 +1235,92 @@
   font-family: 'Source Serif 4', var(--font-display);
   font-style: italic;
   font-weight: 500;
-  font-size: 1rem;
+  font-size: 0.92rem;
   line-height: 1.55;
   text-align: justify;
   color: var(--fg-soft);
 }
 .affiliate__agree {
   display: flex;
-  gap: var(--space-2);
+  align-items: flex-start;
+  gap: var(--space-3);
   font-family: 'Source Serif 4', var(--font-display);
   font-style: italic;
   font-weight: 500;
-  font-size: 1rem;
+  font-size: 0.92rem;
   line-height: 1.5;
   text-align: justify;
   color: var(--fg-soft);
 }
+/* Custom checkbox, not the browser default -- applies to every checkbox in
+   this form (both this consent box and CheckboxGroupField's "what kind of
+   affiliate are you?" options above), scoped here rather than in field.css
+   since the rest of the site keeps the plain native look. `appearance: none`
+   plus a clip-path check mark keeps the real <input> (full keyboard/screen-
+   reader semantics -- native controls are still the right base, just
+   restyled) instead of swapping in a decorative div. A legally significant
+   control (this IS the consent, see Clause 21) also gets a deliberately
+   bigger hit target than a disposable "remember me" checkbox would. */
+.affiliate__form .field__checkbox-group input[type='checkbox'],
+.affiliate__form .affiliate__agree input[type='checkbox'] {
+  appearance: none;
+  -webkit-appearance: none;
+  flex: none;
+  width: 1.125rem;
+  height: 1.125rem;
+  margin-top: 0.2rem;
+  border: 1.5px solid var(--line-strong);
+  border-radius: 5px;
+  background: var(--surface);
+  cursor: pointer;
+  display: inline-grid;
+  place-content: center;
+  transition:
+    background var(--dur-fast) var(--ease-out),
+    border-color var(--dur-fast) var(--ease-out);
+}
+.affiliate__form .field__checkbox-group input[type='checkbox']::before,
+.affiliate__form .affiliate__agree input[type='checkbox']::before {
+  content: '';
+  width: 0.65rem;
+  height: 0.65rem;
+  transform: scale(0);
+  transition: transform var(--dur-fast) var(--ease-out);
+  background: #fff;
+  clip-path: polygon(14% 44%, 0 65%, 50% 100%, 100% 16%, 80% 0%, 43% 62%);
+}
+.affiliate__form .field__checkbox-group input[type='checkbox']:checked,
+.affiliate__form .affiliate__agree input[type='checkbox']:checked {
+  background: var(--brass);
+  border-color: var(--brass);
+}
+.affiliate__form .field__checkbox-group input[type='checkbox']:checked::before,
+.affiliate__form .affiliate__agree input[type='checkbox']:checked::before {
+  transform: scale(1);
+}
+.affiliate__form .field__checkbox-group input[type='checkbox']:hover,
+.affiliate__form .affiliate__agree input[type='checkbox']:hover {
+  border-color: var(--brass-deep);
+}
+.affiliate__form .field__checkbox-group input[type='checkbox']:focus-visible,
+.affiliate__form .affiliate__agree input[type='checkbox']:focus-visible {
+  outline: 2px solid var(--brass-deep);
+  outline-offset: 2px;
+}
+/* field.css's .field__checkbox-option never set a font-family of its own
+   (it just inherited the sitewide sans), so the "what kind of affiliate are
+   you" option text was the one spot that slipped through the earlier
+   Source Serif 4 pass. */
+.affiliate__form .field__checkbox-option {
+  font-family: 'Source Serif 4', var(--font-display);
+}
 .affiliate__disclaimer {
+  font-family: 'Source Serif 4', var(--font-display);
   font-size: var(--fs-xs);
   color: var(--fg-faint);
 }
 .affiliate__thanks {
+  font-family: 'Source Serif 4', var(--font-display);
   color: var(--fg-soft);
   font-size: var(--fs-lead);
   line-height: 1.6;
@@ -1020,11 +1374,13 @@
   margin-bottom: var(--space-2);
 }
 .affiliate__status-card p {
+  font-family: 'Source Serif 4', var(--font-display);
   color: var(--fg-soft);
   line-height: 1.6;
 }
 .affiliate__status-meta {
   margin-top: var(--space-3);
+  font-family: 'Source Serif 4', var(--font-display);
   font-size: var(--fs-xs);
   color: var(--fg-faint);
 }
@@ -1033,6 +1389,7 @@
   align-items: center;
   gap: var(--space-2);
   margin-top: var(--space-4);
+  font-family: 'Source Serif 4', var(--font-display);
   font-weight: 600;
   color: var(--brass-deep);
   text-decoration: underline;

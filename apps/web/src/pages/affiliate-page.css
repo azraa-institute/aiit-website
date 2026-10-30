@@ -1182,7 +1182,11 @@
     grid-template-areas: 'platform url followers remove';
     align-items: end;
   }
+  /* Bottom-align with the input boxes (the row's own align-items: end),
+     not centered within the whole label+box cell -- centering there put
+     Remove up near the labels instead of level with the boxes beside it. */
   .affiliate__social-remove {
+    align-self: end;
     margin-top: 0;
   }
 }

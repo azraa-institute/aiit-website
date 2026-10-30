@@ -57,6 +57,16 @@ const SOCIAL_PLATFORM_OPTIONS: { value: AffiliateSocialPlatform; label: string }
 ];
 const MAX_SOCIAL_LINKS = 5;
 
+const SOCIAL_PLATFORM_PLACEHOLDERS: Record<AffiliateSocialPlatform, string> = {
+  instagram: 'instagram.com/yourhandle',
+  tiktok: 'tiktok.com/@yourhandle',
+  youtube: 'youtube.com/@yourchannel',
+  x: 'x.com/yourhandle',
+  linkedin: 'linkedin.com/in/yourname',
+  facebook: 'facebook.com/yourpage',
+  other: 'yourwebsite.com',
+};
+
 function socialPlatformLabel(platform: AffiliateSocialPlatform): string {
   return SOCIAL_PLATFORM_OPTIONS.find((o) => o.value === platform)?.label ?? platform;
 }
@@ -442,6 +452,7 @@ export default function AffiliatePage() {
     country.length > 0 &&
     signedName.trim().length > 1 &&
     agreed &&
+    socialLinks.every((row) => !row.url.trim() || row.followers.trim().length > 0) &&
     (isLoggedIn || (name.trim().length > 0 && email.trim().length > 0));
 
   return (
@@ -871,7 +882,7 @@ export default function AffiliatePage() {
                   />
                   <div className="affiliate__social-links field--wide">
                     <p className="field__hint affiliate__social-links-hint">
-                      Add your social profiles (optional). Follower counts help us review your application faster.
+                      Add your social profiles (optional), but once you add one, its follower count is required.
                       Add up to {MAX_SOCIAL_LINKS}.
                     </p>
                     {socialLinks.map((row, i) => (
@@ -887,14 +898,15 @@ export default function AffiliatePage() {
                           label="Profile URL"
                           type="url"
                           className="affiliate__social-url"
-                          placeholder="https://instagram.com/yourhandle"
+                          placeholder={SOCIAL_PLATFORM_PLACEHOLDERS[row.platform]}
                           value={row.url}
                           onChange={(e) => updateSocialLink(i, { url: e.target.value })}
                         />
                         <TextField
-                          label="Followers (optional)"
+                          label="Followers"
                           type="number"
                           min={0}
+                          required={row.url.trim().length > 0}
                           className="affiliate__social-followers"
                           value={row.followers}
                           onChange={(e) => updateSocialLink(i, { followers: e.target.value })}

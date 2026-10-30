@@ -12,15 +12,22 @@
   color: var(--fg);
 }
 
+/* Denser, more deliberate sizing than the old 17px/0.85rem default -- a
+   page with more than a couple of fields (the affiliate application,
+   admin forms, settings pages) read as oversized browser-default boxes at
+   that size. 15px text with tighter padding lands each control around
+   40-42px tall (the standard form-field range), with a slightly larger
+   radius so it reads as considered UI. Sitewide, not per-page, so every
+   TextField/SelectField/TextArea/PasswordField consumer gets it at once. */
 .field__control {
   width: 100%;
-  padding: 0.85rem 1rem;
+  padding: 0.65rem 0.9rem;
   font-family: var(--font-ui);
-  font-size: var(--fs-body);
+  font-size: var(--fs-sm);
   color: var(--fg);
   background: var(--surface);
   border: 1px solid var(--line-strong);
-  border-radius: var(--radius-sm);
+  border-radius: var(--radius-md);
   transition:
     border-color var(--dur-fast) var(--ease-out),
     box-shadow var(--dur-fast) var(--ease-out);

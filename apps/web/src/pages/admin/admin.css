@@ -186,19 +186,25 @@
 .adm-field--wide {
   grid-column: 1 / -1;
 }
+/* Surface, not page-colour background -- --paper reads too close to the
+   page/card background behind these fields to register as a distinct
+   control; --surface (true white) plus the larger radius makes each box
+   read as its own considered element, matching the professional-field
+   treatment used on the public application forms. */
 .adm-field input,
 .adm-field select,
 .adm-field textarea,
 .adm-slot input,
 .adm-slot select,
 .adm-filter select {
-  min-height: 40px;
+  min-height: 38px;
   padding: 0 var(--space-3);
   border: 1px solid var(--line-strong);
-  border-radius: var(--radius-sm);
-  background: var(--paper);
+  border-radius: var(--radius-md);
+  background: var(--surface);
   color: var(--ink);
   font: inherit;
+  transition: border-color var(--dur-fast) var(--ease-out), box-shadow var(--dur-fast) var(--ease-out);
 }
 .adm-field textarea {
   padding: var(--space-2) var(--space-3);
@@ -398,7 +404,9 @@
 .adm-panel {
   padding: var(--space-5);
   border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
   background: var(--surface);
+  box-shadow: var(--shadow-soft);
 }
 .adm-panel__head {
   display: flex;
@@ -474,16 +482,18 @@
 .adm-tablewrap {
   overflow-x: auto;
   border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
   background: var(--surface);
+  box-shadow: var(--shadow-soft);
 }
 .adm-table {
   width: 100%;
   border-collapse: collapse;
-  font-size: 0.88rem;
+  font-size: 0.86rem;
 }
 .adm-table th,
 .adm-table td {
-  padding: 0.65rem var(--space-3);
+  padding: 0.6rem var(--space-3);
   text-align: left;
   border-bottom: 1px solid var(--line);
   vertical-align: middle;

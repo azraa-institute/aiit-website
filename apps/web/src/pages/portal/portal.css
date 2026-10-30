@@ -2373,79 +2373,12 @@
 }
 
 /* ---- Settings: shell + secondary nav ---- */
-.settings-shell {
-  display: grid;
-  grid-template-columns: 15rem 1fr;
-  align-items: start;
-  gap: var(--space-6);
-}
-.settings-nav {
-  position: sticky;
-  top: calc(var(--header-h) + var(--space-5));
-  display: grid;
-  gap: var(--space-1);
-}
-.settings-nav__link {
-  padding: 0.55rem var(--space-4);
-  border-radius: var(--radius-sm);
-  font-size: var(--fs-sm);
-  color: var(--ink-muted);
-  border-left: 2px solid transparent;
-  transition:
-    color var(--dur-fast) var(--ease-out),
-    background var(--dur-fast) var(--ease-out),
-    border-color var(--dur-fast) var(--ease-out);
-}
-.settings-nav__link:hover {
-  color: var(--ink);
-  background: var(--accent-wash);
-}
-.settings-nav__link.is-active {
-  color: var(--brass-deep);
-  background: var(--accent-wash);
-  border-left-color: var(--brass);
-  font-weight: 700;
-}
-.settings-nav__link--danger {
-  color: var(--red-deep);
-}
-.settings-nav__link--danger:hover,
-.settings-nav__link--danger.is-active {
-  color: var(--red-deep);
-  background: rgba(192, 43, 35, 0.08);
-  border-left-color: var(--red);
-}
+/* No side nav -- a plain stacked list of section cards, same flat layout
+   as the admin/instructor account-settings forms (StaffAccountSettings). */
 .settings-panels {
   display: grid;
   gap: var(--space-5);
   min-width: 0;
-}
-@media (max-width: 880px) {
-  .settings-shell {
-    grid-template-columns: 1fr;
-  }
-  .settings-nav {
-    position: static;
-    grid-auto-flow: column;
-    grid-auto-columns: max-content;
-    overflow-x: auto;
-    gap: var(--space-2);
-    padding-bottom: var(--space-2);
-    border-bottom: 1px solid var(--line);
-    -webkit-overflow-scrolling: touch;
-  }
-  .settings-nav__link {
-    white-space: nowrap;
-    border-left: none;
-    border-bottom: 2px solid transparent;
-  }
-  .settings-nav__link.is-active {
-    border-left-color: transparent;
-    border-bottom-color: var(--brass);
-  }
-  .settings-nav__link--danger.is-active {
-    border-bottom-color: var(--red);
-  }
 }
 
 /* ---- Settings: section cards ----

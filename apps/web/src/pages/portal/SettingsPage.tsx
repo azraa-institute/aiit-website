@@ -5,7 +5,6 @@ import { useScrollReveal } from '@/lib/useScrollReveal';
 import { useAuth } from '@/lib/AuthContext';
 import { supabase } from '@/lib/supabaseClient';
 import { apiFetch } from '@/lib/api';
-import { cn } from '@/lib/cn';
 import { TextField, PasswordField, SelectField } from '@/components/common/Field';
 import { PASSWORD_HINT, passwordMeetsRequirements, PasswordRequirementsList } from '@/components/common/PasswordRequirements';
 import { Button } from '@/components/primitives/Button';
@@ -20,14 +19,6 @@ import { usePortalActions } from './PortalActionsContext';
 
 const COUNTRY_OPTIONS = [{ value: '', label: 'Not set' }, ...COUNTRIES.map((c) => ({ value: c.code, label: c.name }))];
 const LANGUAGE_OPTIONS = LANGUAGES.map((l) => ({ value: l.code, label: l.name }));
-
-const SETTINGS_NAV_ITEMS = [
-  { id: 'sign-in-security', label: 'Sign-in & security' },
-  { id: 'linked-accounts', label: 'Linked accounts' },
-  { id: 'preferences', label: 'Preferences' },
-  { id: 'two-factor', label: 'Two-factor authentication' },
-  { id: 'danger-zone', label: 'Danger zone', danger: true },
-] as const;
 
 export default function SettingsPage() {
   const state = useLearner();
@@ -44,15 +35,12 @@ export default function SettingsPage() {
         <p className="portal-page__intro">Manage your account, security and preferences.</p>
       </header>
 
-      <div className="settings-shell" data-reveal>
-        <SettingsNav />
-        <div className="settings-panels">
-          <SignInSecuritySection />
-          <LinkedAccountsSection />
-          <RegionLanguageSection />
-          <SecurityFactorsSection />
-          <DangerZoneSection />
-        </div>
+      <div className="settings-panels" data-reveal>
+        <SignInSecuritySection />
+        <LinkedAccountsSection />
+        <RegionLanguageSection />
+        <SecurityFactorsSection />
+        <DangerZoneSection />
       </div>
 
       <p className="settings__foot" data-reveal>
@@ -62,70 +50,6 @@ export default function SettingsPage() {
   );
 }
 
-/** Anchor nav for the settings sections below -- every section stays mounted
- * and visible (not a hide/show tab), so a save confirmation or error a
- * section is showing never gets hidden by switching tabs. IntersectionObserver
- * only drives which link is highlighted as "active" while scrolling. */
-function SettingsNav() {
-  const [activeId, setActiveId] = useState<string>(SETTINGS_NAV_ITEMS[0].id);
-  // Some sections (Linked accounts) can render nothing -- e.g. an
-  // email/password-only account has no Google identity to manage -- so the
-  // nav link list is derived from which section elements actually exist in
-  // the DOM, not the static id list, otherwise a link could point at nothing.
-  const [availableIds, setAvailableIds] = useState<Set<string>>(() => new Set());
-
-  useEffect(() => {
-    const panels = document.querySelector('.settings-panels');
-    if (!panels) return;
-
-    const allIds = SETTINGS_NAV_ITEMS.map((item) => item.id);
-    const sync = () => setAvailableIds(new Set(allIds.filter((id) => document.getElementById(id))));
-    sync();
-
-    const mutation = new MutationObserver(sync);
-    mutation.observe(panels, { childList: true, subtree: true });
-    return () => mutation.disconnect();
-  }, []);
-
-  useEffect(() => {
-    const elements = [...availableIds]
-      .map((id) => document.getElementById(id))
-      .filter((el): el is HTMLElement => el !== null);
-    if (elements.length === 0) return;
-
-    const observer = new IntersectionObserver(
-      (entries) => {
-        const visible = entries
-          .filter((entry) => entry.isIntersecting)
-          .sort((a, b) => a.boundingClientRect.top - b.boundingClientRect.top);
-        if (visible[0]) setActiveId(visible[0].target.id);
-      },
-      { rootMargin: '-15% 0px -70% 0px', threshold: [0, 1] },
-    );
-    elements.forEach((el) => observer.observe(el));
-    return () => observer.disconnect();
-  }, [availableIds]);
-
-  const items = SETTINGS_NAV_ITEMS.filter((item) => availableIds.has(item.id));
-
-  return (
-    <nav className="settings-nav" aria-label="Settings sections">
-      {items.map((item) => (
-        <a
-          key={item.id}
-          href={`#${item.id}`}
-          className={cn(
-            'settings-nav__link',
-            'danger' in item && item.danger && 'settings-nav__link--danger',
-            activeId === item.id && 'is-active',
-          )}
-        >
-          {item.label}
-        </a>
-      ))}
-    </nav>
-  );
-}
 
 function SignInSecuritySection() {
   const { session } = useAuth();

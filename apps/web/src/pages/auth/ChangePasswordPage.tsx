@@ -15,11 +15,17 @@ import { LockIcon } from './StaffFieldIcons';
 
 /**
  * First sign-in with a one-time password -- the learner-facing twin of
- * StaffChangePasswordPage.tsx. Reached the same way: RequireRole/
- * RequireAffiliate redirect here whenever Profile.mustChangePassword is
- * true and the account isn't staff. Today that's an affiliate application
- * AffiliatesService.applyNew() created (see its email), but the check
- * itself is generic to any learner account issued a temporary password.
+ * StaffChangePasswordPage.tsx. Mounted at two routes: the bare
+ * /change-password (RequireRole's fallback for a plain learner account
+ * somehow issued a temporary password -- doesn't happen today, but the
+ * check itself is generic) and /affiliate/change-password (RequireAffiliate
+ * and AffiliateLoginPage's redirect for the one case that's actually live:
+ * an affiliate application AffiliatesService.applyNew() created, still on
+ * its one-time password), mirroring /staff/change-password's own
+ * namespaced URL instead of sending an affiliate to a bare, student-
+ * flavoured path. Same component either way -- its own destination logic
+ * already checks for a real affiliate record and sends it to
+ * /affiliate-portal regardless of which route rendered it.
  */
 export default function ChangePasswordPage() {
   const navigate = useNavigate();

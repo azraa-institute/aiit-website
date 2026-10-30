@@ -305,6 +305,21 @@ export function App() {
                   hood, but have no reason to land on the student sign-in form. */}
               <Route path="/affiliate/login" element={<AffiliateLoginPage />} />
 
+              {/* First sign-in on a one-time password, namespaced under /affiliate
+                  like /staff/change-password is under /staff -- same ChangePasswordPage
+                  component (its own destination logic already sends an affiliate to
+                  /affiliate-portal on success), just reached from a URL that matches
+                  where the rest of this portal lives instead of the bare, student-
+                  flavoured /change-password. */}
+              <Route
+                path="/affiliate/change-password"
+                element={
+                  <RequireAuth to="/affiliate/login">
+                    <ChangePasswordPage />
+                  </RequireAuth>
+                }
+              />
+
               {/* Affiliate portal: a regular (learner-login) account, not staff -- gated on
                   having an Affiliate row at all, not on approval status (the dashboard
                   itself shows pending/in-review/approved/rejected). */}

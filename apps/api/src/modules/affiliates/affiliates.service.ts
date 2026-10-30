@@ -584,11 +584,13 @@ export class AffiliatesService {
       email = person?.email ?? null;
     }
     if (!email) return;
+    const { firstName, lastName } = splitFullName(name ?? '');
     const listId = process.env.BREVO_AFFILIATE_LIST_ID ? Number(process.env.BREVO_AFFILIATE_LIST_ID) : undefined;
     await this.brevo.upsertContact({
       email,
       attributes: {
-        FIRSTNAME: name ?? '',
+        FIRSTNAME: firstName,
+        LASTNAME: lastName,
         COUNTRY: affiliate.country ?? '',
         APPLICATION_TYPES: types.join(', '),
         SOCIAL_LINKS: socialLinks.map((l) => `${l.platform}: ${l.url}`).join(' | '),
@@ -675,6 +677,20 @@ function generateReferenceCode(): string {
 
 export function webOrigin(): string {
   return process.env.APP_URL ?? 'https://aiit.network';
+}
+
+/** The applicant's free-text full name, split for Brevo's own FIRSTNAME/
+ * LASTNAME contact attributes -- Brevo's contact list reads the two
+ * separately (it doesn't parse a single combined name), so sending the
+ * whole name in FIRSTNAME alone left LASTNAME blank and the name
+ * unsplit in Brevo's UI. First whitespace-separated word is the first
+ * name; everything after it is the last name (matches the applicant's
+ * own `signedName`-style input -- there's no structured first/last field
+ * on the application form to read instead). */
+function splitFullName(fullName: string): { firstName: string; lastName: string } {
+  const parts = fullName.trim().split(/\s+/).filter(Boolean);
+  if (parts.length === 0) return { firstName: '', lastName: '' };
+  return { firstName: parts[0], lastName: parts.slice(1).join(' ') };
 }
 
 export function credentialsBlockHtml(rows: { label: string; value: string }[]): string {

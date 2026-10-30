@@ -77,7 +77,7 @@ export default function AffiliateLoginPage() {
       return;
     }
     if (me.mustChangePassword) {
-      navigate('/change-password', { replace: true });
+      navigate('/affiliate/change-password', { replace: true });
       return;
     }
     try {

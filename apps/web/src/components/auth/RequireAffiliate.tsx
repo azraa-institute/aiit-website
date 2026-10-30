@@ -24,7 +24,7 @@ export function RequireAffiliate({ children }: { children: ReactNode }) {
   if (me.status === 'loading' || state.status === 'loading') return <RouteFallback />;
 
   if (me.status === 'ready' && me.me.mustChangePassword) {
-    return <Navigate to="/change-password" replace />;
+    return <Navigate to="/affiliate/change-password" replace />;
   }
 
   if (state.status === 'error') {

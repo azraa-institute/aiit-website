@@ -263,7 +263,7 @@ export default function LoginPage() {
         }
         footer={
           <>
-            No account? <Link to="/register">Sign Up</Link>
+            No account? <Link to="/register">Sign up</Link>
           </>
         }
       >
@@ -327,12 +327,12 @@ export default function LoginPage() {
                   onChange={(e) => setPassword(e.target.value)}
                 />
                 <div className="auth__aux">
-                  <Link to="/forgot-password">Forgot Password?</Link>
+                  <Link to="/forgot-password">Forgot password?</Link>
                 </div>
               </>
             )}
             <Button as="button" type="submit" size="lg" fullWidth arrow disabled={!canSubmit} loading={submitting}>
-              {mode === 'password' ? 'Sign In' : 'Send magic link'}
+              {mode === 'password' ? 'Sign in' : 'Send magic link'}
             </Button>
             <button type="button" className="auth__mode-toggle" onClick={toggleMode}>
               {mode === 'password' ? 'Or sign in with a magic link instead' : 'Or sign in with your password instead'}

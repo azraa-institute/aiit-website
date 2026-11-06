@@ -9,8 +9,6 @@
   font-family: var(--font-ui);
   font-weight: 700;
   font-size: var(--fs-sm);
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
   line-height: 1;
   white-space: nowrap;
   border-radius: var(--radius-sm);

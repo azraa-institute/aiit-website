@@ -9,8 +9,8 @@ export const BLUEPRINT = {
     "At AIIT, learning doesn't stop with certification. We help you turn your skills into academic and professional opportunities across the world.",
   intro2:
     "Whether you're aiming for a Bachelor's, Master's, Postgraduate Diploma, Research Program, or Industry Certification, AIIT provides the guidance and pathway to get you there.",
-  primaryCta: { label: 'Talk to a Blueprint Advisor', to: '/contact' },
-  secondaryCta: { label: 'Browse AIIT Courses', to: '/courses' },
+  primaryCta: { label: 'Talk to a Blueprint advisor', to: '/contact' },
+  secondaryCta: { label: 'Browse AIIT courses', to: '/courses' },
   stats: [
     { value: '5', label: 'Countries' },
     { value: '7', label: 'Program tracks' },
@@ -52,7 +52,7 @@ export const BLUEPRINT = {
   closing: {
     title: 'Ready to build your global career?',
     body: 'Talk to our Blueprint team about pathway planning, university selection, SOPs, portfolios, scholarships, and visa guidance, all in one place.',
-    cta: { label: 'Start Your Blueprint Journey', to: '/contact' },
+    cta: { label: 'Start your Blueprint journey', to: '/contact' },
     tagline: 'LEARN TODAY · STUDY GLOBALLY · LEAD TOMORROW',
   },
 };
@@ -65,7 +65,7 @@ export const AFFILIATE = {
   title: 'Earn every time someone starts their tech career through you.',
   intro:
     "Refer students to AIIT's globally recognised tech programmes, introduce creators who'll promote us to their audience, or bring other affiliates into the program, and get paid per successful, fully-onboarded enrolment.",
-  primaryCta: { label: 'Apply as an Affiliate', to: '#apply' },
+  primaryCta: { label: 'Apply as an affiliate', to: '#apply' },
   secondaryCta: { label: 'See how you earn', to: '#earn' },
   rates: [
     { label: 'Per student you refer directly', value: '$7' },

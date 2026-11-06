@@ -47,7 +47,7 @@ export function useAccountMenu() {
     name,
     photoUrl,
     returnTarget: isAffiliate ? '/affiliate-portal' : returnTo === 'resources' ? '/portal/resources' : '/portal',
-    returnLabel: isAffiliate ? 'Return to Dashboard' : returnTo === 'resources' ? 'Return to Resources' : 'Return to Dashboard',
+    returnLabel: isAffiliate ? 'Return to dashboard' : returnTo === 'resources' ? 'Return to resources' : 'Return to dashboard',
     signOut,
   };
 }

@@ -38,7 +38,7 @@ function QuizRunner({ quizId, onExit }: { quizId: string; onExit: () => void }) 
   if (state.status === 'loading') return <PortalLoader label="Loading quiz" />;
   if (state.status === 'error') {
     return (
-      <PortalEmpty title="Couldn't load this quiz" body={state.message} action={{ label: 'Back to Practice', to: '/portal/practice' }} />
+      <PortalEmpty title="Couldn't load this quiz" body={state.message} action={{ label: 'Back to practice', to: '/portal/practice' }} />
     );
   }
 
@@ -64,7 +64,7 @@ function QuizRunner({ quizId, onExit }: { quizId: string; onExit: () => void }) 
     return (
       <div className="practice-run">
         <button type="button" className="practice-run__back" onClick={onExit}>
-          &larr; Back to Practice
+          &larr; Back to practice
         </button>
         <h1 className="practice-run__title">{quiz.title}</h1>
         <p className="practice-result__score">
@@ -98,7 +98,7 @@ function QuizRunner({ quizId, onExit }: { quizId: string; onExit: () => void }) 
           })}
         </ol>
         <Button as="button" onClick={onExit}>
-          Back to Practice
+          Back to practice
         </Button>
       </div>
     );
@@ -107,7 +107,7 @@ function QuizRunner({ quizId, onExit }: { quizId: string; onExit: () => void }) 
   return (
     <div className="practice-run">
       <button type="button" className="practice-run__back" onClick={onExit}>
-        &larr; Back to Practice
+        &larr; Back to practice
       </button>
       <h1 className="practice-run__title">{quiz.title}</h1>
       {quiz.description ? <p className="practice-run__desc">{quiz.description}</p> : null}

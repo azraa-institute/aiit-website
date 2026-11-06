@@ -399,8 +399,6 @@
   font-family: var(--font-ui);
   font-size: 13px;
   font-weight: 600;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
   color: var(--ink);
   transition: border-color var(--dur-fast) var(--ease-out);
 }

@@ -151,10 +151,10 @@ export default function StaffLoginPage() {
               onChange={(e) => setPassword(e.target.value)}
             />
             <div className="auth__aux">
-              <Link to="/forgot-password">Forgot Password?</Link>
+              <Link to="/forgot-password">Forgot password?</Link>
             </div>
             <Button as="button" type="submit" size="lg" fullWidth arrow disabled={!canSubmit} loading={submitting}>
-              Sign In
+              Sign in
             </Button>
           </form>
         )}

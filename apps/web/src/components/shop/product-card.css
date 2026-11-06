@@ -77,8 +77,6 @@
   margin-top: var(--space-2);
   font-size: var(--fs-xs);
   font-weight: var(--fw-strong);
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
   padding: 0.6rem 1.1rem;
   border: 1px solid var(--line-strong);
   border-radius: var(--radius-sm);

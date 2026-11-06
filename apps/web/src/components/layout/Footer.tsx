@@ -142,7 +142,7 @@ export function Footer() {
             <Link to="/privacy-policy">Privacy Policy</Link>
             <Link to="/terms">Terms and Conditions</Link>
             <button type="button" className="site-footer__legal-btn" onClick={openPreferences}>
-              Cookie Preferences
+              Cookie preferences
             </button>
           </div>
           <p className="site-footer__closer">

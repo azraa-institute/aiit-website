@@ -37,10 +37,10 @@ export default function AboutPage() {
             <p className="about-page__mission-text">{SITE.mission}</p>
             <div className="about-page__cta-row">
               <Button as="link" to="/courses" arrow>
-                Explore Courses
+                Explore courses
               </Button>
               <Button as="link" to="/contact" variant="secondary">
-                Contact Us
+                Contact us
               </Button>
             </div>
             <p className="about-page__global">
@@ -82,7 +82,7 @@ export default function AboutPage() {
             intro={ABOUT_BLOCKS[2].body}
           />
           <Button as="link" to="/courses" size="lg" arrow>
-            Browse Courses
+            Browse courses
           </Button>
         </div>
       </Section>

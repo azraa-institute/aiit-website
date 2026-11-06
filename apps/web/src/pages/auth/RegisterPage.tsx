@@ -126,7 +126,7 @@ export default function RegisterPage() {
         }
         footer={
           <>
-            Have account? <Link to="/login">Sign In</Link>
+            Have account? <Link to="/login">Sign in</Link>
           </>
         }
       >
@@ -216,7 +216,7 @@ export default function RegisterPage() {
               </span>
             </label>
             <Button as="button" type="submit" size="lg" fullWidth arrow disabled={!canSubmit} loading={submitting}>
-              Sign Up
+              Sign up
             </Button>
           </form>
         )}

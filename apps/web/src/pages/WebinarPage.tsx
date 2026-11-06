@@ -181,7 +181,7 @@ export default function WebinarPage() {
         <div className="container container--wide">
           <div className="webinar-page__cta-primary" data-reveal>
             <Button as="link" to="/webinar#register" variant="primary" size="lg" arrow>
-              Yes! Reserve My Free Seat
+              Yes! Reserve my free seat
             </Button>
             <p className="webinar-page__cta-reassurance">Free to attend · Online · Beginner-friendly</p>
           </div>
@@ -237,7 +237,7 @@ export default function WebinarPage() {
             options, ask questions and get guidance on the programme that best fits your interests and goals.
           </p>
           <Button as="link" to="/webinar#register" variant="secondary" arrow>
-            Claim My Free Webinar Seat Now
+            Claim my free webinar seat now
           </Button>
         </div>
       </Section>
@@ -338,7 +338,7 @@ export default function WebinarPage() {
               </div>
             ) : (
               <form className="webinar-page__form" onSubmit={onSubmit}>
-                <p className="webinar-page__form-kicker">Register for the Free Webinar</p>
+                <p className="webinar-page__form-kicker">Register for the free webinar</p>
                 {w.seatsLimited && <p className="webinar-page__seats-note">Seats are limited.</p>}
                 {error ? (
                   <p className="auth__alert" role="alert">
@@ -402,7 +402,7 @@ export default function WebinarPage() {
                 />
                 <Turnstile onVerify={setTurnstileToken} />
                 <Button as="button" type="submit" size="lg" fullWidth arrow loading={submitting} disabled={!canSubmit}>
-                  Register for the Free Webinar
+                  Register for the free webinar
                 </Button>
               </form>
             )}

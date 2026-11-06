@@ -44,6 +44,68 @@
   display: none;
 }
 
+/* Roadmap — beginner to global tech opportunities */
+.webinar-page__roadmap-list {
+  margin-top: var(--space-7);
+  display: grid;
+  gap: var(--space-5);
+  max-width: 68ch;
+}
+.webinar-page__roadmap-list li {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: var(--space-4);
+  align-items: baseline;
+  padding-block: var(--space-4);
+  border-top: 1px solid var(--hairline);
+}
+.webinar-page__roadmap-list li:last-child {
+  border-bottom: 1px solid var(--hairline);
+}
+.webinar-page__roadmap-list h3 {
+  font-family: var(--font-display);
+  font-size: var(--fs-subhead);
+  font-weight: var(--fw-medium);
+  margin-bottom: var(--space-1);
+}
+.webinar-page__roadmap-list p {
+  font-size: var(--fs-sm);
+  color: var(--fg-muted);
+}
+
+/* Explore all AIIT Academy technology learning paths */
+.webinar-page__paths-grid {
+  margin-top: var(--space-7);
+  margin-bottom: var(--space-6);
+  display: grid;
+  gap: var(--space-6) var(--gutter);
+}
+@media (min-width: 640px) {
+  .webinar-page__paths-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+@media (min-width: 1000px) {
+  .webinar-page__paths-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+.webinar-page__paths-grid h3 {
+  font-family: var(--font-display);
+  font-size: var(--fs-subhead);
+  font-weight: var(--fw-medium);
+  margin-block: var(--space-3) var(--space-2);
+}
+.webinar-page__paths-grid p {
+  font-size: var(--fs-sm);
+  color: var(--fg-muted);
+}
+.webinar-page__paths-note {
+  max-width: 60ch;
+  color: var(--fg-soft);
+  margin-bottom: var(--space-6);
+}
+
 /* Section C — the video, a cinematic centerpiece independent of the flyer.
    Zeroed top padding: `size="tight"` on the Section itself still supplies
    up to 5rem on top of the meta row's own closing padding right above it

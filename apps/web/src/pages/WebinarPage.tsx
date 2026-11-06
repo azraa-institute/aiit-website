@@ -6,7 +6,7 @@ import { PageBanner } from '@/components/layout/PageBanner';
 import { Seo, organizationLd } from '@/lib/Seo';
 import { useScrollReveal } from '@/lib/useScrollReveal';
 import { useApiFetch } from '@/lib/useApiFetch';
-import { LIVE_EVENTS, WEBINAR_WHY_ATTEND } from '@/data/webinars';
+import { LIVE_EVENTS, WEBINAR_LEARNING_PATHS, WEBINAR_ROADMAP, WEBINAR_WHY_ATTEND } from '@/data/webinars';
 import { Section, SectionHeading } from '@/components/primitives/Section';
 import { Plate } from '@/components/primitives/Plate';
 import { Countdown } from '@/components/common/Countdown';
@@ -128,6 +128,28 @@ export default function WebinarPage() {
         </div>
       </Section>
 
+      {/* Roadmap — beginner to global tech opportunities */}
+      <Section tone="paper" size="tight" className="webinar-page__roadmap-section">
+        <div className="container container--wide">
+          <SectionHeading
+            align="start"
+            title="Your roadmap from beginner to global tech opportunities"
+            intro="The tech industry is creating opportunities across the globe. Choosing the right field, knowing where to begin, and turning your skills into a real career can feel overwhelming — this is where your journey starts."
+          />
+          <ol className="webinar-page__roadmap-list">
+            {WEBINAR_ROADMAP.map((step, i) => (
+              <li key={step.title} data-reveal>
+                <span className="index-num">{String(i + 1).padStart(2, '0')}</span>
+                <div>
+                  <h3>{step.title}</h3>
+                  <p>{step.body}</p>
+                </div>
+              </li>
+            ))}
+          </ol>
+        </div>
+      </Section>
+
       {/* C — Full-width, independent video */}
       <Section tone="paper" size="tight" className="webinar-page__video-section">
         <div className="container container--wide">
@@ -159,7 +181,7 @@ export default function WebinarPage() {
         <div className="container container--wide">
           <div className="webinar-page__cta-primary" data-reveal>
             <Button as="link" to="/webinar#register" variant="primary" size="lg" arrow>
-              Reserve My Free Seat
+              Yes! Reserve My Free Seat
             </Button>
             <p className="webinar-page__cta-reassurance">Free to attend · Online · Beginner-friendly</p>
           </div>
@@ -189,6 +211,33 @@ export default function WebinarPage() {
           </div>
           <Button as="link" to="/webinar#register" variant="secondary" arrow>
             Register for this session
+          </Button>
+        </div>
+      </Section>
+
+      {/* Explore all AIIT Academy technology learning paths */}
+      <Section tone="ivory" size="default" hairline>
+        <div className="container container--wide">
+          <SectionHeading
+            align="start"
+            title="Explore all these technology learning paths at AIIT Academy"
+            intro="One academy. Multiple technology pathways. Your next move starts with choosing the skills you want to build."
+          />
+          <div className="webinar-page__paths-grid">
+            {WEBINAR_LEARNING_PATHS.map((path, i) => (
+              <div key={path.title} data-reveal>
+                <span className="index-num">{String(i + 1).padStart(2, '0')}</span>
+                <h3>{path.title}</h3>
+                <p>{path.body}</p>
+              </div>
+            ))}
+          </div>
+          <p className="webinar-page__paths-note">
+            Not sure which field to choose? That&apos;s exactly why you should attend the free webinar. Explore your
+            options, ask questions and get guidance on the programme that best fits your interests and goals.
+          </p>
+          <Button as="link" to="/webinar#register" variant="secondary" arrow>
+            Claim My Free Webinar Seat Now
           </Button>
         </div>
       </Section>
@@ -226,8 +275,11 @@ export default function WebinarPage() {
         <div className="container container--wide">
           <div className="webinar-page__register" data-reveal>
             <div className="webinar-page__register-text">
-              <h2>Your next step in technology starts here.</h2>
-              <p>Join AIIT for a practical introduction to the technologies shaping modern industries.</p>
+              <h2>Stop guessing. Start exploring your options.</h2>
+              <p>
+                Your technology journey doesn&apos;t have to begin with confusion. Take 60–90 minutes to explore your
+                options and identify a practical next step. Your first step costs nothing — make it count.
+              </p>
 
               <dl className="webinar-page__facts">
                 <div>

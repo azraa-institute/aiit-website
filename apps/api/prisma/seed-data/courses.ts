@@ -140,7 +140,7 @@ export const COURSES: CourseSeed[] = [
       { name: 'AI evaluation tools', type: 'tool', icon: 'search', tier: 'optional' },
     ],
     summary:
-      'Design, build and deploy autonomous AI agents that plan, use tools and work together -- going beyond prompting to real agentic systems.',
+      'Design, build and deploy autonomous AI agents that plan, use tools and work together, going beyond prompting to real agentic systems.',
     description:
       'This course moves beyond single-turn prompting into agentic AI: systems that reason, call tools, retrieve information and act autonomously toward a goal. Participants build real agents using Claude, Gemini and OpenAI APIs alongside LangChain, working hands-on with tool calling, function calling, Retrieval-Augmented Generation, agent memory and multi-agent coordination, and explore emerging ecosystems such as the Model Context Protocol (MCP).',
     priceUsdCents: 18000,
@@ -553,7 +553,7 @@ export const COURSES: CourseSeed[] = [
       { name: 'Meta Ads / Meta Business Suite', type: 'platform', icon: 'megaphone', tier: 'optional' },
     ],
     summary:
-      'A practical introduction to digital marketing -- SEO, paid advertising, social media, content and email marketing, and the analytics behind them.',
+      'A practical introduction to digital marketing: SEO, paid advertising, social media, content and email marketing, and the analytics behind them.',
     description:
       'This course introduces the core disciplines of digital marketing: search engine optimisation, paid advertising, social media, content and email marketing, and how to measure what is actually working. Participants learn to plan, run and analyse digital marketing activity using real platforms and a shared analytics vocabulary used across the industry.',
     priceUsdCents: 12000,
@@ -614,7 +614,7 @@ export const COURSES: CourseSeed[] = [
       { name: 'Scrum', type: 'concept', icon: 'briefcase', tier: 'optional' },
     ],
     summary:
-      'A technology-focused introduction to IT business management -- governance, service management, project delivery and digital transformation for IT-driven organisations.',
+      'A technology-focused introduction to IT business management: governance, service management, project delivery and digital transformation for IT-driven organisations.',
     description:
       'This course introduces IT business management as it is practised inside technology-driven organisations: governance, IT service management, project and risk management, and the strategic thinking behind digital transformation. It is built for people working at the intersection of technology and business, not a general management or MBA-style programme.',
     priceUsdCents: 12000,
@@ -725,7 +725,7 @@ export const COURSES: CourseSeed[] = [
       { name: 'AI Dashboards', type: 'tool', icon: 'chart', tier: 'optional' },
     ],
     summary:
-      'A 4-week, tool-based introduction to using AI for market research and financial analysis -- for first-year MBA students.',
+      'A 4-week, tool-based introduction to using AI for market research and financial analysis, for first-year MBA students.',
     description:
       'Part of the AIIT Bangalore MBA Certification Program. Participants survey today\'s leading AI tools (ChatGPT, Claude, Copilot and finance-specific AI platforms), then apply them to real market-research and financial-analysis workflows: sentiment analysis, competitor research, trend forecasting, budgeting and risk scoring. The course closes with a capstone AI-powered market/finance mini-workflow and a look at the limitations and responsible use of financial AI.',
     priceUsdCents: 15000,
@@ -769,7 +769,7 @@ export const COURSES: CourseSeed[] = [
       { name: 'CRM Administration', type: 'concept', icon: 'database', tier: 'core' },
     ],
     summary:
-      'A 4-week, hands-on Zoho CRM certification track -- setup, lead management, pipeline analytics and automation -- for first-year MBA students.',
+      'A 4-week, hands-on Zoho CRM certification track covering setup, lead management, pipeline analytics and automation, for first-year MBA students.',
     description:
       'Part of the AIIT Bangalore MBA Certification Program. Participants configure a sandbox Zoho CRM organisation, manage leads and contacts with deduplication and workflow automation, build a live sales pipeline dashboard, then move into advanced automation with Zia AI features and Blueprint process automation. The course closes with a Zoho CRM certification mock exam and review. Zoho CRM certification eligibility is included; the official Zoho certification exam itself carries an additional fee charged directly by Zoho.',
     priceUsdCents: 15000,
@@ -814,9 +814,9 @@ export const COURSES: CourseSeed[] = [
       { name: 'Lead Scoring', type: 'concept', icon: 'chart', tier: 'core' },
     ],
     summary:
-      'A 4-week, tool-based lead generation and growth marketing track -- funnels, channels, outbound and CRM integration -- for first-year MBA students.',
+      'A 4-week, tool-based lead generation and growth marketing track covering funnels, channels, outbound and CRM integration, for first-year MBA students.',
     description:
-      'Part of the AIIT Bangalore MBA Certification Program. Participants build an ideal-customer-profile and buyer-persona worksheet, plan a multi-channel lead generation strategy across SEO, content, LinkedIn and paid ads, then run outbound campaigns -- cold email sequencing and LinkedIn outreach -- synced into Zoho CRM. The course closes with landing-page optimisation, A/B testing and lead scoring, and a capstone go-to-market plan.',
+      'Part of the AIIT Bangalore MBA Certification Program. Participants build an ideal-customer-profile and buyer-persona worksheet, plan a multi-channel lead generation strategy across SEO, content, LinkedIn and paid ads, then run outbound campaigns (cold email sequencing and LinkedIn outreach) synced into Zoho CRM. The course closes with landing-page optimisation, A/B testing and lead scoring, and a capstone go-to-market plan.',
     priceUsdCents: 15000,
     priceWasUsdCents: null,
     pricing: 'paid',

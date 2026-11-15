@@ -95,7 +95,13 @@ export default function CoursesPage() {
   // enabled: {} skips the fetch entirely for an anonymous visitor -- same
   // gating convention useLearner()/useCart() already use elsewhere.
   const learnerState = useLearner({ enabled: authenticated });
-  const cartState = useCart({ enabled: authenticated });
+  // The cart is a learner-portal feature -- /auth/me (and so useLearner())
+  // succeeds for any signed-in role, so "authenticated" alone isn't enough:
+  // without this, an admin/instructor/affiliate account browsing /courses
+  // would see "Add to cart" too, for a cart they can never reach or check
+  // out (confirmed live -- /portal redirects a non-learner role elsewhere).
+  const isLearner = learnerState.status === 'ready' && learnerState.learner.role === 'learner';
+  const cartState = useCart({ enabled: isLearner });
   const cartCourseIds = useMemo(() => new Set(cartState.status === 'ready' ? cartState.items.map((i) => i.courseId) : []), [cartState]);
   const enrolledCourseIds = useMemo(
     () => new Set(learnerState.status === 'ready' ? learnerState.learner.enrolled.filter((e) => e.status !== 'cancelled').map((e) => e.course.id) : []),
@@ -242,7 +248,7 @@ export default function CoursesPage() {
                   course={c}
                   index={start + i}
                   layout={view === 'grid' ? 'grid' : 'list'}
-                  onToggleCart={authenticated && c.pricing === 'paid' && !enrolledCourseIds.has(c.id) ? () => toggleCart(c) : undefined}
+                  onToggleCart={isLearner && c.pricing === 'paid' && !enrolledCourseIds.has(c.id) ? () => toggleCart(c) : undefined}
                   inCart={cartCourseIds.has(c.id)}
                 />
               ))}

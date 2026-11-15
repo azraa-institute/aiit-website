@@ -419,7 +419,12 @@ function EnrollAction({ course, comingSoon }: { course: Course; comingSoon: bool
   // the actual fetch for anonymous/loading visitors, same pattern already
   // used by the public header's account widget (see learnerData.ts).
   const learnerState = useLearner({ enabled: status === 'authenticated' });
-  const cartState = useCart({ enabled: status === 'authenticated' });
+  // The cart is a learner-portal feature -- /auth/me (and so useLearner())
+  // succeeds for any signed-in role, so this can't just check `status`
+  // without also showing the toggle to a signed-in admin/instructor/
+  // affiliate account browsing this page, for a cart they can never reach.
+  const isLearner = learnerState.status === 'ready' && learnerState.learner.role === 'learner';
+  const cartState = useCart({ enabled: isLearner });
   useLockBodyScroll(profileWizardOpen);
 
   if (status === 'loading') {
@@ -520,13 +525,15 @@ function EnrollAction({ course, comingSoon }: { course: Course; comingSoon: bool
     return (
       <>
         <PaymentMethodPicker courseSlug={course.slug} onSuccess={onPaymentSuccess} />
-        <button
-          type="button"
-          className="course-detail__cart-toggle"
-          onClick={() => (inCart ? removeFromCart(course.id) : addToCart(course.slug))}
-        >
-          {inCart ? 'In your cart: remove' : 'Add to cart instead, decide later'}
-        </button>
+        {isLearner ? (
+          <button
+            type="button"
+            className="course-detail__cart-toggle"
+            onClick={() => (inCart ? removeFromCart(course.id) : addToCart(course.slug))}
+          >
+            {inCart ? 'In your cart: remove' : 'Add to cart instead, decide later'}
+          </button>
+        ) : null}
       </>
     );
   }

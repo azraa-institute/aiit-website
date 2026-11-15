@@ -5,6 +5,7 @@ import { Plate } from '@/components/primitives/Plate';
 import { Button } from '@/components/primitives/Button';
 import { apiFetch, ApiError } from '@/lib/api';
 import { cn } from '@/lib/cn';
+import { useScrollReveal } from '@/lib/useScrollReveal';
 import { openRazorpayBundleCheckout } from '@/lib/razorpayCheckout';
 import { useCart, removeFromCart, invalidateCart } from './cartData';
 import { invalidateLearner } from './learnerData';
@@ -19,6 +20,14 @@ type PriceState = { status: 'idle' } | { status: 'loading' } | { status: 'ready'
 /** The learner dashboard's cart widget -- only ever rendered by DashboardPage once the cart actually has something in it. */
 export function DashboardCart() {
   const cart = useCart();
+  // DashboardPage's own useScrollReveal() already ran its one-time scan
+  // before this section exists in the DOM (it only mounts once useCart()
+  // resolves, via the early `return null` below) -- without this, the
+  // section's [data-reveal] never gets observed and stays invisible
+  // forever (confirmed live: it rendered with real content in the DOM,
+  // just never painted). Keyed on cart.status so the scan re-runs the
+  // moment this section actually appears.
+  useScrollReveal([cart.status]);
   const navigate = useNavigate();
   const [promoInput, setPromoInput] = useState('');
   // Only set once the student actually clicks "Redeem coupon" (or presses

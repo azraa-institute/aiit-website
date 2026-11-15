@@ -523,12 +523,53 @@ model Order {
   refundRef   String?         @map("refund_ref")
   // Last raw provider response/webhook payload -- support/debugging only, never rendered to users.
   rawPayload  Json?           @map("raw_payload")
+  // Set only for a Razorpay promo-code bundle purchase (see PromoCode below)
+  // -- several Order rows (one per bundled course) can share one Razorpay
+  // providerRef, which is why the unique index below includes courseId.
+  promoCodeId String?         @map("promo_code_id") @db.Uuid
+  promoCode   PromoCode?      @relation(fields: [promoCodeId], references: [id])
   createdAt   DateTime        @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt   DateTime        @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
 
-  @@unique([provider, providerRef])
+  // Was @@unique([provider, providerRef]) -- widened to include courseId so
+  // a multi-course promo-code bundle purchase (Part E) can attach the same
+  // Razorpay providerRef to several Order rows (one per bundled course)
+  // while each row stays individually unique. No behavior change for a
+  // normal single-course order, where (provider, providerRef) was already
+  // effectively 1:1 with courseId.
+  @@unique([provider, providerRef, courseId])
   @@index([userId])
   @@map("orders")
+  @@schema("public")
+}
+
+// ---- MBA certification program: promo-code bundle checkout ----
+// A single admin-generated code, scoped to an exact set of courses (the 3
+// AIIT Bangalore MBA courses), capped at a maximum number of successful
+// (paid) redemptions. INR/Razorpay-only by product decision -- `currency`
+// is stored rather than hardcoded so the model doesn't silently assume INR
+// if this is ever reused. Never exposed on any public endpoint except the
+// one-shot "price a checkout" preview, which never echoes the code list
+// back -- only admin list/detail routes return the plaintext `code`.
+model PromoCode {
+  id               String   @id @default(uuid()) @db.Uuid
+  code             String   @unique // stored lowercase, same convention as Affiliate.referralSlug
+  courseIds        String[] @map("course_ids") @db.Uuid // exactly the courses this code is scoped to
+  // Price per course when fewer than every scoped course is bought together
+  // in one checkout (e.g. 1,100,000 = ₹11,000). bundlePriceCents applies
+  // only once ALL scoped courses are bought together in one checkout (e.g.
+  // 700,000 = ₹7,000) -- see PromoCodesService.priceCheckout.
+  singlePriceCents Int      @map("single_price_cents")
+  bundlePriceCents Int      @map("bundle_price_cents")
+  currency         String   @default("INR")
+  maxRedemptions   Int      @map("max_redemptions")
+  active           Boolean  @default(true)
+  createdByAdminId String?  @map("created_by_admin_id") @db.Uuid // plain id, no relation -- same convention as Affiliate.reviewedBy
+  createdAt        DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt        DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+  orders           Order[]
+
+  @@map("promo_codes")
   @@schema("public")
 }
 

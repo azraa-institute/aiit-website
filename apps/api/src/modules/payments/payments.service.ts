@@ -8,6 +8,7 @@ import { EnrollmentsService } from '../enrollments/enrollments.service';
 import { PayPalClientService } from './paypal/paypal-client.service';
 import { RazorpayClientService } from './razorpay/razorpay-client.service';
 import { PaystackClientService } from './paystack/paystack-client.service';
+import { PromoCodesService } from './promo-codes/promo-codes.service';
 
 /**
  * Provider-agnostic order bookkeeping. A provider-specific client (e.g.
@@ -28,6 +29,7 @@ export class PaymentsService {
     private readonly paypal: PayPalClientService,
     private readonly razorpay: RazorpayClientService,
     private readonly paystack: PaystackClientService,
+    private readonly promoCodes: PromoCodesService,
   ) {}
 
   /**
@@ -72,12 +74,64 @@ export class PaymentsService {
     return { order, courseTitle: course.title };
   }
 
+  /**
+   * A Razorpay-only promo-code bundle purchase (MBA certification courses,
+   * see PromoCode in schema.prisma) -- creates one pending Order per
+   * selected course, all sharing the same (not-yet-known) Razorpay
+   * providerRef once RazorpayCheckoutController attaches it via
+   * attachProviderRefMany. Pricing + the redemption-cap check both happen
+   * inside this one transaction, via PromoCodesService -- that's the real
+   * enforcement point for the cap, not the frontend's earlier preview call.
+   */
+  async createPendingBundleOrder(userId: string, courseSlugs: string[], promoCode: string): Promise<{ orders: Order[]; totalAmountCents: number; currency: string }> {
+    const orders = await this.prisma.$transaction(async (tx) => {
+      const courseIds = await this.promoCodes.resolveCourseIds(courseSlugs, tx);
+      const priced = await this.promoCodes.priceCheckout(promoCode, courseIds, tx);
+      return Promise.all(
+        courseIds.map((courseId) =>
+          tx.order.create({
+            data: {
+              userId,
+              courseId,
+              provider: 'razorpay',
+              currency: priced.currency,
+              amountCents: priced.pricePerCourseCents,
+              promoCodeId: priced.promoCodeId,
+            },
+          }),
+        ),
+      );
+    });
+    return {
+      orders,
+      totalAmountCents: orders.reduce((sum, o) => sum + o.amountCents, 0),
+      currency: orders[0].currency,
+    };
+  }
+
   async attachProviderRef(orderId: string, providerRef: string): Promise<void> {
     await this.prisma.order.update({ where: { id: orderId }, data: { providerRef } });
   }
 
+  /** Attaches one shared providerRef to every Order row from a bundle checkout -- see createPendingBundleOrder. */
+  async attachProviderRefMany(orderIds: string[], providerRef: string): Promise<void> {
+    await this.prisma.order.updateMany({ where: { id: { in: orderIds } }, data: { providerRef } });
+  }
+
+  /**
+   * findUnique's old compound key (provider_providerRef) no longer exists
+   * now that the unique index also covers courseId (see Order.@@unique's
+   * doc comment in schema.prisma) -- findFirst behaves identically for
+   * every existing single-course call site, where (provider, providerRef)
+   * is still effectively 1:1.
+   */
   async findByProviderRef(provider: PaymentProvider, providerRef: string): Promise<Order | null> {
-    return this.prisma.order.findUnique({ where: { provider_providerRef: { provider, providerRef } } });
+    return this.prisma.order.findFirst({ where: { provider, providerRef } });
+  }
+
+  /** The whole group of Order rows from a bundle checkout that share one providerRef -- see createPendingBundleOrder. Returns a 1-element array for a normal single-course order. */
+  async findAllByProviderRef(provider: PaymentProvider, providerRef: string): Promise<Order[]> {
+    return this.prisma.order.findMany({ where: { provider, providerRef } });
   }
 
   /**

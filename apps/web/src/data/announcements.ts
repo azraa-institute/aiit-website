@@ -4,7 +4,7 @@
  */
 
 export const ADMISSIONS_ANNOUNCEMENT = {
-  message: 'Admissions for 2026 intake are now open',
+  message: 'Admissions for 2027 intake are now open',
   /** Existing route the message links to. */
   link: '/register',
 } as const;

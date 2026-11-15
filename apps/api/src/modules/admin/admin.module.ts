@@ -22,6 +22,8 @@ import { AdminBlogService } from './admin-blog.service';
 import { GithubPublisherService } from './github-publisher.service';
 import { AdminWebinarsController } from './admin-webinars.controller';
 import { AdminWebinarsService } from './admin-webinars.service';
+import { AdminPromoCodesController } from './admin-promo-codes.controller';
+import { AdminPromoCodesService } from './admin-promo-codes.service';
 
 @Module({
   imports: [EmailModule, EnrollmentsModule, AffiliatesModule, WebinarsModule, PaymentsModule, CurrencyModule],
@@ -33,6 +35,7 @@ import { AdminWebinarsService } from './admin-webinars.service';
     AdminAffiliatesController,
     AdminBlogController,
     AdminWebinarsController,
+    AdminPromoCodesController,
   ],
   providers: [
     AdminUsersService,
@@ -45,6 +48,7 @@ import { AdminWebinarsService } from './admin-webinars.service';
     AdminBlogService,
     GithubPublisherService,
     AdminWebinarsService,
+    AdminPromoCodesService,
   ],
 })
 export class AdminModule {}

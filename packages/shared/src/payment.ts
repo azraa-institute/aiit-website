@@ -40,3 +40,61 @@ export interface CreatePaystackOrderResponse {
   accessCode: string;
   reference: string;
 }
+
+/**
+ * Promo-code bundle checkout (MBA certification courses, Razorpay/INR only
+ * -- see PromoCodesService.priceCheckout). A student picks 1-N of a code's
+ * scoped courses in one checkout; the server recomputes the real price,
+ * the frontend never computes a discount itself.
+ */
+export interface CreateRazorpayBundleOrderRequest {
+  courseSlugs: string[];
+  promoCode: string;
+}
+
+export interface PromoPreviewRequest {
+  courseSlugs: string[];
+  promoCode: string;
+}
+
+export interface PromoPreviewResponse {
+  pricePerCourseCents: number;
+  totalAmountCents: number;
+  currency: string;
+}
+
+/** Admin-only -- generated/listed/managed from the admin portal, never surfaced on any public page. */
+export interface AdminPromoCodeSummary {
+  id: string;
+  code: string;
+  courseTitles: string[];
+  singlePriceCents: number;
+  bundlePriceCents: number;
+  currency: string;
+  maxRedemptions: number;
+  paidRedemptionCount: number;
+  active: boolean;
+  createdAt: string;
+}
+
+export interface AdminPromoCodeRedemption {
+  providerRef: string;
+  userName: string | null;
+  userEmail: string | null;
+  courseCount: number;
+  amountCents: number;
+  paidAt: string;
+}
+
+export interface AdminPromoCodeDetail extends AdminPromoCodeSummary {
+  courseIds: string[];
+  redemptions: AdminPromoCodeRedemption[];
+}
+
+export interface GeneratePromoCodeRequest {
+  code?: string;
+  courseIds: string[];
+  singlePriceCents: number;
+  bundlePriceCents: number;
+  maxRedemptions: number;
+}

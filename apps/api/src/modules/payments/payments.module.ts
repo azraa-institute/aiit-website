@@ -12,6 +12,8 @@ import { RazorpayWebhookController } from './razorpay/razorpay-webhook.controlle
 import { PaystackClientService } from './paystack/paystack-client.service';
 import { PaystackCheckoutController } from './paystack/paystack-checkout.controller';
 import { PaystackWebhookController } from './paystack/paystack-webhook.controller';
+import { PromoCodesService } from './promo-codes/promo-codes.service';
+import { PromoCodesController } from './promo-codes/promo-codes.controller';
 
 @Module({
   imports: [EnrollmentsModule, NotificationsModule, CurrencyModule],
@@ -22,8 +24,9 @@ import { PaystackWebhookController } from './paystack/paystack-webhook.controlle
     RazorpayWebhookController,
     PaystackCheckoutController,
     PaystackWebhookController,
+    PromoCodesController,
   ],
-  providers: [PaymentsService, PayPalClientService, RazorpayClientService, PaystackClientService],
-  exports: [PaymentsService],
+  providers: [PaymentsService, PayPalClientService, RazorpayClientService, PaystackClientService, PromoCodesService],
+  exports: [PaymentsService, PromoCodesService],
 })
 export class PaymentsModule {}

@@ -108,7 +108,7 @@ export function EnrollmentPopup() {
             src="/assets/popups/aiit-enrollment.webp"
             width={887}
             height={1774}
-            alt="Smiling AIIT students. Admissions for the 2026 intake are open."
+            alt="Smiling AIIT students. Admissions for the 2027 intake are open."
             loading="lazy"
             decoding="async"
           />

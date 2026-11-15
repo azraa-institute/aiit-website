@@ -55,6 +55,7 @@ const ADMIN_NAV: StaffNavItem[] = [
     items: [
       { to: '/admin/payments', label: 'Payments' },
       { to: '/admin/reports', label: 'Reports' },
+      { to: '/admin/promo-codes', label: 'Promo codes' },
     ],
   },
   {

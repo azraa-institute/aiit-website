@@ -56,22 +56,27 @@ export class RazorpayWebhookController {
     const paymentId = entity?.id;
     if (!razorpayOrderId || !paymentId) return { ok: true };
 
-    const order = await this.payments.findByProviderRef('razorpay', razorpayOrderId);
+    // Usually one Order; for a promo-code bundle checkout (see
+    // PaymentsService.createPendingBundleOrder) several Order rows share
+    // this one providerRef, and all of them need marking paid together.
+    const orders = await this.payments.findAllByProviderRef('razorpay', razorpayOrderId);
+    const pending = orders.filter((o) => o.status === 'pending');
     // Missing, or already resolved by the synchronous /verify path -- a
     // harmless race is possible here, but markOrderPaid()'s own conditional
     // update is the actual correctness guarantee, not this check.
-    if (!order || order.status !== 'pending') return { ok: true };
+    if (pending.length === 0) return { ok: true };
 
     const payment = await this.razorpay.fetchPayment(paymentId);
+    const totalAmountCents = pending.reduce((sum, o) => sum + o.amountCents, 0);
     // See the matching comment in RazorpayCheckoutController.verify() -- a
     // Convenience Fee (if ever activated) legitimately inflates the
-    // captured amount above order.amountCents, so only reject if it's less.
-    if (payment.status !== 'captured' || payment.amountCents < order.amountCents || payment.currency !== order.currency) {
-      this.logger.error(`Razorpay webhook payment mismatch for order ${order.id}.`);
+    // captured amount above the order total, so only reject if it's less.
+    if (payment.status !== 'captured' || payment.amountCents < totalAmountCents || payment.currency !== pending[0].currency) {
+      this.logger.error(`Razorpay webhook payment mismatch for providerRef ${razorpayOrderId}.`);
       return { ok: true };
     }
 
-    await this.payments.markOrderPaid(order.id, payment);
+    await Promise.all(pending.map((o) => this.payments.markOrderPaid(o.id, payment)));
     return { ok: true };
   }
 }

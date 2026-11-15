@@ -7,6 +7,7 @@ import { PaymentsService } from '../payments.service';
 import { RazorpayClientService } from './razorpay-client.service';
 import { CreateOrderDto } from '../dto/create-order.dto';
 import { VerifyRazorpayPaymentDto } from '../dto/verify-razorpay-payment.dto';
+import { PromoCourseSelectionDto } from '../dto/promo-preview.dto';
 
 @Controller('payments/razorpay')
 @UseGuards(JwtGuard)
@@ -54,5 +55,45 @@ export class RazorpayCheckoutController {
 
     const paid = await this.payments.markOrderPaid(order.id, payment);
     return { status: paid.status };
+  }
+
+  /**
+   * Promo-code bundle checkout (MBA certification courses, see PromoCode
+   * in schema.prisma) -- the only route on this controller that can
+   * create more than one Order from a single request. PayPal/Paystack
+   * have no equivalent; this mechanism is INR/Razorpay-only by product
+   * decision.
+   */
+  @Post('orders/bundle')
+  async createBundleOrder(@Body() dto: PromoCourseSelectionDto, @CurrentUser() user: AuthenticatedUser): Promise<CreateRazorpayOrderResponse> {
+    const { orders, totalAmountCents, currency } = await this.payments.createPendingBundleOrder(user.userId, dto.courseSlugs, dto.promoCode);
+    const razorpayOrderId = await this.razorpay.createOrder(totalAmountCents, currency, orders[0].id);
+    await this.payments.attachProviderRefMany(orders.map((o) => o.id), razorpayOrderId);
+    return { razorpayOrderId, amountCents: totalAmountCents, currency };
+  }
+
+  @Post('orders/bundle/:razorpayOrderId/verify')
+  async verifyBundle(
+    @Param('razorpayOrderId') razorpayOrderId: string,
+    @Body() dto: VerifyRazorpayPaymentDto,
+    @CurrentUser() user: AuthenticatedUser,
+  ): Promise<{ status: string }> {
+    const orders = await this.payments.findAllByProviderRef('razorpay', razorpayOrderId);
+    if (orders.length === 0) throw new NotFoundException('Order not found.');
+    if (orders.some((o) => o.userId !== user.userId)) throw new ForbiddenException();
+    if (orders.every((o) => o.status === 'paid')) return { status: 'paid' };
+
+    if (!this.razorpay.verifyPaymentSignature(razorpayOrderId, dto.razorpayPaymentId, dto.razorpaySignature)) {
+      throw new ConflictException('This payment could not be verified.');
+    }
+
+    const payment = await this.razorpay.fetchPayment(dto.razorpayPaymentId);
+    const totalAmountCents = orders.reduce((sum, o) => sum + o.amountCents, 0);
+    if (payment.status !== 'captured' || payment.amountCents < totalAmountCents || payment.currency !== orders[0].currency) {
+      throw new ConflictException('This payment could not be verified.');
+    }
+
+    await Promise.all(orders.map((o) => this.payments.markOrderPaid(o.id, payment)));
+    return { status: 'paid' };
   }
 }

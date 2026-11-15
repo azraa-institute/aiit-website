@@ -1,6 +1,6 @@
 import { apiFetch, ApiError } from '@/lib/api';
 import { captureException } from '@/lib/sentry';
-import type { CreateRazorpayOrderRequest, CreateRazorpayOrderResponse, VerifyRazorpayPaymentRequest } from '@aiit/shared';
+import type { CreateRazorpayBundleOrderRequest, CreateRazorpayOrderRequest, CreateRazorpayOrderResponse, VerifyRazorpayPaymentRequest } from '@aiit/shared';
 
 interface RazorpayCheckoutHandlerResponse {
   razorpay_payment_id: string;
@@ -105,6 +105,70 @@ export async function openRazorpayCheckout({ courseSlug, keyId, onSuccess, onErr
           razorpaySignature: response.razorpay_signature,
         };
         apiFetch(`/payments/razorpay/orders/${encodeURIComponent(response.razorpay_order_id)}/verify`, {
+          method: 'POST',
+          body: JSON.stringify(verifyBody),
+        })
+          .then(() => onSuccess())
+          .catch((err: unknown) => {
+            captureException(err);
+            onError(err instanceof ApiError ? err.message : 'Something went wrong confirming your payment. Please try again.');
+          });
+      },
+      modal: { ondismiss: () => onDismiss?.() },
+    });
+    rzp.on('payment.failed', (response) => {
+      onError(response.error?.description ?? 'Your payment could not be completed. Please try again.');
+      onDismiss?.();
+    });
+    rzp.open();
+  } catch (err) {
+    captureException(err);
+    onError(err instanceof ApiError ? err.message : 'Could not start Razorpay checkout. Please try again later.');
+    onDismiss?.();
+  }
+}
+
+interface OpenRazorpayBundleCheckoutOptions {
+  courseSlugs: string[];
+  promoCode: string;
+  keyId: string;
+  onSuccess: () => void;
+  onError: (message: string) => void;
+  onDismiss?: () => void;
+}
+
+/**
+ * Promo-code bundle checkout for the MBA certification courses (see
+ * PromoCode in schema.prisma) -- same Checkout.js mechanics as
+ * openRazorpayCheckout, pointed at the bundle-order endpoints instead. The
+ * discounted total is always server-computed (PaymentsService.
+ * createPendingBundleOrder); this never calculates a price itself.
+ */
+export async function openRazorpayBundleCheckout({ courseSlugs, promoCode, keyId, onSuccess, onError, onDismiss }: OpenRazorpayBundleCheckoutOptions): Promise<void> {
+  try {
+    await loadRazorpaySdk();
+    if (!window.Razorpay) throw new Error('Razorpay SDK failed to load.');
+
+    const body: CreateRazorpayBundleOrderRequest = { courseSlugs, promoCode };
+    const order = await apiFetch<CreateRazorpayOrderResponse>('/payments/razorpay/orders/bundle', {
+      method: 'POST',
+      body: JSON.stringify(body),
+    });
+
+    const rzp = new window.Razorpay({
+      key: keyId,
+      amount: order.amountCents,
+      currency: order.currency,
+      order_id: order.razorpayOrderId,
+      name: 'AIIT.NETWORK',
+      image: 'https://aiit.network/apple-touch-icon.png',
+      theme: { color: '#2b2420' },
+      handler: (response) => {
+        const verifyBody: VerifyRazorpayPaymentRequest = {
+          razorpayPaymentId: response.razorpay_payment_id,
+          razorpaySignature: response.razorpay_signature,
+        };
+        apiFetch(`/payments/razorpay/orders/bundle/${encodeURIComponent(response.razorpay_order_id)}/verify`, {
           method: 'POST',
           body: JSON.stringify(verifyBody),
         })

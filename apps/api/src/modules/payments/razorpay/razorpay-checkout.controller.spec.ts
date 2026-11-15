@@ -20,7 +20,15 @@ const PENDING_ORDER = {
 
 describe('RazorpayCheckoutController', () => {
   let controller: RazorpayCheckoutController;
-  let payments: { createPendingOrder: jest.Mock; attachProviderRef: jest.Mock; findByProviderRef: jest.Mock; markOrderPaid: jest.Mock };
+  let payments: {
+    createPendingOrder: jest.Mock;
+    attachProviderRef: jest.Mock;
+    findByProviderRef: jest.Mock;
+    markOrderPaid: jest.Mock;
+    createPendingBundleOrder: jest.Mock;
+    attachProviderRefMany: jest.Mock;
+    findAllByProviderRef: jest.Mock;
+  };
   let razorpay: { createOrder: jest.Mock; verifyPaymentSignature: jest.Mock; fetchPayment: jest.Mock };
 
   beforeEach(async () => {
@@ -29,6 +37,9 @@ describe('RazorpayCheckoutController', () => {
       attachProviderRef: jest.fn(),
       findByProviderRef: jest.fn(),
       markOrderPaid: jest.fn(),
+      createPendingBundleOrder: jest.fn(),
+      attachProviderRefMany: jest.fn(),
+      findAllByProviderRef: jest.fn(),
     };
     razorpay = { createOrder: jest.fn(), verifyPaymentSignature: jest.fn(), fetchPayment: jest.fn() };
 
@@ -123,6 +134,78 @@ describe('RazorpayCheckoutController', () => {
 
       expect(payments.markOrderPaid).toHaveBeenCalledWith('order-1', payment);
       expect(result).toEqual({ status: 'paid' });
+    });
+  });
+
+  describe('createBundleOrder', () => {
+    const BUNDLE_DTO = { courseSlugs: ['ai-markets', 'zoho-crm', 'lead-gen'], promoCode: 'mba2027' };
+    const BUNDLE_ORDERS = [
+      { ...PENDING_ORDER, id: 'order-1', courseId: 'course-1', amountCents: 700_000 },
+      { ...PENDING_ORDER, id: 'order-2', courseId: 'course-2', amountCents: 700_000 },
+      { ...PENDING_ORDER, id: 'order-3', courseId: 'course-3', amountCents: 700_000 },
+    ];
+
+    it('prices the bundle, asks Razorpay for one combined order, and attaches it to every bundled order', async () => {
+      payments.createPendingBundleOrder.mockResolvedValueOnce({ orders: BUNDLE_ORDERS, totalAmountCents: 2_100_000, currency: 'INR' });
+      razorpay.createOrder.mockResolvedValueOnce('RAZORPAY-BUNDLE-1');
+
+      const result = await controller.createBundleOrder(BUNDLE_DTO, USER);
+
+      expect(payments.createPendingBundleOrder).toHaveBeenCalledWith('user-1', BUNDLE_DTO.courseSlugs, 'mba2027');
+      expect(razorpay.createOrder).toHaveBeenCalledWith(2_100_000, 'INR', 'order-1');
+      expect(payments.attachProviderRefMany).toHaveBeenCalledWith(['order-1', 'order-2', 'order-3'], 'RAZORPAY-BUNDLE-1');
+      expect(result).toEqual({ razorpayOrderId: 'RAZORPAY-BUNDLE-1', amountCents: 2_100_000, currency: 'INR' });
+    });
+  });
+
+  describe('verifyBundle', () => {
+    const DTO = { razorpayPaymentId: 'pay_1', razorpaySignature: 'sig_1' };
+    const BUNDLE_ORDERS = [
+      { ...PENDING_ORDER, id: 'order-1', amountCents: 700_000 },
+      { ...PENDING_ORDER, id: 'order-2', amountCents: 700_000 },
+      { ...PENDING_ORDER, id: 'order-3', amountCents: 700_000 },
+    ];
+
+    it('throws NotFoundException when no order shares the given providerRef', async () => {
+      payments.findAllByProviderRef.mockResolvedValueOnce([]);
+      await expect(controller.verifyBundle('missing', DTO, USER)).rejects.toBeInstanceOf(NotFoundException);
+    });
+
+    it('throws ForbiddenException if any bundled order belongs to someone else', async () => {
+      payments.findAllByProviderRef.mockResolvedValueOnce([...BUNDLE_ORDERS, { ...BUNDLE_ORDERS[0], id: 'order-4', userId: 'someone-else' }]);
+      await expect(controller.verifyBundle('RAZORPAY-BUNDLE-1', DTO, USER)).rejects.toBeInstanceOf(ForbiddenException);
+    });
+
+    it('is a no-op when every bundled order is already paid', async () => {
+      payments.findAllByProviderRef.mockResolvedValueOnce(BUNDLE_ORDERS.map((o) => ({ ...o, status: 'paid' })));
+      const result = await controller.verifyBundle('RAZORPAY-BUNDLE-1', DTO, USER);
+      expect(razorpay.verifyPaymentSignature).not.toHaveBeenCalled();
+      expect(result).toEqual({ status: 'paid' });
+    });
+
+    it('marks every bundled order paid once the signature verifies and the captured total covers them all', async () => {
+      payments.findAllByProviderRef.mockResolvedValueOnce(BUNDLE_ORDERS);
+      razorpay.verifyPaymentSignature.mockReturnValueOnce(true);
+      const payment = { status: 'captured', amountCents: 2_100_000, currency: 'INR', orderId: 'RAZORPAY-BUNDLE-1' };
+      razorpay.fetchPayment.mockResolvedValueOnce(payment);
+      payments.markOrderPaid.mockResolvedValue({ status: 'paid' });
+
+      const result = await controller.verifyBundle('RAZORPAY-BUNDLE-1', DTO, USER);
+
+      expect(payments.markOrderPaid).toHaveBeenCalledTimes(3);
+      expect(payments.markOrderPaid).toHaveBeenCalledWith('order-1', payment);
+      expect(payments.markOrderPaid).toHaveBeenCalledWith('order-2', payment);
+      expect(payments.markOrderPaid).toHaveBeenCalledWith('order-3', payment);
+      expect(result).toEqual({ status: 'paid' });
+    });
+
+    it('rejects a captured total that falls short of the full bundle', async () => {
+      payments.findAllByProviderRef.mockResolvedValueOnce(BUNDLE_ORDERS);
+      razorpay.verifyPaymentSignature.mockReturnValueOnce(true);
+      razorpay.fetchPayment.mockResolvedValueOnce({ status: 'captured', amountCents: 700_000, currency: 'INR', orderId: 'RAZORPAY-BUNDLE-1' });
+
+      await expect(controller.verifyBundle('RAZORPAY-BUNDLE-1', DTO, USER)).rejects.toBeInstanceOf(ConflictException);
+      expect(payments.markOrderPaid).not.toHaveBeenCalled();
     });
   });
 });

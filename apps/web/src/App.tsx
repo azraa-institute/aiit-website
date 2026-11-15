@@ -55,6 +55,7 @@ const CourseDetailPage = lazy(() => import('@/pages/CourseDetailPage'));
 const ResourcesPage = lazy(() => import('@/pages/ResourcesPage'));
 const ResourceDetailPage = lazy(() => import('@/pages/ResourceDetailPage'));
 const WebinarPage = lazy(() => import('@/pages/WebinarPage'));
+const MbaProgramPage = lazy(() => import('@/pages/MbaProgramPage'));
 const FaqsPage = lazy(() => import('@/pages/FaqsPage'));
 const ContactPage = lazy(() => import('@/pages/ContactPage'));
 const NewsletterConfirmPage = lazy(() => import('@/pages/NewsletterConfirmPage'));
@@ -107,6 +108,7 @@ const AdminWebinarsPage = lazy(() => import('@/pages/admin/AdminWebinarsPage'));
 const AdminWebinarEditorPage = lazy(() => import('@/pages/admin/AdminWebinarEditorPage'));
 const AdminWebinarRegistrantsPage = lazy(() => import('@/pages/admin/AdminWebinarRegistrantsPage'));
 const AdminPaymentsPage = lazy(() => import('@/pages/admin/AdminPaymentsPage'));
+const AdminPromoCodesPage = lazy(() => import('@/pages/admin/AdminPromoCodesPage'));
 const AdminSettingsPage = lazy(() => import('@/pages/admin/AdminSettingsPage'));
 const AffiliateLayout = lazy(() => import('@/pages/affiliate/AffiliateLayout'));
 const AffiliateDashboardPage = lazy(() => import('@/pages/affiliate/AffiliateDashboardPage'));
@@ -175,6 +177,7 @@ export function App() {
               <Route path="/resources" element={<ResourcesPage />} />
               <Route path="/resources/:slug" element={<ResourceDetailPage />} />
               <Route path="/webinar" element={<WebinarPage />} />
+              <Route path="/mba-certification-program" element={<MbaProgramPage />} />
               <Route path="/faqs" element={<FaqsPage />} />
               <Route path="/contact" element={<ContactPage />} />
               <Route path="/newsletter/confirm" element={<NewsletterConfirmPage />} />
@@ -388,6 +391,7 @@ export function App() {
                 <Route path="announcements" element={<AdminAnnouncementsPage />} />
                 <Route path="payments" element={<AdminPaymentsPage />} />
                 <Route path="reports" element={<AdminReportsPage />} />
+                <Route path="promo-codes" element={<AdminPromoCodesPage />} />
                 <Route path="messages" element={<AdminMessagesPage />} />
                 <Route path="audit" element={<AdminAuditPage />} />
                 <Route path="settings" element={<AdminSettingsPage />} />

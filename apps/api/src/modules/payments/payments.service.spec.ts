@@ -8,6 +8,7 @@ import { EnrollmentsService } from '../enrollments/enrollments.service';
 import { PayPalClientService } from './paypal/paypal-client.service';
 import { RazorpayClientService } from './razorpay/razorpay-client.service';
 import { PaystackClientService } from './paystack/paystack-client.service';
+import { PromoCodesService } from './promo-codes/promo-codes.service';
 import { PaymentsService } from './payments.service';
 
 const COURSE = { id: 'course-1', title: 'Full Stack Development', pricing: 'paid', priceUsdCents: 4900 };
@@ -39,7 +40,8 @@ describe('PaymentsService', () => {
   let service: PaymentsService;
   let prisma: {
     course: { findFirst: jest.Mock };
-    order: { create: jest.Mock; update: jest.Mock; findUnique: jest.Mock; updateMany: jest.Mock; findUniqueOrThrow: jest.Mock };
+    order: { create: jest.Mock; update: jest.Mock; findUnique: jest.Mock; findFirst: jest.Mock; findMany: jest.Mock; updateMany: jest.Mock; findUniqueOrThrow: jest.Mock };
+    $transaction: jest.Mock;
   };
   let enrollments: { enrollAfterPayment: jest.Mock };
   let notifications: { create: jest.Mock };
@@ -48,11 +50,13 @@ describe('PaymentsService', () => {
   let paypal: { getCaptureId: jest.Mock; refundCapture: jest.Mock };
   let razorpay: { findCapturedPaymentId: jest.Mock; refundPayment: jest.Mock };
   let paystack: { refundTransaction: jest.Mock };
+  let promoCodes: { resolveCourseIds: jest.Mock; priceCheckout: jest.Mock };
 
   beforeEach(async () => {
     prisma = {
       course: { findFirst: jest.fn() },
-      order: { create: jest.fn(), update: jest.fn(), findUnique: jest.fn(), updateMany: jest.fn(), findUniqueOrThrow: jest.fn() },
+      order: { create: jest.fn(), update: jest.fn(), findUnique: jest.fn(), findFirst: jest.fn(), findMany: jest.fn(), updateMany: jest.fn(), findUniqueOrThrow: jest.fn() },
+      $transaction: jest.fn((fn: (tx: unknown) => unknown) => fn(prisma)),
     };
     enrollments = { enrollAfterPayment: jest.fn() };
     notifications = { create: jest.fn() };
@@ -61,6 +65,7 @@ describe('PaymentsService', () => {
     paypal = { getCaptureId: jest.fn(), refundCapture: jest.fn() };
     razorpay = { findCapturedPaymentId: jest.fn(), refundPayment: jest.fn() };
     paystack = { refundTransaction: jest.fn() };
+    promoCodes = { resolveCourseIds: jest.fn(), priceCheckout: jest.fn() };
 
     const moduleRef = await Test.createTestingModule({
       providers: [
@@ -73,6 +78,7 @@ describe('PaymentsService', () => {
         { provide: PayPalClientService, useValue: paypal },
         { provide: RazorpayClientService, useValue: razorpay },
         { provide: PaystackClientService, useValue: paystack },
+        { provide: PromoCodesService, useValue: promoCodes },
       ],
     }).compile();
 
@@ -238,6 +244,72 @@ describe('PaymentsService', () => {
 
       expect(paystack.refundTransaction).toHaveBeenCalledWith('PSK-REF-1');
       expect(result.refundRef).toBe('123');
+    });
+  });
+
+  describe('findByProviderRef', () => {
+    it('looks up via findFirst, not findUnique, now that the unique index also covers courseId', async () => {
+      prisma.order.findFirst.mockResolvedValueOnce(ORDER);
+      const result = await service.findByProviderRef('paypal', 'PAYPAL-ORDER-1');
+      expect(prisma.order.findFirst).toHaveBeenCalledWith({ where: { provider: 'paypal', providerRef: 'PAYPAL-ORDER-1' } });
+      expect(result).toBe(ORDER);
+    });
+  });
+
+  describe('findAllByProviderRef', () => {
+    it('returns every Order row sharing one providerRef', async () => {
+      const bundle = [ORDER, { ...ORDER, id: 'order-2', courseId: 'course-2' }];
+      prisma.order.findMany.mockResolvedValueOnce(bundle);
+      const result = await service.findAllByProviderRef('razorpay', 'RZP-ORDER-1');
+      expect(prisma.order.findMany).toHaveBeenCalledWith({ where: { provider: 'razorpay', providerRef: 'RZP-ORDER-1' } });
+      expect(result).toBe(bundle);
+    });
+  });
+
+  describe('createPendingBundleOrder', () => {
+    it('prices + creates one pending Order per course, inside one transaction', async () => {
+      promoCodes.resolveCourseIds.mockResolvedValueOnce(['course-1', 'course-2', 'course-3']);
+      promoCodes.priceCheckout.mockResolvedValueOnce({
+        promoCodeId: 'promo-1',
+        pricePerCourseCents: 700000,
+        totalAmountCents: 2100000,
+        currency: 'INR',
+      });
+      prisma.order.create
+        .mockResolvedValueOnce({ ...ORDER, id: 'order-1', courseId: 'course-1', provider: 'razorpay', currency: 'INR', amountCents: 700000, promoCodeId: 'promo-1' })
+        .mockResolvedValueOnce({ ...ORDER, id: 'order-2', courseId: 'course-2', provider: 'razorpay', currency: 'INR', amountCents: 700000, promoCodeId: 'promo-1' })
+        .mockResolvedValueOnce({ ...ORDER, id: 'order-3', courseId: 'course-3', provider: 'razorpay', currency: 'INR', amountCents: 700000, promoCodeId: 'promo-1' });
+
+      const result = await service.createPendingBundleOrder('user-1', ['ai-markets', 'zoho-crm', 'lead-gen'], 'mba2027');
+
+      expect(promoCodes.resolveCourseIds).toHaveBeenCalledWith(['ai-markets', 'zoho-crm', 'lead-gen'], prisma);
+      expect(promoCodes.priceCheckout).toHaveBeenCalledWith('mba2027', ['course-1', 'course-2', 'course-3'], prisma);
+      expect(prisma.order.create).toHaveBeenCalledTimes(3);
+      expect(prisma.order.create).toHaveBeenCalledWith({
+        data: { userId: 'user-1', courseId: 'course-1', provider: 'razorpay', currency: 'INR', amountCents: 700000, promoCodeId: 'promo-1' },
+      });
+      expect(result.orders).toHaveLength(3);
+      expect(result.totalAmountCents).toBe(2100000);
+      expect(result.currency).toBe('INR');
+    });
+
+    it('propagates a rejected (e.g. cap-exceeded) priceCheckout without creating any Order', async () => {
+      promoCodes.resolveCourseIds.mockResolvedValueOnce(['course-1']);
+      promoCodes.priceCheckout.mockRejectedValueOnce(new ConflictException('This promo code has reached its redemption limit.'));
+
+      await expect(service.createPendingBundleOrder('user-1', ['ai-markets'], 'mba2027')).rejects.toThrow(ConflictException);
+      expect(prisma.order.create).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('attachProviderRefMany', () => {
+    it('attaches one shared providerRef to every order id given', async () => {
+      prisma.order.updateMany.mockResolvedValueOnce({ count: 3 });
+      await service.attachProviderRefMany(['order-1', 'order-2', 'order-3'], 'RZP-ORDER-1');
+      expect(prisma.order.updateMany).toHaveBeenCalledWith({
+        where: { id: { in: ['order-1', 'order-2', 'order-3'] } },
+        data: { providerRef: 'RZP-ORDER-1' },
+      });
     });
   });
 });

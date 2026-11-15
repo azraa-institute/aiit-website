@@ -435,6 +435,7 @@ model Course {
   announcements    Announcement[]
   complaints       Complaint[]
   orders           Order[]
+  cartItems        CartItem[]
   createdAt        DateTime              @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt        DateTime              @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
   deletedAt        DateTime?             @map("deleted_at") @db.Timestamptz(6)
@@ -570,6 +571,24 @@ model PromoCode {
   orders           Order[]
 
   @@map("promo_codes")
+  @@schema("public")
+}
+
+// A real, server-side shopping cart -- "this user's cart" is just their
+// CartItem rows, no wrapping Cart entity needed. Paid courses only (a
+// free/subscription course self-enrolls instantly, there's nothing to
+// "cash out"); removed automatically once the matching Order is marked
+// paid (see PaymentsService.markOrderPaid), not left sitting around after
+// checkout.
+model CartItem {
+  id       String   @id @default(uuid()) @db.Uuid
+  userId   String   @map("user_id") @db.Uuid // references auth.users.id, no Prisma relation -- same convention as Enrollment.userId
+  courseId String   @map("course_id") @db.Uuid
+  course   Course   @relation(fields: [courseId], references: [id])
+  addedAt  DateTime @default(now()) @map("added_at") @db.Timestamptz(6)
+
+  @@unique([userId, courseId])
+  @@map("cart_items")
   @@schema("public")
 }
 

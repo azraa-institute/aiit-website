@@ -75,31 +75,36 @@ export class PaymentsService {
   }
 
   /**
-   * A Razorpay-only promo-code bundle purchase (MBA certification courses,
-   * see PromoCode in schema.prisma) -- creates one pending Order per
+   * A Razorpay-only cart/bundle purchase -- creates one pending Order per
    * selected course, all sharing the same (not-yet-known) Razorpay
    * providerRef once RazorpayCheckoutController attaches it via
    * attachProviderRefMany. Pricing + the redemption-cap check both happen
-   * inside this one transaction, via PromoCodesService -- that's the real
-   * enforcement point for the cap, not the frontend's earlier preview call.
+   * inside this one transaction, via PromoCodesService.priceCart -- that's
+   * the real enforcement point for the cap, not the frontend's earlier
+   * preview call. `promoCode` is optional: a cart with no code at all
+   * still checks out, every course priced at its own real, INR-converted
+   * rate; a code only discounts the courses inside its own scope, the
+   * rest of the cart still prices normally in the same checkout.
    */
-  async createPendingBundleOrder(userId: string, courseSlugs: string[], promoCode: string): Promise<{ orders: Order[]; totalAmountCents: number; currency: string }> {
+  async createPendingBundleOrder(userId: string, courseSlugs: string[], promoCode?: string): Promise<{ orders: Order[]; totalAmountCents: number; currency: string }> {
     const orders = await this.prisma.$transaction(async (tx) => {
       const courseIds = await this.promoCodes.resolveCourseIds(courseSlugs, tx);
-      const priced = await this.promoCodes.priceCheckout(promoCode, courseIds, tx);
+      const priced = await this.promoCodes.priceCart(courseIds, promoCode, (usdCents) => this.currency.convert(usdCents, 'INR').then((r) => r.amountCents), tx);
+      const lineByCourseId = new Map(priced.lines.map((l) => [l.courseId, l]));
       return Promise.all(
-        courseIds.map((courseId) =>
-          tx.order.create({
+        courseIds.map((courseId) => {
+          const line = lineByCourseId.get(courseId)!;
+          return tx.order.create({
             data: {
               userId,
               courseId,
               provider: 'razorpay',
               currency: priced.currency,
-              amountCents: priced.pricePerCourseCents,
-              promoCodeId: priced.promoCodeId,
+              amountCents: line.amountCents,
+              promoCodeId: line.eligible ? priced.promoCodeId : null,
             },
-          }),
-        ),
+          });
+        }),
       );
     });
     return {
@@ -149,6 +154,11 @@ export class PaymentsService {
 
     const order = await this.prisma.order.findUniqueOrThrow({ where: { id: orderId } });
     if (result.count === 0) return order;
+
+    // Harmless no-op if this order didn't come from a cart checkout at all
+    // (e.g. the single-course flow, or the MBA page's own direct picker) --
+    // a paid course has nothing left to do sitting in the cart.
+    await this.prisma.cartItem.deleteMany({ where: { userId: order.userId, courseId: order.courseId } });
 
     try {
       const enrollment = await this.enrollments.enrollAfterPayment(order.userId, order.courseId);

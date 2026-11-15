@@ -130,7 +130,8 @@ export async function openRazorpayCheckout({ courseSlug, keyId, onSuccess, onErr
 
 interface OpenRazorpayBundleCheckoutOptions {
   courseSlugs: string[];
-  promoCode: string;
+  /** Optional -- a cart can check out with no code at all. */
+  promoCode?: string;
   keyId: string;
   onSuccess: () => void;
   onError: (message: string) => void;
@@ -138,11 +139,12 @@ interface OpenRazorpayBundleCheckoutOptions {
 }
 
 /**
- * Promo-code bundle checkout for the MBA certification courses (see
- * PromoCode in schema.prisma) -- same Checkout.js mechanics as
- * openRazorpayCheckout, pointed at the bundle-order endpoints instead. The
- * discounted total is always server-computed (PaymentsService.
- * createPendingBundleOrder); this never calculates a price itself.
+ * Cart/bundle checkout -- any 1-N courses in one Razorpay payment (see
+ * PromoCode in schema.prisma for the optional-discount mechanism on top).
+ * Same Checkout.js mechanics as openRazorpayCheckout, pointed at the
+ * bundle-order endpoints instead. The total is always server-computed
+ * (PaymentsService.createPendingBundleOrder); this never calculates a
+ * price itself.
  */
 export async function openRazorpayBundleCheckout({ courseSlugs, promoCode, keyId, onSuccess, onError, onDismiss }: OpenRazorpayBundleCheckoutOptions): Promise<void> {
   try {

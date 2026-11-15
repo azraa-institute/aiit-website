@@ -88,36 +88,77 @@ describe('PromoCodesService', () => {
     });
   });
 
-  describe('priceCheckout', () => {
-    it('throws for a missing/inactive code without revealing why', async () => {
-      prisma.promoCode.findFirst.mockResolvedValueOnce(null);
-      await expect(service.priceCheckout('nope', ['course-1'])).rejects.toThrow(BadRequestException);
+  describe('priceCart', () => {
+    const convert = jest.fn(async (usdCents: number) => usdCents * 2);
+
+    beforeEach(() => {
+      convert.mockClear();
+      prisma.course.findMany.mockResolvedValue([
+        { id: 'course-1', priceUsdCents: 15000 },
+        { id: 'course-2', priceUsdCents: 15000 },
+        { id: 'course-3', priceUsdCents: 15000 },
+        { id: 'some-other-course', priceUsdCents: 10000 },
+      ]);
     });
 
-    it('throws when a course falls outside the code scope', async () => {
+    it('prices every course via convert when no promo code is given', async () => {
+      const result = await service.priceCart(['course-1', 'some-other-course'], undefined, convert);
+      expect(result.promoCodeId).toBeNull();
+      expect(result.lines).toEqual([
+        { courseId: 'course-1', amountCents: 30000, eligible: false },
+        { courseId: 'some-other-course', amountCents: 20000, eligible: false },
+      ]);
+      expect(result.totalAmountCents).toBe(50000);
+      expect(prisma.promoCode.findFirst).not.toHaveBeenCalled();
+    });
+
+    it('throws for a missing/inactive code without revealing why', async () => {
+      prisma.promoCode.findFirst.mockResolvedValueOnce(null);
+      await expect(service.priceCart(['course-1'], 'nope', convert)).rejects.toThrow(BadRequestException);
+    });
+
+    it('throws when the code matches nothing in the cart', async () => {
       prisma.promoCode.findFirst.mockResolvedValueOnce(PROMO_CODE);
-      prisma.order.groupBy.mockResolvedValueOnce([]);
-      await expect(service.priceCheckout('mba2027', ['course-1', 'some-other-course'])).rejects.toThrow(BadRequestException);
+      await expect(service.priceCart(['some-other-course'], 'mba2027', convert)).rejects.toThrow(BadRequestException);
     });
 
     it('throws when the redemption cap has been reached', async () => {
       prisma.promoCode.findFirst.mockResolvedValueOnce({ ...PROMO_CODE, maxRedemptions: 1 });
       prisma.order.groupBy.mockResolvedValueOnce([{ providerRef: 'RZP-1', _count: { _all: 1 } }]);
-      await expect(service.priceCheckout('mba2027', ['course-1'])).rejects.toThrow(ConflictException);
+      await expect(service.priceCart(['course-1'], 'mba2027', convert)).rejects.toThrow(ConflictException);
     });
 
     it('prices 1 or 2 of 3 scoped courses at the single rate', async () => {
       prisma.promoCode.findFirst.mockResolvedValueOnce(PROMO_CODE);
       prisma.order.groupBy.mockResolvedValueOnce([]);
-      const result = await service.priceCheckout('MBA2027', ['course-1', 'course-2']);
-      expect(result).toEqual({ promoCodeId: 'promo-1', pricePerCourseCents: 1100000, totalAmountCents: 2200000, currency: 'INR' });
+      const result = await service.priceCart(['course-1', 'course-2'], 'MBA2027', convert);
+      expect(result.promoCodeId).toBe('promo-1');
+      expect(result.lines).toEqual([
+        { courseId: 'course-1', amountCents: 1100000, eligible: true },
+        { courseId: 'course-2', amountCents: 1100000, eligible: true },
+      ]);
+      expect(result.totalAmountCents).toBe(2200000);
     });
 
     it('prices all 3 scoped courses at the bundle rate', async () => {
       prisma.promoCode.findFirst.mockResolvedValueOnce(PROMO_CODE);
       prisma.order.groupBy.mockResolvedValueOnce([]);
-      const result = await service.priceCheckout('mba2027', ['course-1', 'course-2', 'course-3']);
-      expect(result).toEqual({ promoCodeId: 'promo-1', pricePerCourseCents: 700000, totalAmountCents: 2100000, currency: 'INR' });
+      const result = await service.priceCart(['course-1', 'course-2', 'course-3'], 'mba2027', convert);
+      expect(result.lines.every((l) => l.amountCents === 700000 && l.eligible)).toBe(true);
+      expect(result.totalAmountCents).toBe(2100000);
+    });
+
+    it('mixes eligible (code rate) and ineligible (converted rate) lines in one cart, and sets promoCodeId only because something was eligible', async () => {
+      prisma.promoCode.findFirst.mockResolvedValueOnce(PROMO_CODE);
+      prisma.order.groupBy.mockResolvedValueOnce([]);
+      const result = await service.priceCart(['course-1', 'some-other-course'], 'mba2027', convert);
+      expect(result.promoCodeId).toBe('promo-1');
+      expect(result.lines).toEqual([
+        { courseId: 'course-1', amountCents: 1100000, eligible: true },
+        { courseId: 'some-other-course', amountCents: 20000, eligible: false },
+      ]);
+      expect(convert).toHaveBeenCalledWith(10000);
+      expect(convert).not.toHaveBeenCalledWith(15000);
     });
   });
 

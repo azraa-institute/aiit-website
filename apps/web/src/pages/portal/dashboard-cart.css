@@ -1,0 +1,123 @@
+.dash__cart {
+  margin-top: var(--space-7);
+}
+
+.dash__cart-count {
+  color: var(--ink-muted);
+  font-size: var(--fs-sm);
+}
+
+.cart-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  margin: 0 0 var(--space-5);
+}
+
+.cart-row {
+  display: grid;
+  grid-template-columns: 48px 1fr auto auto;
+  align-items: center;
+  gap: var(--space-4);
+  padding: var(--space-3) var(--space-4);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
+}
+
+.cart-row.is-coupon-eligible {
+  border-color: var(--brass);
+  box-shadow: 0 0 0 1px var(--brass);
+}
+
+.cart-row__plate {
+  width: 48px;
+  height: 48px;
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+}
+
+.cart-row__body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  min-width: 0;
+}
+
+.cart-row__title {
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.cart-row__badge {
+  align-self: flex-start;
+  font-size: var(--fs-xs);
+  color: var(--brass-deep);
+  font-weight: 600;
+}
+
+.cart-row__price {
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.cart-row__remove {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 1.2rem;
+  line-height: 1;
+  color: var(--ink-muted);
+  padding: var(--space-1);
+}
+.cart-row__remove:hover {
+  color: var(--red);
+}
+
+.dash__cart-checkout {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--space-3);
+  padding: var(--space-5);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+  max-width: 28rem;
+}
+
+.dash__cart-promo {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  width: 100%;
+}
+
+.dash__cart-promo-row {
+  display: flex;
+  gap: var(--space-2);
+}
+
+.dash__cart-promo-row input {
+  flex: 1;
+  padding: var(--space-3);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
+}
+
+.dash__cart-note {
+  margin: 0;
+  color: var(--ink-muted);
+  font-size: var(--fs-sm);
+}
+.dash__cart-note--error {
+  color: var(--red);
+}
+
+.dash__cart-total-row {
+  display: flex;
+  justify-content: space-between;
+  width: 100%;
+  font-weight: 600;
+  font-size: 1.1rem;
+}

@@ -146,6 +146,22 @@
   font-size: var(--fs-sm);
   color: var(--fg-muted);
 }
+
+.course-detail__cart-toggle {
+  margin-top: var(--space-3);
+  font-size: var(--fs-sm);
+  color: var(--fg-soft);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  align-self: center;
+}
+.course-detail__cart-toggle:hover {
+  color: var(--brass-deep);
+}
 /* Blocking-state alert, not a passive note -- a learner can't enroll until
    this is resolved, so it gets the same red treatment as a form validation
    error (var(--red)/--red-tint, the site's one reserved "something needs

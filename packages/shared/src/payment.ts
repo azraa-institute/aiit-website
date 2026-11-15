@@ -42,25 +42,36 @@ export interface CreatePaystackOrderResponse {
 }
 
 /**
- * Promo-code bundle checkout (MBA certification courses, Razorpay/INR only
- * -- see PromoCodesService.priceCheckout). A student picks 1-N of a code's
- * scoped courses in one checkout; the server recomputes the real price,
- * the frontend never computes a discount itself.
+ * Cart/bundle checkout (Razorpay/INR only -- see PromoCodesService.priceCart).
+ * A student picks any 1-N paid courses in one checkout; `promoCode` is
+ * optional -- when given, only the courses it's scoped to get discounted
+ * (see CartPriceResponse), everything else is priced at its own real,
+ * currency-converted rate. The server always recomputes the price; the
+ * frontend never computes a discount itself.
  */
 export interface CreateRazorpayBundleOrderRequest {
   courseSlugs: string[];
-  promoCode: string;
+  promoCode?: string;
 }
 
 export interface PromoPreviewRequest {
   courseSlugs: string[];
-  promoCode: string;
+  promoCode?: string;
 }
 
-export interface PromoPreviewResponse {
-  pricePerCourseCents: number;
+/** One cart line's resolved price -- `eligible` is true only when `promoCode` was given and this specific course falls inside that code's scope. */
+export interface CartPricedLine {
+  courseId: string;
+  amountCents: number;
+  eligible: boolean;
+}
+
+export interface CartPriceResponse {
+  lines: CartPricedLine[];
   totalAmountCents: number;
   currency: string;
+  /** True only if at least one line actually got the discount -- a code that matches nothing in the cart never shows as "applied." */
+  promoApplied: boolean;
 }
 
 /** Admin-only -- generated/listed/managed from the admin portal, never surfaced on any public page. */
@@ -97,4 +108,19 @@ export interface GeneratePromoCodeRequest {
   singlePriceCents: number;
   bundlePriceCents: number;
   maxRedemptions: number;
+}
+
+/** One course sitting in a learner's cart -- `GET /me/cart`'s response shape. */
+export interface CartItemSummary {
+  courseId: string;
+  slug: string;
+  title: string;
+  image: string;
+  /** This course's own real price, live-converted to the viewer's resolved currency -- same PriceInfo.amountCents convention as the catalogue, not the INR-only cart-checkout total. */
+  amountCents: number | null;
+  currency: string;
+}
+
+export interface AddToCartRequest {
+  courseSlug: string;
 }

@@ -1,14 +1,18 @@
 import { randomBytes } from 'node:crypto';
 import { BadRequestException, ConflictException, Injectable, NotFoundException } from '@nestjs/common';
 import { Prisma, type PromoCode } from '@prisma/client';
-import type { GeneratePromoCodeRequest, PromoPreviewResponse } from '@aiit/shared';
+import type { CartPricedLine, GeneratePromoCodeRequest } from '@aiit/shared';
 import { PrismaService } from '../../../common/prisma/prisma.service';
 
-/** Either the ambient PrismaService or an active $transaction's client -- see priceCheckout's doc comment for why the caller picks which one. */
+/** Either the ambient PrismaService or an active $transaction's client -- see priceCart's doc comment for why the caller picks which one. */
 type PrismaOrTx = PrismaService | Prisma.TransactionClient;
 
-export interface PriceCheckoutResult extends PromoPreviewResponse {
-  promoCodeId: string;
+/** Internal only -- unlike CartPriceResponse (the public API shape), this carries the real PromoCode id so PaymentsService knows exactly which Order rows to stamp with it. Never returned from a controller directly. */
+export interface CartPriceResult {
+  promoCodeId: string | null;
+  lines: CartPricedLine[];
+  totalAmountCents: number;
+  currency: string;
 }
 
 /**
@@ -65,38 +69,81 @@ export class PromoCodesService {
   }
 
   /**
-   * Prices a would-be checkout against a code without creating anything.
-   * Called twice in practice: once for the frontend's live preview (this
+   * Prices a cart (any 1-N courses) without creating anything. Called
+   * twice in practice: once for the frontend's live preview (this
    * service, via the public PromoCodesController), and once more inside
    * PaymentsService.createPendingBundleOrder's own transaction right
    * before the real Order rows are created -- that second call is the one
    * that actually enforces the redemption cap, using the transactional
    * client (`tx`) so two students racing for the last slot can't both win.
+   *
+   * `promoCode` is optional -- a cart can check out with no code at all,
+   * in which case every line is priced via `convert` (the caller's own
+   * USD-cents -> INR-cents conversion, so this service stays currency-
+   * agnostic). When a code is given, only the courses inside its own
+   * `courseIds` scope are "eligible" and get the code's price; everything
+   * else in the cart still prices via `convert`, same as the no-code case
+   * -- a cart is allowed to mix coupon-eligible and ordinary courses in
+   * one checkout. `promoCodeId` on the result (and thus the redemption
+   * counter) is only ever non-null when at least one line was actually
+   * eligible -- a code that matches nothing in the cart never "applies."
    */
-  async priceCheckout(code: string, courseIds: string[], tx: PrismaOrTx = this.prisma): Promise<PriceCheckoutResult> {
-    const normalized = code.trim().toLowerCase();
-    if (!normalized || courseIds.length === 0) throw new BadRequestException('Invalid or expired promo code.');
-
-    const promoCode = await tx.promoCode.findFirst({ where: { code: normalized, active: true } });
-    if (!promoCode) throw new BadRequestException('Invalid or expired promo code.');
-
+  async priceCart(
+    courseIds: string[],
+    promoCode: string | undefined,
+    convert: (usdCents: number) => Promise<number>,
+    tx: PrismaOrTx = this.prisma,
+  ): Promise<CartPriceResult> {
     const uniqueCourseIds = [...new Set(courseIds)];
-    const scoped = new Set(promoCode.courseIds);
-    if (uniqueCourseIds.length === 0 || !uniqueCourseIds.every((id) => scoped.has(id))) {
-      throw new BadRequestException('This promo code does not apply to one or more of the selected courses.');
+    if (uniqueCourseIds.length === 0) throw new BadRequestException('Your cart is empty.');
+
+    const courses = await tx.course.findMany({
+      where: { id: { in: uniqueCourseIds } },
+      select: { id: true, priceUsdCents: true },
+    });
+    const priceById = new Map(courses.map((c) => [c.id, c.priceUsdCents]));
+
+    let eligibleIds = new Set<string>();
+    let promoCodeRow: PromoCode | null = null;
+    const normalized = promoCode?.trim().toLowerCase();
+    if (normalized) {
+      promoCodeRow = await tx.promoCode.findFirst({ where: { code: normalized, active: true } });
+      if (!promoCodeRow) throw new BadRequestException('Invalid or expired promo code.');
+
+      const scoped = new Set(promoCodeRow.courseIds);
+      eligibleIds = new Set(uniqueCourseIds.filter((id) => scoped.has(id)));
+      if (eligibleIds.size === 0) {
+        throw new BadRequestException('This promo code does not apply to any course in your selection.');
+      }
+
+      const redeemed = await this.redemptionCount(promoCodeRow.id, tx);
+      if (redeemed >= promoCodeRow.maxRedemptions) {
+        throw new ConflictException('This promo code has reached its redemption limit.');
+      }
     }
 
-    const redeemed = await this.redemptionCount(promoCode.id, tx);
-    if (redeemed >= promoCode.maxRedemptions) {
-      throw new ConflictException('This promo code has reached its redemption limit.');
+    const eligiblePriceCents = promoCodeRow
+      ? eligibleIds.size === promoCodeRow.courseIds.length
+        ? promoCodeRow.bundlePriceCents
+        : promoCodeRow.singlePriceCents
+      : 0;
+
+    const lines: CartPricedLine[] = [];
+    for (const courseId of uniqueCourseIds) {
+      if (eligibleIds.has(courseId)) {
+        lines.push({ courseId, amountCents: eligiblePriceCents, eligible: true });
+        continue;
+      }
+      const usdCents = priceById.get(courseId);
+      if (usdCents == null) throw new BadRequestException('One or more selected courses are not available for purchase.');
+      lines.push({ courseId, amountCents: await convert(usdCents), eligible: false });
     }
 
-    const pricePerCourseCents = uniqueCourseIds.length === promoCode.courseIds.length ? promoCode.bundlePriceCents : promoCode.singlePriceCents;
     return {
-      promoCodeId: promoCode.id,
-      pricePerCourseCents,
-      totalAmountCents: pricePerCourseCents * uniqueCourseIds.length,
-      currency: promoCode.currency,
+      promoCodeId: eligibleIds.size > 0 ? (promoCodeRow?.id ?? null) : null,
+      lines,
+      totalAmountCents: lines.reduce((sum, l) => sum + l.amountCents, 0),
+      currency: 'INR',
     };
   }
 

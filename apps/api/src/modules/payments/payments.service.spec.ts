@@ -41,6 +41,7 @@ describe('PaymentsService', () => {
   let prisma: {
     course: { findFirst: jest.Mock };
     order: { create: jest.Mock; update: jest.Mock; findUnique: jest.Mock; findFirst: jest.Mock; findMany: jest.Mock; updateMany: jest.Mock; findUniqueOrThrow: jest.Mock };
+    cartItem: { deleteMany: jest.Mock };
     $transaction: jest.Mock;
   };
   let enrollments: { enrollAfterPayment: jest.Mock };
@@ -50,12 +51,13 @@ describe('PaymentsService', () => {
   let paypal: { getCaptureId: jest.Mock; refundCapture: jest.Mock };
   let razorpay: { findCapturedPaymentId: jest.Mock; refundPayment: jest.Mock };
   let paystack: { refundTransaction: jest.Mock };
-  let promoCodes: { resolveCourseIds: jest.Mock; priceCheckout: jest.Mock };
+  let promoCodes: { resolveCourseIds: jest.Mock; priceCart: jest.Mock };
 
   beforeEach(async () => {
     prisma = {
       course: { findFirst: jest.fn() },
       order: { create: jest.fn(), update: jest.fn(), findUnique: jest.fn(), findFirst: jest.fn(), findMany: jest.fn(), updateMany: jest.fn(), findUniqueOrThrow: jest.fn() },
+      cartItem: { deleteMany: jest.fn() },
       $transaction: jest.fn((fn: (tx: unknown) => unknown) => fn(prisma)),
     };
     enrollments = { enrollAfterPayment: jest.fn() };
@@ -65,7 +67,7 @@ describe('PaymentsService', () => {
     paypal = { getCaptureId: jest.fn(), refundCapture: jest.fn() };
     razorpay = { findCapturedPaymentId: jest.fn(), refundPayment: jest.fn() };
     paystack = { refundTransaction: jest.fn() };
-    promoCodes = { resolveCourseIds: jest.fn(), priceCheckout: jest.fn() };
+    promoCodes = { resolveCourseIds: jest.fn(), priceCart: jest.fn() };
 
     const moduleRef = await Test.createTestingModule({
       providers: [
@@ -144,6 +146,16 @@ describe('PaymentsService', () => {
         currency: 'USD',
       });
       expect(result.status).toBe('paid');
+    });
+
+    it('removes any matching CartItem once the order is paid -- harmless no-op if it was never a cart checkout', async () => {
+      prisma.order.updateMany.mockResolvedValueOnce({ count: 1 });
+      prisma.order.findUniqueOrThrow.mockResolvedValueOnce({ ...ORDER, status: 'paid' });
+      enrollments.enrollAfterPayment.mockResolvedValueOnce(ENROLLMENT);
+
+      await service.markOrderPaid('order-1');
+
+      expect(prisma.cartItem.deleteMany).toHaveBeenCalledWith({ where: { userId: 'user-1', courseId: 'course-1' } });
     });
 
     it('is a no-op when the order was already paid (e.g. the other confirmation path won the race)', async () => {
@@ -269,9 +281,13 @@ describe('PaymentsService', () => {
   describe('createPendingBundleOrder', () => {
     it('prices + creates one pending Order per course, inside one transaction', async () => {
       promoCodes.resolveCourseIds.mockResolvedValueOnce(['course-1', 'course-2', 'course-3']);
-      promoCodes.priceCheckout.mockResolvedValueOnce({
+      promoCodes.priceCart.mockResolvedValueOnce({
         promoCodeId: 'promo-1',
-        pricePerCourseCents: 700000,
+        lines: [
+          { courseId: 'course-1', amountCents: 700000, eligible: true },
+          { courseId: 'course-2', amountCents: 700000, eligible: true },
+          { courseId: 'course-3', amountCents: 700000, eligible: true },
+        ],
         totalAmountCents: 2100000,
         currency: 'INR',
       });
@@ -283,7 +299,7 @@ describe('PaymentsService', () => {
       const result = await service.createPendingBundleOrder('user-1', ['ai-markets', 'zoho-crm', 'lead-gen'], 'mba2027');
 
       expect(promoCodes.resolveCourseIds).toHaveBeenCalledWith(['ai-markets', 'zoho-crm', 'lead-gen'], prisma);
-      expect(promoCodes.priceCheckout).toHaveBeenCalledWith('mba2027', ['course-1', 'course-2', 'course-3'], prisma);
+      expect(promoCodes.priceCart).toHaveBeenCalledWith(['course-1', 'course-2', 'course-3'], 'mba2027', expect.any(Function), prisma);
       expect(prisma.order.create).toHaveBeenCalledTimes(3);
       expect(prisma.order.create).toHaveBeenCalledWith({
         data: { userId: 'user-1', courseId: 'course-1', provider: 'razorpay', currency: 'INR', amountCents: 700000, promoCodeId: 'promo-1' },
@@ -293,9 +309,52 @@ describe('PaymentsService', () => {
       expect(result.currency).toBe('INR');
     });
 
-    it('propagates a rejected (e.g. cap-exceeded) priceCheckout without creating any Order', async () => {
+    it('checks out a cart with no promo code at all, every line priced at its own rate and no promoCodeId stamped', async () => {
+      promoCodes.resolveCourseIds.mockResolvedValueOnce(['course-1', 'course-2']);
+      promoCodes.priceCart.mockResolvedValueOnce({
+        promoCodeId: null,
+        lines: [
+          { courseId: 'course-1', amountCents: 300000, eligible: false },
+          { courseId: 'course-2', amountCents: 200000, eligible: false },
+        ],
+        totalAmountCents: 500000,
+        currency: 'INR',
+      });
+      prisma.order.create
+        .mockResolvedValueOnce({ ...ORDER, id: 'order-1', courseId: 'course-1', amountCents: 300000, promoCodeId: null })
+        .mockResolvedValueOnce({ ...ORDER, id: 'order-2', courseId: 'course-2', amountCents: 200000, promoCodeId: null });
+
+      const result = await service.createPendingBundleOrder('user-1', ['full-stack', 'cloud-fundamentals']);
+
+      expect(promoCodes.priceCart).toHaveBeenCalledWith(['course-1', 'course-2'], undefined, expect.any(Function), prisma);
+      expect(prisma.order.create).toHaveBeenCalledWith({ data: { userId: 'user-1', courseId: 'course-1', provider: 'razorpay', currency: 'INR', amountCents: 300000, promoCodeId: null } });
+      expect(result.totalAmountCents).toBe(500000);
+    });
+
+    it('only stamps promoCodeId on the Order rows for lines priceCart actually marked eligible', async () => {
+      promoCodes.resolveCourseIds.mockResolvedValueOnce(['course-1', 'some-other-course']);
+      promoCodes.priceCart.mockResolvedValueOnce({
+        promoCodeId: 'promo-1',
+        lines: [
+          { courseId: 'course-1', amountCents: 700000, eligible: true },
+          { courseId: 'some-other-course', amountCents: 20000, eligible: false },
+        ],
+        totalAmountCents: 720000,
+        currency: 'INR',
+      });
+      prisma.order.create
+        .mockResolvedValueOnce({ ...ORDER, id: 'order-1', courseId: 'course-1' })
+        .mockResolvedValueOnce({ ...ORDER, id: 'order-2', courseId: 'some-other-course' });
+
+      await service.createPendingBundleOrder('user-1', ['ai-markets', 'other'], 'mba2027');
+
+      expect(prisma.order.create).toHaveBeenCalledWith({ data: expect.objectContaining({ courseId: 'course-1', promoCodeId: 'promo-1' }) });
+      expect(prisma.order.create).toHaveBeenCalledWith({ data: expect.objectContaining({ courseId: 'some-other-course', promoCodeId: null }) });
+    });
+
+    it('propagates a rejected (e.g. cap-exceeded) priceCart without creating any Order', async () => {
       promoCodes.resolveCourseIds.mockResolvedValueOnce(['course-1']);
-      promoCodes.priceCheckout.mockRejectedValueOnce(new ConflictException('This promo code has reached its redemption limit.'));
+      promoCodes.priceCart.mockRejectedValueOnce(new ConflictException('This promo code has reached its redemption limit.'));
 
       await expect(service.createPendingBundleOrder('user-1', ['ai-markets'], 'mba2027')).rejects.toThrow(ConflictException);
       expect(prisma.order.create).not.toHaveBeenCalled();

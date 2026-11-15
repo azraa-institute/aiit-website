@@ -296,6 +296,34 @@
    reads as a hand-written flourish rather than just another label. The
    sweep cycles through the card's own per-domain accent alongside brass,
    so it stays tied to the site's palette instead of introducing a new one. */
+.course-card__actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  flex-wrap: wrap;
+}
+
+/* Deliberately plain/small, unlike .course-card__enroll's cursive flourish
+   -- a secondary action shouldn't compete with the primary CTA. */
+.course-card__cart-btn {
+  font-family: var(--font-ui);
+  font-size: var(--fs-xs);
+  color: var(--fg-soft);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+}
+.course-card__cart-btn:hover {
+  color: var(--card-accent);
+}
+.course-card__cart-btn.is-in-cart {
+  color: var(--card-accent);
+  font-weight: 600;
+}
+
 .course-card__enroll {
   display: inline-flex;
   align-items: center;

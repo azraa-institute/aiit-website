@@ -14,6 +14,7 @@ import { PortalJourney } from './PortalJourney';
 import { PortalEmpty } from './PortalEmpty';
 import { PortalLoader } from './PortalLoader';
 import { CoursePathRow } from './CoursePathRow';
+import { DashboardCart } from './DashboardCart';
 
 const LATEST_RESOURCES = [...RESOURCES]
   .sort((a, b) => (a.publishedAt < b.publishedAt ? 1 : -1))
@@ -135,6 +136,8 @@ export default function DashboardPage() {
           </section>
         </>
       )}
+
+      <DashboardCart />
 
       <section className="dash__explore" data-reveal>
         <div className="dash__block-head">

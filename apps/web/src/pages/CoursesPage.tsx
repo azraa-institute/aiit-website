@@ -3,6 +3,7 @@ import { useSearchParams } from 'react-router-dom';
 import { Layout } from '@/components/layout/Layout';
 import { Seo } from '@/lib/Seo';
 import { useScrollReveal } from '@/lib/useScrollReveal';
+import { useAuth } from '@/lib/AuthContext';
 import { useCourseList } from './CoursesPage.data';
 import { CourseCard } from '@/components/course/CourseCard';
 import {
@@ -14,6 +15,8 @@ import { filterAndSortCourses } from '@/lib/filterCourses';
 import { Button } from '@/components/primitives/Button';
 import { CATALOGUE_CATEGORIES } from '@/data/catalogueCategories';
 import type { Course } from '@/data/types';
+import { useLearner } from './portal/learnerData';
+import { addToCart, removeFromCart, useCart } from './portal/cartData';
 import './courses-page.css';
 
 /** Stable empty-array reference so useMemo deps below don't see a "new"
@@ -86,6 +89,22 @@ export default function CoursesPage() {
     },
     [setParams],
   );
+
+  const { status: authStatus } = useAuth();
+  const authenticated = authStatus === 'authenticated';
+  // enabled: {} skips the fetch entirely for an anonymous visitor -- same
+  // gating convention useLearner()/useCart() already use elsewhere.
+  const learnerState = useLearner({ enabled: authenticated });
+  const cartState = useCart({ enabled: authenticated });
+  const cartCourseIds = useMemo(() => new Set(cartState.status === 'ready' ? cartState.items.map((i) => i.courseId) : []), [cartState]);
+  const enrolledCourseIds = useMemo(
+    () => new Set(learnerState.status === 'ready' ? learnerState.learner.enrolled.filter((e) => e.status !== 'cancelled').map((e) => e.course.id) : []),
+    [learnerState],
+  );
+  function toggleCart(course: Course) {
+    if (cartCourseIds.has(course.id)) void removeFromCart(course.id);
+    else void addToCart(course.slug);
+  }
 
   const courseList = useCourseList();
   const allCourses = courseList.status === 'ready' ? courseList.courses : NO_COURSES;
@@ -218,7 +237,14 @@ export default function CoursesPage() {
 
             <div className={view === 'grid' ? 'courses-page__grid' : 'courses-page__list'}>
               {pageItems.map((c, i) => (
-                <CourseCard key={c.id} course={c} index={start + i} layout={view === 'grid' ? 'grid' : 'list'} />
+                <CourseCard
+                  key={c.id}
+                  course={c}
+                  index={start + i}
+                  layout={view === 'grid' ? 'grid' : 'list'}
+                  onToggleCart={authenticated && c.pricing === 'paid' && !enrolledCourseIds.has(c.id) ? () => toggleCart(c) : undefined}
+                  inCart={cartCourseIds.has(c.id)}
+                />
               ))}
             </div>
 

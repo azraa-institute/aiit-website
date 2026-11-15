@@ -28,6 +28,7 @@ import { SupabaseAdminModule } from './common/supabase-admin/supabase-admin.serv
 import { MemoryCacheModule } from './common/cache/memory-cache.service';
 import { R2Module } from './common/r2/r2.service';
 import { WebinarsModule } from './modules/webinars/webinars.module';
+import { CartModule } from './modules/cart/cart.module';
 
 @Module({
   imports: [
@@ -72,6 +73,7 @@ import { WebinarsModule } from './modules/webinars/webinars.module';
     SupportModule,
     QuillModule,
     WebinarsModule,
+    CartModule,
   ],
   providers: [{ provide: APP_GUARD, useClass: ThrottlerGuard }],
 })

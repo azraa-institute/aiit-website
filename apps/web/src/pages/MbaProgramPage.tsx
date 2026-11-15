@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import type { PromoPreviewResponse } from '@aiit/shared';
+import type { CartPriceResponse } from '@aiit/shared';
 import { Layout } from '@/components/layout/Layout';
 import { PageBanner } from '@/components/layout/PageBanner';
 import { Seo, organizationLd } from '@/lib/Seo';
@@ -36,7 +36,7 @@ function formatRupees(cents: number): string {
 type PreviewState =
   | { status: 'idle' }
   | { status: 'loading' }
-  | { status: 'ready'; data: PromoPreviewResponse }
+  | { status: 'ready'; data: CartPriceResponse }
   | { status: 'error'; message: string };
 
 export default function MbaProgramPage() {
@@ -64,7 +64,7 @@ export default function MbaProgramPage() {
     }
     let alive = true;
     setPreview({ status: 'loading' });
-    apiFetch<PromoPreviewResponse>('/payment-promos/preview', {
+    apiFetch<CartPriceResponse>('/payment-promos/preview', {
       method: 'POST',
       body: JSON.stringify({ courseSlugs: selected, promoCode: debouncedCode }),
     })
@@ -163,8 +163,8 @@ export default function MbaProgramPage() {
               ) : null}
               {preview.status === 'ready' ? (
                 <p className="mba-program__total">
-                  {selected.length} course{selected.length === 1 ? '' : 's'} · {formatRupees(preview.data.pricePerCourseCents)} each · Total{' '}
-                  {formatRupees(preview.data.totalAmountCents)}
+                  {selected.length} course{selected.length === 1 ? '' : 's'} ·{' '}
+                  {formatRupees(preview.data.lines[0]?.amountCents ?? 0)} each · Total {formatRupees(preview.data.totalAmountCents)}
                 </p>
               ) : null}
               {payError ? <p className="mba-program__note mba-program__note--error">{payError}</p> : null}

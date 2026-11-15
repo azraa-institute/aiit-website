@@ -25,6 +25,7 @@ import { useQuill } from '@/lib/QuillContext';
 import { ProfileCompletionWizard } from './portal/ProfileCompletionWizard';
 import { useLockBodyScroll } from '@/lib/useLockBodyScroll';
 import { invalidateLearner, useLearner } from './portal/learnerData';
+import { addToCart, removeFromCart, useCart } from './portal/cartData';
 import './course-detail.css';
 
 function CapIcon() {
@@ -418,6 +419,7 @@ function EnrollAction({ course, comingSoon }: { course: Course; comingSoon: bool
   // the actual fetch for anonymous/loading visitors, same pattern already
   // used by the public header's account widget (see learnerData.ts).
   const learnerState = useLearner({ enabled: status === 'authenticated' });
+  const cartState = useCart({ enabled: status === 'authenticated' });
   useLockBodyScroll(profileWizardOpen);
 
   if (status === 'loading') {
@@ -514,7 +516,19 @@ function EnrollAction({ course, comingSoon }: { course: Course; comingSoon: bool
       invalidateLearner();
       navigate('/portal/courses');
     };
-    return <PaymentMethodPicker courseSlug={course.slug} onSuccess={onPaymentSuccess} />;
+    const inCart = cartState.status === 'ready' && cartState.items.some((i) => i.courseId === course.id);
+    return (
+      <>
+        <PaymentMethodPicker courseSlug={course.slug} onSuccess={onPaymentSuccess} />
+        <button
+          type="button"
+          className="course-detail__cart-toggle"
+          onClick={() => (inCart ? removeFromCart(course.id) : addToCart(course.slug))}
+        >
+          {inCart ? 'In your cart: remove' : 'Add to cart instead, decide later'}
+        </button>
+      </>
+    );
   }
 
   async function handleEnroll() {

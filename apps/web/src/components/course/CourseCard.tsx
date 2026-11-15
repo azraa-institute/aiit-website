@@ -58,9 +58,18 @@ interface CourseCardProps {
   /** 'feature' = larger editorial treatment; 'list' = compact row. */
   layout?: 'grid' | 'feature' | 'list';
   index?: number;
+  /**
+   * Cart toggle -- omitted entirely by every embedding that doesn't need
+   * it (homepage features, WhyJoinPage), so they render exactly as before.
+   * The caller (CoursesPage.tsx) decides eligibility (paid, not already
+   * enrolled, signed in) before ever passing this; CourseCard itself just
+   * renders whatever it's given.
+   */
+  inCart?: boolean;
+  onToggleCart?: () => void;
 }
 
-export function CourseCard({ course, layout = 'grid', index }: CourseCardProps) {
+export function CourseCard({ course, layout = 'grid', index, inCart, onToggleCart }: CourseCardProps) {
   const domain = getDomain(course.domainId);
   const instructor = getInstructor(course.instructorId);
   const off = discountPercent(course.price, course.priceWas);
@@ -148,10 +157,24 @@ export function CourseCard({ course, layout = 'grid', index }: CourseCardProps) 
             page itself owns the real "Enroll now" logic: auth state, coming-soon,
             already-enrolled), this is just a more obviously actionable label right
             under the title rather than only the image/title being clickable. */}
-        <Link to={`/courses/${course.slug}`} className="course-card__enroll">
-          {comingSoon ? 'Join the waitlist' : 'Enroll now'}
-          <span aria-hidden="true">→</span>
-        </Link>
+        <div className="course-card__actions">
+          <Link to={`/courses/${course.slug}`} className="course-card__enroll">
+            {comingSoon ? 'Join the waitlist' : 'Enroll now'}
+            <span aria-hidden="true">→</span>
+          </Link>
+          {onToggleCart ? (
+            <button
+              type="button"
+              className={cn('course-card__cart-btn', inCart && 'is-in-cart')}
+              onClick={(e) => {
+                e.preventDefault();
+                onToggleCart();
+              }}
+            >
+              {inCart ? 'In cart · Remove' : 'Add to cart'}
+            </button>
+          ) : null}
+        </div>
 
         {layout !== 'list' && <p className="course-card__summary">{course.summary}</p>}
 

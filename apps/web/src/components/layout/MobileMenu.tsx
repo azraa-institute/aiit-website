@@ -4,6 +4,7 @@ import { PRIMARY_NAV } from '@/data/navigation';
 import { SITE } from '@/data/site';
 import { useLockBodyScroll } from '@/lib/useLockBodyScroll';
 import { useAccountMenu } from '@/lib/useAccountMenu';
+import { useCart } from '@/pages/portal/cartData';
 import { cn } from '@/lib/cn';
 import { Button } from '@/components/primitives/Button';
 import { SocialLinks } from '@/components/common/SocialLinks';
@@ -30,7 +31,9 @@ function isChildCurrent(childTo: string, pathname: string, search: string) {
 export function MobileMenu({ open, onClose, onOpenSearch }: MobileMenuProps) {
   const { pathname, search } = useLocation();
   const [openGroup, setOpenGroup] = useState<string | null>(null);
-  const { authenticated, returnTarget, returnLabel, signOut } = useAccountMenu();
+  const { authenticated, isLearner, returnTarget, returnLabel, signOut } = useAccountMenu();
+  const cart = useCart({ enabled: isLearner });
+  const cartCount = cart.status === 'ready' ? cart.items.length : 0;
   useLockBodyScroll(open);
 
   // On open, auto-expand whichever group (if any) contains the current page —
@@ -171,6 +174,11 @@ export function MobileMenu({ open, onClose, onOpenSearch }: MobileMenuProps) {
               <Link to="/portal/profile" className="mobile-menu__account-item" onClick={onClose}>
                 View profile
               </Link>
+              {isLearner ? (
+                <Link to="/portal" className="mobile-menu__account-item" onClick={onClose}>
+                  Your cart{cartCount > 0 ? ` (${cartCount})` : ''}
+                </Link>
+              ) : null}
               <Link to={returnTarget} className="mobile-menu__account-item" onClick={onClose}>
                 {returnLabel}
               </Link>

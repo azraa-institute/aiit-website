@@ -7,6 +7,7 @@ import { MobileMenu } from './MobileMenu';
 import { SiteSearch } from './SiteSearch';
 import { Logo } from './Logo';
 import { HeaderAccount } from './HeaderAccount';
+import { HeaderCart } from './HeaderCart';
 import './header.css';
 
 interface HeaderProps {
@@ -246,6 +247,7 @@ export function Header({ overHero = false }: HeaderProps) {
                 <path d="M11 11l4.5 4.5" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
               </svg>
             </button>
+            <HeaderCart />
             <HeaderAccount />
             <SocialLinks className="site-header__social" />
             <button

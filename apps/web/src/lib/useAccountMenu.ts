@@ -41,9 +41,14 @@ export function useAccountMenu() {
 
   const name = profile?.name ?? session?.user.email ?? null;
   const photoUrl = publicFileUrl('avatars', profile?.avatarKey ?? null);
+  // The cart is a learner-portal feature -- an admin/instructor/affiliate
+  // account can still sign in and browse the public site, but has nowhere
+  // to use a cart, so the header's cart icon only ever shows for this.
+  const isLearner = learnerState.status === 'ready' && learnerState.learner.role === 'learner';
 
   return {
     authenticated,
+    isLearner,
     name,
     photoUrl,
     returnTarget: isAffiliate

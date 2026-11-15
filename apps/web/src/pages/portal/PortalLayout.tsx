@@ -17,6 +17,7 @@ import { PortalActionsProvider } from './PortalActionsContext';
 import { publicFileUrl } from '@/lib/storage';
 import { clearPortalReturn } from '@/lib/portalReturn';
 import { useLearner, greetingName } from './learnerData';
+import { useCart } from './cartData';
 import { PortalAtmosphere } from './PortalAtmosphere';
 import { PortalLoader } from './PortalLoader';
 import { SidebarToggleIcon } from '@/components/common/SidebarToggleIcon';
@@ -174,6 +175,8 @@ export default function PortalLayout() {
   const learner = learnerState.learner;
   const unread = learner?.notifications.filter((n) => !n.read).length ?? 0;
   const firstName = learner ? greetingName(learner) : null;
+  const cartState = useCart();
+  const cartCount = cartState.status === 'ready' ? cartState.items.length : 0;
   const avatarUrl = publicFileUrl('avatars', learner?.profile.avatarKey);
   const current = NAV.find((n) => (n.end ? location.pathname === n.to : location.pathname.startsWith(n.to)));
   const sectionLabel = current?.label ?? 'Portal';
@@ -334,6 +337,25 @@ export default function PortalLayout() {
           </p>
 
           <div className="portal-topbar__tools">
+            <NavLink
+              to="/portal"
+              end
+              className={({ isActive }) => cn('portal-topbar__bell', 'portal-topbar__cart', isActive && 'is-active', cartCount > 0 && 'has-unread')}
+            >
+              <span className="visually-hidden">Your cart{cartCount > 0 ? `, ${cartCount} course${cartCount === 1 ? '' : 's'}` : ''}</span>
+              <svg width="18" height="18" viewBox="0 0 19 17" aria-hidden="true">
+                <path
+                  d="M1 1h2l1.6 9.6a1.5 1.5 0 0 0 1.5 1.3h8.4a1.5 1.5 0 0 0 1.5-1.2L17.5 4.5H4"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="1.4"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+                <circle cx="7.5" cy="15" r="1.1" fill="currentColor" />
+                <circle cx="13.5" cy="15" r="1.1" fill="currentColor" />
+              </svg>
+            </NavLink>
             <NavLink
               to="/portal/notifications"
               className={({ isActive }) =>

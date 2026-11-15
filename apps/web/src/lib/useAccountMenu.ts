@@ -22,7 +22,7 @@ import { useAffiliateMe } from '@/pages/affiliate/affiliateData';
 export function useAccountMenu() {
   const { status, session, signOut } = useAuth();
   const location = useLocation();
-  const [returnTo, setReturnTo] = useState<'resources' | null>(null);
+  const [returnTo, setReturnTo] = useState<'resources' | 'courses' | null>(null);
 
   useEffect(() => {
     setReturnTo(getPortalReturn());
@@ -46,8 +46,20 @@ export function useAccountMenu() {
     authenticated,
     name,
     photoUrl,
-    returnTarget: isAffiliate ? '/affiliate-portal' : returnTo === 'resources' ? '/portal/resources' : '/portal',
-    returnLabel: isAffiliate ? 'Return to dashboard' : returnTo === 'resources' ? 'Return to resources' : 'Return to dashboard',
+    returnTarget: isAffiliate
+      ? '/affiliate-portal'
+      : returnTo === 'resources'
+        ? '/portal/resources'
+        : returnTo === 'courses'
+          ? '/portal/courses'
+          : '/portal',
+    returnLabel: isAffiliate
+      ? 'Return to dashboard'
+      : returnTo === 'resources'
+        ? 'Return to resources'
+        : returnTo === 'courses'
+          ? 'Return to my courses'
+          : 'Return to dashboard',
     signOut,
   };
 }

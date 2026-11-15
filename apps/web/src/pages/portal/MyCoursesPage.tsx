@@ -1,8 +1,13 @@
 import { useScrollReveal } from '@/lib/useScrollReveal';
+import { Button } from '@/components/primitives/Button';
+import { markPortalExit } from '@/lib/portalReturn';
 import { useLearner } from './learnerData';
 import { PortalEmpty } from './PortalEmpty';
 import { PortalLoader } from './PortalLoader';
 import { CoursePathRow } from './CoursePathRow';
+import { PlusIcon } from './ContentIcons';
+
+const leavePortal = () => markPortalExit('courses');
 
 export default function MyCoursesPage() {
   const state = useLearner();
@@ -18,11 +23,22 @@ export default function MyCoursesPage() {
   return (
     <div className="portal-page">
       <header className="portal-page__head" data-reveal>
-        <p className="portal-eyebrow">My courses</p>
-        <h1 className="portal-page__title">Your courses</h1>
-        <p className="portal-page__intro">
-          Everything you are enrolled in: where you are, and the next step in each.
-        </p>
+        <div className="portal-page__head-row">
+          <div>
+            <p className="portal-eyebrow">My courses</p>
+            <h1 className="portal-page__title">Your courses</h1>
+            <p className="portal-page__intro">
+              Everything you are enrolled in: where you are, and the next step in each.
+            </p>
+          </div>
+          {enrolled.length > 0 ? (
+            <Button as="link" to="/courses" variant="secondary" size="sm" onClick={leavePortal}>
+              <span className="mycourses__add">
+                <PlusIcon /> Add a course
+              </span>
+            </Button>
+          ) : null}
+        </div>
       </header>
 
       {enrolled.length === 0 ? (

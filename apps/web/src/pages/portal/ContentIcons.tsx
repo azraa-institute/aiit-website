@@ -124,3 +124,11 @@ export function ClockIcon({ className }: IconProps) {
     </svg>
   );
 }
+
+export function PlusIcon({ className }: IconProps) {
+  return (
+    <svg {...common} className={className}>
+      <path d="M8 2.8v10.4M2.8 8h10.4" />
+    </svg>
+  );
+}

@@ -707,12 +707,8 @@ export const COURSES: CourseSeed[] = [
   },
 
   // AIIT Bangalore MBA Certification Program -- 3 modular, one-month,
-  // tool-based courses for first-year MBA students (see
-  // AIIT_Bangalore_MBA_Certification_Program.pdf). `image` uses a Plate
-  // motif key (no real photo asset exists yet for these new courses),
-  // same convention used for the other most-recently-added courses
-  // (digital-marketing-fundamentals/it-business-management-fundamentals
-  // use motif keys in production -- see the 2027 MBA-courses migration).
+  // tool-based courses for first-year MBA students. Real cover banners
+  // (project-owner-supplied) live at apps/web/public/assets/courses/.
   {
     slug: 'applied-ai-for-markets-and-finance',
     title: 'Applied AI for Markets & Finance',
@@ -742,7 +738,7 @@ export const COURSES: CourseSeed[] = [
     ratingCount: 0,
     badges: ['new_badge'],
     instructorId: 'ins-aiit',
-    image: 'strata',
+    image: '/assets/courses/applied-ai-for-markets-and-finance.jpg',
     outcomes: [
       'Survey and compare leading AI tools for market and financial research',
       'Apply AI-assisted sentiment analysis and competitor research techniques',
@@ -786,7 +782,7 @@ export const COURSES: CourseSeed[] = [
     ratingCount: 0,
     badges: ['new_badge'],
     instructorId: 'ins-aiit',
-    image: 'horizon',
+    image: '/assets/courses/zoho-crm-professional-certification.jpg',
     outcomes: [
       'Set up and configure a Zoho CRM organisation, including user roles and permissions',
       'Capture and manage leads and contacts with clean, deduplicated data',
@@ -831,7 +827,7 @@ export const COURSES: CourseSeed[] = [
     ratingCount: 0,
     badges: ['new_badge'],
     instructorId: 'ins-aiit',
-    image: 'field',
+    image: '/assets/courses/strategic-lead-generation-and-growth-marketing.jpg',
     outcomes: [
       'Define an ideal customer profile and buyer personas for a brand',
       'Plan a multi-channel lead generation strategy across SEO, content, LinkedIn and paid ads',

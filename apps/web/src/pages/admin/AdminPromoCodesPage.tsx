@@ -28,7 +28,7 @@ export default function AdminPromoCodesPage() {
           <h1 className="adm-title">Promo codes</h1>
           <p className="adm-intro">
             Discount codes for course bundles, capped at a maximum number of successful payments. A code is never
-            shown anywhere on the public site -- only here, and only once you generate or open it.
+            shown anywhere on the public site: only here, and only once you generate or open it.
           </p>
         </div>
         <button type="button" className="adm-btn adm-btn--primary" onClick={() => setGenerating(true)}>
@@ -255,7 +255,7 @@ function GenerateForm({ onDone, onClose }: { onDone: () => void; onClose: () => 
       {result ? (
         <>
           <p className="adm-notice" role="status">
-            Done. Share this code with students yourself -- it's never shown anywhere on the public site.
+            Done. Share this code with students yourself; it's never shown anywhere on the public site.
           </p>
           <dl className="adm-dl">
             <div>
@@ -278,7 +278,7 @@ function GenerateForm({ onDone, onClose }: { onDone: () => void; onClose: () => 
         <form className="adm-form" onSubmit={onSubmit}>
           <div className="adm-grid">
             <label className="adm-field adm-field--wide">
-              <span>Code (optional -- leave blank to auto-generate)</span>
+              <span>Code (optional, leave blank to auto-generate)</span>
               <input maxLength={40} value={code} onChange={(e) => setCode(e.target.value)} placeholder="e.g. MBA2027" />
             </label>
 

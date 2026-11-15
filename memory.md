@@ -350,7 +350,7 @@ session · ⚠️ partial/known gap · ❌ not built.
 
 | Feature | Status | Key files | Notes |
 |---|---|---|---|
-| **AIIT Bangalore MBA Certification Program: promo-code bundle checkout** (new, 2026-11-15) | 🟡 build/test-verified, not live-verified | `apps/api/prisma/schema.prisma` (`PromoCode` model, `Order.promoCodeId`, migration `20261115000001_promo_codes`), 3 new `Course` rows (migration `20261115000000_mba_certification_courses` + `seed-data/courses.ts`), `apps/api/src/modules/payments/promo-codes/{promo-codes.service,promo-codes.controller}.ts`, `apps/api/src/modules/payments/payments.service.ts` (`createPendingBundleOrder`/`findAllByProviderRef`/`attachProviderRefMany`), `apps/api/src/modules/payments/razorpay/{razorpay-checkout.controller,razorpay-webhook.controller}.ts`, `apps/api/src/modules/admin/admin-promo-codes.{controller,service}.ts`, `packages/shared/src/payment.ts`, `apps/web/src/pages/MbaProgramPage.tsx`, `apps/web/src/pages/admin/AdminPromoCodesPage.tsx`, `apps/web/src/lib/razorpayCheckout.ts` (`openRazorpayBundleCheckout`) | Three new MBA courses (Applied AI for Markets & Finance, Zoho CRM Professional Certification, Strategic Lead Generation & Growth Marketing — from `AIIT_Bangalore_MBA_Certification_Program.pdf`) list at the normal $150 catalogue price (live-converted per-currency, same `CurrencyService` as every other course). A new, separate **INR/Razorpay-only** promo-code mechanism lets a student pick 1-3 of those 3 courses in one checkout and pay a fixed rupee price instead: ₹11,000/course for 1-2, ₹7,000/course only once all 3 are selected together — these are absolute INR overrides, never currency-converted. `PromoCode.courseIds`/`singlePriceCents`/`bundlePriceCents`/`maxRedemptions`/`active`, admin-generated/viewed only (`admin/promo-codes`, never on any public route or response). **Redemption counting is the subtle part**: it counts distinct successful checkouts (`Order.groupBy(['providerRef'])` where `status: 'paid'`), not raw `Order` rows — a 3-course bundle purchase is one redemption against the cap, not three, and a code typed in but never paid consumes nothing. The cap is enforced inside the same DB transaction that creates the bundle's `Order` rows (`PaymentsService.createPendingBundleOrder`), not at the earlier preview call, so two students racing for the last slot can't both win. Required widening `Order`'s unique index from `[provider, providerRef]` to `[provider, providerRef, courseId]` so several `Order` rows (one per bundled course) can share one Razorpay `providerRef` — this is the one schema change with a small ripple into existing code: `PaymentsService.findByProviderRef()` now uses `findFirst` instead of `findUnique` (behavior-identical for every existing single-course call site), and `RazorpayWebhookController.handle()` was generalized to fan out over every `Order` sharing a `providerRef` instead of assuming exactly one. PayPal/Paystack are completely untouched — new `orders/bundle` + `orders/bundle/:id/verify` routes exist only on `RazorpayCheckoutController`. Public preview endpoint (`POST /payment-promos/preview`) lets the frontend show the real server-computed price before opening the Razorpay modal, without ever computing a discount itself. Courses were added via the project's existing seed+migration convention (no admin "create course" UI exists — confirmed, see `courses.service.ts`'s own "no write path" comment), reusing the `IT Business Management`/`Digital Marketing` `course_categories` rows from `20260919010000_course_catalogue_taxonomy` rather than creating new ones; each course's `image` is a Plate procedural motif key (`strata`/`horizon`/`field`), not a real photo asset, matching the same choice already made for the 2 most-recently-added courses. **Verification performed**: `tsc --noEmit` + `eslint` clean in all three workspaces; full API Jest suite green (70 suites/~600 tests including new specs for `PromoCodesService`, `PaymentsService`'s bundle methods, `RazorpayCheckoutController`'s bundle routes, `AdminPromoCodesService`); both production builds succeed. **Not yet done**: not committed/pushed this round (see §11); no live test — no real Razorpay redemption has been run against the live account yet, and the 2 production migrations haven't actually been applied (they land via `deploy.yml` once pushed to `main`, same as every prior round). Intake-year copy also fixed this round (`announcements.ts`/`EnrollmentPopup.tsx`, "2026 intake" → "2027 intake" — the only 2 user-facing spots that said it). |
+| **AIIT Bangalore MBA Certification Program: promo-code bundle checkout** (new, 2026-11-15) | 🟡 build/test-verified, not live-verified | `apps/api/prisma/schema.prisma` (`PromoCode` model, `Order.promoCodeId`, migration `20261115000001_promo_codes`), 3 new `Course` rows (migration `20261115000000_mba_certification_courses` + `seed-data/courses.ts`), `apps/api/src/modules/payments/promo-codes/{promo-codes.service,promo-codes.controller}.ts`, `apps/api/src/modules/payments/payments.service.ts` (`createPendingBundleOrder`/`findAllByProviderRef`/`attachProviderRefMany`), `apps/api/src/modules/payments/razorpay/{razorpay-checkout.controller,razorpay-webhook.controller}.ts`, `apps/api/src/modules/admin/admin-promo-codes.{controller,service}.ts`, `packages/shared/src/payment.ts`, `apps/web/src/pages/MbaProgramPage.tsx`, `apps/web/src/pages/admin/AdminPromoCodesPage.tsx`, `apps/web/src/lib/razorpayCheckout.ts` (`openRazorpayBundleCheckout`) | Three new MBA courses (Applied AI for Markets & Finance, Zoho CRM Professional Certification, Strategic Lead Generation & Growth Marketing — from `AIIT_Bangalore_MBA_Certification_Program.pdf`) list at the normal $150 catalogue price (live-converted per-currency, same `CurrencyService` as every other course). A new, separate **INR/Razorpay-only** promo-code mechanism lets a student pick 1-3 of those 3 courses in one checkout and pay a fixed rupee price instead: ₹11,000/course for 1-2, ₹7,000/course only once all 3 are selected together — these are absolute INR overrides, never currency-converted. `PromoCode.courseIds`/`singlePriceCents`/`bundlePriceCents`/`maxRedemptions`/`active`, admin-generated/viewed only (`admin/promo-codes`, never on any public route or response). **Redemption counting is the subtle part**: it counts distinct successful checkouts (`Order.groupBy(['providerRef'])` where `status: 'paid'`), not raw `Order` rows — a 3-course bundle purchase is one redemption against the cap, not three, and a code typed in but never paid consumes nothing. The cap is enforced inside the same DB transaction that creates the bundle's `Order` rows (`PaymentsService.createPendingBundleOrder`), not at the earlier preview call, so two students racing for the last slot can't both win. Required widening `Order`'s unique index from `[provider, providerRef]` to `[provider, providerRef, courseId]` so several `Order` rows (one per bundled course) can share one Razorpay `providerRef` — this is the one schema change with a small ripple into existing code: `PaymentsService.findByProviderRef()` now uses `findFirst` instead of `findUnique` (behavior-identical for every existing single-course call site), and `RazorpayWebhookController.handle()` was generalized to fan out over every `Order` sharing a `providerRef` instead of assuming exactly one. PayPal/Paystack are completely untouched — new `orders/bundle` + `orders/bundle/:id/verify` routes exist only on `RazorpayCheckoutController`. Public preview endpoint (`POST /payment-promos/preview`) lets the frontend show the real server-computed price before opening the Razorpay modal, without ever computing a discount itself. Courses were added via the project's existing seed+migration convention (no admin "create course" UI exists — confirmed, see `courses.service.ts`'s own "no write path" comment), reusing the `IT Business Management`/`Digital Marketing` `course_categories` rows from `20260919010000_course_catalogue_taxonomy` rather than creating new ones. Each course's `image` initially shipped as a Plate procedural motif key (`strata`/`horizon`/`field`, no real photo asset existed yet); later the same day the project owner supplied real cover banners (pasted into the repo root), which were converted (`sharp`, PNG→JPEG, resized to 1600px wide, ~235-280KB each — matching the existing `apps/web/public/assets/courses/*.jpg` convention) and placed at `apps/web/public/assets/courses/{applied-ai-for-markets-and-finance,zoho-crm-professional-certification,strategic-lead-generation-and-growth-marketing}.jpg`. Both consuming components (`CourseCard.tsx`, `CourseDetailPage.tsx`) already render `course.image` via `<Plate fit="contain">`, so the real 4:3 banners display with zero cropping, no component change needed. Since `20261115000000_mba_certification_courses` had already been applied to production by then, the image swap landed as its own follow-up migration (`20261115000002_mba_course_cover_images`, plain `UPDATE courses SET image = ...`) rather than editing the already-applied one in place. The source `AIIT_Bangalore_MBA_Certification_Program.pdf` was removed from the repo (and the root-level `image.png` scratch file deleted) once the courses were fully built from it, at the project owner's explicit request. **Verification performed**: `tsc --noEmit` + `eslint` clean in all three workspaces; full API Jest suite green (70 suites/~600 tests including new specs for `PromoCodesService`, `PaymentsService`'s bundle methods, `RazorpayCheckoutController`'s bundle routes, `AdminPromoCodesService`); both production builds succeed. **Committed and pushed, `CI`+`Deploy` confirmed green** for the main round (`002af5f`); the image-swap follow-up is committed in the same session (see §15). **Not yet done**: no live Razorpay test purchase has been run yet at any price tier — see §12. Intake-year copy also fixed this round (`announcements.ts`/`EnrollmentPopup.tsx`, "2026 intake" → "2027 intake" — the only 2 user-facing spots that said it). |
 | **Affiliate seriousness screening + deferred credentials + Brevo lead sync** (new, 2026-10-28) | 🟡 build/test-verified, not live-verified | `apps/api/prisma/schema.prisma` (`Affiliate.socialLinks`, migration `20261028000000_affiliate_social_links`), `packages/shared/src/affiliate.ts` (`AffiliateSocialLink`/`AffiliateSocialPlatform`), `apps/api/src/modules/affiliates/{affiliates.service.ts,dto/social-link.dto.ts}`, `apps/api/src/modules/admin/admin-affiliates.service.ts`, `apps/api/src/common/{youtube,brevo}/*-client.service.ts`, `apps/web/src/pages/AffiliatePage.tsx`, `apps/web/src/pages/admin/AdminAffiliatesPage.tsx` | Built from a project-owner-approved plan (reasoning turn → plan-mode → build, same session). The public application form now collects up to 5 social platform/URL/follower-count entries (`Affiliate.socialLinks`, a JSON array — additive, the old single `handle` field is untouched). A new `YoutubeClientService` best-effort verifies the real subscriber count server-side, fire-and-forget, for YouTube links only — confirmed during planning that Instagram/TikTok/X/LinkedIn have no free, no-OAuth public lookup (paid tiers, app-review gates, or ToS-violating scraping only), so every other platform stays self-reported with `fetchStatus: 'unsupported'`; the admin drawer (`AdminAffiliatesPage.tsx`) now shows reported-vs-verified counts per link so a human still makes the call, not an automated gate. **Registration flow changed**: `AffiliatesService.applyNew()` no longer emails login credentials at submission — only an acknowledgment email. Real credentials (a freshly-generated password, via `SupabaseAdminService.setPassword()`, the same method staff password resets already use — the original temp password is never persisted, by design) only go out from `AdminAffiliatesService.notifyApplicant()` when an admin sets status to `approved`. `createManually()`'s existing immediate-credentials behavior is preserved for its default `'approved'` case, but withholds credentials the same way if an admin explicitly sets a non-terminal status there. New `BrevoClientService` (thin REST client, same house style as Paystack/GitHub) pushes a privacy-minimal lead record (name/email/social links/reported follower counts/country/types — explicitly never phone/motivation/signature/payout data) to Brevo on every application (`apply()`/`applyNew()`), no status-based segmentation (explicitly decided against a "come back" nurture distinction). New env vars: `BREVO_API_KEY`, `BREVO_AFFILIATE_LIST_ID`, `YOUTUBE_API_KEY` (all optional, fail-soft/no-op when unset — nothing else is affected). **Deliberately not built this round** (separable phase, flagged in the plan as sequence-after): a newsletter-sending feature on Brevo — confirmed during planning that no campaign/broadcast code exists anywhere in this codebase today, `NewsletterService` is capture-only. **Verification performed**: `tsc --noEmit` + `eslint` clean in all three workspaces (api/web/shared); full API Jest suite green (66 suites/540 tests, including two new client specs with mocked `fetch` and updated/new affiliate-flow assertions); both production builds succeed. **Not yet done**: nothing committed/pushed (not asked to); no live submission test (no real `BREVO_API_KEY`/`YOUTUBE_API_KEY` in this session); the project owner still needs to create the Brevo list + API key, a Google Cloud YouTube Data API v3 key, and set all three env vars on Render before any of this does anything beyond no-op gracefully. |
 | **Auth** (email/password, magic link, Google/Microsoft OAuth, TOTP 2FA) | 🟡 | `apps/api/src/modules/auth/`, `apps/web/src/pages/auth/` | JWT verified against Supabase JWKS (`JwtGuard`); app role always read from `profiles`, never trusted from the JWT claim. Apple sign-in **not built** (needs paid Apple Developer account, $99/yr — explicitly deprioritized by the project owner, not worth it for now). Staff onboarding: new instructor/admin accounts and password resets email the temporary credentials (`AdminUsersService.sendCredentialsEmail`); `StaffChangePasswordPage` force-signs-out and redirects to `/staff/login` after a password change. **Microsoft (`azure` provider id) and Facebook OAuth added this round** alongside the existing Google button — both are free to set up (unlike Apple); Facebook is coded but **hidden from the UI** pending Meta App Review (see the Auth routing note in §4). The `/login` page's post-sign-in logic (`LoginPage.tsx`'s `enterPortal()`) now rejects an affiliate account with a link to the new `/affiliate/login` page — see §15 for why this flipped twice in one round (route-to-portal, then back to turn-away, as `/affiliate/login` went from nonexistent → existing). Google's OAuth consent screen still shows the raw Supabase project domain (`oyngcwhziidaehpuisoi.supabase.co`) rather than `aiit.network` — fixable only via Supabase's paid Custom Domains add-on or Google app-verification, both outside this codebase; explained to the project owner, not actioned. |
 | **Catalogue / course discovery** | 🟡 | `apps/api/src/modules/courses/` | Location-based currency pricing. Curriculum tables (`CourseModule`/`Lesson`/`LessonResource`) exist in schema and are soft-deletable, but **seeded empty, not wired to any learner UI** — the real learner experience is live-class + assignments + quizzes, not a self-paced lesson browser. |
@@ -757,19 +757,26 @@ round's commits.
 certification program promo-code bundle checkout described in §5's new top row,
 from a project-owner-approved plan (clarifying questions via `AskUserQuestion` →
 `EnterPlanMode`/`ExitPlanMode` → build, all in one session), plus the small
-2026-11-15 intake-year copy fix. Schema (2 new migrations), shared types, backend
-(new `PromoCodesService`/`PromoCodesController`, `PaymentsService` bundle methods,
-Razorpay controller/webhook changes, new `admin-promo-codes` module), and frontend
-(new `MbaProgramPage.tsx`, new `AdminPromoCodesPage.tsx`, `razorpayCheckout.ts`'s
-new bundle helper) are all done and verified (`tsc`/`eslint` clean across all
-three workspaces, full API Jest suite green, both production builds succeed).
-**Nothing committed or pushed this round** (not asked to) — working tree has the
-changes, uncommitted. **Not live-tested**: no real Razorpay redemption has been
-run, and the 2 new migrations haven't reached production yet (they apply via
-`deploy.yml` once pushed to `main`). See §12's new items for exactly what's left:
-run a real test purchase at each price tier, confirm the migrations actually land,
-and decide the 3 new courses' category placement/images if the project owner wants
-something different from this round's defaults.
+2026-11-15 intake-year copy fix, a site-wide " -- "/em-dash sweep (found and
+fixed 3 genuine new instances, all in this round's own `AdminPromoCodesPage.tsx`
+— everywhere else was already clean from the 2026-10-20 sweep), and, later the
+same day, swapped the 3 new courses' placeholder Plate motif images for real
+project-owner-supplied cover banners. Schema (3 migrations: the 2 original plus a
+follow-up `20261115000002_mba_course_cover_images` data migration — written
+instead of editing the already-applied courses migration in place, which would
+break its stored checksum), shared types, backend, and frontend are all done and
+verified (`tsc`/`eslint` clean across all three workspaces, full API Jest suite
+green, both production builds succeed). **Committed (`002af5f`) and pushed —
+`CI`+`Deploy` both confirmed green** (the image-swap follow-up commit comes next,
+see below). **Not live-tested**: no real Razorpay redemption has been run yet at
+any price tier. The 3 new courses' `categoryKey`/`catalogueCategory` placement
+(`IT Business Management`/`Digital Marketing`, reusing existing categories) is
+still this session's own default, not separately confirmed with the project
+owner — low-stakes, easy to change later if they want something different.
+The original `AIIT_Bangalore_MBA_Certification_Program.pdf` reference doc (root
+dir) was removed from the repo once the courses were built from it, at the
+project owner's request — the 3 courses/curriculum it described now live in
+`seed-data/courses.ts`/the migrations themselves, nothing was lost.
 
 **Important note on this document's own staleness, found at the start of this
 round:** `git log` showed `main`'s most recent commits (`ec6faa7` "sentence-case
@@ -921,19 +928,17 @@ here because it's dated 2026-09-12 and unverified against the current codebase �
 not "no outstanding work."
 
 **P1 — confirmed gaps, no workaround needed, real product features missing**
-- **MBA promo-code round (2026-11-15, new) not yet live.** Working tree has the
-  full feature (§5's new top row) but nothing is committed/pushed. Before this is
-  real: (1) commit + push + watch `CI`/`Deploy` go green (2 new migrations need to
-  actually apply to the production DB); (2) have the project owner generate a real
-  code from `/admin/promo-codes` and run one real test purchase at each tier (1
-  course, 2 courses, all 3) against the live Razorpay account to confirm the
-  ₹11,000/₹7,000 math and the redemption counter both behave correctly outside
-  mocked tests; (3) the 3 new courses' `categoryKey`/`catalogueCategory` placement
-  (currently `IT Business Management`/`Digital Marketing`, reusing existing
-  categories) and their Plate motif images (`strata`/`horizon`/`field`, placeholder
-  procedural art, no real photo assets exist yet) were this session's own
-  reasonable defaults, not confirmed with the project owner — worth a quick check
-  before treating them as final.
+- **MBA promo-code round (2026-11-15) — live, one real gap left.** Code,
+  migrations, and the real cover images are all committed/pushed/deployed (§5,
+  §11, §15). The one remaining thing before handing a code out to real students:
+  have the project owner generate a real code from `/admin/promo-codes` and run
+  one real test purchase at each tier (1 course, 2 courses, all 3) against the
+  live Razorpay account, to confirm the ₹11,000/₹7,000 math and the redemption
+  counter both behave correctly outside mocked tests. The 3 new courses'
+  `categoryKey`/`catalogueCategory` placement (`IT Business Management`/`Digital
+  Marketing`, reusing existing categories) is still this session's own default,
+  not separately confirmed with the project owner — low-stakes, worth a quick
+  check sometime, not blocking.
 - ~~Webinar registration backend~~ — done, see §5's Webinar entity row. `/portal/webinars` and the homepage spotlight both read real data now.
 - Apple sign-in. Blocked on a paid Apple Developer Program membership + Services
   ID/key setup — an external/account dependency, not a code task alone. Explicitly
@@ -1206,13 +1211,40 @@ prior round — not run directly against Supabase by this session). Also:
 between the last entry below this one (2026-10-28) and now — this pass did not
 attempt to reconstruct that gap (out of scope for this round), see §11's new note.
 
-**Next step for whoever picks this up:** review the uncommitted diff, commit if
-it looks right, push, watch `CI`/`Deploy` go green, then have the project owner
-generate a real code from `/admin/promo-codes` and run one real test purchase per
-price tier before handing the code out to actual students. Separately, consider
+**Next step for whoever picks this up:** have the project owner generate a real
+code from `/admin/promo-codes` and run one real test purchase per price tier
+before handing the code out to actual students. Separately, consider
 reconstructing the §5/§9 gap for the undocumented commits between `ec6db33`
 (2026-10-13, this doc's last full audit) and the current `main` HEAD, next time
 there's room for a dedicated documentation pass.
+
+**Addendum, same day — committed/pushed, site-wide punctuation sweep, real cover
+images:** (1) the round above was committed (`002af5f`) and pushed; `CI`+`Deploy`
+both watched green, confirming the 2 new migrations actually applied to
+production. (2) The project owner then asked for a full site-wide check that
+literal `" -- "` had been removed everywhere (the standing no-em-dash convention,
+§14) — ran two parallel sweeps (`apps/web`, `apps/api`) checking every genuine
+match against actual rendered/user-facing text (never touching code comments,
+CSS custom properties, or BEM `--modifier` class names, all exempt). Backend: zero
+genuine matches, already fully clean. Frontend: exactly 3 genuine matches, all in
+this same round's own brand-new `AdminPromoCodesPage.tsx` (not yet swept) — fixed
+(colon/semicolon/comma, chosen per sentence). (3) The project owner then pasted 3
+real cover-banner images into the repo root and asked for them to be placed and
+renamed correctly, `image.png` (a scratch file, already gitignored) deleted, and
+the source PDF deleted now that the courses were built from it. Matched each
+banner to its course by content, converted PNG→JPEG via `sharp` (1600px wide,
+quality 82 — ~235-280KB each, matching the existing `apps/web/public/assets/
+courses/*.jpg` size convention) at `apps/web/public/assets/courses/{slug}.jpg`,
+updated `seed-data/courses.ts`'s `image` fields, and — since the original courses
+migration had already been applied to production, so couldn't be edited in
+place without breaking its stored checksum — wrote a small follow-up data
+migration (`20261115000002_mba_course_cover_images`) to update the `image`
+column on the 3 existing rows instead. Confirmed both consuming components
+(`CourseCard.tsx`, `CourseDetailPage.tsx`) already render course images via
+`<Plate fit="contain">`, so the real 4:3 banners (title/footer text fills the
+whole frame, unsafe to crop) display with zero cropping, no component change
+needed — checked by actually viewing each banner's content before assuming a
+blind resize/crop was safe.
 
 ---
 

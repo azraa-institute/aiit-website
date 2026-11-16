@@ -26,7 +26,7 @@ export class PromoCodesController {
   @Post('preview')
   async preview(@Body() dto: PromoCourseSelectionDto): Promise<CartPriceResponse> {
     const courseIds = await this.promoCodes.resolveCourseIds(dto.courseSlugs);
-    const priced = await this.promoCodes.priceCart(courseIds, dto.promoCode, (usdCents) =>
+    const priced = await this.promoCodes.priceCart(courseIds, dto.promoCode, 'INR', (usdCents) =>
       this.currency.convert(usdCents, 'INR').then((r) => r.amountCents),
     );
     return {

@@ -1,4 +1,4 @@
-import { ConflictException, NotFoundException } from '@nestjs/common';
+import { BadRequestException, ConflictException, NotFoundException } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
 import { PrismaService } from '../../common/prisma/prisma.service';
 import { AuditService } from '../../common/audit/audit.service';
@@ -299,7 +299,7 @@ describe('PaymentsService', () => {
       const result = await service.createPendingBundleOrder('user-1', ['ai-markets', 'zoho-crm', 'lead-gen'], 'mba2027');
 
       expect(promoCodes.resolveCourseIds).toHaveBeenCalledWith(['ai-markets', 'zoho-crm', 'lead-gen'], prisma);
-      expect(promoCodes.priceCart).toHaveBeenCalledWith(['course-1', 'course-2', 'course-3'], 'mba2027', expect.any(Function), prisma);
+      expect(promoCodes.priceCart).toHaveBeenCalledWith(['course-1', 'course-2', 'course-3'], 'mba2027', 'INR', expect.any(Function), prisma);
       expect(prisma.order.create).toHaveBeenCalledTimes(3);
       expect(prisma.order.create).toHaveBeenCalledWith({
         data: { userId: 'user-1', courseId: 'course-1', provider: 'razorpay', currency: 'INR', amountCents: 700000, promoCodeId: 'promo-1' },
@@ -326,7 +326,7 @@ describe('PaymentsService', () => {
 
       const result = await service.createPendingBundleOrder('user-1', ['full-stack', 'cloud-fundamentals']);
 
-      expect(promoCodes.priceCart).toHaveBeenCalledWith(['course-1', 'course-2'], undefined, expect.any(Function), prisma);
+      expect(promoCodes.priceCart).toHaveBeenCalledWith(['course-1', 'course-2'], undefined, 'INR', expect.any(Function), prisma);
       expect(prisma.order.create).toHaveBeenCalledWith({ data: { userId: 'user-1', courseId: 'course-1', provider: 'razorpay', currency: 'INR', amountCents: 300000, promoCodeId: null } });
       expect(result.totalAmountCents).toBe(500000);
     });
@@ -357,6 +357,51 @@ describe('PaymentsService', () => {
       promoCodes.priceCart.mockRejectedValueOnce(new ConflictException('This promo code has reached its redemption limit.'));
 
       await expect(service.createPendingBundleOrder('user-1', ['ai-markets'], 'mba2027')).rejects.toThrow(ConflictException);
+      expect(prisma.order.create).not.toHaveBeenCalled();
+    });
+
+    it('defaults to USD for a PayPal bundle', async () => {
+      promoCodes.resolveCourseIds.mockResolvedValueOnce(['course-1', 'course-2']);
+      promoCodes.priceCart.mockResolvedValueOnce({
+        promoCodeId: null,
+        lines: [
+          { courseId: 'course-1', amountCents: 15000, eligible: false },
+          { courseId: 'course-2', amountCents: 15000, eligible: false },
+        ],
+        totalAmountCents: 30000,
+        currency: 'USD',
+      });
+      prisma.order.create
+        .mockResolvedValueOnce({ ...ORDER, id: 'order-1', courseId: 'course-1', provider: 'paypal', currency: 'USD', amountCents: 15000, promoCodeId: null })
+        .mockResolvedValueOnce({ ...ORDER, id: 'order-2', courseId: 'course-2', provider: 'paypal', currency: 'USD', amountCents: 15000, promoCodeId: null });
+
+      const result = await service.createPendingBundleOrder('user-1', ['full-stack', 'cloud-fundamentals'], undefined, 'paypal');
+
+      expect(promoCodes.priceCart).toHaveBeenCalledWith(['course-1', 'course-2'], undefined, 'USD', expect.any(Function), prisma);
+      expect(prisma.order.create).toHaveBeenCalledWith({ data: { userId: 'user-1', courseId: 'course-1', provider: 'paypal', currency: 'USD', amountCents: 15000, promoCodeId: null } });
+      expect(result.currency).toBe('USD');
+    });
+
+    it('defaults to NGN for a Paystack bundle', async () => {
+      promoCodes.resolveCourseIds.mockResolvedValueOnce(['course-1']);
+      promoCodes.priceCart.mockResolvedValueOnce({
+        promoCodeId: null,
+        lines: [{ courseId: 'course-1', amountCents: 500000, eligible: false }],
+        totalAmountCents: 500000,
+        currency: 'NGN',
+      });
+      prisma.order.create.mockResolvedValueOnce({ ...ORDER, id: 'order-1', courseId: 'course-1', provider: 'paystack', currency: 'NGN', amountCents: 500000, promoCodeId: null });
+
+      const result = await service.createPendingBundleOrder('user-1', ['full-stack'], undefined, 'paystack');
+
+      expect(promoCodes.priceCart).toHaveBeenCalledWith(['course-1'], undefined, 'NGN', expect.any(Function), prisma);
+      expect(result.currency).toBe('NGN');
+    });
+
+    it('rejects a promo code on any provider other than Razorpay without ever calling priceCart', async () => {
+      await expect(service.createPendingBundleOrder('user-1', ['ai-markets'], 'mba2027', 'paypal')).rejects.toThrow(BadRequestException);
+      await expect(service.createPendingBundleOrder('user-1', ['ai-markets'], 'mba2027', 'paystack')).rejects.toThrow(BadRequestException);
+      expect(promoCodes.priceCart).not.toHaveBeenCalled();
       expect(prisma.order.create).not.toHaveBeenCalled();
     });
   });

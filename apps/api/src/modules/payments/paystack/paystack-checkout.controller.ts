@@ -6,6 +6,7 @@ import { CurrentUser } from '../../../common/decorators/current-user.decorator';
 import { PaymentsService } from '../payments.service';
 import { PaystackClientService } from './paystack-client.service';
 import { CreateOrderDto } from '../dto/create-order.dto';
+import { PromoCourseSelectionDto } from '../dto/promo-preview.dto';
 
 @Controller('payments/paystack')
 @UseGuards(JwtGuard)
@@ -45,5 +46,37 @@ export class PaystackCheckoutController {
 
     const paid = await this.payments.markOrderPaid(order.id, transaction);
     return { status: paid.status };
+  }
+
+  /**
+   * An ordinary multi-course cart checkout (never a promo code -- the MBA
+   * discount is Razorpay/INR-only; PaymentsService rejects one outright).
+   */
+  @Post('orders/bundle')
+  async createBundleOrder(@Body() dto: PromoCourseSelectionDto, @CurrentUser() user: AuthenticatedUser): Promise<CreatePaystackOrderResponse> {
+    if (!user.email) throw new ConflictException('Your account has no email on file, so this Paystack payment cannot start.');
+    const { orders, totalAmountCents, currency } = await this.payments.createPendingBundleOrder(user.userId, dto.courseSlugs, dto.promoCode, 'paystack');
+    const { accessCode, reference } = await this.paystack.initializeTransaction(totalAmountCents, currency, user.email, orders[0].id);
+    await this.payments.attachProviderRefMany(orders.map((o) => o.id), reference);
+    return { accessCode, reference };
+  }
+
+  @Post('orders/bundle/:reference/verify')
+  async verifyBundle(@Param('reference') reference: string, @CurrentUser() user: AuthenticatedUser): Promise<{ status: string }> {
+    const orders = await this.payments.findAllByProviderRef('paystack', reference);
+    if (orders.length === 0) throw new NotFoundException('Order not found.');
+    if (orders.some((o) => o.userId !== user.userId)) throw new ForbiddenException();
+    if (orders.every((o) => o.status === 'paid')) return { status: 'paid' };
+
+    const transaction = await this.paystack.verifyTransaction(reference);
+    const totalAmountCents = orders.reduce((sum, o) => sum + o.amountCents, 0);
+    // Not a strict equality check: see the matching comment in verify() --
+    // "pass transaction fees to customers" legitimately inflates the amount.
+    if (transaction.status !== 'success' || transaction.amountCents < totalAmountCents || transaction.currency !== orders[0].currency) {
+      throw new ConflictException('This payment could not be verified.');
+    }
+
+    await Promise.all(orders.map((o) => this.payments.markOrderPaid(o.id, transaction)));
+    return { status: 'paid' };
   }
 }

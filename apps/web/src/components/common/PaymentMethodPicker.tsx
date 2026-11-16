@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { PayPalCheckoutButton } from '@/components/common/PayPalCheckoutButton';
-import { openRazorpayCheckout } from '@/lib/razorpayCheckout';
-import { openPaystackCheckout } from '@/lib/paystackCheckout';
+import { openRazorpayCheckout, openRazorpayBundleCheckout } from '@/lib/razorpayCheckout';
+import { openPaystackCheckout, openPaystackBundleCheckout } from '@/lib/paystackCheckout';
 import './payment-method-picker.css';
 
 function ArrowIcon() {
@@ -122,7 +122,13 @@ function RupayMark() {
 }
 
 interface PaymentMethodPickerProps {
-  courseSlug: string;
+  /** Exactly one of courseSlug/courseSlugs is given -- courseSlugs switches every card into cart/bundle mode (CourseDetailPage passes courseSlug, DashboardCart passes courseSlugs). */
+  courseSlug?: string;
+  courseSlugs?: string[];
+  /** Only meaningful with courseSlugs -- forwarded to Razorpay's bundle checkout only, never to PayPal/Paystack (their bundle endpoints reject one outright; see CreateCartBundleOrderRequest). */
+  promoCode?: string;
+  /** True once a cart promo code is actively discounting at least one line -- only Razorpay can honor it, so every other card is hidden rather than silently charging full price through them. */
+  razorpayOnly?: boolean;
   /** Called once a payment is confirmed and the learner is enrolled. */
   onSuccess: () => void;
 }
@@ -137,12 +143,17 @@ interface PaymentMethodPickerProps {
  * custom element can never trigger a PayPal payment on its own). Razorpay
  * and Paystack's cards are real circle buttons we trigger ourselves, since
  * we own those integrations end to end.
+ *
+ * Shared by CourseDetailPage (single `courseSlug`) and DashboardCart
+ * (`courseSlugs`, a cart of any 1-N courses) -- one picker, so the brand
+ * marks/cards below exist in exactly one place.
  */
-export function PaymentMethodPicker({ courseSlug, onSuccess }: PaymentMethodPickerProps) {
+export function PaymentMethodPicker({ courseSlug, courseSlugs, promoCode, razorpayOnly, onSuccess }: PaymentMethodPickerProps) {
   const [error, setError] = useState<string>();
   const [cardEligible, setCardEligible] = useState(true);
   const [razorpayLoading, setRazorpayLoading] = useState(false);
   const [paystackLoading, setPaystackLoading] = useState(false);
+  const bundle = Boolean(courseSlugs);
 
   const paypalClientId = import.meta.env.VITE_PAYPAL_CLIENT_ID as string | undefined;
   const razorpayKeyId = import.meta.env.VITE_RAZORPAY_KEY_ID as string | undefined;
@@ -159,8 +170,19 @@ export function PaymentMethodPicker({ courseSlug, onSuccess }: PaymentMethodPick
     if (!razorpayKeyId) return;
     setError(undefined);
     setRazorpayLoading(true);
+    if (bundle) {
+      void openRazorpayBundleCheckout({
+        courseSlugs: courseSlugs!,
+        promoCode,
+        keyId: razorpayKeyId,
+        onSuccess,
+        onError: setError,
+        onDismiss: () => setRazorpayLoading(false),
+      });
+      return;
+    }
     void openRazorpayCheckout({
-      courseSlug,
+      courseSlug: courseSlug!,
       keyId: razorpayKeyId,
       onSuccess,
       onError: setError,
@@ -172,8 +194,18 @@ export function PaymentMethodPicker({ courseSlug, onSuccess }: PaymentMethodPick
     if (!paystackPublicKey) return;
     setError(undefined);
     setPaystackLoading(true);
+    if (bundle) {
+      void openPaystackBundleCheckout({
+        courseSlugs: courseSlugs!,
+        publicKey: paystackPublicKey,
+        onSuccess,
+        onError: setError,
+        onDismiss: () => setPaystackLoading(false),
+      });
+      return;
+    }
     void openPaystackCheckout({
-      courseSlug,
+      courseSlug: courseSlug!,
       publicKey: paystackPublicKey,
       onSuccess,
       onError: setError,
@@ -188,8 +220,11 @@ export function PaymentMethodPicker({ courseSlug, onSuccess }: PaymentMethodPick
           {error}
         </p>
       ) : null}
+      {razorpayOnly ? (
+        <p className="pm-picker__note">Your promo code can only be redeemed through Razorpay.</p>
+      ) : null}
       <div className="pm-grid">
-        {paypalClientId ? (
+        {paypalClientId && !razorpayOnly ? (
           <div className="pm-card pm-card--paypal">
             <span className="pm-card__badge pm-card__badge--paypal" aria-hidden="true">
               <PayPalMark />
@@ -197,12 +232,12 @@ export function PaymentMethodPicker({ courseSlug, onSuccess }: PaymentMethodPick
             <h3 className="pm-card__title">PayPal</h3>
             <p className="pm-card__desc">Pay with your PayPal balance, card, or bank</p>
             <div className="pm-card__action">
-              <PayPalCheckoutButton courseSlug={courseSlug} fundingSource="paypal" onSuccess={onSuccess} onError={setError} />
+              <PayPalCheckoutButton courseSlug={courseSlug} courseSlugs={courseSlugs} fundingSource="paypal" onSuccess={onSuccess} onError={setError} />
             </div>
           </div>
         ) : null}
 
-        {paypalClientId && cardEligible ? (
+        {paypalClientId && cardEligible && !razorpayOnly ? (
           <div className="pm-card pm-card--card">
             <span className="pm-card__badge pm-card__badge--card" aria-hidden="true">
               <CardIcon />
@@ -212,6 +247,7 @@ export function PaymentMethodPicker({ courseSlug, onSuccess }: PaymentMethodPick
             <div className="pm-card__action">
               <PayPalCheckoutButton
                 courseSlug={courseSlug}
+                courseSlugs={courseSlugs}
                 fundingSource="card"
                 onSuccess={onSuccess}
                 onError={setError}
@@ -244,7 +280,7 @@ export function PaymentMethodPicker({ courseSlug, onSuccess }: PaymentMethodPick
           </div>
         ) : null}
 
-        {paystackPublicKey ? (
+        {paystackPublicKey && !razorpayOnly ? (
           <div className="pm-card pm-card--paystack">
             <span className="pm-card__badge pm-card__badge--paystack pm-card__badge--wordmark" aria-hidden="true">
               Paystack

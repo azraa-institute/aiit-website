@@ -20,7 +20,15 @@ const PENDING_ORDER = {
 
 describe('PayPalCheckoutController', () => {
   let controller: PayPalCheckoutController;
-  let payments: { createPendingOrder: jest.Mock; attachProviderRef: jest.Mock; findByProviderRef: jest.Mock; markOrderPaid: jest.Mock };
+  let payments: {
+    createPendingOrder: jest.Mock;
+    attachProviderRef: jest.Mock;
+    findByProviderRef: jest.Mock;
+    markOrderPaid: jest.Mock;
+    createPendingBundleOrder: jest.Mock;
+    attachProviderRefMany: jest.Mock;
+    findAllByProviderRef: jest.Mock;
+  };
   let paypal: { createOrder: jest.Mock; captureOrder: jest.Mock };
 
   beforeEach(async () => {
@@ -29,6 +37,9 @@ describe('PayPalCheckoutController', () => {
       attachProviderRef: jest.fn(),
       findByProviderRef: jest.fn(),
       markOrderPaid: jest.fn(),
+      createPendingBundleOrder: jest.fn(),
+      attachProviderRefMany: jest.fn(),
+      findAllByProviderRef: jest.fn(),
     };
     paypal = { createOrder: jest.fn(), captureOrder: jest.fn() };
 
@@ -94,6 +105,73 @@ describe('PayPalCheckoutController', () => {
       const result = await controller.capture('PAYPAL-ORDER-1', USER);
 
       expect(payments.markOrderPaid).toHaveBeenCalledWith('order-1', { status: 'COMPLETED', amountCents: 4900, currency: 'USD' });
+      expect(result).toEqual({ status: 'paid' });
+    });
+  });
+
+  describe('createBundleOrder', () => {
+    const BUNDLE_DTO = { courseSlugs: ['full-stack', 'cloud-fundamentals'] };
+    const BUNDLE_ORDERS = [
+      { ...PENDING_ORDER, id: 'order-1', courseId: 'course-1', amountCents: 4900 },
+      { ...PENDING_ORDER, id: 'order-2', courseId: 'course-2', amountCents: 3900 },
+    ];
+
+    it('prices the bundle, asks PayPal for one combined order, and attaches it to every bundled order', async () => {
+      payments.createPendingBundleOrder.mockResolvedValueOnce({ orders: BUNDLE_ORDERS, totalAmountCents: 8800, currency: 'USD' });
+      paypal.createOrder.mockResolvedValueOnce('PAYPAL-BUNDLE-1');
+
+      const result = await controller.createBundleOrder(BUNDLE_DTO, USER);
+
+      expect(payments.createPendingBundleOrder).toHaveBeenCalledWith('user-1', BUNDLE_DTO.courseSlugs, undefined, 'paypal');
+      expect(paypal.createOrder).toHaveBeenCalledWith(8800, 'USD');
+      expect(payments.attachProviderRefMany).toHaveBeenCalledWith(['order-1', 'order-2'], 'PAYPAL-BUNDLE-1');
+      expect(result).toEqual({ paypalOrderId: 'PAYPAL-BUNDLE-1' });
+    });
+  });
+
+  describe('captureBundle', () => {
+    const BUNDLE_ORDERS = [
+      { ...PENDING_ORDER, id: 'order-1', amountCents: 4900 },
+      { ...PENDING_ORDER, id: 'order-2', amountCents: 3900 },
+    ];
+
+    it('throws NotFoundException when no order shares the given providerRef', async () => {
+      payments.findAllByProviderRef.mockResolvedValueOnce([]);
+      await expect(controller.captureBundle('missing', USER)).rejects.toBeInstanceOf(NotFoundException);
+    });
+
+    it('throws ForbiddenException if any bundled order belongs to someone else', async () => {
+      payments.findAllByProviderRef.mockResolvedValueOnce([...BUNDLE_ORDERS, { ...BUNDLE_ORDERS[0], id: 'order-3', userId: 'someone-else' }]);
+      await expect(controller.captureBundle('PAYPAL-BUNDLE-1', USER)).rejects.toBeInstanceOf(ForbiddenException);
+    });
+
+    it('is a no-op (and never re-calls PayPal) when every bundled order is already paid', async () => {
+      payments.findAllByProviderRef.mockResolvedValueOnce(BUNDLE_ORDERS.map((o) => ({ ...o, status: 'paid' })));
+      const result = await controller.captureBundle('PAYPAL-BUNDLE-1', USER);
+      expect(paypal.captureOrder).not.toHaveBeenCalled();
+      expect(result).toEqual({ status: 'paid' });
+    });
+
+    it('rejects a capture whose confirmed amount falls short of the full bundle', async () => {
+      payments.findAllByProviderRef.mockResolvedValueOnce(BUNDLE_ORDERS);
+      paypal.captureOrder.mockResolvedValueOnce({ status: 'COMPLETED', amountCents: 4900, currency: 'USD' });
+
+      await expect(controller.captureBundle('PAYPAL-BUNDLE-1', USER)).rejects.toBeInstanceOf(ConflictException);
+      expect(payments.markOrderPaid).not.toHaveBeenCalled();
+    });
+
+    it('marks every bundled order paid once PayPal confirms a matching capture of the full total', async () => {
+      payments.findAllByProviderRef.mockResolvedValueOnce(BUNDLE_ORDERS);
+      const capture = { status: 'COMPLETED', amountCents: 8800, currency: 'USD' };
+      paypal.captureOrder.mockResolvedValueOnce(capture);
+      payments.markOrderPaid.mockResolvedValue({ status: 'paid' });
+
+      const result = await controller.captureBundle('PAYPAL-BUNDLE-1', USER);
+
+      expect(paypal.captureOrder).toHaveBeenCalledTimes(1);
+      expect(payments.markOrderPaid).toHaveBeenCalledTimes(2);
+      expect(payments.markOrderPaid).toHaveBeenCalledWith('order-1', capture);
+      expect(payments.markOrderPaid).toHaveBeenCalledWith('order-2', capture);
       expect(result).toEqual({ status: 'paid' });
     });
   });

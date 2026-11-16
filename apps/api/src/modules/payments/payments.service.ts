@@ -1,4 +1,4 @@
-import { ConflictException, Injectable, Logger, NotFoundException } from '@nestjs/common';
+import { BadRequestException, ConflictException, Injectable, Logger, NotFoundException } from '@nestjs/common';
 import type { Order, PaymentProvider, Prisma } from '@prisma/client';
 import { PrismaService } from '../../common/prisma/prisma.service';
 import { AuditService } from '../../common/audit/audit.service';
@@ -75,21 +75,36 @@ export class PaymentsService {
   }
 
   /**
-   * A Razorpay-only cart/bundle purchase -- creates one pending Order per
-   * selected course, all sharing the same (not-yet-known) Razorpay
-   * providerRef once RazorpayCheckoutController attaches it via
-   * attachProviderRefMany. Pricing + the redemption-cap check both happen
-   * inside this one transaction, via PromoCodesService.priceCart -- that's
-   * the real enforcement point for the cap, not the frontend's earlier
-   * preview call. `promoCode` is optional: a cart with no code at all
-   * still checks out, every course priced at its own real, INR-converted
-   * rate; a code only discounts the courses inside its own scope, the
-   * rest of the cart still prices normally in the same checkout.
+   * A cart/bundle purchase across any provider -- creates one pending Order
+   * per selected course, all sharing the same (not-yet-known) providerRef
+   * once the caller's controller attaches it via attachProviderRefMany.
+   * Pricing + the redemption-cap check both happen inside this one
+   * transaction, via PromoCodesService.priceCart -- that's the real
+   * enforcement point for the cap, not the frontend's earlier preview call.
+   *
+   * `promoCode` is optional: a cart with no code at all still checks out,
+   * every course priced at its own real rate converted into `currency`; a
+   * code only discounts the courses inside its own scope, the rest of the
+   * cart still prices normally in the same checkout. The MBA promo-code
+   * discount is Razorpay/INR-only by explicit product decision -- a code
+   * given together with any other provider is rejected outright here, not
+   * just hidden in the UI, since the frontend is never the real gate on
+   * what this service will actually do.
    */
-  async createPendingBundleOrder(userId: string, courseSlugs: string[], promoCode?: string): Promise<{ orders: Order[]; totalAmountCents: number; currency: string }> {
+  async createPendingBundleOrder(
+    userId: string,
+    courseSlugs: string[],
+    promoCode?: string,
+    provider: PaymentProvider = 'razorpay',
+    currency: string = provider === 'paypal' ? 'USD' : provider === 'paystack' ? 'NGN' : 'INR',
+  ): Promise<{ orders: Order[]; totalAmountCents: number; currency: string }> {
+    if (promoCode && provider !== 'razorpay') {
+      throw new BadRequestException('This code can only be redeemed through Razorpay.');
+    }
+
     const orders = await this.prisma.$transaction(async (tx) => {
       const courseIds = await this.promoCodes.resolveCourseIds(courseSlugs, tx);
-      const priced = await this.promoCodes.priceCart(courseIds, promoCode, (usdCents) => this.currency.convert(usdCents, 'INR').then((r) => r.amountCents), tx);
+      const priced = await this.promoCodes.priceCart(courseIds, promoCode, currency, (usdCents) => this.currency.convert(usdCents, currency).then((r) => r.amountCents), tx);
       const lineByCourseId = new Map(priced.lines.map((l) => [l.courseId, l]));
       return Promise.all(
         courseIds.map((courseId) => {
@@ -98,7 +113,7 @@ export class PaymentsService {
             data: {
               userId,
               courseId,
-              provider: 'razorpay',
+              provider,
               currency: priced.currency,
               amountCents: line.amountCents,
               promoCodeId: line.eligible ? priced.promoCodeId : null,

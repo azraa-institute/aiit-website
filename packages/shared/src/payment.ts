@@ -54,6 +54,17 @@ export interface CreateRazorpayBundleOrderRequest {
   promoCode?: string;
 }
 
+/**
+ * A PayPal or Paystack cart/bundle checkout -- any 1-N paid courses in one
+ * payment, each priced at its own real rate converted into that provider's
+ * currency. No `promoCode` field at all: the MBA promo-code discount is
+ * Razorpay/INR-only (see CreateRazorpayBundleOrderRequest above), so these
+ * two providers' bundle endpoint never accepts one.
+ */
+export interface CreateCartBundleOrderRequest {
+  courseSlugs: string[];
+}
+
 export interface PromoPreviewRequest {
   courseSlugs: string[];
   promoCode?: string;

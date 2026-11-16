@@ -1,6 +1,6 @@
 import { apiFetch, ApiError } from '@/lib/api';
 import { captureException } from '@/lib/sentry';
-import type { CreatePaystackOrderRequest, CreatePaystackOrderResponse } from '@aiit/shared';
+import type { CreateCartBundleOrderRequest, CreatePaystackOrderRequest, CreatePaystackOrderResponse } from '@aiit/shared';
 
 interface PaystackTransaction {
   reference: string;
@@ -101,6 +101,59 @@ export async function openPaystackCheckout({ courseSlug, publicKey, onSuccess, o
       accessCode: order.accessCode,
       onSuccess: (transaction) => {
         apiFetch(`/payments/paystack/orders/${encodeURIComponent(transaction.reference)}/verify`, { method: 'POST' })
+          .then(() => onSuccess())
+          .catch((err: unknown) => {
+            captureException(err);
+            onError(err instanceof ApiError ? err.message : 'Something went wrong confirming your payment. Please try again.');
+          })
+          .finally(() => onDismiss?.());
+      },
+      onCancel: () => {
+        onDismiss?.();
+      },
+    });
+  } catch (err) {
+    captureException(err);
+    onError(err instanceof ApiError ? err.message : 'Could not start Paystack checkout. Please try again later.');
+    onDismiss?.();
+  }
+}
+
+interface OpenPaystackBundleCheckoutOptions {
+  courseSlugs: string[];
+  publicKey: string;
+  onSuccess: () => void;
+  onError: (message: string) => void;
+  onDismiss?: () => void;
+}
+
+/**
+ * Cart/bundle checkout -- any 1-N courses in one Paystack transaction, each
+ * priced at its own real NGN rate. Same Inline v2 mechanics as
+ * openPaystackCheckout, pointed at the bundle-order endpoints instead; no
+ * promo code here (that discount is Razorpay/INR-only).
+ */
+export async function openPaystackBundleCheckout({ courseSlugs, publicKey, onSuccess, onError, onDismiss }: OpenPaystackBundleCheckoutOptions): Promise<void> {
+  try {
+    if (!publicKey.startsWith('pk_')) {
+      onError('Payments are not configured yet.');
+      onDismiss?.();
+      return;
+    }
+    await loadPaystackSdk();
+    if (!window.PaystackPop) throw new Error('Paystack SDK failed to load.');
+
+    const body: CreateCartBundleOrderRequest = { courseSlugs };
+    const order = await apiFetch<CreatePaystackOrderResponse>('/payments/paystack/orders/bundle', {
+      method: 'POST',
+      body: JSON.stringify(body),
+    });
+
+    const popup = new window.PaystackPop();
+    popup.checkout({
+      accessCode: order.accessCode,
+      onSuccess: (transaction) => {
+        apiFetch(`/payments/paystack/orders/bundle/${encodeURIComponent(transaction.reference)}/verify`, { method: 'POST' })
           .then(() => onSuccess())
           .catch((err: unknown) => {
             captureException(err);

@@ -3,10 +3,10 @@ import { useNavigate } from 'react-router-dom';
 import type { CartPriceResponse } from '@aiit/shared';
 import { Plate } from '@/components/primitives/Plate';
 import { Button } from '@/components/primitives/Button';
+import { PaymentMethodPicker } from '@/components/common/PaymentMethodPicker';
 import { apiFetch, ApiError } from '@/lib/api';
 import { cn } from '@/lib/cn';
 import { useScrollReveal } from '@/lib/useScrollReveal';
-import { openRazorpayBundleCheckout } from '@/lib/razorpayCheckout';
 import { useCart, removeFromCart, invalidateCart } from './cartData';
 import { invalidateLearner } from './learnerData';
 import './dashboard-cart.css';
@@ -35,12 +35,13 @@ export function DashboardCart() {
   // (so the running total is always live), but a typed code is only sent
   // once redeemed, not on every keystroke.
   const [appliedCode, setAppliedCode] = useState('');
-  const [paying, setPaying] = useState(false);
-  const [payError, setPayError] = useState<string>();
   const [price, setPrice] = useState<PriceState>({ status: 'idle' });
 
   const courseSlugs = cart.status === 'ready' ? cart.items.map((i) => i.slug) : [];
   const key = courseSlugs.join(',');
+  const hasAnyProvider = Boolean(
+    import.meta.env.VITE_PAYPAL_CLIENT_ID || import.meta.env.VITE_RAZORPAY_KEY_ID || import.meta.env.VITE_PAYSTACK_PUBLIC_KEY,
+  );
 
   useEffect(() => {
     if (courseSlugs.length === 0) {
@@ -72,33 +73,8 @@ export function DashboardCart() {
   const ineligibleCount = price.status === 'ready' && price.data.promoApplied ? price.data.lines.filter((l) => !l.eligible).length : 0;
 
   function redeemCoupon() {
-    setPayError(undefined);
     setAppliedCode(promoInput.trim());
   }
-
-  function handleCheckout() {
-    const keyId = import.meta.env.VITE_RAZORPAY_KEY_ID as string | undefined;
-    if (!keyId || price.status !== 'ready') return;
-    setPayError(undefined);
-    setPaying(true);
-    openRazorpayBundleCheckout({
-      courseSlugs,
-      promoCode: appliedCode || undefined,
-      keyId,
-      onSuccess: () => {
-        invalidateLearner();
-        invalidateCart();
-        navigate('/portal/courses');
-      },
-      onError: (message) => {
-        setPayError(message);
-        setPaying(false);
-      },
-      onDismiss: () => setPaying(false),
-    });
-  }
-
-  const hasRazorpay = Boolean(import.meta.env.VITE_RAZORPAY_KEY_ID);
 
   return (
     <section className="dash__cart" data-reveal aria-label="Your cart">
@@ -156,25 +132,26 @@ export function DashboardCart() {
             they&apos;ll be charged at the regular price.
           </p>
         ) : null}
-        {payError ? <p className="dash__cart-note dash__cart-note--error">{payError}</p> : null}
 
         <div className="dash__cart-total-row">
           <span className="dash__cart-total-label">Total</span>
           <span className="dash__cart-total-value">{price.status === 'ready' ? formatRupees(price.data.totalAmountCents) : '…'}</span>
         </div>
 
-        <Button
-          as="button"
-          type="button"
-          size="lg"
-          arrow
-          loading={paying}
-          disabled={price.status !== 'ready' || !hasRazorpay}
-          onClick={handleCheckout}
-        >
-          Checkout
-        </Button>
-        {!hasRazorpay ? <p className="dash__cart-note">Online payment isn&apos;t available yet.</p> : null}
+        {!hasAnyProvider ? (
+          <p className="dash__cart-note">Online payment isn&apos;t available yet.</p>
+        ) : price.status === 'ready' ? (
+          <PaymentMethodPicker
+            courseSlugs={courseSlugs}
+            promoCode={appliedCode || undefined}
+            razorpayOnly={price.data.promoApplied}
+            onSuccess={() => {
+              invalidateLearner();
+              invalidateCart();
+              navigate('/portal/courses');
+            }}
+          />
+        ) : null}
       </div>
     </section>
   );

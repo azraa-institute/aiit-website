@@ -8,8 +8,10 @@ import { CurrencyService, type CurrencyRequestLike } from '../../common/currency
  * "this user's cart" is just their CartItem rows. Paid courses only: a
  * free/subscription course self-enrolls instantly (CourseEnrollController),
  * there's nothing to "cash out" for it. Checkout itself lives in
- * PaymentsService.createPendingBundleOrder (Razorpay-only) -- this service
- * only owns what's sitting in the cart, not pricing or payment.
+ * PaymentsService.createPendingBundleOrder (any of the three providers --
+ * the MBA promo-code discount is the only piece that's Razorpay/INR-only)
+ * -- this service only owns what's sitting in the cart, not pricing or
+ * payment.
  */
 @Injectable()
 export class CartService {

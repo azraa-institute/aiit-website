@@ -354,7 +354,7 @@ session · ⚠️ partial/known gap · ❌ not built.
 | Feature | Status | Key files | Notes |
 |---|---|---|---|
 | **AIIT Bangalore MBA Certification Program: promo-code bundle checkout** (new, 2026-11-15) | 🟡 build/test-verified, not live-verified | `apps/api/prisma/schema.prisma` (`PromoCode` model, `Order.promoCodeId`, migration `20261115000001_promo_codes`), 3 new `Course` rows (migration `20261115000000_mba_certification_courses` + `seed-data/courses.ts`), `apps/api/src/modules/payments/promo-codes/{promo-codes.service,promo-codes.controller}.ts`, `apps/api/src/modules/payments/payments.service.ts` (`createPendingBundleOrder`/`findAllByProviderRef`/`attachProviderRefMany`), `apps/api/src/modules/payments/razorpay/{razorpay-checkout.controller,razorpay-webhook.controller}.ts`, `apps/api/src/modules/admin/admin-promo-codes.{controller,service}.ts`, `packages/shared/src/payment.ts`, `apps/web/src/pages/MbaProgramPage.tsx`, `apps/web/src/pages/admin/AdminPromoCodesPage.tsx`, `apps/web/src/lib/razorpayCheckout.ts` (`openRazorpayBundleCheckout`) | Three new MBA courses (Applied AI for Markets & Finance, Zoho CRM Professional Certification, Strategic Lead Generation & Growth Marketing — from `AIIT_Bangalore_MBA_Certification_Program.pdf`) list at the normal $150 catalogue price (live-converted per-currency, same `CurrencyService` as every other course). A new, separate **INR/Razorpay-only** promo-code mechanism lets a student pick 1-3 of those 3 courses in one checkout and pay a fixed rupee price instead: ₹11,000/course for 1-2, ₹7,000/course only once all 3 are selected together — these are absolute INR overrides, never currency-converted. `PromoCode.courseIds`/`singlePriceCents`/`bundlePriceCents`/`maxRedemptions`/`active`, admin-generated/viewed only (`admin/promo-codes`, never on any public route or response). **Redemption counting is the subtle part**: it counts distinct successful checkouts (`Order.groupBy(['providerRef'])` where `status: 'paid'`), not raw `Order` rows — a 3-course bundle purchase is one redemption against the cap, not three, and a code typed in but never paid consumes nothing. The cap is enforced inside the same DB transaction that creates the bundle's `Order` rows (`PaymentsService.createPendingBundleOrder`), not at the earlier preview call, so two students racing for the last slot can't both win. Required widening `Order`'s unique index from `[provider, providerRef]` to `[provider, providerRef, courseId]` so several `Order` rows (one per bundled course) can share one Razorpay `providerRef` — this is the one schema change with a small ripple into existing code: `PaymentsService.findByProviderRef()` now uses `findFirst` instead of `findUnique` (behavior-identical for every existing single-course call site), and `RazorpayWebhookController.handle()` was generalized to fan out over every `Order` sharing a `providerRef` instead of assuming exactly one. PayPal/Paystack are completely untouched — new `orders/bundle` + `orders/bundle/:id/verify` routes exist only on `RazorpayCheckoutController`. Public preview endpoint (`POST /payment-promos/preview`) lets the frontend show the real server-computed price before opening the Razorpay modal, without ever computing a discount itself. Courses were added via the project's existing seed+migration convention (no admin "create course" UI exists — confirmed, see `courses.service.ts`'s own "no write path" comment), reusing the `IT Business Management`/`Digital Marketing` `course_categories` rows from `20260919010000_course_catalogue_taxonomy` rather than creating new ones. Each course's `image` initially shipped as a Plate procedural motif key (`strata`/`horizon`/`field`, no real photo asset existed yet); later the same day the project owner supplied real cover banners (pasted into the repo root), which were converted (`sharp`, PNG→JPEG, resized to 1600px wide, ~235-280KB each — matching the existing `apps/web/public/assets/courses/*.jpg` convention) and placed at `apps/web/public/assets/courses/{applied-ai-for-markets-and-finance,zoho-crm-professional-certification,strategic-lead-generation-and-growth-marketing}.jpg`. Both consuming components (`CourseCard.tsx`, `CourseDetailPage.tsx`) already render `course.image` via `<Plate fit="contain">`, so the real 4:3 banners display with zero cropping, no component change needed. Since `20261115000000_mba_certification_courses` had already been applied to production by then, the image swap landed as its own follow-up migration (`20261115000002_mba_course_cover_images`, plain `UPDATE courses SET image = ...`) rather than editing the already-applied one in place. The source `AIIT_Bangalore_MBA_Certification_Program.pdf` was removed from the repo (and the root-level `image.png` scratch file deleted) once the courses were fully built from it, at the project owner's explicit request. **The 3 images were corrected again the same day** — the first conversion kept their native 4:3 instead of the 16:9 every other course image uses, so they rendered edge-to-edge in the catalogue grid instead of the consistent letterboxed look; rebuilt at 1600×900 with a blurred pillarbox of the same artwork (`sharp`, no cropping, nothing lost) to match. A broader "--" sweep (one that this time covers seed data and migrations, not just app source) also found 6 courses whose `summary`/`description` still had a literal double-hyphen — fixed in `seed-data/courses.ts` plus a follow-up migration (`20261115000003_course_copy_punctuation_fix`) for the rows already in production. **`PromoCodesService.priceCheckout()` was later fully replaced by `priceCart()`** (2026-11-16, see the new Course cart row below) — everything in this row describing `priceCheckout` now describes `priceCart`'s single-code-against-a-fixed-course-set behavior, which is still exactly how `MbaProgramPage.tsx` uses it. **Verification performed**: `tsc --noEmit` + `eslint` clean in all three workspaces; full API Jest suite green (70 suites/~600 tests including new specs for `PromoCodesService`, `PaymentsService`'s bundle methods, `RazorpayCheckoutController`'s bundle routes, `AdminPromoCodesService`); both production builds succeed. **Committed and pushed, `CI`+`Deploy` confirmed green** for the main round (`002af5f`); the image-swap follow-up is committed in the same session (see §15). **Not yet done**: no live Razorpay test purchase has been run yet at any price tier — see §12. Intake-year copy also fixed this round (`announcements.ts`/`EnrollmentPopup.tsx`, "2026 intake" → "2027 intake" — the only 2 user-facing spots that said it). |
-| **Course cart + mixed coupon-eligibility checkout** (new, 2026-11-16) | 🟡 build/test-verified, not live-verified | `apps/api/prisma/schema.prisma` (`CartItem` model, migration `20261116000000_cart_items`), `apps/api/src/modules/cart/{cart.service,cart.controller,cart.module}.ts`, `apps/api/src/modules/payments/promo-codes/promo-codes.service.ts` (`priceCart`, replaces `priceCheckout`), `apps/api/src/modules/payments/payments.service.ts` (`createPendingBundleOrder` generalized, `markOrderPaid` now clears matching cart items), `packages/shared/src/payment.ts` (`CartPricedLine`/`CartPriceResponse`/`CartItemSummary`), `apps/web/src/pages/portal/{cartData.ts,DashboardCart.tsx}`, `apps/web/src/components/course/CourseCard.tsx` (optional `inCart`/`onToggleCart` props), `apps/web/src/pages/{CoursesPage.tsx,CourseDetailPage.tsx}` | A real, server-side cart (`CartItem` — "this user's cart" is just their rows, no wrapping `Cart` entity) lets a learner add any paid, not-already-enrolled course from the catalogue (`/courses` card grid, or the course-detail page's "Add to cart instead" toggle next to `PaymentMethodPicker`) "for now or later," then check everything out together from a new cart widget (`DashboardCart`) on `/portal`'s dashboard — shown only once the cart actually has something in it. Checkout is **Razorpay-only** (explicit product decision, same as the MBA promo-code round above) via the exact same bundle-order machinery that round built, generalized: `PromoCodesService.priceCheckout()` → **`priceCart()`**, which now returns a *per-course* breakdown (`{courseId, amountCents, eligible}[]`) instead of assuming every course in the request gets the same price — this is what lets a cart mix an ordinary course with one of the MBA promo's 3 eligible courses in a single checkout: the eligible course(s) price at the code's rate, everything else prices at its own real, INR-converted rate, and `promoCodeId` (and therefore the redemption-cap counter) is only ever set when at least one line was actually eligible — a code typed in that matches nothing in the cart never "applies." The dashboard widget's "**Redeem coupon**" button (the project owner's exact requested wording, not "Apply") visibly highlights eligible rows (`is-coupon-eligible`, a brass border/badge) and shows a notice naming how many cart items aren't covered when some aren't. `markOrderPaid` now also does a harmless `cartItem.deleteMany` after enrolling — a paid course drops out of the cart automatically, whether or not the purchase actually originated from the cart (the MBA page's own direct flow doesn't use the cart at all, so this is a no-op there). `GET/POST /me/cart`, `DELETE /me/cart/:courseId`, all `@UseGuards(JwtGuard)`. **Not built this round, by explicit decision**: PayPal/Paystack cart checkout (multi-provider bundling is a real, separate, larger task, deferred). **Verification performed**: `tsc --noEmit` + `eslint` clean in all three workspaces; full API Jest suite green (69 suites/582 tests, including new `cart.service.spec.ts` and the generalized `priceCart`/`createPendingBundleOrder` cases); both production builds succeed. **Not yet done**: not committed/pushed this round (see §11); no live Razorpay test purchase of any kind (single-course, MBA-coupon, or mixed cart) has been run against the live account. |
+| **Course cart + mixed coupon-eligibility checkout, all 3 providers** (new, 2026-11-16) | 🟡 build/test-verified, not live-verified | `apps/api/prisma/schema.prisma` (`CartItem` model, migration `20261116000000_cart_items`), `apps/api/src/modules/cart/{cart.service,cart.controller,cart.module}.ts`, `apps/api/src/modules/payments/promo-codes/promo-codes.service.ts` (`priceCart`, replaces `priceCheckout`, now takes an explicit `currency` param), `apps/api/src/modules/payments/payments.service.ts` (`createPendingBundleOrder` generalized with `provider`/`currency` params, rejects a promo code on any non-Razorpay provider, `markOrderPaid` clears matching cart items), `apps/api/src/modules/payments/{paypal,paystack}/{paypal-checkout,paypal-webhook,paystack-checkout,paystack-webhook}.controller.ts` (new `orders/bundle` routes + webhook fan-out generalization), `packages/shared/src/payment.ts` (`CartPricedLine`/`CartPriceResponse`/`CartItemSummary`/`CreateCartBundleOrderRequest`), `apps/web/src/pages/portal/{cartData.ts,DashboardCart.tsx}`, `apps/web/src/components/common/{PaymentMethodPicker,PayPalCheckoutButton}.tsx` (generalized for cart/bundle mode), `apps/web/src/lib/paystackCheckout.ts` (`openPaystackBundleCheckout`), `apps/web/src/components/layout/HeaderCart.tsx`, `apps/web/src/components/course/CourseCard.tsx` (optional `inCart`/`onToggleCart` props), `apps/web/src/pages/{CoursesPage.tsx,CourseDetailPage.tsx}` | A real, server-side cart (`CartItem` — "this user's cart" is just their rows, no wrapping `Cart` entity) lets a learner add any paid, not-already-enrolled course from the catalogue (`/courses` card grid, or the course-detail page's "Add to cart instead" toggle next to `PaymentMethodPicker`) "for now or later," then check everything out together from a new cart widget (`DashboardCart`) on `/portal`'s dashboard — shown only once the cart actually has something in it. Checkout went through two rounds: first shipped **Razorpay-only** (2026-11-16, committed `78374a5`), then the **same day, a follow-up round, generalized it to all three providers** — PayPal and Paystack can now check out an ordinary cart too (any mix of non-promo courses, each priced at its own real rate converted into that provider's currency), via the exact same bundle-order machinery the first round built, generalized further: `PromoCodesService.priceCheckout()` → **`priceCart()`**, which returns a *per-course* breakdown (`{courseId, amountCents, eligible}[]`) instead of assuming every course in the request gets the same price — this is what lets a cart mix an ordinary course with one of the MBA promo's 3 eligible courses in a single checkout: the eligible course(s) price at the code's rate, everything else prices at its own real rate, and `promoCodeId` (and therefore the redemption-cap counter) is only ever set when at least one line was actually eligible — a code typed in that matches nothing in the cart never "applies." `priceCart()` now takes an explicit `currency` param (previously hardcoded to `'INR'`) so a PayPal/Paystack cart's Order rows get stamped with the right currency, not INR by mistake. The **MBA promo-code discount itself stays Razorpay/INR-only by firm product decision** — `PaymentsService.createPendingBundleOrder()` now takes `provider`/`currency` params (defaulting to Razorpay/INR for backward compatibility) and throws `BadRequestException` outright if a promo code is combined with any other provider, so this is enforced server-side, not just hidden in the UI. `PaymentMethodPicker.tsx` (previously single-course-only) now accepts `courseSlugs`/`promoCode`/`razorpayOnly` too, so the same four-card UI (PayPal/Card/Razorpay/Paystack) is shared by both `CourseDetailPage` and `DashboardCart` — when a promo code is actively discounting something, `razorpayOnly` hides every card but Razorpay with an explanatory note, since only Razorpay can honor the discount. New `PayPal`/`Paystack` bundle routes (`orders/bundle`, `orders/bundle/:id/capture|verify`) mirror Razorpay's exactly, including the webhook fan-out generalization (one `providerRef` can now back 1-N `Order` rows for all three providers, not just Razorpay). The dashboard widget's "**Redeem coupon**" button (the project owner's exact requested wording, not "Apply") visibly highlights eligible rows (`is-coupon-eligible`, a brass border/badge) and shows a notice naming how many cart items aren't covered when some aren't. `markOrderPaid` now also does a harmless `cartItem.deleteMany` after enrolling — a paid course drops out of the cart automatically, whether or not the purchase actually originated from the cart (the MBA page's own direct flow doesn't use the cart at all, so this is a no-op there). `GET/POST /me/cart`, `DELETE /me/cart/:courseId`, all `@UseGuards(JwtGuard)`. Two bugs found via live testing and fixed the same day as the first round (`5a7293d`): `DashboardCart`'s `useScrollReveal` ran too late (it mounted after `DashboardPage`'s one-time reveal scan already fired, so the section had real content but never got observed/painted — fixed by having `DashboardCart` call its own `useScrollReveal([cart.status])`), and "Add to cart" was showing for any signed-in account, not just learners (fixed with `isLearner` checks client-side in `CoursesPage`/`CourseDetailPage`, and server-side via `@Roles('learner')` on `CartController`). A persistent cart icon (`apps/web/src/components/layout/HeaderCart.tsx`) was added to the public header, mobile menu, and portal topbar the same day (`5f5190f`), gated the same `isLearner` way via a new boolean on `useAccountMenu.ts`. Quill (`quill-general-facts.data.ts`) got two new canned replies for MBA/cart questions (`13d56be`) — Quill's actual course list/detail answers already read live from `CoursesService`, nothing hardcoded there needed updating. **Verification performed on both rounds**: `tsc --noEmit` + `eslint` clean in all three workspaces; full API Jest suite green (69→598 tests across the two rounds, including new PayPal/Paystack bundle controller cases); both production builds succeed. **Not yet done**: no live purchase of any kind (single-course or cart, any of the 3 providers, with or without the MBA coupon) has actually been run against the live account this entire session — see §11 for commit/push/CI status as of whichever round is most recent. |
 | **Affiliate seriousness screening + deferred credentials + Brevo lead sync** (new, 2026-10-28) | 🟡 build/test-verified, not live-verified | `apps/api/prisma/schema.prisma` (`Affiliate.socialLinks`, migration `20261028000000_affiliate_social_links`), `packages/shared/src/affiliate.ts` (`AffiliateSocialLink`/`AffiliateSocialPlatform`), `apps/api/src/modules/affiliates/{affiliates.service.ts,dto/social-link.dto.ts}`, `apps/api/src/modules/admin/admin-affiliates.service.ts`, `apps/api/src/common/{youtube,brevo}/*-client.service.ts`, `apps/web/src/pages/AffiliatePage.tsx`, `apps/web/src/pages/admin/AdminAffiliatesPage.tsx` | Built from a project-owner-approved plan (reasoning turn → plan-mode → build, same session). The public application form now collects up to 5 social platform/URL/follower-count entries (`Affiliate.socialLinks`, a JSON array — additive, the old single `handle` field is untouched). A new `YoutubeClientService` best-effort verifies the real subscriber count server-side, fire-and-forget, for YouTube links only — confirmed during planning that Instagram/TikTok/X/LinkedIn have no free, no-OAuth public lookup (paid tiers, app-review gates, or ToS-violating scraping only), so every other platform stays self-reported with `fetchStatus: 'unsupported'`; the admin drawer (`AdminAffiliatesPage.tsx`) now shows reported-vs-verified counts per link so a human still makes the call, not an automated gate. **Registration flow changed**: `AffiliatesService.applyNew()` no longer emails login credentials at submission — only an acknowledgment email. Real credentials (a freshly-generated password, via `SupabaseAdminService.setPassword()`, the same method staff password resets already use — the original temp password is never persisted, by design) only go out from `AdminAffiliatesService.notifyApplicant()` when an admin sets status to `approved`. `createManually()`'s existing immediate-credentials behavior is preserved for its default `'approved'` case, but withholds credentials the same way if an admin explicitly sets a non-terminal status there. New `BrevoClientService` (thin REST client, same house style as Paystack/GitHub) pushes a privacy-minimal lead record (name/email/social links/reported follower counts/country/types — explicitly never phone/motivation/signature/payout data) to Brevo on every application (`apply()`/`applyNew()`), no status-based segmentation (explicitly decided against a "come back" nurture distinction). New env vars: `BREVO_API_KEY`, `BREVO_AFFILIATE_LIST_ID`, `YOUTUBE_API_KEY` (all optional, fail-soft/no-op when unset — nothing else is affected). **Deliberately not built this round** (separable phase, flagged in the plan as sequence-after): a newsletter-sending feature on Brevo — confirmed during planning that no campaign/broadcast code exists anywhere in this codebase today, `NewsletterService` is capture-only. **Verification performed**: `tsc --noEmit` + `eslint` clean in all three workspaces (api/web/shared); full API Jest suite green (66 suites/540 tests, including two new client specs with mocked `fetch` and updated/new affiliate-flow assertions); both production builds succeed. **Not yet done**: nothing committed/pushed (not asked to); no live submission test (no real `BREVO_API_KEY`/`YOUTUBE_API_KEY` in this session); the project owner still needs to create the Brevo list + API key, a Google Cloud YouTube Data API v3 key, and set all three env vars on Render before any of this does anything beyond no-op gracefully. |
 | **Auth** (email/password, magic link, Google/Microsoft OAuth, TOTP 2FA) | 🟡 | `apps/api/src/modules/auth/`, `apps/web/src/pages/auth/` | JWT verified against Supabase JWKS (`JwtGuard`); app role always read from `profiles`, never trusted from the JWT claim. Apple sign-in **not built** (needs paid Apple Developer account, $99/yr — explicitly deprioritized by the project owner, not worth it for now). Staff onboarding: new instructor/admin accounts and password resets email the temporary credentials (`AdminUsersService.sendCredentialsEmail`); `StaffChangePasswordPage` force-signs-out and redirects to `/staff/login` after a password change. **Microsoft (`azure` provider id) and Facebook OAuth added this round** alongside the existing Google button — both are free to set up (unlike Apple); Facebook is coded but **hidden from the UI** pending Meta App Review (see the Auth routing note in §4). The `/login` page's post-sign-in logic (`LoginPage.tsx`'s `enterPortal()`) now rejects an affiliate account with a link to the new `/affiliate/login` page — see §15 for why this flipped twice in one round (route-to-portal, then back to turn-away, as `/affiliate/login` went from nonexistent → existing). Google's OAuth consent screen still shows the raw Supabase project domain (`oyngcwhziidaehpuisoi.supabase.co`) rather than `aiit.network` — fixable only via Supabase's paid Custom Domains add-on or Google app-verification, both outside this codebase; explained to the project owner, not actioned. |
 | **Catalogue / course discovery** | 🟡 | `apps/api/src/modules/courses/` | Location-based currency pricing. Curriculum tables (`CourseModule`/`Lesson`/`LessonResource`) exist in schema and are soft-deletable, but **seeded empty, not wired to any learner UI** — the real learner experience is live-class + assignments + quizzes, not a self-paced lesson browser. |
@@ -757,22 +757,63 @@ round's commits.
 
 ## 11. Current development position
 
-**Last completed objective (2026-11-16, most recent):** built the general
-course cart + mixed coupon-eligibility checkout described in §5's new top row
-(`EnterPlanMode`/`AskUserQuestion`/`ExitPlanMode` → build, same pattern as
-every round this session). The real core of the work was generalizing
-`PromoCodesService.priceCheckout()` into `priceCart()` so a single checkout
-can price some courses at a promo code's rate and others at their own real
-rate in one Razorpay payment — everything else (the `CartItem` schema/
+**Last completed objective (2026-11-16, most recent — follow-up round, same
+day as the cart round below):** generalized cart checkout to PayPal and
+Paystack, described in §5's updated top row (`EnterPlanMode`/`ExitPlanMode` →
+build). The core of the work: `PaymentsService.createPendingBundleOrder()`
+gained `provider`/`currency` params (still defaulting to Razorpay/INR) and now
+throws `BadRequestException` outright if a promo code is combined with any
+non-Razorpay provider — the MBA discount stays Razorpay/INR-only, enforced
+server-side, not just hidden in the UI. `PromoCodesService.priceCart()` had a
+latent bug fixed in the same pass: it hardcoded `currency: 'INR'` on its
+return value regardless of what currency was actually being converted to —
+harmless while only Razorpay ever called it, but would have silently stamped
+`'INR'` onto PayPal/Paystack `Order` rows that were actually priced in
+USD/NGN. Fixed by having callers pass `currency` explicitly. New
+`orders/bundle` routes on `PayPalCheckoutController`/`PaystackCheckoutController`
+mirror `RazorpayCheckoutController`'s exactly (capture/verify the provider's
+own total *once*, then fan out `markOrderPaid` across every `Order` row in the
+group); both providers' webhook controllers got the same `findAllByProviderRef`
+fan-out generalization Razorpay's webhook already had. On the frontend,
+`PaymentMethodPicker` (previously `CourseDetailPage`-only, single `courseSlug`)
+now also accepts `courseSlugs`/`promoCode`/`razorpayOnly`, and `DashboardCart`
+was simplified to just render it instead of its own bespoke Razorpay-only
+"Checkout" button — one picker, shared by both pages. `tsc`/`eslint` clean
+across all three workspaces, full API Jest suite green (69 suites/598 tests —
+the 2 extra suites' worth of new cases are the PayPal/Paystack bundle-route
+tests; the 1 pre-existing failure seen on one full-suite run,
+`affiliate-agreement-pdf.service.spec.ts`, is a slow/flaky timeout unrelated
+to this work — passed clean in isolation, 3/3, ~106s), both production builds
+succeed. **Not live-tested**: no real purchase of any kind, any provider, has
+been run against the live account this entire session. Whoever picks this up
+next should do that first — a plain multi-course cart via PayPal and via
+Paystack, then a cart with an actively-redeeming MBA coupon to confirm
+PayPal/Paystack correctly disappear (replaced by the Razorpay-only note).
+**Known, deliberately out-of-scope gap**: `DashboardCart`'s cart-row prices
+and running total are still always shown in INR (via `/payment-promos/preview`,
+still INR-only) even though PayPal/Paystack now actually charge in USD/NGN —
+not misleading in a way that causes a wrong charge (each provider's own
+checkout button/popup shows its own real amount before charging), just a
+display-currency mismatch worth revisiting if it ever causes confusion.
+
+---
+
+**Last completed objective (2026-11-16, prior round, same day):** built the
+general course cart + mixed coupon-eligibility checkout described in §5's
+updated top row (`EnterPlanMode`/`AskUserQuestion`/`ExitPlanMode` → build,
+same pattern as every round this session). The real core of the work was
+generalizing `PromoCodesService.priceCheckout()` into `priceCart()` so a
+single checkout can price some courses at a promo code's rate and others at
+their own real rate in one payment — everything else (the `CartItem` schema/
 migration, the `cart` module, the dashboard widget, the catalogue/detail-page
 toggle) builds on that. `tsc`/`eslint` clean across all three workspaces, full
 API Jest suite green (69 suites/582 tests), both production builds succeed.
-**Not committed or pushed this round** (not asked to) — working tree has the
-changes, uncommitted. **Not live-tested**: no real Razorpay purchase of any
-kind (single-course, MBA-coupon, or a mixed cart) has actually been run
-against the live account this entire session. PayPal/Paystack cart checkout
-was explicitly deferred (owner's call, see §5) — cart checkout is
-Razorpay-only for now.
+**Committed and pushed this round** (`78374a5`, `CI`+`Deploy` confirmed
+green), followed by two live-testing bug fixes (`5a7293d`), a Quill update
+(`13d56be`), and a persistent header/topbar cart icon (`5f5190f`) — all four
+commits green, all described in §5's row and §15. PayPal/Paystack cart
+checkout was deferred at the time (owner's call) — see the round above this
+one, which built it the same day.
 
 ---
 
@@ -951,13 +992,17 @@ here because it's dated 2026-09-12 and unverified against the current codebase �
 not "no outstanding work."
 
 **P1 — confirmed gaps, no workaround needed, real product features missing**
-- **Course cart round (2026-11-16) not yet live.** Working tree has the full
-  feature (§5's new top row) but nothing is committed/pushed. Before this is
-  real: commit + push + watch `CI`/`Deploy` go green (one new migration), then
-  have the project owner add a couple of courses to a real cart (including at
-  least one MBA-promo-eligible course alongside an ordinary one) and run one
-  real mixed checkout against the live Razorpay account. PayPal/Paystack cart
-  checkout remains explicitly out of scope, not forgotten.
+- **Course cart, all 3 providers (2026-11-16) — live status depends on whether
+  the PayPal/Paystack follow-up round got committed/pushed this session (see
+  §11/§15 for which commits actually landed).** Either way, nothing live has
+  actually been purchased through any of this yet. Before it's real: have the
+  project owner add a couple of courses to a real cart (including at least one
+  MBA-promo-eligible course alongside an ordinary one) and run (a) one real
+  mixed checkout against the live Razorpay account with the coupon applied,
+  (b) one plain multi-course checkout via PayPal, and (c) one via Paystack —
+  confirming PayPal/Paystack correctly disappear from the picker (replaced by
+  the Razorpay-only note) the moment a coupon is actually discounting
+  something.
 - **MBA promo-code round (2026-11-15) — live, one real gap left.** Code,
   migrations, and the real cover images are all committed/pushed/deployed (§5,
   §11, §15). The one remaining thing before handing a code out to real students:
@@ -1226,16 +1271,77 @@ workspaces; full API Jest suite green (69 suites/582 tests, including new
 `cart.service.spec.ts` and the generalized `priceCart`/`createPendingBundleOrder`
 cases); both production builds succeed.
 
-**Not done this round:** nothing committed or pushed (ran out of session time
-immediately after finishing the memory.md update — see the next session's
-entry, if any, for whether this landed); no live Razorpay purchase of any kind
-run against the live account; PayPal/Paystack cart checkout deliberately
-deferred (see §5/§12).
+**Committed and pushed this round — `78374a5`, `CI`+`Deploy` confirmed green.**
+Followed, same day/same session, by three more commits: two live-testing bug
+fixes (`5a7293d` — the cart widget's scroll-reveal timing, and "Add to cart"
+showing for non-learner accounts), a Quill update (`13d56be`), and a
+persistent header/topbar cart icon (`5f5190f`) — all green. See the next entry
+below for the same-day PayPal/Paystack follow-up round.
 
-**Next step for whoever picks this up:** review the diff, commit if it looks
-right, push, watch `CI`/`Deploy` go green, then have the project owner run one
-real mixed-cart checkout (an MBA-eligible course plus an ordinary one) against
-the live Razorpay account before considering this done.
+**Not done this round:** no live Razorpay purchase of any kind run against the
+live account; PayPal/Paystack cart checkout deliberately deferred at the time
+(see the follow-up round below, which built it the same day).
+
+---
+
+### 2026-11-16 — Cart checkout generalized to PayPal and Paystack
+
+Same-day follow-up to the round above, from the project owner asking whether
+cart checkout could work on "all other gateways," not just Razorpay. Confirmed
+via `AskUserQuestion`: the MBA promo-code discount stays Razorpay/INR-only (a
+standing decision, re-confirmed here), but an ordinary cart (no discount, or
+one that doesn't end up discounting anything) should check out through PayPal/
+Paystack too, each at its own real per-course rate converted into that
+provider's currency.
+
+**What changed:** `PaymentsService.createPendingBundleOrder()` gained
+`provider`/`currency` params (default Razorpay/INR, so the one existing call
+site needed no changes) and now throws `BadRequestException` if a promo code
+is combined with any non-Razorpay provider — real server-side enforcement, not
+just a UI affordance. Found and fixed a latent bug in the same pass:
+`PromoCodesService.priceCart()` hardcoded `currency: 'INR'` on its return
+value no matter what currency it was actually asked to convert into —
+harmless while only Razorpay ever called it, but would have silently
+mislabeled PayPal/Paystack `Order` rows as INR when they're actually USD/NGN;
+fixed by having `priceCart()` take an explicit `currency` param instead.
+`PayPalCheckoutController`/`PaystackCheckoutController` each gained
+`orders/bundle` + `orders/bundle/:id/{capture,verify}` routes, built directly
+off `RazorpayCheckoutController`'s existing bundle routes as the template
+(capture/verify the provider's one combined total exactly once, then fan
+`markOrderPaid` out across every `Order` row sharing that `providerRef`); both
+providers' webhook controllers got the same `findAllByProviderRef` fan-out
+generalization Razorpay's webhook already had from the prior round. On the
+frontend, `PaymentMethodPicker.tsx` (until now `CourseDetailPage`-only, a
+single `courseSlug`) gained `courseSlugs`/`promoCode`/`razorpayOnly` props —
+`DashboardCart.tsx` now just renders it instead of owning its own bespoke
+Razorpay-only "Checkout" button, so `CourseDetailPage` and `DashboardCart`
+share one four-card picker instead of two separate checkout UIs.
+`PayPalCheckoutButton.tsx` and `apps/web/src/lib/paystackCheckout.ts`
+(`openPaystackBundleCheckout`, new) both gained the same single/bundle
+branching `openRazorpayCheckout`/`openRazorpayBundleCheckout` already had.
+
+**Verification performed:** `tsc --noEmit` + `eslint` clean in all three
+workspaces; full API Jest suite green (69 suites/598 tests — new bundle-route
+cases added to both `paypal-checkout.controller.spec.ts` and
+`paystack-checkout.controller.spec.ts`, plus new `payments.service.spec.ts`
+cases for the provider/currency defaults and the promo-code rejection; one
+flaky/slow pre-existing failure, `affiliate-agreement-pdf.service.spec.ts`,
+confirmed unrelated — passed 3/3 in isolation); both production builds
+succeed.
+
+**Not done this round:** no live purchase of any kind, any provider, run
+against the live account. `DashboardCart`'s displayed prices/running total are
+still always in INR (the `/payment-promos/preview` endpoint stayed INR-only,
+deliberately out of scope for this round) even though PayPal/Paystack now
+actually charge in USD/NGN — not a wrong-charge risk (each provider's own
+checkout UI shows its own real amount before charging), just a display-
+currency mismatch worth a dedicated pass if it ever causes real confusion.
+
+**Next step for whoever picks this up:** confirm this round's commit landed
+and `CI`/`Deploy` are green (check `git log`/`gh run list` against this entry
+rather than trusting it blindly — see CLAUDE.md's own instruction to verify
+against source when precision matters), then have the project owner run the
+three real-purchase checks described in §12's P1 item for this feature.
 
 ---
 

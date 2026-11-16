@@ -1,7 +1,7 @@
 import { useEffect, useRef } from 'react';
 import { apiFetch, ApiError } from '@/lib/api';
 import { captureException } from '@/lib/sentry';
-import type { CreatePayPalOrderRequest, CreatePayPalOrderResponse } from '@aiit/shared';
+import type { CreateCartBundleOrderRequest, CreatePayPalOrderRequest, CreatePayPalOrderResponse } from '@aiit/shared';
 
 interface PayPalButtonsActions {
   isEligible: () => boolean;
@@ -49,7 +49,9 @@ function loadPayPalSdk(clientId: string): Promise<void> {
 }
 
 interface PayPalCheckoutButtonProps {
-  courseSlug: string;
+  /** Exactly one of courseSlug/courseSlugs is given -- courseSlugs switches this into cart/bundle mode (any 1-N courses in one PayPal order), pointed at the `orders/bundle` endpoints instead of the single-course ones. */
+  courseSlug?: string;
+  courseSlugs?: string[];
   /** Which of PayPal's own funding sources this instance renders -- 'paypal' for the PayPal-balance/login button, 'card' for PayPal's own card-only button. Each needs its own container, isolated via the SDK's `fundingSource` option, so the two can live in two separate cards instead of PayPal's default single auto-split button. */
   fundingSource: PayPalFundingSource;
   /** Called once a payment is captured and the learner is enrolled -- the caller owns navigation/cache invalidation, same as the free-enroll path. */
@@ -64,13 +66,17 @@ interface PayPalCheckoutButtonProps {
  * Renders exactly one of PayPal's own Smart Buttons (isolated to a single
  * funding source) once the SDK has loaded. The order itself is created and
  * captured server-side (PaymentsService) -- this component never computes
- * or sends an amount, it only relays the course slug and the PayPal order
- * id the backend hands back. No card chrome here (label/badge/footer) --
- * the caller (PaymentMethodPicker) owns the surrounding card.
+ * or sends an amount, it only relays the course slug(s) and the PayPal
+ * order id the backend hands back. `courseSlugs` switches it into cart/
+ * bundle mode, hitting the `orders/bundle` endpoints instead -- same
+ * single-PayPal-order mechanics either way. No card chrome here (label/
+ * badge/footer) -- the caller (PaymentMethodPicker) owns the surrounding
+ * card.
  */
-export function PayPalCheckoutButton({ courseSlug, fundingSource, onSuccess, onError, onEligibility }: PayPalCheckoutButtonProps) {
+export function PayPalCheckoutButton({ courseSlug, courseSlugs, fundingSource, onSuccess, onError, onEligibility }: PayPalCheckoutButtonProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const clientId = import.meta.env.VITE_PAYPAL_CLIENT_ID as string | undefined;
+  const bundle = Boolean(courseSlugs);
 
   // Read via refs inside the effect below, not as dependencies -- these are
   // fresh inline functions on every render of the course page, and
@@ -99,15 +105,15 @@ export function PayPalCheckoutButton({ courseSlug, fundingSource, onSuccess, onE
           fundingSource,
           style: { layout: 'vertical', color: fundingSource === 'card' ? 'black' : 'gold', shape: 'pill', label: fundingSource === 'card' ? 'pay' : 'paypal', height: 40 },
           createOrder: async () => {
-            const body: CreatePayPalOrderRequest = { courseSlug };
-            const res = await apiFetch<CreatePayPalOrderResponse>('/payments/paypal/orders', {
+            const body: CreatePayPalOrderRequest | CreateCartBundleOrderRequest = bundle ? { courseSlugs: courseSlugs! } : { courseSlug: courseSlug! };
+            const res = await apiFetch<CreatePayPalOrderResponse>(`/payments/paypal/orders${bundle ? '/bundle' : ''}`, {
               method: 'POST',
               body: JSON.stringify(body),
             });
             return res.paypalOrderId;
           },
           onApprove: async (data) => {
-            await apiFetch(`/payments/paypal/orders/${encodeURIComponent(data.orderID)}/capture`, { method: 'POST' });
+            await apiFetch(`/payments/paypal/orders${bundle ? '/bundle' : ''}/${encodeURIComponent(data.orderID)}/capture`, { method: 'POST' });
             onSuccessRef.current();
           },
           onError: (err) => {
@@ -131,7 +137,13 @@ export function PayPalCheckoutButton({ courseSlug, fundingSource, onSuccess, onE
     return () => {
       cancelled = true;
     };
-  }, [clientId, courseSlug, fundingSource]);
+    // courseSlugs is keyed on its joined contents, not its array identity --
+    // a cart page recomputes that array on every render, and a fresh
+    // reference here would re-run this effect (and re-render PayPal's
+    // Buttons into the same container) on every unrelated re-render, same
+    // failure mode the onSuccess/onError refs above exist to avoid.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [clientId, courseSlug, courseSlugs?.join(','), fundingSource]);
 
   if (!clientId) return null;
 

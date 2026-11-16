@@ -51,22 +51,27 @@ export class PaystackWebhookController {
     const reference = event.data?.reference;
     if (!reference) return { ok: true };
 
-    const order = await this.payments.findByProviderRef('paystack', reference);
-    // Missing, or already resolved by the synchronous /verify path -- a
-    // harmless race is possible here, but markOrderPaid()'s own conditional
-    // update is the actual correctness guarantee, not this check.
-    if (!order || order.status !== 'pending') return { ok: true };
+    // One providerRef can back 1 (single-course) or several (cart/bundle)
+    // Order rows -- findAllByProviderRef returns whichever applies.
+    const orders = await this.payments.findAllByProviderRef('paystack', reference);
+    const pending = orders.filter((o) => o.status === 'pending');
+    // Nothing pending: either an unknown order, or already resolved by the
+    // synchronous /verify path -- a harmless race is possible here, but
+    // markOrderPaid()'s own conditional update is the actual correctness
+    // guarantee, not this check.
+    if (pending.length === 0) return { ok: true };
 
     const transaction = await this.paystack.verifyTransaction(reference);
+    const totalAmountCents = orders.reduce((sum, o) => sum + o.amountCents, 0);
     // See the matching comment in PaystackCheckoutController.verify() --
     // "pass transaction fees to customers" legitimately inflates the
-    // charged amount above order.amountCents, so only reject if it's less.
-    if (transaction.status !== 'success' || transaction.amountCents < order.amountCents || transaction.currency !== order.currency) {
-      this.logger.error(`Paystack webhook payment mismatch for order ${order.id}.`);
+    // charged amount above the order total, so only reject if it's less.
+    if (transaction.status !== 'success' || transaction.amountCents < totalAmountCents || transaction.currency !== orders[0].currency) {
+      this.logger.error(`Paystack webhook payment mismatch for providerRef ${reference}.`);
       return { ok: true };
     }
 
-    await this.payments.markOrderPaid(order.id, transaction);
+    await Promise.all(pending.map((o) => this.payments.markOrderPaid(o.id, transaction)));
     return { ok: true };
   }
 }

@@ -79,18 +79,24 @@ export class PromoCodesService {
    *
    * `promoCode` is optional -- a cart can check out with no code at all,
    * in which case every line is priced via `convert` (the caller's own
-   * USD-cents -> INR-cents conversion, so this service stays currency-
-   * agnostic). When a code is given, only the courses inside its own
-   * `courseIds` scope are "eligible" and get the code's price; everything
-   * else in the cart still prices via `convert`, same as the no-code case
-   * -- a cart is allowed to mix coupon-eligible and ordinary courses in
-   * one checkout. `promoCodeId` on the result (and thus the redemption
-   * counter) is only ever non-null when at least one line was actually
-   * eligible -- a code that matches nothing in the cart never "applies."
+   * USD-cents -> `currency`-cents conversion, so this service stays
+   * currency-agnostic -- `currency` itself is just echoed back on the
+   * result, it never changes what `convert` actually does). When a code is
+   * given, only the courses inside its own `courseIds` scope are
+   * "eligible" and get the code's fixed-INR price; everything else in the
+   * cart still prices via `convert`, same as the no-code case -- a cart is
+   * allowed to mix coupon-eligible and ordinary courses in one checkout.
+   * (The caller -- PaymentsService.createPendingBundleOrder -- is what
+   * actually refuses a promo code together with any `currency` other than
+   * INR; this method doesn't re-check that.) `promoCodeId` on the result
+   * (and thus the redemption counter) is only ever non-null when at least
+   * one line was actually eligible -- a code that matches nothing in the
+   * cart never "applies."
    */
   async priceCart(
     courseIds: string[],
     promoCode: string | undefined,
+    currency: string,
     convert: (usdCents: number) => Promise<number>,
     tx: PrismaOrTx = this.prisma,
   ): Promise<CartPriceResult> {
@@ -143,7 +149,7 @@ export class PromoCodesService {
       promoCodeId: eligibleIds.size > 0 ? (promoCodeRow?.id ?? null) : null,
       lines,
       totalAmountCents: lines.reduce((sum, l) => sum + l.amountCents, 0),
-      currency: 'INR',
+      currency,
     };
   }
 

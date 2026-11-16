@@ -6,6 +6,7 @@ import { CurrentUser } from '../../../common/decorators/current-user.decorator';
 import { PaymentsService } from '../payments.service';
 import { PayPalClientService } from './paypal-client.service';
 import { CreateOrderDto } from '../dto/create-order.dto';
+import { PromoCourseSelectionDto } from '../dto/promo-preview.dto';
 
 @Controller('payments/paypal')
 @UseGuards(JwtGuard)
@@ -43,5 +44,37 @@ export class PayPalCheckoutController {
 
     const paid = await this.payments.markOrderPaid(order.id, capture);
     return { status: paid.status };
+  }
+
+  /**
+   * An ordinary multi-course cart checkout (never a promo code -- the MBA
+   * discount is Razorpay/INR-only; PaymentsService rejects one outright).
+   */
+  @Post('orders/bundle')
+  async createBundleOrder(@Body() dto: PromoCourseSelectionDto, @CurrentUser() user: AuthenticatedUser): Promise<CreatePayPalOrderResponse> {
+    const { orders, totalAmountCents, currency } = await this.payments.createPendingBundleOrder(user.userId, dto.courseSlugs, dto.promoCode, 'paypal');
+    const paypalOrderId = await this.paypal.createOrder(totalAmountCents, currency);
+    await this.payments.attachProviderRefMany(orders.map((o) => o.id), paypalOrderId);
+    return { paypalOrderId };
+  }
+
+  @Post('orders/bundle/:paypalOrderId/capture')
+  async captureBundle(
+    @Param('paypalOrderId') paypalOrderId: string,
+    @CurrentUser() user: AuthenticatedUser,
+  ): Promise<{ status: string }> {
+    const orders = await this.payments.findAllByProviderRef('paypal', paypalOrderId);
+    if (orders.length === 0) throw new NotFoundException('Order not found.');
+    if (orders.some((o) => o.userId !== user.userId)) throw new ForbiddenException();
+    if (orders.every((o) => o.status === 'paid')) return { status: 'paid' };
+
+    const capture = await this.paypal.captureOrder(paypalOrderId);
+    const totalAmountCents = orders.reduce((sum, o) => sum + o.amountCents, 0);
+    if (capture.status !== 'COMPLETED' || capture.amountCents !== totalAmountCents || capture.currency !== orders[0].currency) {
+      throw new ConflictException('This payment could not be verified.');
+    }
+
+    await Promise.all(orders.map((o) => this.payments.markOrderPaid(o.id, capture)));
+    return { status: 'paid' };
   }
 }

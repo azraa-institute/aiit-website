@@ -48,21 +48,26 @@ export class PayPalWebhookController {
     const paypalOrderId = resolveOrderId(body);
     if (!paypalOrderId) return { ok: true };
 
-    const order = await this.payments.findByProviderRef('paypal', paypalOrderId);
-    // Missing, or already resolved by the synchronous capture path -- a
-    // harmless race against onApprove()'s own call is possible here (both
-    // could pass this check before either writes), but markOrderPaid()'s
-    // own conditional update is the actual correctness guarantee, not this
-    // check -- it's just an optimization to skip a redundant PayPal call.
-    if (!order || order.status !== 'pending') return { ok: true };
+    // One providerRef can back 1 (single-course) or several (cart/bundle)
+    // Order rows -- findAllByProviderRef returns whichever applies.
+    const orders = await this.payments.findAllByProviderRef('paypal', paypalOrderId);
+    const pending = orders.filter((o) => o.status === 'pending');
+    // Nothing pending: either an unknown order, or already resolved by the
+    // synchronous capture path -- a harmless race against onApprove()'s own
+    // call is possible here (both could pass this check before either
+    // writes), but markOrderPaid()'s own conditional update is the actual
+    // correctness guarantee, not this check -- it's just an optimization to
+    // skip a redundant PayPal call.
+    if (pending.length === 0) return { ok: true };
 
     const capture = await this.paypal.captureOrder(paypalOrderId);
-    if (capture.status !== 'COMPLETED' || capture.amountCents !== order.amountCents || capture.currency !== order.currency) {
-      this.logger.error(`PayPal webhook capture mismatch for order ${order.id}.`);
+    const totalAmountCents = orders.reduce((sum, o) => sum + o.amountCents, 0);
+    if (capture.status !== 'COMPLETED' || capture.amountCents !== totalAmountCents || capture.currency !== orders[0].currency) {
+      this.logger.error(`PayPal webhook capture mismatch for providerRef ${paypalOrderId}.`);
       return { ok: true };
     }
 
-    await this.payments.markOrderPaid(order.id, capture);
+    await Promise.all(pending.map((o) => this.payments.markOrderPaid(o.id, capture)));
     return { ok: true };
   }
 }

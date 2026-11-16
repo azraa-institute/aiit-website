@@ -4,6 +4,11 @@
   gap: var(--space-5);
 }
 
+.pm-picker__note {
+  font-size: var(--fs-sm);
+  color: var(--fg-muted);
+}
+
 /* auto-fit rather than a fixed column count -- the number of cards is
    genuinely variable (1-4: either provider's env var can be unset, and
    PayPal's own Card funding can turn out ineligible for a given buyer), so

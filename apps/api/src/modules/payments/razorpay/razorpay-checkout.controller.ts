@@ -58,11 +58,13 @@ export class RazorpayCheckoutController {
   }
 
   /**
-   * Promo-code bundle checkout (MBA certification courses, see PromoCode
-   * in schema.prisma) -- the only route on this controller that can
-   * create more than one Order from a single request. PayPal/Paystack
-   * have no equivalent; this mechanism is INR/Razorpay-only by product
-   * decision.
+   * Cart/bundle checkout -- creates more than one Order from a single
+   * request. PayPal's and Paystack's own checkout controllers have the
+   * equivalent `orders/bundle` routes for an ordinary multi-course cart;
+   * only this one ever accepts a `promoCode`, since the MBA promo-code
+   * discount (see PromoCode in schema.prisma) is INR/Razorpay-only by
+   * product decision -- PaymentsService.createPendingBundleOrder rejects
+   * a promo code on any other provider outright.
    */
   @Post('orders/bundle')
   async createBundleOrder(@Body() dto: PromoCourseSelectionDto, @CurrentUser() user: AuthenticatedUser): Promise<CreateRazorpayOrderResponse> {

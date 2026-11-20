@@ -1,5 +1,8 @@
 import type { LiveEvent } from './types';
 
+/** Student WhatsApp group invite link, shown after webinar registration (WebinarThankYouPage). */
+export const WEBINAR_WHATSAPP_GROUP_URL = 'https://chat.whatsapp.com/If7f7fLp8CW8pS8zH0iXp1?s=cl&p=a&iam=2';
+
 /** "Why attend this free webinar" — verbatim bullets from aiit.network. Generic copy, not specific to any one webinar, so it stays static rather than living on the DB-driven Webinar entity (see apps/api's Webinar model / GET /webinars). */
 export const WEBINAR_WHY_ATTEND = [
   'An introduction to technology career pathways',

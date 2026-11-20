@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import type { FormEvent } from 'react';
+import { useNavigate } from 'react-router-dom';
 import type { PublicWebinar } from '@aiit/shared';
 import { Layout } from '@/components/layout/Layout';
 import { PageBanner } from '@/components/layout/PageBanner';
@@ -40,6 +41,7 @@ function MetaRow({ w }: { w: PublicWebinar }) {
 }
 
 export default function WebinarPage() {
+  const navigate = useNavigate();
   const state = useApiFetch<PublicWebinar[]>('/webinars');
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
@@ -49,7 +51,6 @@ export default function WebinarPage() {
   const [turnstileToken, setTurnstileToken] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string>();
-  const [done, setDone] = useState(false);
   useScrollReveal([state.status]);
 
   if (state.status === 'loading') {
@@ -91,7 +92,7 @@ export default function WebinarPage() {
           turnstileToken,
         }),
       });
-      setDone(true);
+      navigate('/webinar/thank-you');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Could not register you. Please try again.');
     } finally {
@@ -325,87 +326,74 @@ export default function WebinarPage() {
               </div>
             </div>
 
-            {done ? (
-              <div className="webinar-page__done">
-                <p className="heading">You&apos;re registered.</p>
-                <p>
-                  Look out for a confirmation, then the joining details closer to the date. In the
-                  meantime, explore the courses these topics lead into.
+            <form className="webinar-page__form" onSubmit={onSubmit}>
+              <p className="webinar-page__form-kicker">Register for the free webinar</p>
+              {w.seatsLimited && <p className="webinar-page__seats-note">Seats are limited.</p>}
+              {error ? (
+                <p className="auth__alert" role="alert">
+                  {error}
                 </p>
-                <Button as="link" to="/courses" variant="secondary">
-                  Browse courses
-                </Button>
-              </div>
-            ) : (
-              <form className="webinar-page__form" onSubmit={onSubmit}>
-                <p className="webinar-page__form-kicker">Register for the free webinar</p>
-                {w.seatsLimited && <p className="webinar-page__seats-note">Seats are limited.</p>}
-                {error ? (
-                  <p className="auth__alert" role="alert">
-                    {error}
-                  </p>
-                ) : null}
-                <TextField
-                  label="Full name"
-                  name="name"
-                  required
-                  autoComplete="name"
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                />
-                <TextField
-                  label="Email address"
-                  name="email"
-                  type="email"
-                  required
-                  autoComplete="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                />
-                <TextField
-                  label="WhatsApp number"
-                  name="whatsapp"
-                  hint="Optional, for the joining link"
-                  value={whatsapp}
-                  onChange={(e) => setWhatsapp(e.target.value)}
-                />
-                <SelectField
-                  label="Where are you joining from?"
-                  name="region"
-                  options={[
-                    { value: '', label: 'Select a region' },
-                    { value: 'west-africa', label: 'West Africa' },
-                    { value: 'east-africa', label: 'East Africa' },
-                    { value: 'southern-africa', label: 'Southern Africa' },
-                    { value: 'south-asia', label: 'South Asia' },
-                    { value: 'southeast-asia', label: 'Southeast Asia' },
-                    { value: 'other', label: 'Elsewhere' },
-                  ]}
-                  required
-                  value={region}
-                  onChange={(e) => setRegion(e.target.value)}
-                />
-                <SelectField
-                  label="What describes you best?"
-                  name="persona"
-                  options={[
-                    { value: '', label: 'Select one' },
-                    { value: 'student', label: 'Student or recent graduate' },
-                    { value: 'professional', label: 'Working professional' },
-                    { value: 'career-changer', label: 'Career-changer' },
-                    { value: 'enthusiast', label: 'Technology enthusiast' },
-                    { value: 'partner', label: 'Organisation or partner' },
-                  ]}
-                  required
-                  value={persona}
-                  onChange={(e) => setPersona(e.target.value)}
-                />
-                <Turnstile onVerify={setTurnstileToken} />
-                <Button as="button" type="submit" size="lg" fullWidth arrow loading={submitting} disabled={!canSubmit}>
-                  Register for the free webinar
-                </Button>
-              </form>
-            )}
+              ) : null}
+              <TextField
+                label="Full name"
+                name="name"
+                required
+                autoComplete="name"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+              />
+              <TextField
+                label="Email address"
+                name="email"
+                type="email"
+                required
+                autoComplete="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+              />
+              <TextField
+                label="WhatsApp number"
+                name="whatsapp"
+                hint="Optional, for the joining link"
+                value={whatsapp}
+                onChange={(e) => setWhatsapp(e.target.value)}
+              />
+              <SelectField
+                label="Where are you joining from?"
+                name="region"
+                options={[
+                  { value: '', label: 'Select a region' },
+                  { value: 'west-africa', label: 'West Africa' },
+                  { value: 'east-africa', label: 'East Africa' },
+                  { value: 'southern-africa', label: 'Southern Africa' },
+                  { value: 'south-asia', label: 'South Asia' },
+                  { value: 'southeast-asia', label: 'Southeast Asia' },
+                  { value: 'other', label: 'Elsewhere' },
+                ]}
+                required
+                value={region}
+                onChange={(e) => setRegion(e.target.value)}
+              />
+              <SelectField
+                label="What describes you best?"
+                name="persona"
+                options={[
+                  { value: '', label: 'Select one' },
+                  { value: 'student', label: 'Student or recent graduate' },
+                  { value: 'professional', label: 'Working professional' },
+                  { value: 'career-changer', label: 'Career-changer' },
+                  { value: 'enthusiast', label: 'Technology enthusiast' },
+                  { value: 'partner', label: 'Organisation or partner' },
+                ]}
+                required
+                value={persona}
+                onChange={(e) => setPersona(e.target.value)}
+              />
+              <Turnstile onVerify={setTurnstileToken} />
+              <Button as="button" type="submit" size="lg" fullWidth arrow loading={submitting} disabled={!canSubmit}>
+                Register for the free webinar
+              </Button>
+            </form>
           </div>
         </div>
       </Section>

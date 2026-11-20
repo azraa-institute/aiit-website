@@ -298,17 +298,6 @@
   color: var(--fg-muted);
   margin-top: calc(var(--space-2) * -1);
 }
-.webinar-page__done {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: var(--space-4);
-}
-.webinar-page__done p:not(.heading) {
-  color: var(--fg-soft);
-  max-width: 46ch;
-}
-
 /* More live at AIIT */
 .webinar-page__events-title {
   font-family: var(--font-display);

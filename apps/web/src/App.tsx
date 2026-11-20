@@ -55,6 +55,7 @@ const CourseDetailPage = lazy(() => import('@/pages/CourseDetailPage'));
 const ResourcesPage = lazy(() => import('@/pages/ResourcesPage'));
 const ResourceDetailPage = lazy(() => import('@/pages/ResourceDetailPage'));
 const WebinarPage = lazy(() => import('@/pages/WebinarPage'));
+const WebinarThankYouPage = lazy(() => import('@/pages/WebinarThankYouPage'));
 const MbaProgramPage = lazy(() => import('@/pages/MbaProgramPage'));
 const FaqsPage = lazy(() => import('@/pages/FaqsPage'));
 const ContactPage = lazy(() => import('@/pages/ContactPage'));
@@ -177,6 +178,7 @@ export function App() {
               <Route path="/resources" element={<ResourcesPage />} />
               <Route path="/resources/:slug" element={<ResourceDetailPage />} />
               <Route path="/webinar" element={<WebinarPage />} />
+              <Route path="/webinar/thank-you" element={<WebinarThankYouPage />} />
               <Route path="/mba-certification-program" element={<MbaProgramPage />} />
               <Route path="/faqs" element={<FaqsPage />} />
               <Route path="/contact" element={<ContactPage />} />

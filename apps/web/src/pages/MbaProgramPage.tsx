@@ -112,7 +112,7 @@ export default function MbaProgramPage() {
     <Layout>
       <Seo
         title="AIIT Bangalore MBA Certification Program"
-        description="Three modular, one-month, tool-based certification courses for first-year MBA students: Applied AI for Markets & Finance, Zoho CRM Professional Certification, and Strategic Lead Generation & Growth Marketing."
+        description="Three modular, one-month, tool-based certification courses for first-year MBA students: Applied AI for Markets & Finance, CRM Professional Certification, and Strategic Lead Generation & Growth Marketing."
         path="/mba-certification-program"
         jsonLd={organizationLd()}
       />

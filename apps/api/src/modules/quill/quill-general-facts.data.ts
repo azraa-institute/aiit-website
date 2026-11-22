@@ -44,7 +44,7 @@ export const QUILL_GENERAL_FACTS: QuillFact[] = [
   {
     pattern: /\b(mba|bangalore mba|first.year mba)\b/i,
     reply:
-      "Yes, AIIT runs a Bangalore MBA Certification Program: three 4-week, tool-based courses for first-year MBA students, each delivered live by AIIT instructors: Applied AI for Markets & Finance, Zoho CRM Professional Certification, and Strategic Lead Generation & Growth Marketing. Ask me about any of them by name, or find them in the course catalogue.",
+      "Yes, AIIT runs a Bangalore MBA Certification Program: three 4-week, tool-based courses for first-year MBA students, each delivered live by AIIT instructors: Applied AI for Markets & Finance, CRM Professional Certification, and Strategic Lead Generation & Growth Marketing. Ask me about any of them by name, or find them in the course catalogue.",
   },
   {
     pattern: /\b(cart|buy (multiple|several) courses|checkout together|pay for (several|multiple))\b/i,

@@ -54,9 +54,12 @@ const SOCIAL_PLATFORM_OPTIONS: { value: AffiliateSocialPlatform; label: string }
   { value: 'x', label: 'X (Twitter)' },
   { value: 'linkedin', label: 'LinkedIn' },
   { value: 'facebook', label: 'Facebook' },
+  { value: 'website', label: 'Website' },
   { value: 'other', label: 'Other' },
 ];
 const MAX_SOCIAL_LINKS = 5;
+/** Published eligibility bar -- see the social-profiles hint text and SocialLinkDto's matching server-side check. */
+const MIN_FOLLOWERS = 4000;
 
 const SOCIAL_PLATFORM_PLACEHOLDERS: Record<AffiliateSocialPlatform, string> = {
   instagram: 'instagram.com/yourhandle',
@@ -65,7 +68,8 @@ const SOCIAL_PLATFORM_PLACEHOLDERS: Record<AffiliateSocialPlatform, string> = {
   x: 'x.com/yourhandle',
   linkedin: 'linkedin.com/in/yourname',
   facebook: 'facebook.com/yourpage',
-  other: 'yourwebsite.com',
+  website: 'yourwebsite.com',
+  other: 'link to your profile or page',
 };
 
 function socialPlatformLabel(platform: AffiliateSocialPlatform): string {
@@ -400,7 +404,6 @@ export default function AffiliatePage() {
   const [email, setEmail] = useState('');
   const [phoneCountry, setPhoneCountry] = useState('');
   const [phoneNational, setPhoneNational] = useState('');
-  const [handle, setHandle] = useState('');
   const [socialLinks, setSocialLinks] = useState<SocialLinkRow[]>([emptySocialLinkRow()]);
   const [country, setCountry] = useState('');
   const [state, setState] = useState('');
@@ -540,7 +543,6 @@ export default function AffiliatePage() {
         signedName: signedName.trim(),
         agreedToTerms: agreed,
         phone: combinePhone(phoneCountry, phoneNational) || undefined,
-        handle: handle || undefined,
         socialLinks: socialLinksPayload.length > 0 ? socialLinksPayload : undefined,
         country: country || undefined,
         state: state || undefined,
@@ -593,7 +595,8 @@ export default function AffiliatePage() {
     country.length > 0 &&
     signedName.trim().length > 1 &&
     agreed &&
-    socialLinks.every((row) => !row.url.trim() || row.followers.trim().length > 0) &&
+    socialLinks.some((row) => row.url.trim().length > 0) &&
+    socialLinks.every((row) => !row.url.trim() || Number(row.followers.trim() || 0) >= MIN_FOLLOWERS) &&
     (isLoggedIn || (name.trim().length > 0 && email.trim().length > 0));
 
   return (
@@ -946,7 +949,7 @@ export default function AffiliatePage() {
               </div>
             ) : !(isLoggedIn && affiliateMe.status === 'loading') ? (
               <form className="affiliate__form" onSubmit={onSubmit}>
-                <Logo variant="dark" className="affiliate__form-logo" />
+                <Logo variant="light" className="affiliate__form-logo" />
                 {error ? (
                   <p className="auth__alert" role="alert">
                     {error}
@@ -1014,23 +1017,22 @@ export default function AffiliatePage() {
                     value={phoneNational}
                     onChange={(e) => setPhoneNational(e.target.value)}
                   />
-                  <TextField
-                    label="Platform or profile link (optional)"
-                    name="handle"
-                    className="field--wide"
-                    hint="Instagram, YouTube, TikTok, a website, wherever we can see your work."
-                    value={handle}
-                    onChange={(e) => setHandle(e.target.value)}
-                  />
                   <div className="affiliate__social-links field--wide">
                     <p className="field__hint affiliate__social-links-hint">
-                      Add your social profiles (optional), but once you add one, its follower count is required.
-                      Add up to {MAX_SOCIAL_LINKS}.
+                      Add at least one platform or website on which you have at least 4,000 followers or
+                      subscribers. You may add up to {MAX_SOCIAL_LINKS}.
                     </p>
                     {socialLinks.map((row, i) => (
                       <div className="affiliate__social-row" key={i}>
                         <SelectField
                           label="Platform"
+                          // Only the first row is ever truly mandatory -- the
+                          // "add another platform" rows are genuinely optional
+                          // (see canSubmit's `.some()` check), so marking every
+                          // row's URL as natively `required` would block
+                          // submission on a 2nd/3rd row the applicant added
+                          // then decided to leave blank instead of removing.
+                          required={i === 0}
                           className="affiliate__social-platform"
                           options={SOCIAL_PLATFORM_OPTIONS}
                           value={row.platform}
@@ -1039,6 +1041,7 @@ export default function AffiliatePage() {
                         <TextField
                           label="Profile URL"
                           type="url"
+                          required={i === 0}
                           className="affiliate__social-url"
                           placeholder={SOCIAL_PLATFORM_PLACEHOLDERS[row.platform]}
                           value={row.url}
@@ -1047,8 +1050,13 @@ export default function AffiliatePage() {
                         <TextField
                           label="Followers"
                           type="number"
-                          min={0}
+                          min={MIN_FOLLOWERS}
                           required={row.url.trim().length > 0}
+                          error={
+                            row.followers.trim() && Number(row.followers.trim()) < MIN_FOLLOWERS
+                              ? `Must be at least ${MIN_FOLLOWERS.toLocaleString()}.`
+                              : undefined
+                          }
                           className="affiliate__social-followers"
                           value={row.followers}
                           onChange={(e) => updateSocialLink(i, { followers: e.target.value })}

@@ -1052,29 +1052,16 @@
    account / About you / Sign the agreement) rather than one undifferentiated
    list of inputs, matching the "official paperwork" language the agreement
    reader and the signed PDF already use. */
+/* Deliberately no card chrome -- this form sits directly on the Apply
+   section's dark .on-ink background, same treatment as WebinarPage's
+   registration form (webinar-page.css's .webinar-page__form has no color
+   overrides of its own for exactly this reason: it just lets field.css/
+   button.css's existing .on-ink rules apply). An earlier version put this in
+   a cream paper card instead; this reads better against the page's dark
+   hero and matches the already-established webinar-form look. */
 .affiliate__form {
-  /* This card sits inside the section's .on-ink context, which remaps --fg/
-     --hairline/etc to their light-on-dark values for everything around it
-     -- reset back to the page's normal light-mode semantics here, or every
-     label and hint on this cream card would render near-invisible light
-     text on a light background. */
-  --bg: var(--paper);
-  --bg-alt: var(--ivory);
-  --fg: var(--ink);
-  --fg-soft: var(--ink-soft);
-  --fg-muted: var(--ink-muted);
-  --fg-faint: var(--ink-faint);
-  --hairline: var(--line);
-  --accent: var(--brass);
-  --accent-strong: var(--brass-deep);
-  --accent-fg: #ffffff;
-  color-scheme: light;
   display: grid;
   gap: clamp(1.75rem, 1.4rem + 1.5vw, 2.5rem);
-  padding: clamp(1.5rem, 1rem + 2vw, 2.5rem);
-  border-radius: var(--radius-md);
-  border: 1px solid var(--line);
-  background: var(--paper);
 }
 /* The card's own letterhead mark, centered at the top -- modestly sized, not
    a large banner (that was tried and reverted: it forced the whole section
@@ -1112,28 +1099,20 @@
   text-decoration: underline;
   text-underline-offset: 2px;
 }
-/* field.css's `.on-ink .field__control` dark-translucent override still
-   matches here (its ancestor .on-ink section is still there -- only the
-   custom-property values were reset above, not the class itself), so
-   field inputs/selects/PhoneCountrySelect's trigger (also a .field__control)
-   need their own explicit light-mode values, at higher specificity than
-   that two-class selector, to actually win the cascade. */
 /* Denser, more deliberate field sizing than the sitewide default (field.css's
    17px/0.85rem padding reads oversized once a form has this many fields on
    one page) -- 15px text and tighter padding land each control around
    40-42px tall, in line with standard form-field sizing, with a slightly
-   larger radius so boxes read as considered UI rather than browser default. */
+   larger radius so boxes read as considered UI rather than browser default.
+   Color/background is deliberately left alone here -- field.css's own
+   `.on-ink .field__control` rule (this form's ancestor section is tone="ink")
+   already supplies the right dark-translucent look, same as WebinarPage's
+   form. */
 .affiliate__form .field .field__control {
-  background: var(--surface);
-  border-color: var(--line-strong);
   padding: 0.6rem 0.85rem;
   font-family: 'Source Serif 4', var(--font-display);
   font-size: var(--fs-sm);
   border-radius: var(--radius-md);
-}
-.affiliate__form .field .field__control option {
-  background-color: var(--surface);
-  color: var(--fg);
 }
 .affiliate__form .field__select-wrap select.field__control {
   padding-right: 2.25rem;
@@ -1149,28 +1128,16 @@
 .affiliate__form .field__control--area {
   min-height: 140px;
 }
-.affiliate__form .field .field__control:-webkit-autofill,
-.affiliate__form .field .field__control:-webkit-autofill:hover,
-.affiliate__form .field .field__control:-webkit-autofill:focus {
-  -webkit-text-fill-color: var(--fg);
-  -webkit-box-shadow: 0 0 0 1000px var(--surface) inset;
-}
 /* Every button in this form (the ghost "Remove"/"Add another platform"
    controls as well as the primary submit) reads as part of the same signed
    document as the fields around it -- button.css's sitewide SHOUT-CASE
    interface-chrome treatment (and its default sans) is reset here, not just
-   on the submit button. */
+   on the submit button. The submit button's actual color is left to button.css's
+   `.on-ink .btn--primary` default, same reasoning as the fields above. */
 .affiliate__form .btn {
   font-family: 'Source Serif 4', var(--font-display);
   text-transform: none;
   letter-spacing: 0;
-}
-/* Same problem as the fields above: button.css's `.on-ink .btn--primary`
-   would otherwise paint the submit button ivory-on-ivory against this card. */
-.affiliate__form .btn.btn--primary {
-  --btn-bg: var(--ink);
-  --btn-fg: var(--paper);
-  --btn-border: var(--ink);
 }
 /* field.css's `.field__label` is uppercase site-wide by design (interface
    chrome), but this form reads as a signed document -- its labels (down to
@@ -1198,7 +1165,7 @@
 }
 .affiliate__form-section + .affiliate__form-section {
   padding-top: clamp(1.75rem, 1.4rem + 1.5vw, 2.5rem);
-  border-top: 1px solid var(--line);
+  border-top: 1px solid var(--hairline);
 }
 .affiliate__form-section > legend {
   grid-column: 1 / -1;
@@ -1207,7 +1174,12 @@
   font-size: 0.95rem;
   font-weight: 700;
   letter-spacing: 0.01em;
-  color: var(--brass-deep);
+  /* --brass-deep (tuned for the old cream card) measures ~3.3:1 against this
+     dark background -- under WCAG AA's 4.5:1 for normal text. --brass-tint
+     is the token this codebase already uses for brass accents specifically
+     on .on-ink sections (see tokens.css's .on-ink --accent) and clears AA
+     comfortably (~11.5:1 measured here). */
+  color: var(--brass-tint);
 }
 /* One repeatable social-profile entry (platform/url/followers/remove) --
    a tinted, bordered card so a row visually reads as one unit, the same way
@@ -1234,9 +1206,16 @@
     'url url'
     'followers followers';
   padding: var(--space-4);
-  border: 1px solid var(--line);
+  /* Extra room below the fields, reserved for the Followers field's
+     validation message -- see .affiliate__social-followers below for why
+     that message is taken out of flow (absolute) rather than just living
+     under the input normally. Without this reserved space, the floated
+     message would sit on top of "Add another platform" underneath this
+     row instead of the row visibly making room for it. */
+  padding-bottom: calc(var(--space-4) + 1.4rem);
+  border: 1px solid var(--line-invert);
   border-radius: var(--radius-md);
-  background: var(--ivory);
+  background: rgba(244, 239, 231, 0.06);
 }
 .affiliate__social-platform {
   grid-area: platform;
@@ -1244,8 +1223,28 @@
 .affiliate__social-url {
   grid-area: url;
 }
+/* The Followers field is the one field in this row that can show a
+   validation message ("Must be at least 4,000."). With the row's own
+   align-items: end (set below, >=560px, so Remove sits level with the input
+   boxes instead of up near the labels), that extra text adds height AFTER
+   the input -- which end-alignment reads as "make this whole column taller
+   at the bottom," so it pushes the label+input part UP out of line with
+   Platform/Profile URL instead (reported live: the Followers box visibly
+   floated above the other two). Taking the message out of flow (absolute,
+   anchored under the input, not contributing to this field's own box
+   height) keeps every input in the row level regardless of whether an
+   error is showing -- the row's own extra bottom padding above reserves
+   room for it instead. */
 .affiliate__social-followers {
   grid-area: followers;
+  position: relative;
+}
+.affiliate__social-followers .field__error {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  margin-top: var(--space-1);
+  white-space: nowrap;
 }
 .affiliate__social-remove {
   grid-area: remove;
@@ -1308,7 +1307,7 @@
   align-items: flex-start;
   gap: var(--space-2);
   padding: var(--space-3) var(--space-4);
-  border: 1px solid var(--line);
+  border: 1px solid var(--hairline);
   border-left: 3px solid var(--brass-tint);
   border-radius: var(--radius-sm);
   background: color-mix(in srgb, var(--brass-tint) 7%, transparent);
@@ -1380,11 +1379,15 @@
 }
 .affiliate__form .field__checkbox-group input[type='checkbox']:hover,
 .affiliate__form .affiliate__agree input[type='checkbox']:hover {
-  border-color: var(--brass-deep);
+  border-color: var(--brass-tint);
 }
+/* Focus-visible is the one indicator keyboard/low-vision users rely on to
+   find this control at all -- --brass-deep measured right at WCAG's 3:1
+   floor for non-text contrast against this dark background, too close for
+   comfort; --brass-tint clears it with real margin (~11.5:1). */
 .affiliate__form .field__checkbox-group input[type='checkbox']:focus-visible,
 .affiliate__form .affiliate__agree input[type='checkbox']:focus-visible {
-  outline: 2px solid var(--brass-deep);
+  outline: 2px solid var(--brass-tint);
   outline-offset: 2px;
 }
 /* field.css's .field__checkbox-option never set a font-family of its own

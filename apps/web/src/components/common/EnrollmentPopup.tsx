@@ -5,13 +5,10 @@ import './enrollment-popup.css';
 
 const SEEN_KEY = 'aiit.enroll.popup.seen';
 const DELAY_MS = 30_000;
-/** Routes where an enrolment promo would be redundant or intrusive.
- *  `/resources` is excluded so the promo never interrupts an article the
- *  reader has just started — the newsletter band at the end of each piece
- *  is the non-intrusive path there. `/verify` is excluded because its
- *  visitor is typically a third party (an employer or admissions office
- *  checking a credential), not a prospective student. */
-const SKIP_PREFIXES = ['/login', '/register', '/forgot-password', '/portal', '/resources', '/verify'];
+/** This promo is only relevant on the webinar landing page itself -- not
+ *  the post-registration thank-you page, which already has its own single
+ *  CTA (join the WhatsApp group) and shouldn't compete with this one. */
+const SHOW_PATH = '/webinar';
 /** Enrolment currently routes to the register page (no checkout yet). */
 const ENROLL_ROUTE = '/register';
 
@@ -22,7 +19,7 @@ export function EnrollmentPopup() {
   const cardRef = useRef<HTMLDivElement>(null);
   const closeRef = useRef<HTMLButtonElement>(null);
 
-  const skip = SKIP_PREFIXES.some((p) => location.pathname.startsWith(p));
+  const skip = location.pathname !== SHOW_PATH;
 
   useEffect(() => {
     if (skip) return;

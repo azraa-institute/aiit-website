@@ -72,10 +72,10 @@ export class ApplyAffiliateDto {
   @MaxLength(1000)
   motivation?: string;
 
-  @IsOptional()
   @IsArray()
+  @ArrayNotEmpty({ message: 'Add at least one platform or website.' })
   @ArrayMaxSize(5)
   @ValidateNested({ each: true })
   @Type(() => SocialLinkDto)
-  socialLinks?: SocialLinkDto[];
+  socialLinks!: SocialLinkDto[];
 }

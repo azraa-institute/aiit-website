@@ -175,6 +175,18 @@
   border-color: #971f19;
 }
 
+/* The light-mode error red above measures ~2:1 contrast against a dark
+   .on-ink background -- far under WCAG AA's 4.5:1 minimum for text, close
+   to unreadable for low-vision users. #ff8a80 (Material Design's dark-theme
+   error red) keeps the same "this is an error" red hue while clearing AA
+   comfortably (~8:1 measured against this site's --ink). */
+.on-ink .field__error {
+  color: #ff8a80;
+}
+.on-ink .field--error .field__control {
+  border-color: #ff8a80;
+}
+
 .field__checkbox-group {
   display: flex;
   flex-direction: column;

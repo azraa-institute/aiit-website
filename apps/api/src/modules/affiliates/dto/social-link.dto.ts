@@ -1,7 +1,7 @@
 import { IsIn, IsInt, IsOptional, IsUrl, Min, MaxLength } from 'class-validator';
 import type { AffiliateSocialPlatform } from '@aiit/shared';
 
-export const AFFILIATE_SOCIAL_PLATFORMS = ['instagram', 'tiktok', 'youtube', 'x', 'linkedin', 'facebook', 'other'] as const;
+export const AFFILIATE_SOCIAL_PLATFORMS = ['instagram', 'tiktok', 'youtube', 'x', 'linkedin', 'facebook', 'website', 'other'] as const;
 
 /**
  * One social profile given on the application -- see the
@@ -17,8 +17,9 @@ export class SocialLinkDto {
   @MaxLength(300)
   url!: string;
 
+  /** Published eligibility bar for the affiliate program -- see the apply form's matching hint text and client-side check. */
   @IsOptional()
   @IsInt()
-  @Min(0)
+  @Min(4000, { message: 'Follower count must be at least 4,000.' })
   followersReported?: number;
 }

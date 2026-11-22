@@ -40,6 +40,7 @@ const SOCIAL_PLATFORM_LABELS: Record<AffiliateSocialLink['platform'], string> = 
   x: 'X (Twitter)',
   linkedin: 'LinkedIn',
   facebook: 'Facebook',
+  website: 'Website',
   other: 'Other profile',
 };
 

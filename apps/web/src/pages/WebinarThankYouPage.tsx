@@ -22,11 +22,6 @@ export default function WebinarThankYouPage() {
             Join WhatsApp Group
           </Button>
         </div>
-        <div>
-          <Button as="link" to="/courses" variant="secondary">
-            Browse courses
-          </Button>
-        </div>
       </div>
     </Layout>
   );

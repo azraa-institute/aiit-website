@@ -31,6 +31,13 @@
   position: absolute;
 }
 
+/* Same reasoning as searchable-select.css's .ssel__panel: this popup is
+   always its own light surface regardless of the section it opens from, so
+   its text is hardcoded to the --ink family rather than the ambient --fg
+   tokens, which flip to pale on-ink values inside a dark tone="ink" section
+   (e.g. the affiliate apply form's "Country code" field) and would
+   otherwise render near-invisible pale text on this panel's white
+   background. */
 .pcs__panel {
   position: absolute;
   z-index: 20;
@@ -55,13 +62,16 @@
   padding: 0.7rem 0.9rem;
   font-family: var(--font-ui);
   font-size: var(--fs-sm);
-  color: var(--fg);
+  color: var(--ink);
   background: var(--surface);
   border: none;
   border-bottom: 1px solid var(--line-strong);
 }
 .pcs__search:focus {
   outline: none;
+}
+.pcs__search::placeholder {
+  color: var(--ink-faint);
 }
 
 .pcs__list {
@@ -79,7 +89,7 @@
   padding: 0.55rem 0.9rem;
   font-family: var(--font-ui);
   font-size: var(--fs-sm);
-  color: var(--fg);
+  color: var(--ink);
   background: none;
   border: none;
   text-align: left;
@@ -95,7 +105,7 @@
 }
 .pcs__option-dial {
   flex: none;
-  color: var(--fg-muted);
+  color: var(--ink-muted);
 }
 .pcs__option-name {
   overflow: hidden;
@@ -106,5 +116,5 @@
 .pcs__empty {
   padding: 0.7rem 0.9rem;
   font-size: var(--fs-sm);
-  color: var(--fg-muted);
+  color: var(--ink-muted);
 }

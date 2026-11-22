@@ -72,12 +72,12 @@ export class ApplyNewAffiliateDto {
   @MaxLength(1000)
   motivation?: string;
 
-  @IsOptional()
   @IsArray()
+  @ArrayNotEmpty({ message: 'Add at least one platform or website.' })
   @ArrayMaxSize(5)
   @ValidateNested({ each: true })
   @Type(() => SocialLinkDto)
-  socialLinks?: SocialLinkDto[];
+  socialLinks!: SocialLinkDto[];
 
   /** A pending /r/:slug click (getPendingReferralSlug()), if the applicant arrived via one -- see AffiliatesService.applyNew(). Attributes the new PROFILE (student-side), distinct from affiliateCouponCode below. */
   @IsOptional()

@@ -32,6 +32,13 @@
   position: absolute;
 }
 
+/* This panel is a floating popup, always on its own light surface regardless
+   of the page/section it opens from (same reasoning as a native <select>'s
+   own popup) -- so its own text is hardcoded to the --ink family rather than
+   the ambient --fg/--fg-muted/--fg-faint tokens, which flip to their pale
+   on-ink values inside a dark tone="ink" section (as this component now is,
+   on the affiliate apply form) and would otherwise render near-invisible
+   pale text on this panel's always-white background. */
 .ssel__panel {
   position: absolute;
   z-index: 20;
@@ -56,13 +63,16 @@
   padding: 0.7rem 0.9rem;
   font-family: var(--font-ui);
   font-size: var(--fs-sm);
-  color: var(--fg);
+  color: var(--ink);
   background: var(--surface);
   border: none;
   border-bottom: 1px solid var(--line-strong);
 }
 .ssel__search:focus {
   outline: none;
+}
+.ssel__search::placeholder {
+  color: var(--ink-faint);
 }
 
 .ssel__list {
@@ -81,7 +91,7 @@
   padding: 0.55rem 0.9rem;
   font-family: var(--font-ui);
   font-size: var(--fs-sm);
-  color: var(--fg);
+  color: var(--ink);
   background: none;
   border: none;
   text-align: left;
@@ -103,11 +113,11 @@
 .ssel__option-meta {
   flex: none;
   font-size: var(--fs-xs);
-  color: var(--fg-muted);
+  color: var(--ink-muted);
 }
 
 .ssel__empty {
   padding: 0.7rem 0.9rem;
   font-size: var(--fs-sm);
-  color: var(--fg-muted);
+  color: var(--ink-muted);
 }

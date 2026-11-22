@@ -417,6 +417,7 @@ describe('AffiliatesService', () => {
       types: ['creator'],
       signedName: 'Ada Lovelace',
       agreedToTerms: true,
+      socialLinks: [{ platform: 'instagram', url: 'https://instagram.com/ada', followersReported: 4000 }],
     };
 
     it('creates the Supabase account, upserts a learner profile flagged mustChangePassword, creates the Affiliate row, and sends only an acknowledgment email (no credentials yet)', async () => {

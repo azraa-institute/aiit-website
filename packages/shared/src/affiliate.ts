@@ -10,7 +10,7 @@ export type AffiliateType = 'creator' | 'student' | 'affiliate_to_affiliate';
 export type AffiliateApplicationStatus = 'pending' | 'in_review' | 'approved' | 'rejected';
 export type AffiliatePayoutMethod = 'paypal' | 'bank';
 
-export type AffiliateSocialPlatform = 'instagram' | 'tiktok' | 'youtube' | 'x' | 'linkedin' | 'facebook' | 'other';
+export type AffiliateSocialPlatform = 'instagram' | 'tiktok' | 'youtube' | 'x' | 'linkedin' | 'facebook' | 'website' | 'other';
 
 /**
  * One social profile given on the application, for admin screening. Only

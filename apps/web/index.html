@@ -119,28 +119,9 @@
         }
       }
     </style>
-    <!-- Deliberately no static description/og:*/twitter:* tags here -- every
-         route already renders its own via <Seo> (src/lib/Seo.tsx),
-         react-helmet-async on the client. A static duplicate here isn't a
-         "fallback": react-helmet-async only manages tags it rendered itself,
-         so it never removes a pre-existing static one -- it just inserts
-         its own alongside it, leaving two <meta name="description"> tags
-         per page. Browsers use the first; so does every social-media
-         link-preview bot (Facebook, Slack, Discord, WhatsApp, iMessage) --
-         none of them execute JS, so they only ever see this static block,
-         meaning every shared link showed the homepage's own generic
-         preview regardless of which page was actually shared. <title> is
-         the one exception worth keeping static: document.title is a single
-         property, not an inserted element, so Helmet genuinely replaces it
-         in place rather than duplicating it. -->
     <title>AIIT: Azraa Institute of Information Technology</title>
-    <!-- Google Search Console's second ownership-verification method
-         (Settings -> Ownership verification), alongside the standalone
-         /googleadefb798b5f3ca8c.html file -- having two independent
-         methods means verification survives either one breaking on its
-         own. Not managed by <Seo>/react-helmet-async, so no duplicate-tag
-         risk the way a static description/og:* tag would have; this one
-         has to stay here permanently either way. -->
+    <!-- No static description/og:* tags: see Seo.tsx. Keep head comments short -- a non-JS bot has scraped a long one here before and shown it as the page description. -->
+    <!-- Google Search Console ownership verification -- keep permanently; see /googleadefb798b5f3ca8c.html for the other verification method. -->
     <meta name="google-site-verification" content="jHYril7l4HA_3GkDxvdVhxtnZfWP-6FDyFLTITrTBZI" />
   </head>
   <body>

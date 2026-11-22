@@ -1,6 +1,31 @@
 import { Helmet } from 'react-helmet-async';
 import { SITE } from '@/data/site';
 
+/**
+ * index.html deliberately has no static description/og:* /twitter:* tags --
+ * every route renders its own via this component, through react-helmet-async
+ * on the client. A static duplicate in index.html isn't a "fallback":
+ * react-helmet-async only manages tags it rendered itself, so it never
+ * removes a pre-existing static one -- it just inserts its own alongside it,
+ * leaving two <meta name="description"> tags per page. Browsers use the
+ * first; so does every social-media link-preview bot (Facebook, Slack,
+ * Discord, WhatsApp, iMessage) -- none of them execute JS, so they only
+ * ever see this static block, meaning every shared link showed the
+ * homepage's own generic preview regardless of which page was actually
+ * shared. <title> is the one exception kept static in index.html:
+ * document.title is a single property, not an inserted element, so Helmet
+ * genuinely replaces it in place rather than duplicating it.
+ *
+ * Known accepted trade-off: a non-JS bot that can't find a real meta
+ * description in index.html gets none at all, rather than a wrong one --
+ * confirmed live (2026-11-22) when one such bot fell back to scraping a
+ * long prose comment that used to sit directly before <title> in
+ * index.html, and showed that comment's text as the page's "description".
+ * That comment has since been shortened and moved after <title> for
+ * exactly this reason -- keep any comment near the top of index.html's
+ * <head> short, not full sentences, for the same reason.
+ */
+
 interface SeoProps {
   title?: string;
   description?: string;

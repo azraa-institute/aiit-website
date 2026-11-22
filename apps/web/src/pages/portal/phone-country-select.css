@@ -96,7 +96,8 @@
   cursor: pointer;
 }
 .pcs__option:hover,
-.pcs__option:focus-visible {
+.pcs__option:focus-visible,
+.pcs__option.is-active {
   background: var(--brass-tint);
 }
 .pcs__option.is-selected {

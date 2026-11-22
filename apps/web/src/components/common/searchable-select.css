@@ -98,7 +98,8 @@
   cursor: pointer;
 }
 .ssel__option:hover,
-.ssel__option:focus-visible {
+.ssel__option:focus-visible,
+.ssel__option.is-active {
   background: var(--brass-tint);
 }
 .ssel__option.is-selected {

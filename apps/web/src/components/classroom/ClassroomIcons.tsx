@@ -83,6 +83,12 @@ export const BreakoutIcon = () => (
   </Icon>
 );
 
+export const RecordIcon = () => (
+  <Icon>
+    <circle cx="12" cy="12" r="8" />
+  </Icon>
+);
+
 export const PinIcon = () => (
   <Icon>
     <path d="M12 2v6M8 8h8l1 4H7l1-4ZM9 12h6v4a3 3 0 0 1-6 0v-4ZM12 20v2" />

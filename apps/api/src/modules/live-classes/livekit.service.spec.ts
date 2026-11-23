@@ -142,3 +142,66 @@ describe('LiveKitService.listParticipants', () => {
     await expect(service.listParticipants(ROOM)).resolves.toEqual([]);
   });
 });
+
+describe('LiveKitService recording (Egress)', () => {
+  let service: LiveKitService;
+  let fetchSpy: jest.SpiedFunction<typeof fetch>;
+
+  beforeEach(() => {
+    process.env.LIVEKIT_URL = 'wss://example.livekit.cloud';
+    process.env.LIVEKIT_API_KEY = 'APItestkey';
+    process.env.LIVEKIT_API_SECRET = 'test-secret-value-that-is-long-enough';
+    process.env.R2_ACCOUNT_ID = 'acct-1';
+    process.env.R2_ACCESS_KEY_ID = 'r2-access-key';
+    process.env.R2_SECRET_ACCESS_KEY = 'r2-secret';
+    process.env.R2_BUCKET_NAME = 'aiit-media';
+    service = new LiveKitService();
+    fetchSpy = jest.spyOn(global, 'fetch');
+  });
+
+  afterEach(() => {
+    delete process.env.LIVEKIT_URL;
+    delete process.env.LIVEKIT_API_KEY;
+    delete process.env.LIVEKIT_API_SECRET;
+    delete process.env.R2_ACCOUNT_ID;
+    delete process.env.R2_ACCESS_KEY_ID;
+    delete process.env.R2_SECRET_ACCESS_KEY;
+    delete process.env.R2_BUCKET_NAME;
+    fetchSpy.mockRestore();
+  });
+
+  it('starts a room-composite egress against the livekit.Egress Twirp service with the R2 bucket as its S3 output', async () => {
+    fetchSpy.mockResolvedValueOnce({ ok: true, json: async () => ({ egressId: 'EG_abc123', status: 'EGRESS_STARTING' }) } as Response);
+
+    const result = await service.startRoomRecording(ROOM);
+
+    expect(result.egressId).toBe('EG_abc123');
+    const [calledUrl, init] = fetchSpy.mock.calls[0];
+    expect(String(calledUrl)).toContain('/twirp/livekit.Egress/StartEgress');
+    const body = JSON.parse(String((init as RequestInit).body));
+    expect(body.room_name).toBe(ROOM);
+    expect(body.storage.s3).toEqual({
+      access_key: 'r2-access-key',
+      secret: 'r2-secret',
+      bucket: 'aiit-media',
+      endpoint: 'https://acct-1.r2.cloudflarestorage.com',
+      force_path_style: true,
+    });
+  });
+
+  it('refuses to start recording when R2 is not configured', async () => {
+    delete process.env.R2_BUCKET_NAME;
+    await expect(service.startRoomRecording(ROOM)).rejects.toThrow('Recording storage is not configured yet.');
+    expect(fetchSpy).not.toHaveBeenCalled();
+  });
+
+  it('stops an egress by id against the Egress service', async () => {
+    fetchSpy.mockResolvedValueOnce({ ok: true, json: async () => ({ egressId: 'EG_abc123', status: 'EGRESS_ENDING' }) } as Response);
+
+    await service.stopRoomRecording('EG_abc123');
+
+    const [calledUrl, init] = fetchSpy.mock.calls[0];
+    expect(String(calledUrl)).toContain('/twirp/livekit.Egress/StopEgress');
+    expect(JSON.parse(String((init as RequestInit).body))).toEqual({ egress_id: 'EG_abc123' });
+  });
+});

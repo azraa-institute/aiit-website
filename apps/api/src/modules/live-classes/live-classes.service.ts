@@ -10,6 +10,8 @@ import type {
   LiveClassSummary,
   LiveClassWhiteboard,
   PinnedResource,
+  Recording,
+  RecordingStatus,
 } from '@aiit/shared';
 import { PrismaService } from '../../common/prisma/prisma.service';
 import type { AuthenticatedUser } from '../../common/guards/jwt.guard';
@@ -510,6 +512,62 @@ export class LiveClassesService {
     });
   }
 
+  // ---- recording ----
+
+  /** Only one recording may be in progress per class at a time -- starting a second would just create a duplicate, overlapping file. */
+  async startRecording(user: AuthenticatedUser, id: string): Promise<Recording> {
+    const cls = await this.getClass(id);
+    if (this.roleFor(user, cls) !== 'host') throw new ForbiddenException('Only the instructor can start recording.');
+    if (cls.status !== 'live') throw new ConflictException('This class is not live.');
+    const inProgress = await this.prisma.recording.findFirst({
+      where: { liveClassId: id, status: { in: ['starting', 'active'] } },
+    });
+    if (inProgress) throw new ConflictException('A recording is already in progress for this class.');
+
+    const info = await this.livekit.startRoomRecording(cls.roomName);
+    const row = await this.prisma.recording.create({
+      data: { liveClassId: id, egressId: info.egressId, status: 'starting', startedBy: user.userId },
+    });
+    return toRecording(row);
+  }
+
+  /** Egress finishes asynchronously -- this only requests the stop; the row flips to 'complete'/'failed' once the egress_ended webhook arrives (see recordEgressEvent). */
+  async stopRecording(user: AuthenticatedUser, id: string): Promise<Recording> {
+    const cls = await this.getClass(id);
+    if (this.roleFor(user, cls) !== 'host') throw new ForbiddenException('Only the instructor can stop recording.');
+    const active = await this.prisma.recording.findFirst({
+      where: { liveClassId: id, status: { in: ['starting', 'active'] } },
+      orderBy: { startedAt: 'desc' },
+    });
+    if (!active) throw new NotFoundException('No recording is currently active for this class.');
+    await this.livekit.stopRoomRecording(active.egressId);
+    return toRecording(active);
+  }
+
+  /** Readable after the class ends too, same as the whiteboard/resources -- a learner reviewing the session needs this once it's over, not just live. */
+  async listRecordings(user: AuthenticatedUser, id: string): Promise<Recording[]> {
+    const cls = await this.getClass(id);
+    await this.assertEnrolledOrHost(user, cls);
+    const rows = await this.prisma.recording.findMany({ where: { liveClassId: id }, orderBy: { startedAt: 'desc' } });
+    return rows.map(toRecording);
+  }
+
+  /** Called by LiveKitWebhookController on egress_updated/egress_ended -- egressId is the only join key LiveKit's webhook payload carries back to us. Silently no-ops for an unknown egressId (e.g. a recording started before this feature existed, or a duplicate/retried webhook delivery). */
+  async recordEgressEvent(
+    egressId: string,
+    status: RecordingStatus,
+    patch: { url?: string; durationSeconds?: number; fileSizeBytes?: bigint; error?: string },
+  ): Promise<void> {
+    await this.prisma.recording.updateMany({
+      where: { egressId },
+      data: {
+        status,
+        endedAt: status === 'complete' || status === 'failed' ? new Date() : undefined,
+        ...patch,
+      },
+    });
+  }
+
   // ---- helpers ----
 
   private async getClass(id: string): Promise<ClassRow> {
@@ -562,4 +620,24 @@ export class LiveClassesService {
       joinState: computeJoinState(row, role),
     };
   }
+}
+
+function toRecording(row: {
+  id: string;
+  status: RecordingStatus;
+  startedAt: Date;
+  endedAt: Date | null;
+  url: string | null;
+  durationSeconds: number | null;
+  error: string | null;
+}): Recording {
+  return {
+    id: row.id,
+    status: row.status,
+    startedAt: row.startedAt.toISOString(),
+    endedAt: row.endedAt?.toISOString() ?? null,
+    url: row.url,
+    durationSeconds: row.durationSeconds,
+    error: row.error,
+  };
 }

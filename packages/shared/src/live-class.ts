@@ -138,6 +138,19 @@ export interface Timetable {
   classCount: number;
 }
 
+export type RecordingStatus = 'starting' | 'active' | 'complete' | 'failed';
+
+export interface Recording {
+  id: string;
+  status: RecordingStatus;
+  startedAt: string;
+  endedAt: string | null;
+  /** Public R2 playback URL -- set once status is 'complete'. */
+  url: string | null;
+  durationSeconds: number | null;
+  error: string | null;
+}
+
 export interface AdminLiveClass extends Omit<LiveClassSummary, 'role' | 'joinState'> {
   timetableId: string | null;
   hostUserId: string | null;

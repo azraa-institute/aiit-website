@@ -111,6 +111,18 @@
 .lobby__note--small {
   font-size: 0.85rem;
 }
+.lobby__recordings {
+  margin: var(--space-2) 0;
+  text-align: left;
+}
+.lobby__recordings ul {
+  margin: var(--space-2) 0 0;
+  padding: 0;
+  list-style: none;
+}
+.lobby__recordings a {
+  color: var(--brass-tint);
+}
 .lobby__error {
   padding: var(--space-3);
   border-left: 2px solid #ff8a80;

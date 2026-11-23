@@ -8,6 +8,7 @@ import type {
   LiveClassSummary,
   LiveClassWhiteboard,
   PinnedResource,
+  Recording,
 } from '@aiit/shared';
 import { JwtGuard, type AuthenticatedUser } from '../../common/guards/jwt.guard';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
@@ -190,5 +191,21 @@ export class LiveClassesController {
   @HttpCode(204)
   async closeBreakouts(@CurrentUser() user: AuthenticatedUser, @Param('id', ParseUUIDPipe) id: string): Promise<void> {
     await this.liveClasses.closeBreakouts(user, id);
+  }
+
+  @Post('live-classes/:id/recording/start')
+  startRecording(@CurrentUser() user: AuthenticatedUser, @Param('id', ParseUUIDPipe) id: string): Promise<Recording> {
+    return this.liveClasses.startRecording(user, id);
+  }
+
+  @Post('live-classes/:id/recording/stop')
+  stopRecording(@CurrentUser() user: AuthenticatedUser, @Param('id', ParseUUIDPipe) id: string): Promise<Recording> {
+    return this.liveClasses.stopRecording(user, id);
+  }
+
+  /** Readable after the class ends too -- a learner reviewing the session needs this once it's over, not just live. */
+  @Get('live-classes/:id/recordings')
+  listRecordings(@CurrentUser() user: AuthenticatedUser, @Param('id', ParseUUIDPipe) id: string): Promise<Recording[]> {
+    return this.liveClasses.listRecordings(user, id);
   }
 }

@@ -39,6 +39,7 @@ describe('LiveClassesService', () => {
     liveClassAttendance: { upsert: jest.Mock; findUnique: jest.Mock; update: jest.Mock };
     enrollment: { findUnique: jest.Mock; findMany: jest.Mock };
     profile: { findUnique: jest.Mock; findMany: jest.Mock };
+    recording: { findFirst: jest.Mock; findMany: jest.Mock; create: jest.Mock; updateMany: jest.Mock };
   };
   let livekit: LiveKitService;
 
@@ -51,6 +52,7 @@ describe('LiveClassesService', () => {
       liveClassAttendance: { upsert: jest.fn(), findUnique: jest.fn(), update: jest.fn() },
       enrollment: { findUnique: jest.fn(), findMany: jest.fn() },
       profile: { findUnique: jest.fn().mockResolvedValue({ name: 'Ada' }), findMany: jest.fn().mockResolvedValue([]) },
+      recording: { findFirst: jest.fn(), findMany: jest.fn(), create: jest.fn(), updateMany: jest.fn() },
     };
     livekit = new LiveKitService();
     service = new LiveClassesService(prisma as never, livekit);
@@ -552,6 +554,100 @@ describe('LiveClassesService', () => {
       prisma.liveClass.findMany.mockResolvedValue([]);
       await service.listForUser(instructor);
       expect(prisma.liveClass.findMany.mock.calls[0][0].where.hostUserId).toBe(HOST_ID);
+    });
+  });
+
+  describe('recording', () => {
+    it('only the host can start recording', async () => {
+      prisma.liveClass.findUnique.mockResolvedValue(classRow());
+      await expect(service.startRecording(learner, 'cls-1')).rejects.toBeInstanceOf(ForbiddenException);
+    });
+
+    it('refuses to start when the class is not live', async () => {
+      prisma.liveClass.findUnique.mockResolvedValue(classRow({ status: 'scheduled' }));
+      await expect(service.startRecording(instructor, 'cls-1')).rejects.toBeInstanceOf(ConflictException);
+    });
+
+    it('refuses a second recording while one is already in progress', async () => {
+      prisma.liveClass.findUnique.mockResolvedValue(classRow());
+      prisma.recording.findFirst.mockResolvedValue({ id: 'rec-1', status: 'active' });
+      await expect(service.startRecording(instructor, 'cls-1')).rejects.toBeInstanceOf(ConflictException);
+    });
+
+    it('starts an egress against the class room and stores the returned egress id', async () => {
+      prisma.liveClass.findUnique.mockResolvedValue(classRow());
+      prisma.recording.findFirst.mockResolvedValue(null);
+      const startEgress = jest.spyOn(livekit, 'startRoomRecording').mockResolvedValue({ egressId: 'EG_abc', status: 'EGRESS_STARTING' });
+      const created = {
+        id: 'rec-1',
+        status: 'starting',
+        startedAt: new Date('2026-11-23T00:00:00Z'),
+        endedAt: null,
+        url: null,
+        durationSeconds: null,
+        error: null,
+      };
+      prisma.recording.create.mockResolvedValue(created);
+
+      const result = await service.startRecording(instructor, 'cls-1');
+
+      expect(startEgress).toHaveBeenCalledWith('class-cls-1');
+      expect(prisma.recording.create).toHaveBeenCalledWith(
+        expect.objectContaining({ data: expect.objectContaining({ liveClassId: 'cls-1', egressId: 'EG_abc', startedBy: HOST_ID }) }),
+      );
+      expect(result.id).toBe('rec-1');
+      expect(result.status).toBe('starting');
+    });
+
+    it('refuses to stop when nothing is currently recording', async () => {
+      prisma.liveClass.findUnique.mockResolvedValue(classRow());
+      prisma.recording.findFirst.mockResolvedValue(null);
+      await expect(service.stopRecording(instructor, 'cls-1')).rejects.toBeInstanceOf(NotFoundException);
+    });
+
+    it('stops the active egress by its stored id', async () => {
+      prisma.liveClass.findUnique.mockResolvedValue(classRow());
+      prisma.recording.findFirst.mockResolvedValue({
+        id: 'rec-1',
+        egressId: 'EG_abc',
+        status: 'active',
+        startedAt: new Date(),
+        endedAt: null,
+        url: null,
+        durationSeconds: null,
+        error: null,
+      });
+      const stopEgress = jest.spyOn(livekit, 'stopRoomRecording').mockResolvedValue({ egressId: 'EG_abc', status: 'EGRESS_ENDING' });
+
+      await service.stopRecording(instructor, 'cls-1');
+
+      expect(stopEgress).toHaveBeenCalledWith('EG_abc');
+    });
+
+    it('lets an enrolled learner (not just the host) list recordings', async () => {
+      prisma.liveClass.findUnique.mockResolvedValue(classRow());
+      prisma.enrollment.findUnique.mockResolvedValue({ status: 'active' });
+      prisma.recording.findMany.mockResolvedValue([]);
+      await expect(service.listRecordings(learner, 'cls-1')).resolves.toEqual([]);
+    });
+
+    it('recordEgressEvent patches the matching row by egress id, stamping endedAt only on a terminal status', async () => {
+      await service.recordEgressEvent('EG_abc', 'complete', { url: 'https://media.aiit.network/recordings/x.mp4', durationSeconds: 120 });
+      expect(prisma.recording.updateMany).toHaveBeenCalledWith({
+        where: { egressId: 'EG_abc' },
+        data: {
+          status: 'complete',
+          endedAt: expect.any(Date),
+          url: 'https://media.aiit.network/recordings/x.mp4',
+          durationSeconds: 120,
+        },
+      });
+
+      await service.recordEgressEvent('EG_abc', 'active', {});
+      expect(prisma.recording.updateMany).toHaveBeenLastCalledWith({
+        where: { egressId: 'EG_abc' },
+        data: { status: 'active', endedAt: undefined },
+      });
     });
   });
 

@@ -1,7 +1,7 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { DisconnectReason } from 'livekit-client';
-import type { LiveClassJoin, LiveClassSummary } from '@aiit/shared';
+import type { LiveClassJoin, LiveClassSummary, Recording } from '@aiit/shared';
 import { Seo } from '@/lib/Seo';
 import { apiFetch } from '@/lib/api';
 import { cn } from '@/lib/cn';
@@ -23,6 +23,41 @@ function useBackTarget(): { to: string; label: string } {
     return { to: roleHome(me.me.role), label: 'Back to your portal' };
   }
   return { to: '/portal/schedule', label: 'Back to your timetable' };
+}
+
+/** Shown once a class has ended -- a finished recording is one more thing to review alongside the whiteboard/resources, not something only the instructor can see. */
+function RecordingsList({ liveClassId }: { liveClassId: string }) {
+  const [recordings, setRecordings] = useState<Recording[]>([]);
+
+  useEffect(() => {
+    let cancelled = false;
+    apiFetch<Recording[]>(`/live-classes/${liveClassId}/recordings`)
+      .then((rows) => {
+        if (!cancelled) setRecordings(rows);
+      })
+      .catch(() => undefined);
+    return () => {
+      cancelled = true;
+    };
+  }, [liveClassId]);
+
+  const complete = recordings.filter((r) => r.status === 'complete' && r.url);
+  if (complete.length === 0) return null;
+
+  return (
+    <div className="lobby__recordings">
+      <p className="lobby__note lobby__note--small">Recording{complete.length > 1 ? 's' : ''} from this session:</p>
+      <ul role="list">
+        {complete.map((r) => (
+          <li key={r.id}>
+            <a href={r.url!} target="_blank" rel="noreferrer">
+              {new Date(r.startedAt).toLocaleString()}
+            </a>
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
 }
 
 function ClassroomHeader({ liveClass, live }: { liveClass?: LiveClassSummary; live?: boolean }) {
@@ -127,6 +162,7 @@ export default function LiveClassroomPage() {
                 {phase === 'removed' && 'The instructor removed you from this session. Contact the AIIT team if you think this was a mistake.'}
                 {phase === 'dropped' && (error ?? 'Your connection to the classroom was lost. You can try to rejoin.')}
               </p>
+              {phase === 'ended' && id ? <RecordingsList liveClassId={id} /> : null}
               <div className="lobby__actions">
                 {phase !== 'ended' && phase !== 'removed' ? (
                   <button type="button" className="lobby__btn" onClick={() => setPhase('lobby')}>
@@ -200,6 +236,7 @@ export default function LiveClassroomPage() {
                   <p className="lobby__note">
                     {joinState === 'cancelled' ? 'This class has been cancelled.' : 'This class has ended.'}
                   </p>
+                  {joinState === 'ended' && id ? <RecordingsList liveClassId={id} /> : null}
                   <Link to={back.to} className="lobby__btn lobby__btn--ghost">
                     {back.label}
                   </Link>

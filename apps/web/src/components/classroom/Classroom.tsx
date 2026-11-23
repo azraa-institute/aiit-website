@@ -18,7 +18,7 @@ import {
   type TrackReferenceOrPlaceholder,
 } from '@livekit/components-react';
 import { ConnectionState, DisconnectReason, Track } from 'livekit-client';
-import type { BreakoutJoin, LiveClassBreakouts, LiveClassJoin, PinnedResource } from '@aiit/shared';
+import type { BreakoutJoin, LiveClassBreakouts, LiveClassJoin, PinnedResource, Recording } from '@aiit/shared';
 import { apiFetch } from '@/lib/api';
 import { cn } from '@/lib/cn';
 import type { RoomConnection } from './breakouts';
@@ -33,6 +33,7 @@ import {
   PeopleIcon,
   PinIcon,
   PollIcon,
+  RecordIcon,
   ShareIcon,
   WhiteboardIcon,
 } from './ClassroomIcons';
@@ -595,7 +596,42 @@ function Controls({
   const [handsOpen, setHandsOpen] = useState(false);
   const [raisingHand, setRaisingHand] = useState(false);
   const [reactOpen, setReactOpen] = useState(false);
+  const [recording, setRecording] = useState<Recording | null>(null);
+  const [recordingBusy, setRecordingBusy] = useState(false);
+  const [recordingError, setRecordingError] = useState<string>();
   const isHost = join.role === 'host';
+
+  useEffect(() => {
+    if (!isHost) return;
+    let cancelled = false;
+    apiFetch<Recording[]>(`/live-classes/${join.liveClass.id}/recordings`)
+      .then((rows) => {
+        if (!cancelled) setRecording(rows.find((r) => r.status === 'starting' || r.status === 'active') ?? null);
+      })
+      .catch(() => undefined);
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isHost]);
+
+  async function toggleRecording() {
+    setRecordingBusy(true);
+    setRecordingError(undefined);
+    try {
+      if (recording) {
+        await apiFetch<Recording>(`/live-classes/${join.liveClass.id}/recording/stop`, { method: 'POST' });
+        setRecording(null);
+      } else {
+        const started = await apiFetch<Recording>(`/live-classes/${join.liveClass.id}/recording/start`, { method: 'POST' });
+        setRecording(started);
+      }
+    } catch (err) {
+      setRecordingError(err instanceof Error ? err.message : 'Could not change the recording state.');
+    } finally {
+      setRecordingBusy(false);
+    }
+  }
   const canShare = isHost && typeof navigator.mediaDevices?.getDisplayMedia === 'function';
   const micLocked = isMicLocked(localParticipant);
   const handRaised = useIsHandRaised(localParticipant);
@@ -821,6 +857,19 @@ function Controls({
         </button>
       ) : null}
 
+      {isHost ? (
+        <button
+          type="button"
+          className={cn('controls__btn', recording && 'is-danger')}
+          aria-pressed={Boolean(recording)}
+          disabled={recordingBusy}
+          onClick={() => void toggleRecording()}
+        >
+          <RecordIcon />
+          <span>{recordingBusy ? 'Working…' : recording ? 'Stop recording' : 'Record'}</span>
+        </button>
+      ) : null}
+
       <span className="controls__divider" aria-hidden="true" />
 
       {isHost && confirmEnd ? (
@@ -849,6 +898,11 @@ function Controls({
       {endError ? (
         <span className="controls__error" role="alert">
           {endError}
+        </span>
+      ) : null}
+      {recordingError ? (
+        <span className="controls__error" role="alert">
+          {recordingError}
         </span>
       ) : null}
     </div>

@@ -41,6 +41,22 @@ interface LiveKitParticipantInfo {
   permission?: LiveKitPermission;
 }
 
+export interface EgressFileResult {
+  filename?: string;
+  location?: string;
+  size?: string | number;
+  duration?: string | number;
+}
+
+export interface EgressInfo {
+  egressId: string;
+  status?: string;
+  error?: string;
+  startedAt?: string | number;
+  endedAt?: string | number;
+  fileResults?: EgressFileResult[];
+}
+
 function isMicrophoneSource(value: string | number): boolean {
   return value === 'MICROPHONE' || value === 2;
 }
@@ -115,16 +131,16 @@ export class LiveKitService {
   }
 
   async removeParticipant(room: string, identity: string): Promise<void> {
-    await this.twirp('RemoveParticipant', room, { room, identity });
+    await this.roomServiceTwirp('RemoveParticipant', room, { room, identity });
   }
 
   async deleteRoom(room: string): Promise<void> {
-    await this.twirp('DeleteRoom', room, { room });
+    await this.roomServiceTwirp('DeleteRoom', room, { room });
   }
 
   /** Who's actually connected right now, for auto-splitting into breakout rooms -- an empty array if the room has no one in it (or doesn't exist yet, e.g. before anyone has joined). */
   async listParticipants(room: string): Promise<string[]> {
-    const listed = await this.twirp<{ participants?: LiveKitParticipantInfo[] }>('ListParticipants', room, { room });
+    const listed = await this.roomServiceTwirp<{ participants?: LiveKitParticipantInfo[] }>('ListParticipants', room, { room });
     return (listed.participants ?? []).map((p) => p.identity);
   }
 
@@ -133,7 +149,7 @@ export class LiveKitService {
     const target = await this.findParticipant(room, identity);
     for (const track of target?.tracks ?? []) {
       if (track.type === 'AUDIO' || track.type === 0) {
-        await this.twirp('MutePublishedTrack', room, { room, identity, trackSid: track.sid, muted: true });
+        await this.roomServiceTwirp('MutePublishedTrack', room, { room, identity, trackSid: track.sid, muted: true });
       }
     }
   }
@@ -161,23 +177,67 @@ export class LiveKitService {
       recorder: current?.recorder ?? false,
       canUpdateMetadata: current?.canUpdateMetadata ?? false,
     };
-    await this.twirp('UpdateParticipant', room, { room, identity, permission });
+    await this.roomServiceTwirp('UpdateParticipant', room, { room, identity, permission });
   }
 
   private async findParticipant(room: string, identity: string): Promise<LiveKitParticipantInfo | undefined> {
-    const listed = await this.twirp<{ participants?: LiveKitParticipantInfo[] }>('ListParticipants', room, { room });
+    const listed = await this.roomServiceTwirp<{ participants?: LiveKitParticipantInfo[] }>('ListParticipants', room, { room });
     return listed.participants?.find((p) => p.identity === identity);
   }
 
-  private async twirp<T = unknown>(method: string, room: string, body: Record<string, unknown>): Promise<T> {
+  private roomServiceTwirp<T = unknown>(method: string, room: string, body: Record<string, unknown>): Promise<T> {
+    return this.twirp('livekit.RoomService', method, { roomAdmin: true, room }, body);
+  }
+
+  /**
+   * Room-composite recording via LiveKit's Egress service -- a separate
+   * Twirp service from RoomService above, with its own JWT grant
+   * (`roomRecord`, not `roomAdmin`) and its own request/response field
+   * casing: Egress's JSON API uses snake_case request fields (confirmed
+   * against LiveKit's own docs examples), unlike RoomService's camelCase
+   * above, and its responses/webhook payloads come back camelCase (plain
+   * protobuf-JSON convention) -- see AdminLiveClassesService's recording
+   * methods for how the response is read. Uploads straight to this
+   * project's R2 bucket (same credentials as R2Service, read directly here
+   * rather than adding a dependency on that service for three env vars).
+   * `StartEgress`/`TemplateSource` is the current, non-deprecated RPC --
+   * the older `StartRoomCompositeEgress` still works but LiveKit's own docs
+   * say new code should use this instead.
+   */
+  async startRoomRecording(room: string): Promise<EgressInfo> {
+    if (!process.env.R2_ACCOUNT_ID || !process.env.R2_ACCESS_KEY_ID || !process.env.R2_SECRET_ACCESS_KEY || !process.env.R2_BUCKET_NAME) {
+      throw new ServiceUnavailableException('Recording storage is not configured yet.');
+    }
+    const body = {
+      room_name: room,
+      template: { layout: 'grid' },
+      outputs: [{ file: { file_type: 'MP4', filepath: `recordings/{room_name}-{time}.mp4` } }],
+      storage: {
+        s3: {
+          access_key: process.env.R2_ACCESS_KEY_ID,
+          secret: process.env.R2_SECRET_ACCESS_KEY,
+          bucket: process.env.R2_BUCKET_NAME,
+          endpoint: `https://${process.env.R2_ACCOUNT_ID}.r2.cloudflarestorage.com`,
+          force_path_style: true,
+        },
+      },
+    };
+    return this.twirp<EgressInfo>('livekit.Egress', 'StartEgress', { roomRecord: true }, body);
+  }
+
+  async stopRoomRecording(egressId: string): Promise<EgressInfo> {
+    return this.twirp<EgressInfo>('livekit.Egress', 'StopEgress', { roomRecord: true }, { egress_id: egressId });
+  }
+
+  private async twirp<T = unknown>(service: string, method: string, grant: Record<string, unknown>, body: Record<string, unknown>): Promise<T> {
     const { url, apiKey, apiSecret } = this.config;
-    const token = jwt.sign({ video: { roomAdmin: true, room } }, apiSecret, {
+    const token = jwt.sign({ video: grant }, apiSecret, {
       algorithm: 'HS256',
       issuer: apiKey,
       expiresIn: 60,
     });
     const httpUrl = url.replace(/^wss:/, 'https:').replace(/^ws:/, 'http:').replace(/\/$/, '');
-    const res = await fetch(`${httpUrl}/twirp/livekit.RoomService/${method}`, {
+    const res = await fetch(`${httpUrl}/twirp/${service}/${method}`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
       body: JSON.stringify(body),

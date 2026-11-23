@@ -1069,6 +1069,7 @@ model LiveClass {
   /// Breakout rooms + assignments, if the host has started any. Null once closed.
   breakoutState    Json?                 @map("breakout_state")
   attendance       LiveClassAttendance[]
+  recordings       Recording[]
   createdAt        DateTime              @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt        DateTime              @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
 
@@ -1076,6 +1077,45 @@ model LiveClass {
   @@index([courseId, startsAt])
   @@index([hostUserId])
   @@map("live_classes")
+  @@schema("public")
+}
+
+enum RecordingStatus {
+  starting
+  active
+  complete
+  failed
+
+  @@schema("public")
+}
+
+/// A room-composite recording of a LiveClass, captured via LiveKit Egress and
+/// uploaded straight to Cloudflare R2 (LiveKit's own Egress worker uploads
+/// directly -- the file never passes through this API server). One LiveClass
+/// can have more than one row if an instructor stops and restarts recording
+/// mid-session.
+model Recording {
+  id              String          @id @default(uuid()) @db.Uuid
+  liveClassId     String          @map("live_class_id") @db.Uuid
+  liveClass       LiveClass       @relation(fields: [liveClassId], references: [id], onDelete: Cascade)
+  /// LiveKit's own egress job id (`EG_...`) -- the join key for the async
+  /// egress_updated/egress_ended webhook, since that's all LiveKit's webhook
+  /// payload carries back.
+  egressId        String          @unique @map("egress_id")
+  status          RecordingStatus @default(starting)
+  startedBy       String?         @map("started_by") @db.Uuid
+  startedAt       DateTime        @default(now()) @map("started_at") @db.Timestamptz(6)
+  endedAt         DateTime?       @map("ended_at") @db.Timestamptz(6)
+  /// Public R2 URL, set once the egress_ended webhook reports a completed file.
+  url             String?
+  durationSeconds Int?            @map("duration_seconds")
+  fileSizeBytes   BigInt?         @map("file_size_bytes")
+  /// Set when status is 'failed' -- LiveKit's own error string, shown to the instructor rather than a bare failure.
+  error           String?
+  createdAt       DateTime        @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  @@index([liveClassId])
+  @@map("recordings")
   @@schema("public")
 }
 

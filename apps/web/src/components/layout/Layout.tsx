@@ -3,6 +3,7 @@ import { AnnouncementBar } from './AnnouncementBar';
 import { Header } from './Header';
 import { Footer } from './Footer';
 import { EnrollmentPopup } from '@/components/common/EnrollmentPopup';
+import { WebinarEnrollmentPopup } from '@/components/common/WebinarEnrollmentPopup';
 import { FloatingActions } from '@/components/common/FloatingActions';
 import { useAuth } from '@/lib/AuthContext';
 import './layout.css';
@@ -37,6 +38,7 @@ export function Layout({ children, heroPage = false }: LayoutProps) {
       {status !== 'authenticated' && <Footer />}
       <FloatingActions />
       <EnrollmentPopup />
+      <WebinarEnrollmentPopup />
     </div>
   );
 }

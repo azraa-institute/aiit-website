@@ -77,6 +77,13 @@
   cursor: pointer;
   border-radius: var(--radius-pill);
 }
+/* Same mechanic as .enroll-pop__hotspot above, positioned for
+   WebinarEnrollmentPopup's own artwork instead (its embedded "REGISTER NOW"
+   pill sits higher up the frame) -- see that component's own doc comment. */
+.enroll-pop__hotspot--webinar {
+  top: 80%;
+  height: 10%;
+}
 .enroll-pop__hotspot:focus-visible {
   outline: 2px dashed var(--ivory);
   outline-offset: -3px;

@@ -349,7 +349,7 @@ export default function AdminCourseEditorPage() {
             />
           </label>
           <label className="adm-field">
-            <span>"Was" price (USD, optional -- shows a strikethrough discount)</span>
+            <span>"Was" price (USD, optional: shows a strikethrough discount)</span>
             <input
               type="number"
               min={0}
@@ -443,7 +443,7 @@ export default function AdminCourseEditorPage() {
         <h2 className="adm-h2">Outcomes, requirements &amp; audience</h2>
         <div className="adm-grid">
           <label className="adm-field adm-field--wide">
-            <span>Outcomes -- "What you'll be able to do" (one per line)</span>
+            <span>Outcomes: "What you'll be able to do" (one per line)</span>
             <textarea rows={6} value={form.outcomes.join('\n')} onChange={(e) => update('outcomes', e.target.value.split('\n'))} />
           </label>
           <label className="adm-field adm-field--wide">
@@ -468,7 +468,7 @@ export default function AdminCourseEditorPage() {
         <div className="adm-grid">
           <div className="adm-field adm-field--wide">
             <span>
-              Upload a cover image -- must be exactly {REQUIRED_COVER_WIDTH}x{REQUIRED_COVER_HEIGHT}px (16:9, full-bleed, no letterboxing),
+              Upload a cover image: must be exactly {REQUIRED_COVER_WIDTH}x{REQUIRED_COVER_HEIGHT}px (16:9, full-bleed, no letterboxing),
               same as every other course cover. A wrong-sized image is rejected, not resized.
             </span>
             <FilePickerButton

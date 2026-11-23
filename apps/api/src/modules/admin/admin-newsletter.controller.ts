@@ -6,7 +6,7 @@ import { RolesGuard } from '../../common/guards/roles.guard';
 import { Roles } from '../../common/decorators/roles.decorator';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import { NewsletterService } from '../forms/newsletter/newsletter.service';
-import { SendNewsletterDto } from './dto/admin-newsletter.dto';
+import { SendNewsletterDto, SendTestNewsletterDto } from './dto/admin-newsletter.dto';
 
 /** Compose-and-send a newsletter broadcast to every confirmed (opted-in) subscriber. Sending is synchronous, so a large list can take a few seconds -- matches every other admin bulk action in this codebase (bulk certificate issuance, webinar reminders), no queue/worker exists here to hand it off to. */
 @Controller('admin/newsletter')
@@ -29,5 +29,12 @@ export class AdminNewsletterController {
   @Post('send')
   send(@CurrentUser() user: AuthenticatedUser, @Body() dto: SendNewsletterDto): Promise<AdminNewsletterIssue> {
     return this.newsletter.sendIssue(user.userId, dto.subject, dto.bodyText);
+  }
+
+  /** Sends to one address, not the subscriber list -- the safe way to confirm delivery actually works and preview the rendered email before a real send. */
+  @Post('test')
+  async sendTest(@Body() dto: SendTestNewsletterDto): Promise<{ ok: true }> {
+    await this.newsletter.sendTest(dto.to, dto.subject, dto.bodyText);
+    return { ok: true };
   }
 }

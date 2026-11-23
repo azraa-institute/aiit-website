@@ -15,6 +15,7 @@ describe('AdminBlogService', () => {
   let supabase: { uploadToStorage: jest.Mock };
   let r2: { buildVideoKey: jest.Mock; createPresignedUploadUrl: jest.Mock };
   let github: { isConfigured: jest.Mock; getFileSha: jest.Mock; listDir: jest.Mock; putFile: jest.Mock; deleteFile: jest.Mock };
+  let newsletter: { notifyNewPost: jest.Mock };
 
   const row = (overrides: Record<string, unknown> = {}) => ({
     id: POST_ID,
@@ -62,7 +63,8 @@ describe('AdminBlogService', () => {
       putFile: jest.fn().mockResolvedValue({ fileSha: 'file-sha', commitSha: 'commit-sha', commitUrl: 'https://github.com/x/commit/1' }),
       deleteFile: jest.fn(),
     };
-    service = new AdminBlogService(prisma as never, audit as never, supabase as never, r2 as never, github as never);
+    newsletter = { notifyNewPost: jest.fn() };
+    service = new AdminBlogService(prisma as never, audit as never, supabase as never, r2 as never, github as never, newsletter as never);
   });
 
   it('create() rejects a duplicate slug with a 409, not a raw Prisma error', async () => {
@@ -157,6 +159,24 @@ describe('AdminBlogService', () => {
       expect(r2.buildVideoKey).toHaveBeenCalledWith('lecture.mp4');
       expect(r2.createPresignedUploadUrl).toHaveBeenCalledWith('media/video/fake-uuid.mp4', 'video/mp4', 1024);
       expect(result).toEqual({ uploadUrl: 'https://r2.example/signed', publicUrl: 'https://media.example/media/video/fake-uuid.mp4' });
+    });
+  });
+
+  describe('notifySubscribers', () => {
+    it('refuses to notify about a post that is not published', async () => {
+      prisma.blogPost.findUnique.mockResolvedValueOnce(row({ status: 'draft' }));
+      await expect(service.notifySubscribers(ADMIN, POST_ID)).rejects.toBeInstanceOf(ConflictException);
+      expect(newsletter.notifyNewPost).not.toHaveBeenCalled();
+    });
+
+    it('delegates to NewsletterService.notifyNewPost with the post title/excerpt/slug', async () => {
+      prisma.blogPost.findUnique.mockResolvedValueOnce(row({ status: 'published', title: 'A Post', excerpt: 'An excerpt.', slug: 'a-post' }));
+      newsletter.notifyNewPost.mockResolvedValueOnce({ id: 'issue-1', sentCount: 5 });
+
+      const result = await service.notifySubscribers(ADMIN, POST_ID);
+
+      expect(newsletter.notifyNewPost).toHaveBeenCalledWith(ADMIN, { title: 'A Post', excerpt: 'An excerpt.', slug: 'a-post' });
+      expect(result).toEqual({ id: 'issue-1', sentCount: 5 });
     });
   });
 });

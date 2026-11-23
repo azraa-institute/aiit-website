@@ -1,4 +1,4 @@
-import { IsString, MaxLength, MinLength } from 'class-validator';
+import { IsEmail, IsString, MaxLength, MinLength } from 'class-validator';
 
 export class SendNewsletterDto {
   @IsString()
@@ -10,4 +10,9 @@ export class SendNewsletterDto {
   @MinLength(1)
   @MaxLength(20_000)
   bodyText!: string;
+}
+
+export class SendTestNewsletterDto extends SendNewsletterDto {
+  @IsEmail()
+  to!: string;
 }

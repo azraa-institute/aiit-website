@@ -186,6 +186,49 @@ describe('NewsletterService', () => {
     });
   });
 
+  describe('sendTest', () => {
+    it('refuses an empty subject or body', async () => {
+      await expect(service.sendTest('a@example.com', '  ', 'body')).rejects.toBeInstanceOf(BadRequestException);
+      expect(email.send).not.toHaveBeenCalled();
+    });
+
+    it('sends to the given address only, never touches the subscriber list or issue history', async () => {
+      await service.sendTest('a@example.com', 'Hello', 'Hi there');
+
+      expect(email.send).toHaveBeenCalledTimes(1);
+      expect(email.send).toHaveBeenCalledWith(
+        expect.objectContaining({ to: 'a@example.com', subject: '[Test] Hello', html: expect.stringContaining('Hi there') }),
+      );
+      expect(prisma.newsletterSubscriber.findMany).not.toHaveBeenCalled();
+      expect(prisma.newsletterIssue.create).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('notifyNewPost', () => {
+    it('broadcasts to confirmed subscribers with a link to the post, and records it as an issue', async () => {
+      prisma.newsletterIssue.create.mockResolvedValueOnce({ id: 'issue-1' });
+      prisma.newsletterSubscriber.findMany.mockResolvedValueOnce([{ email: 'a@example.com', unsubscribeToken: 'tok-a' }]);
+      prisma.newsletterIssue.update.mockResolvedValueOnce({
+        id: 'issue-1',
+        subject: 'New on the AIIT blog: A Post',
+        bodyText: 'An excerpt.',
+        sentAt: new Date(),
+        sentCount: 1,
+        createdAt: new Date(),
+      });
+
+      const result = await service.notifyNewPost('admin-1', { title: 'A Post', excerpt: 'An excerpt.', slug: 'a-post' });
+
+      expect(prisma.newsletterIssue.create).toHaveBeenCalledWith(
+        expect.objectContaining({ data: expect.objectContaining({ subject: 'New on the AIIT blog: A Post', bodyText: 'An excerpt.' }) }),
+      );
+      expect(email.send).toHaveBeenCalledWith(
+        expect.objectContaining({ to: 'a@example.com', html: expect.stringContaining('/resources/a-post') }),
+      );
+      expect(result.sentCount).toBe(1);
+    });
+  });
+
   describe('countConfirmedSubscribers', () => {
     it('counts only confirmed subscribers', async () => {
       prisma.newsletterSubscriber.count.mockResolvedValueOnce(42);

@@ -4,6 +4,7 @@ import { Prisma } from '@prisma/client';
 import type {
   AdminBlogPost,
   AdminBlogPostSummary,
+  AdminNewsletterIssue,
   BlogMediaUploadResult,
   BlogPostStatus,
   BlogPublishResult,
@@ -13,6 +14,7 @@ import { PrismaService } from '../../common/prisma/prisma.service';
 import { AuditService } from '../../common/audit/audit.service';
 import { SupabaseAdminService } from '../../common/supabase-admin/supabase-admin.service';
 import { R2Service } from '../../common/r2/r2.service';
+import { NewsletterService } from '../forms/newsletter/newsletter.service';
 import { GithubPublisherService, GithubPublishError } from './github-publisher.service';
 import type { BlogPostInputDto, ListBlogPostsQueryDto, PresignBlogVideoDto } from './dto/admin-blog.dto';
 
@@ -38,7 +40,22 @@ export class AdminBlogService {
     private readonly supabase: SupabaseAdminService,
     private readonly r2: R2Service,
     private readonly github: GithubPublisherService,
+    private readonly newsletter: NewsletterService,
   ) {}
+
+  /**
+   * Opt-in, not automatic on every publish -- a draft fix or minor copy edit
+   * shouldn't email anyone, only a post the admin explicitly decides is
+   * newsletter-worthy. Reuses NewsletterService's own broadcast path and
+   * NewsletterIssue history rather than a separate blog-specific one.
+   */
+  async notifySubscribers(adminId: string, id: string): Promise<AdminNewsletterIssue> {
+    const post = await this.findOrThrow(id);
+    if (post.status !== 'published') {
+      throw new ConflictException('Publish this post before notifying subscribers about it.');
+    }
+    return this.newsletter.notifyNewPost(adminId, { title: post.title, excerpt: post.excerpt, slug: post.slug });
+  }
 
   async list(query: ListBlogPostsQueryDto): Promise<AdminBlogPostSummary[]> {
     const where: Prisma.BlogPostWhereInput = {

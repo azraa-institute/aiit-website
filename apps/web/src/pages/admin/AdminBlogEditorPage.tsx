@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import type { FormEvent } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
-import type { AdminBlogPost, BlogLayoutPreset, BlogMediaUploadResult, BlogPostInput, BlogVideoPresignResult } from '@aiit/shared';
+import type { AdminBlogPost, AdminNewsletterIssue, BlogLayoutPreset, BlogMediaUploadResult, BlogPostInput, BlogVideoPresignResult } from '@aiit/shared';
 import { apiFetch } from '@/lib/api';
 import { looksLikeHtml } from '@/lib/markdown';
 import { formatWhen, useAdminFetch } from './adminData';
@@ -193,6 +193,22 @@ export default function AdminBlogEditorPage() {
       setNotice('Unpublished. The file has been removed from the live site.');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Could not unpublish this post.');
+    } finally {
+      setPublishing(false);
+    }
+  }
+
+  async function handleNotifySubscribers() {
+    if (!post) return;
+    if (!window.confirm('Email every confirmed newsletter subscriber about this post now? This cannot be undone.')) return;
+    setPublishing(true);
+    setError(undefined);
+    setNotice(undefined);
+    try {
+      const issue = await apiFetch<AdminNewsletterIssue>(`/admin/blog/${post.id}/notify-subscribers`, { method: 'POST' });
+      setNotice(`Sent to ${issue.sentCount} subscriber${issue.sentCount === 1 ? '' : 's'}.`);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Could not notify subscribers.');
     } finally {
       setPublishing(false);
     }
@@ -466,6 +482,9 @@ export default function AdminBlogEditorPage() {
             <>
               <button type="button" className="adm-btn adm-btn--primary" disabled={publishing} onClick={handlePublish}>
                 {publishing ? 'Updating…' : 'Publish update'}
+              </button>
+              <button type="button" className="adm-btn adm-btn--ghost" disabled={publishing} onClick={handleNotifySubscribers}>
+                Notify subscribers
               </button>
               <button type="button" className="adm-btn adm-btn--danger" disabled={publishing} onClick={handleUnpublish}>
                 Unpublish

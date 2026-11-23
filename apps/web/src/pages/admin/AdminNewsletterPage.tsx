@@ -12,8 +12,29 @@ export default function AdminNewsletterPage() {
   const [sending, setSending] = useState(false);
   const [error, setError] = useState<string>();
   const [sent, setSent] = useState<AdminNewsletterIssue>();
+  const [testTo, setTestTo] = useState('');
+  const [testSending, setTestSending] = useState(false);
+  const [testError, setTestError] = useState<string>();
+  const [testSent, setTestSent] = useState(false);
 
   const canSend = subject.trim().length > 0 && bodyText.trim().length > 0;
+
+  async function sendTest() {
+    setTestSending(true);
+    setTestError(undefined);
+    setTestSent(false);
+    try {
+      await apiFetch('/admin/newsletter/test', {
+        method: 'POST',
+        body: JSON.stringify({ to: testTo.trim(), subject: subject.trim(), bodyText: bodyText.trim() }),
+      });
+      setTestSent(true);
+    } catch (err) {
+      setTestError(err instanceof Error ? err.message : 'Could not send that test email.');
+    } finally {
+      setTestSending(false);
+    }
+  }
 
   async function send() {
     setSending(true);
@@ -59,6 +80,29 @@ export default function AdminNewsletterPage() {
             <span>Body (one paragraph per line)</span>
             <textarea rows={10} value={bodyText} onChange={(e) => setBodyText(e.target.value)} disabled={sending} />
           </label>
+
+          <label className="adm-field adm-field--wide">
+            <span>Send a test to (optional, doesn't touch your subscriber list)</span>
+            <input
+              type="email"
+              value={testTo}
+              onChange={(e) => setTestTo(e.target.value)}
+              placeholder="you@example.com"
+              disabled={testSending}
+            />
+          </label>
+          {testError ? <p className="adm-error" role="alert">{testError}</p> : null}
+          {testSent ? <p className="adm-muted">Test email sent to {testTo}.</p> : null}
+          <div className="adm-card__actions">
+            <button
+              type="button"
+              className="adm-btn adm-btn--ghost"
+              disabled={!canSend || !testTo.trim() || testSending}
+              onClick={() => void sendTest()}
+            >
+              {testSending ? 'Sending test…' : 'Send test email'}
+            </button>
+          </div>
 
           {error ? <p className="adm-error" role="alert">{error}</p> : null}
           {sent ? (

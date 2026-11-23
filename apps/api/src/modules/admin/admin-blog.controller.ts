@@ -18,7 +18,7 @@ import {
 import { FileInterceptor } from '@nestjs/platform-express';
 import { memoryStorage } from 'multer';
 import { Throttle } from '@nestjs/throttler';
-import type { AdminBlogPost, AdminBlogPostSummary, BlogMediaUploadResult, BlogPublishResult, BlogVideoPresignResult } from '@aiit/shared';
+import type { AdminBlogPost, AdminBlogPostSummary, AdminNewsletterIssue, BlogMediaUploadResult, BlogPublishResult, BlogVideoPresignResult } from '@aiit/shared';
 import { JwtGuard, type AuthenticatedUser } from '../../common/guards/jwt.guard';
 import { RolesGuard } from '../../common/guards/roles.guard';
 import { Roles } from '../../common/decorators/roles.decorator';
@@ -109,6 +109,17 @@ export class AdminBlogController {
   async unpublish(@CurrentUser() user: AuthenticatedUser, @Param('id', ParseUUIDPipe) id: string): Promise<AdminBlogPost> {
     try {
       return await this.blog.unpublish(user.userId, id);
+    } catch (err) {
+      throw toHttpException(err);
+    }
+  }
+
+  /** Opt-in -- an admin explicitly asks for this once a post is live, never automatic on publish. */
+  @Post(':id/notify-subscribers')
+  @Throttle({ default: { limit: 10, ttl: 60_000 } })
+  async notifySubscribers(@CurrentUser() user: AuthenticatedUser, @Param('id', ParseUUIDPipe) id: string): Promise<AdminNewsletterIssue> {
+    try {
+      return await this.blog.notifySubscribers(user.userId, id);
     } catch (err) {
       throw toHttpException(err);
     }

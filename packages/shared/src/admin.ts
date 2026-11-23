@@ -195,3 +195,18 @@ export interface RefundResult {
   order: AdminOrderRow;
   refundRef: string;
 }
+
+// ---- Newsletter (admin compose/send) ----
+
+export interface AdminNewsletterIssue {
+  id: string;
+  subject: string;
+  bodyText: string;
+  sentAt: string | null;
+  sentCount: number;
+  createdAt: string;
+}
+
+export interface SendNewsletterResult {
+  issue: AdminNewsletterIssue;
+}

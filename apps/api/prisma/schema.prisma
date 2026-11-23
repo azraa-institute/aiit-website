@@ -862,6 +862,24 @@ model NewsletterSubscriber {
   @@schema("public")
 }
 
+/// One sent (or in-progress) newsletter broadcast. Sending is synchronous
+/// and direct via EmailService/Resend -- same fan-out pattern
+/// WebinarNotificationsService.sendReminders already uses for many
+/// recipients, not a Brevo campaign -- so no new vendor dependency for the
+/// one feature this codebase actually has (confirmed opt-in subscribers).
+model NewsletterIssue {
+  id        String    @id @default(uuid()) @db.Uuid
+  subject   String
+  bodyText  String    @map("body_text")
+  sentAt    DateTime? @map("sent_at") @db.Timestamptz(6)
+  sentCount Int       @default(0) @map("sent_count")
+  createdBy String?   @map("created_by") @db.Uuid
+  createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  @@map("newsletter_issues")
+  @@schema("public")
+}
+
 enum WebinarStatus {
   upcoming
   live

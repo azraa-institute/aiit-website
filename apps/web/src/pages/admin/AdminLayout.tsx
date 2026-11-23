@@ -39,6 +39,7 @@ const ADMIN_NAV: StaffNavItem[] = [
       { to: '/admin/blog', label: 'Blog' },
       { to: '/admin/webinars', label: 'Webinars' },
       { to: '/admin/announcements', label: 'Announcements' },
+      { to: '/admin/newsletter', label: 'Newsletter' },
     ],
   },
   {

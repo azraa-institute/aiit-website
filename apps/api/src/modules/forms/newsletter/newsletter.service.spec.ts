@@ -1,4 +1,4 @@
-import { NotFoundException } from '@nestjs/common';
+import { BadRequestException, NotFoundException } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
 import { PrismaService } from '../../../common/prisma/prisma.service';
 import { EmailService } from '../../../common/email/email.service';
@@ -6,12 +6,16 @@ import { NewsletterService } from './newsletter.service';
 
 describe('NewsletterService', () => {
   let service: NewsletterService;
-  let prisma: { newsletterSubscriber: { findUnique: jest.Mock; create: jest.Mock; update: jest.Mock } };
+  let prisma: {
+    newsletterSubscriber: { findUnique: jest.Mock; findMany: jest.Mock; create: jest.Mock; update: jest.Mock; count: jest.Mock };
+    newsletterIssue: { findMany: jest.Mock; create: jest.Mock; update: jest.Mock };
+  };
   let email: { send: jest.Mock };
 
   beforeEach(async () => {
     prisma = {
-      newsletterSubscriber: { findUnique: jest.fn(), create: jest.fn(), update: jest.fn() },
+      newsletterSubscriber: { findUnique: jest.fn(), findMany: jest.fn(), create: jest.fn(), update: jest.fn(), count: jest.fn() },
+      newsletterIssue: { findMany: jest.fn(), create: jest.fn(), update: jest.fn() },
     };
     email = { send: jest.fn() };
 
@@ -120,6 +124,73 @@ describe('NewsletterService', () => {
       expect(prisma.newsletterSubscriber.update).toHaveBeenCalledWith(
         expect.objectContaining({ where: { id: '1' }, data: expect.objectContaining({ status: 'unsubscribed' }) }),
       );
+    });
+  });
+
+  describe('sendIssue', () => {
+    it('refuses an empty subject or body', async () => {
+      await expect(service.sendIssue('admin-1', '  ', 'body')).rejects.toBeInstanceOf(BadRequestException);
+      await expect(service.sendIssue('admin-1', 'subject', '   ')).rejects.toBeInstanceOf(BadRequestException);
+      expect(prisma.newsletterIssue.create).not.toHaveBeenCalled();
+    });
+
+    it('sends only to confirmed subscribers, each with their own unsubscribe link, and records the sent count', async () => {
+      prisma.newsletterIssue.create.mockResolvedValueOnce({ id: 'issue-1' });
+      prisma.newsletterSubscriber.findMany.mockResolvedValueOnce([
+        { email: 'a@example.com', unsubscribeToken: 'tok-a' },
+        { email: 'b@example.com', unsubscribeToken: 'tok-b' },
+      ]);
+      prisma.newsletterIssue.update.mockResolvedValueOnce({
+        id: 'issue-1',
+        subject: 'Hello',
+        bodyText: 'Hi there',
+        sentAt: new Date('2026-11-23T00:00:00Z'),
+        sentCount: 2,
+        createdAt: new Date('2026-11-23T00:00:00Z'),
+      });
+
+      const result = await service.sendIssue('admin-1', 'Hello', 'Hi there');
+
+      expect(prisma.newsletterSubscriber.findMany).toHaveBeenCalledWith(expect.objectContaining({ where: { status: 'confirmed' } }));
+      expect(email.send).toHaveBeenCalledTimes(2);
+      expect(email.send).toHaveBeenCalledWith(expect.objectContaining({ to: 'a@example.com', html: expect.stringContaining('tok-a') }));
+      expect(email.send).toHaveBeenCalledWith(expect.objectContaining({ to: 'b@example.com', html: expect.stringContaining('tok-b') }));
+      expect(prisma.newsletterIssue.update).toHaveBeenCalledWith(
+        expect.objectContaining({ where: { id: 'issue-1' }, data: expect.objectContaining({ sentCount: 2 }) }),
+      );
+      expect(result.sentCount).toBe(2);
+    });
+
+    it('keeps sending to the rest of the list when one recipient fails', async () => {
+      prisma.newsletterIssue.create.mockResolvedValueOnce({ id: 'issue-1' });
+      prisma.newsletterSubscriber.findMany.mockResolvedValueOnce([
+        { email: 'bad@example.com', unsubscribeToken: 'tok-a' },
+        { email: 'good@example.com', unsubscribeToken: 'tok-b' },
+      ]);
+      email.send.mockRejectedValueOnce(new Error('bounced')).mockResolvedValueOnce(undefined);
+      prisma.newsletterIssue.update.mockResolvedValueOnce({
+        id: 'issue-1',
+        subject: 'Hello',
+        bodyText: 'Hi',
+        sentAt: new Date(),
+        sentCount: 1,
+        createdAt: new Date(),
+      });
+
+      await service.sendIssue('admin-1', 'Hello', 'Hi');
+
+      expect(email.send).toHaveBeenCalledTimes(2);
+      expect(prisma.newsletterIssue.update).toHaveBeenCalledWith(
+        expect.objectContaining({ data: expect.objectContaining({ sentCount: 1 }) }),
+      );
+    });
+  });
+
+  describe('countConfirmedSubscribers', () => {
+    it('counts only confirmed subscribers', async () => {
+      prisma.newsletterSubscriber.count.mockResolvedValueOnce(42);
+      await expect(service.countConfirmedSubscribers()).resolves.toBe(42);
+      expect(prisma.newsletterSubscriber.count).toHaveBeenCalledWith({ where: { status: 'confirmed' } });
     });
   });
 });

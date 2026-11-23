@@ -5,6 +5,7 @@ import { EnrollmentsModule } from '../enrollments/enrollments.module';
 import { AffiliatesModule } from '../affiliates/affiliates.module';
 import { WebinarsModule } from '../webinars/webinars.module';
 import { PaymentsModule } from '../payments/payments.module';
+import { FormsModule } from '../forms/forms.module';
 import { AdminUsersController } from './admin-users.controller';
 import { AdminUsersService } from './admin-users.service';
 import { AdminCoursesController } from './admin-courses.controller';
@@ -24,9 +25,10 @@ import { AdminWebinarsController } from './admin-webinars.controller';
 import { AdminWebinarsService } from './admin-webinars.service';
 import { AdminPromoCodesController } from './admin-promo-codes.controller';
 import { AdminPromoCodesService } from './admin-promo-codes.service';
+import { AdminNewsletterController } from './admin-newsletter.controller';
 
 @Module({
-  imports: [EmailModule, EnrollmentsModule, AffiliatesModule, WebinarsModule, PaymentsModule, CurrencyModule],
+  imports: [EmailModule, EnrollmentsModule, AffiliatesModule, WebinarsModule, PaymentsModule, CurrencyModule, FormsModule],
   controllers: [
     AdminUsersController,
     AdminCoursesController,
@@ -36,6 +38,7 @@ import { AdminPromoCodesService } from './admin-promo-codes.service';
     AdminBlogController,
     AdminWebinarsController,
     AdminPromoCodesController,
+    AdminNewsletterController,
   ],
   providers: [
     AdminUsersService,

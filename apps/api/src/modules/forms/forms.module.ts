@@ -21,5 +21,6 @@ import { ConsentService } from './consent/consent.service';
   imports: [EmailModule, TurnstileModule, WebinarsModule],
   controllers: [ContactController, NewsletterController, WebinarController, ConsentController],
   providers: [ContactService, NewsletterService, WebinarService, ConsentService, JwtGuard],
+  exports: [NewsletterService],
 })
 export class FormsModule {}

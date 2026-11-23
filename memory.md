@@ -358,7 +358,9 @@ session · ⚠️ partial/known gap · ❌ not built.
 | **Bulk certificate issuance** (new, 2026-11-23) | ✅ verified live this session (read path only — see note) | `apps/web/src/pages/admin/AdminCertificatesPage.tsx` (`BulkIssuePanel`), `apps/api/src/modules/certificates/certificates.service.ts` (`eligibleForCourse`/`issueBulk`), `apps/api/src/modules/certificates/course-certificates.controller.ts`, `apps/api/src/modules/certificates/dto/bulk-issue-certificates.dto.ts`, `packages/shared/src/certificate.ts` (`CertificateEligibleStudent`/`BulkIssueCertificatesResult`) | New panel at the top of the Certificates admin page: pick a course, see everyone actively enrolled who doesn't already hold a certificate, multi-select (with "select all"), issue to everyone selected in one request. Each learner is issued independently — one already-certified or nameless learner in the batch doesn't block the rest; the response reports per-learner `issued`/`skipped` (with a reason). The pre-existing one-at-a-time flow in `AdminStudentsPage.tsx`'s drawer is untouched. **Verified via 32 Jest cases plus a live read-path check** (a real course's roster correctly excluded an already-certified learner) — the actual "Issue to N selected" click was deliberately never run against real enrolled students this session, since unlike the course-editor's throwaway test course, issuing a real certificate notifies a real learner and isn't easily undone. Whoever wants a live write-path test next: use a disposable test course + a throwaway enrolled account. |
 | **Webinar popup split from the general enrollment popup** (new, 2026-11-23) | ✅ verified live this session | `apps/web/src/components/common/{EnrollmentPopup,WebinarEnrollmentPopup}.tsx`, `enrollment-popup.css`, `apps/web/public/assets/popups/aiit-webinar-registration.webp` | `/webinar` now shows its own popup (new artwork, the project owner's own supplied image) whose "Register Now" hotspot redirects to `/webinar#register`. `EnrollmentPopup` (the general "Enroll Now" one) was reverted from an earlier round's webinar-only scoping back to a skip-list that now also excludes `/webinar`, so the two never compete — "Enroll Now" still routes to `/register`, unchanged. Both share `enrollment-popup.css`'s generic classes; only the hotspot's vertical position differs per artwork (`.enroll-pop__hotspot--webinar`). Live-verified both popups and the register-now click-through/scroll. |
 | **Course cart + mixed coupon-eligibility checkout, all 3 providers** (new, 2026-11-16) | 🟡 build/test-verified, not live-verified | `apps/api/prisma/schema.prisma` (`CartItem` model, migration `20261116000000_cart_items`), `apps/api/src/modules/cart/{cart.service,cart.controller,cart.module}.ts`, `apps/api/src/modules/payments/promo-codes/promo-codes.service.ts` (`priceCart`, replaces `priceCheckout`, now takes an explicit `currency` param), `apps/api/src/modules/payments/payments.service.ts` (`createPendingBundleOrder` generalized with `provider`/`currency` params, rejects a promo code on any non-Razorpay provider, `markOrderPaid` clears matching cart items), `apps/api/src/modules/payments/{paypal,paystack}/{paypal-checkout,paypal-webhook,paystack-checkout,paystack-webhook}.controller.ts` (new `orders/bundle` routes + webhook fan-out generalization), `packages/shared/src/payment.ts` (`CartPricedLine`/`CartPriceResponse`/`CartItemSummary`/`CreateCartBundleOrderRequest`), `apps/web/src/pages/portal/{cartData.ts,DashboardCart.tsx}`, `apps/web/src/components/common/{PaymentMethodPicker,PayPalCheckoutButton}.tsx` (generalized for cart/bundle mode), `apps/web/src/lib/paystackCheckout.ts` (`openPaystackBundleCheckout`), `apps/web/src/components/layout/HeaderCart.tsx`, `apps/web/src/components/course/CourseCard.tsx` (optional `inCart`/`onToggleCart` props), `apps/web/src/pages/{CoursesPage.tsx,CourseDetailPage.tsx}` | A real, server-side cart (`CartItem` — "this user's cart" is just their rows, no wrapping `Cart` entity) lets a learner add any paid, not-already-enrolled course from the catalogue (`/courses` card grid, or the course-detail page's "Add to cart instead" toggle next to `PaymentMethodPicker`) "for now or later," then check everything out together from a new cart widget (`DashboardCart`) on `/portal`'s dashboard — shown only once the cart actually has something in it. Checkout went through two rounds: first shipped **Razorpay-only** (2026-11-16, committed `78374a5`), then the **same day, a follow-up round, generalized it to all three providers** — PayPal and Paystack can now check out an ordinary cart too (any mix of non-promo courses, each priced at its own real rate converted into that provider's currency), via the exact same bundle-order machinery the first round built, generalized further: `PromoCodesService.priceCheckout()` → **`priceCart()`**, which returns a *per-course* breakdown (`{courseId, amountCents, eligible}[]`) instead of assuming every course in the request gets the same price — this is what lets a cart mix an ordinary course with one of the MBA promo's 3 eligible courses in a single checkout: the eligible course(s) price at the code's rate, everything else prices at its own real rate, and `promoCodeId` (and therefore the redemption-cap counter) is only ever set when at least one line was actually eligible — a code typed in that matches nothing in the cart never "applies." `priceCart()` now takes an explicit `currency` param (previously hardcoded to `'INR'`) so a PayPal/Paystack cart's Order rows get stamped with the right currency, not INR by mistake. The **MBA promo-code discount itself stays Razorpay/INR-only by firm product decision** — `PaymentsService.createPendingBundleOrder()` now takes `provider`/`currency` params (defaulting to Razorpay/INR for backward compatibility) and throws `BadRequestException` outright if a promo code is combined with any other provider, so this is enforced server-side, not just hidden in the UI. `PaymentMethodPicker.tsx` (previously single-course-only) now accepts `courseSlugs`/`promoCode`/`razorpayOnly` too, so the same four-card UI (PayPal/Card/Razorpay/Paystack) is shared by both `CourseDetailPage` and `DashboardCart` — when a promo code is actively discounting something, `razorpayOnly` hides every card but Razorpay with an explanatory note, since only Razorpay can honor the discount. New `PayPal`/`Paystack` bundle routes (`orders/bundle`, `orders/bundle/:id/capture|verify`) mirror Razorpay's exactly, including the webhook fan-out generalization (one `providerRef` can now back 1-N `Order` rows for all three providers, not just Razorpay). The dashboard widget's "**Redeem coupon**" button (the project owner's exact requested wording, not "Apply") visibly highlights eligible rows (`is-coupon-eligible`, a brass border/badge) and shows a notice naming how many cart items aren't covered when some aren't. `markOrderPaid` now also does a harmless `cartItem.deleteMany` after enrolling — a paid course drops out of the cart automatically, whether or not the purchase actually originated from the cart (the MBA page's own direct flow doesn't use the cart at all, so this is a no-op there). `GET/POST /me/cart`, `DELETE /me/cart/:courseId`, all `@UseGuards(JwtGuard)`. Two bugs found via live testing and fixed the same day as the first round (`5a7293d`): `DashboardCart`'s `useScrollReveal` ran too late (it mounted after `DashboardPage`'s one-time reveal scan already fired, so the section had real content but never got observed/painted — fixed by having `DashboardCart` call its own `useScrollReveal([cart.status])`), and "Add to cart" was showing for any signed-in account, not just learners (fixed with `isLearner` checks client-side in `CoursesPage`/`CourseDetailPage`, and server-side via `@Roles('learner')` on `CartController`). A persistent cart icon (`apps/web/src/components/layout/HeaderCart.tsx`) was added to the public header, mobile menu, and portal topbar the same day (`5f5190f`), gated the same `isLearner` way via a new boolean on `useAccountMenu.ts`. Quill (`quill-general-facts.data.ts`) got two new canned replies for MBA/cart questions (`13d56be`) — Quill's actual course list/detail answers already read live from `CoursesService`, nothing hardcoded there needed updating. **Verification performed on both rounds**: `tsc --noEmit` + `eslint` clean in all three workspaces; full API Jest suite green (69→598 tests across the two rounds, including new PayPal/Paystack bundle controller cases); both production builds succeed. **Not yet done**: no live purchase of any kind (single-course or cart, any of the 3 providers, with or without the MBA coupon) has actually been run against the live account this entire session — see §11 for commit/push/CI status as of whichever round is most recent. |
-| **Affiliate seriousness screening + deferred credentials + Brevo lead sync** (new, 2026-10-28) | 🟡 build/test-verified, not live-verified | `apps/api/prisma/schema.prisma` (`Affiliate.socialLinks`, migration `20261028000000_affiliate_social_links`), `packages/shared/src/affiliate.ts` (`AffiliateSocialLink`/`AffiliateSocialPlatform`), `apps/api/src/modules/affiliates/{affiliates.service.ts,dto/social-link.dto.ts}`, `apps/api/src/modules/admin/admin-affiliates.service.ts`, `apps/api/src/common/{youtube,brevo}/*-client.service.ts`, `apps/web/src/pages/AffiliatePage.tsx`, `apps/web/src/pages/admin/AdminAffiliatesPage.tsx` | Built from a project-owner-approved plan (reasoning turn → plan-mode → build, same session). The public application form now collects up to 5 social platform/URL/follower-count entries (`Affiliate.socialLinks`, a JSON array — additive, the old single `handle` field is untouched). A new `YoutubeClientService` best-effort verifies the real subscriber count server-side, fire-and-forget, for YouTube links only — confirmed during planning that Instagram/TikTok/X/LinkedIn have no free, no-OAuth public lookup (paid tiers, app-review gates, or ToS-violating scraping only), so every other platform stays self-reported with `fetchStatus: 'unsupported'`; the admin drawer (`AdminAffiliatesPage.tsx`) now shows reported-vs-verified counts per link so a human still makes the call, not an automated gate. **Registration flow changed**: `AffiliatesService.applyNew()` no longer emails login credentials at submission — only an acknowledgment email. Real credentials (a freshly-generated password, via `SupabaseAdminService.setPassword()`, the same method staff password resets already use — the original temp password is never persisted, by design) only go out from `AdminAffiliatesService.notifyApplicant()` when an admin sets status to `approved`. `createManually()`'s existing immediate-credentials behavior is preserved for its default `'approved'` case, but withholds credentials the same way if an admin explicitly sets a non-terminal status there. New `BrevoClientService` (thin REST client, same house style as Paystack/GitHub) pushes a privacy-minimal lead record (name/email/social links/reported follower counts/country/types — explicitly never phone/motivation/signature/payout data) to Brevo on every application (`apply()`/`applyNew()`), no status-based segmentation (explicitly decided against a "come back" nurture distinction). New env vars: `BREVO_API_KEY`, `BREVO_AFFILIATE_LIST_ID`, `YOUTUBE_API_KEY` (all optional, fail-soft/no-op when unset — nothing else is affected). **Deliberately not built this round** (separable phase, flagged in the plan as sequence-after): a newsletter-sending feature on Brevo — confirmed during planning that no campaign/broadcast code exists anywhere in this codebase today, `NewsletterService` is capture-only. **Verification performed**: `tsc --noEmit` + `eslint` clean in all three workspaces (api/web/shared); full API Jest suite green (66 suites/540 tests, including two new client specs with mocked `fetch` and updated/new affiliate-flow assertions); both production builds succeed. **Not yet done**: nothing committed/pushed (not asked to); no live submission test (no real `BREVO_API_KEY`/`YOUTUBE_API_KEY` in this session); the project owner still needs to create the Brevo list + API key, a Google Cloud YouTube Data API v3 key, and set all three env vars on Render before any of this does anything beyond no-op gracefully. |
+| **Live-class session recording (LiveKit Egress + R2)** (new, 2026-11-23) | 🟡 build/test-verified, **not live-verified against a real Egress call** | `apps/api/prisma/schema.prisma` (`Recording` model, `RecordingStatus` enum, migration `20261123010000_live_class_recordings`), `apps/api/src/modules/live-classes/{livekit.service,live-classes.service,live-classes.controller,livekit-webhook.controller}.ts`, `packages/shared/src/live-class.ts` (`Recording`/`RecordingStatus`), `apps/web/src/components/classroom/{Classroom,ClassroomIcons}.tsx`, `apps/web/src/pages/portal/LiveClassroomPage.tsx` | Instructor gets a "Record"/"Stop recording" toggle in the classroom toolbar; starts a LiveKit **Egress** room-composite recording (`StartEgress`+`TemplateSource`, the current non-deprecated RPC — not the older `StartRoomCompositeEgress`) that uploads the MP4 straight to the existing R2 bucket (LiveKit's own egress worker does the upload, the file never touches this API server). `LiveKitService.twirp()` was generalized to take a service name + JWT grant (was hardcoded to `livekit.RoomService`+`roomAdmin`) so Egress calls can use `livekit.Egress`+`roomRecord`, the grant Egress actually checks. Egress's own JSON API is snake_case request fields (confirmed against LiveKit's docs, verified via a fresh web-fetch this round rather than guessed) — differs from RoomService's camelCase already used elsewhere in this file; responses/webhooks come back camelCase, ordinary protobuf-JSON convention. `LiveKitWebhookController` now also handles `egress_updated`/`egress_ended`, flipping the `Recording` row to `active`/`complete`/`failed` by `egressId` (the only join key the webhook carries) — the public URL is built from the webhook's `fileResults[].filename` + `R2_PUBLIC_URL`, deliberately not trusting `EgressInfo.location`'s undocumented shape for a non-AWS target. Finished recordings show up for the instructor and any enrolled learner once the class ends (`LiveClassroomPage.tsx`'s `RecordingsList`). **Verified via 15 new Jest cases** (LiveKitService's Egress methods, LiveClassesService's start/stop/list/recordEgressEvent, a new webhook controller spec) plus a clean migration apply to production — **never actually run against a real LiveKit room with Egress** (no live class session existed to test against this round), so the real end-to-end path (does `StartEgress` actually succeed on this LiveKit Cloud project's plan, does the webhook actually arrive with the field names assumed here) is unconfirmed. First real test should be: start a real/throwaway live class, click Record, speak for a few seconds, Stop, confirm a recording appears in R2 and the row flips to `complete` with a working URL. |
+| **Newsletter broadcast sending** (new, 2026-11-23) | 🟡 build/test-verified, **never actually sent to real subscribers** | `apps/api/prisma/schema.prisma` (`NewsletterIssue` model, migration `20261123020000_newsletter_issues`), `apps/api/src/modules/forms/newsletter/newsletter.service.ts` (`sendIssue`/`listIssues`/`countConfirmedSubscribers`), `apps/api/src/modules/admin/{admin-newsletter.controller.ts,dto/admin-newsletter.dto.ts}`, `packages/shared/src/admin.ts` (`AdminNewsletterIssue`/`SendNewsletterResult`), `apps/web/src/pages/admin/AdminNewsletterPage.tsx` | New `/admin/newsletter` page: compose a subject + plain-text body (one paragraph per line), see how many confirmed subscribers it would reach, double-confirm (same "click once to reveal Confirm, click again" pattern `AdminPaymentsPage.tsx`'s refund button uses — a real, irreversible bulk-email action deserves the same treatment as real money), then send. **Deliberately not a Brevo campaign** — sends directly via the existing `EmailService`/Resend, one at a time, the exact same fan-out shape `WebinarNotificationsService.sendReminders` already uses for many recipients (sequential `for` loop, `try/catch` per recipient so one bad address never blocks the rest, `sentCount` only reflects actual successes) — no new vendor dependency for the one newsletter feature this codebase actually has. Each recipient gets their own per-subscriber unsubscribe link built from their existing `unsubscribeToken` (no new token scheme). `NewsletterIssue` rows are a simple send-history log, not a draft/scheduling system. **Verified via 16 new Jest cases** (service-level: empty-subject/body rejection, per-recipient failure isolation, confirmed-only targeting) — **no real broadcast has been sent**, deliberately: unlike the course-editor/certificate/affiliate tests this session, there's no safe "throwaway" version of this action once there's even one real confirmed subscriber, since it emails real people who opted in for AIIT news, not for being a test target. First real test should be a tiny, clearly-test-labeled subject sent once there's a way to safely target just one subscriber (e.g. the project owner subscribing their own address first). |
+| **Affiliate seriousness screening + deferred credentials + Brevo lead sync** (new, 2026-10-28) | 🟡 build-verified; **YouTube half confirmed broken in production, Brevo presumed working** (2026-11-23 live test) | `apps/api/prisma/schema.prisma` (`Affiliate.socialLinks`, migration `20261028000000_affiliate_social_links`), `packages/shared/src/affiliate.ts` (`AffiliateSocialLink`/`AffiliateSocialPlatform`), `apps/api/src/modules/affiliates/{affiliates.service.ts,dto/social-link.dto.ts}`, `apps/api/src/modules/admin/admin-affiliates.service.ts`, `apps/api/src/common/{youtube,brevo}/*-client.service.ts`, `apps/web/src/pages/AffiliatePage.tsx`, `apps/web/src/pages/admin/AdminAffiliatesPage.tsx` | Built from a project-owner-approved plan (reasoning turn → plan-mode → build, same session). The public application form now collects up to 5 social platform/URL/follower-count entries (`Affiliate.socialLinks`, a JSON array — additive, the old single `handle` field is untouched). A new `YoutubeClientService` best-effort verifies the real subscriber count server-side, fire-and-forget, for YouTube links only — confirmed during planning that Instagram/TikTok/X/LinkedIn have no free, no-OAuth public lookup (paid tiers, app-review gates, or ToS-violating scraping only), so every other platform stays self-reported with `fetchStatus: 'unsupported'`; the admin drawer (`AdminAffiliatesPage.tsx`) now shows reported-vs-verified counts per link so a human still makes the call, not an automated gate. **Registration flow changed**: `AffiliatesService.applyNew()` no longer emails login credentials at submission — only an acknowledgment email. Real credentials (a freshly-generated password, via `SupabaseAdminService.setPassword()`, the same method staff password resets already use — the original temp password is never persisted, by design) only go out from `AdminAffiliatesService.notifyApplicant()` when an admin sets status to `approved`. `createManually()`'s existing immediate-credentials behavior is preserved for its default `'approved'` case, but withholds credentials the same way if an admin explicitly sets a non-terminal status there. New `BrevoClientService` (thin REST client, same house style as Paystack/GitHub) pushes a privacy-minimal lead record (name/email/social links/reported follower counts/country/types — explicitly never phone/motivation/signature/payout data) to Brevo on every application (`apply()`/`applyNew()`), no status-based segmentation (explicitly decided against a "come back" nurture distinction). New env vars: `BREVO_API_KEY`, `BREVO_AFFILIATE_LIST_ID`, `YOUTUBE_API_KEY` (all optional, fail-soft/no-op when unset — nothing else is affected). **Deliberately not built this round** (separable phase, flagged in the plan as sequence-after): a newsletter-sending feature on Brevo — confirmed during planning that no campaign/broadcast code exists anywhere in this codebase today, `NewsletterService` is capture-only. **Verification performed**: `tsc --noEmit` + `eslint` clean in all three workspaces (api/web/shared); full API Jest suite green (66 suites/540 tests, including two new client specs with mocked `fetch` and updated/new affiliate-flow assertions); both production builds succeed. **Not yet done**: nothing committed/pushed (not asked to); no live submission test (no real `BREVO_API_KEY`/`YOUTUBE_API_KEY` in this session); the project owner still needs to create the Brevo list + API key, a Google Cloud YouTube Data API v3 key, and set all three env vars on Render before any of this does anything beyond no-op gracefully. **2026-11-23 live test (new round)**: the project owner added credentials to Render; submitted two real test applications (anonymous flow, each with a real YouTube URL and a `+alias` of a real inbox, cleanly creating a separate account rather than colliding with the already-registered base address) and checked the admin drawer. Brevo's half showed no visible error (can't independently confirm delivery into the project owner's Brevo list without dashboard access, which is out of this project's browser-automation scope — worth a quick manual check there). **YouTube's half is confirmed still failing** (`fetchStatus: 'failed'`, "verification failed, check manually") on both attempts, including after a fresh deploy ruled out stale-env-var timing as the cause — the project owner confirmed afterward they likely never actually created/set `YOUTUBE_API_KEY` on Render (only `BREVO_API_KEY`), which matches exactly: `YoutubeClientService.fetchSubscriberCount()` returns `null` (not an error) whenever `process.env.YOUTUBE_API_KEY` is unset, by design (see its own doc comment) — this is the service correctly no-op'ing, not a code bug. Both test applications (`QA Test Affiliate - please delete` / `... 2 - please delete`, emails `godcaresndubuisi3+affiliatetest@gmail.com` / `...+affiliatetest2@gmail.com`) were set to **Rejected** afterward as the only available cleanup (no delete endpoint exists for affiliate applications, matching certificates'/orders' own never-hard-delete convention) — their underlying Supabase auth accounts still exist, harmless, clearly named if the project owner wants them gone later. **Next step once a real `YOUTUBE_API_KEY` is set**: no code change needed, just re-test the same way (a fresh application with a real YouTube link) to confirm `fetchStatus: 'fetched'` with a real subscriber count. |
 | **Auth** (email/password, magic link, Google/Microsoft OAuth, TOTP 2FA) | 🟡 | `apps/api/src/modules/auth/`, `apps/web/src/pages/auth/` | JWT verified against Supabase JWKS (`JwtGuard`); app role always read from `profiles`, never trusted from the JWT claim. Apple sign-in **not built** (needs paid Apple Developer account, $99/yr — explicitly deprioritized by the project owner, not worth it for now). Staff onboarding: new instructor/admin accounts and password resets email the temporary credentials (`AdminUsersService.sendCredentialsEmail`); `StaffChangePasswordPage` force-signs-out and redirects to `/staff/login` after a password change. **Microsoft (`azure` provider id) and Facebook OAuth added this round** alongside the existing Google button — both are free to set up (unlike Apple); Facebook is coded but **hidden from the UI** pending Meta App Review (see the Auth routing note in §4). The `/login` page's post-sign-in logic (`LoginPage.tsx`'s `enterPortal()`) now rejects an affiliate account with a link to the new `/affiliate/login` page — see §15 for why this flipped twice in one round (route-to-portal, then back to turn-away, as `/affiliate/login` went from nonexistent → existing). Google's OAuth consent screen still shows the raw Supabase project domain (`oyngcwhziidaehpuisoi.supabase.co`) rather than `aiit.network` — fixable only via Supabase's paid Custom Domains add-on or Google app-verification, both outside this codebase; explained to the project owner, not actioned. |
 | **Catalogue / course discovery** | 🟡 | `apps/api/src/modules/courses/` | Location-based currency pricing. Curriculum tables (`CourseModule`/`Lesson`/`LessonResource`) exist in schema and are soft-deletable, but **seeded empty, not wired to any learner UI** — the real learner experience is live-class + assignments + quizzes, not a self-paced lesson browser. |
 | **Quill** (AI course-advisor chat assistant) | ✅ verified live this session | `apps/api/src/modules/quill/`, `apps/web/src/components/course/QuillChatPanel.tsx`, `apps/web/src/lib/QuillContext.tsx`, `quillHistory.ts` | **Just promoted to site-wide** (2026-10-11, commit `ec6db33`) — a persistent floating launcher button on every public page (not just the course page), with client-side (localStorage) multi-conversation history and a "New chat" action. `courseSlug` is now optional on the request; absent → general-assistant mode answering from the live course catalogue + a small curated fact file. Rule-based today (no LLM call); `XAI_API_KEY` is the documented seam to plug in a real model (x.ai Grok) later without changing the contract. **README.md's "Backend" section describing Quill is now stale** — still describes it as course-page-only; not yet updated to reflect the site-wide launcher/history work (see §9, §12). |
@@ -760,7 +762,86 @@ round's commits.
 
 ## 11. Current development position
 
-**Last completed objective (2026-11-20 to 2026-11-23, most recent — a long
+**Last completed objective (2026-11-23, most recent round — a follow-up
+session to the one below, same day): four more asks, each investigated or
+built in turn, ending with this document update because the project owner
+was about to clear the session.** Commits `eed2c0b` through `63da875`.
+
+- **"Hover icons for tools" question** — already fully working, nothing to
+  build. Admin-created courses use the exact same `TechnologyList`/
+  `TechChip` component (`apps/web/src/components/course/TechnologyList.tsx`)
+  every other course uses: a native `title` tooltip plus a real brand logo
+  or the admin-picked generic icon. Confirmed by re-examining the admin
+  course editor's own earlier live test, which already showed this
+  rendering correctly.
+- **"Are course images on R2?" question** — clarified, not a bug: course
+  cover images use Supabase Storage's `blog-media` bucket (same place blog
+  images go), not R2 — R2 in this project is video-only by design (see that
+  row above). Asked the project owner whether to migrate; they said no, just
+  wanted confirmation uploads persist, which the earlier admin-course-editor
+  live test had already independently proven (a real uploaded image
+  rendered correctly on the public catalogue).
+- **Real bug found and fixed**: a "stale Register button" on the webinar
+  page. Root cause: `WebinarPage.tsx` has four separate links all pointing
+  at `/webinar#register`; clicking a second one after the first did nothing,
+  because `ScrollToTop.tsx`'s scroll-to-hash effect depended on
+  `[pathname, hash]` by *value* — re-pushing an identical URL never changes
+  either, so the effect silently never re-ran. Fixed by adding
+  `location.key` (unique per navigation, even to an identical URL) to the
+  dependency array. `eed2c0b`, live-verified: click one Register link, scroll
+  away, click a different one — it now reliably re-scrolls every time. Took
+  real investigative work to pin down — several early repro attempts failed
+  only because of a coordinate-scaling mismatch between screenshot pixels
+  and real viewport pixels when clicking via raw coordinates (not a site
+  bug); a `ref`-based click and later a correctly-scaled coordinate click
+  both confirmed the real bug independent of that red herring.
+- **"--" sweep, again** (`871dce1`) — found and fixed 3 new instances, all
+  in this session's own new `AdminCourseEditorPage.tsx` labels (fixed to
+  colons). Also added a standing rule to §14 below and to this assistant's
+  own cross-session memory, specifically so this stops being rediscovered
+  every round — grep new copy for `--` before finishing any task that adds
+  rendered text.
+- **Affiliate Brevo/YouTube live test** (after the project owner added
+  credentials to Render) — see that row in §5 for the full account. Short
+  version: Brevo looks fine, YouTube verification is confirmed still broken
+  because `YOUTUBE_API_KEY` itself was never actually set (only
+  `BREVO_API_KEY` was) — the project owner confirmed this themselves after
+  seeing the second failed test. Not a code bug; `YoutubeClientService`
+  no-ops by design when the key is absent, exactly as it did here.
+- **Live-class session recording** (`472b94c`) — built the full LiveKit
+  Egress + R2 pipeline (see §5's new row). Code-complete, 15 new Jest cases
+  green, migration applied cleanly to production — **not yet run against a
+  real live class**, so whether `StartEgress` actually succeeds on this
+  LiveKit Cloud project and whether the webhook's real field names match
+  what was implemented (verified against LiveKit's own current docs via a
+  fresh lookup this round, not guessed, but still unconfirmed against the
+  live server) is the one real unknown left.
+- **Newsletter broadcast sending** (`63da875`) — built a full compose/send
+  admin page (see §5's new row), direct via the existing email
+  infrastructure rather than a new Brevo campaign dependency. 16 new Jest
+  cases green. **Deliberately never sent for real** — unlike every other
+  live test this session, there's no safe throwaway version of broadcasting
+  to real opted-in subscribers.
+- Re-confirmed the breakout-room instructor-moderation backlog item (below,
+  previously listed as a gap) is **already fully built** — `moderate()`
+  already resolves which LiveKit room a target is actually in before
+  muting/removing them, and the frontend already has a working "Visit"
+  button for the host to join any breakout room. No code changed; the
+  backlog entry was simply stale (fixed in a round this document never
+  caught up to) and is removed below.
+
+**Verification performed this round**: `tsc --noEmit`/`eslint` clean across
+all three workspaces at every step; full API Jest suite green (70
+suites/636 tests as of the newsletter commit); both production builds
+succeed; every commit's `CI`+`Deploy` confirmed green. Two real production
+side effects from live testing, both cleaned up as far as the system allows:
+two disposable affiliate test applications (rejected, not deletable) and
+zero lasting changes from the course-editor/certificate tests earlier in the
+prior round (already cleaned up then).
+
+---
+
+**Last completed objective (2026-11-20 to 2026-11-23, prior round — a long
 multi-round session, one task fully shipped and verified at a time per
 explicit instruction: "do the task one after the other, for every single
 task, push to production and then start the next"):** ten commits, `4303d61`
@@ -1110,6 +1191,28 @@ here because it's dated 2026-09-12 and unverified against the current codebase �
 not "no outstanding work."
 
 **P1 — confirmed gaps, no workaround needed, real product features missing**
+- **`YOUTUBE_API_KEY` was never actually set on Render (2026-11-23, confirmed
+  by the project owner)** — only `BREVO_API_KEY` was added. Until this is
+  set, every affiliate application's YouTube follower count silently shows
+  "verification failed, check manually" (by design — `YoutubeClientService`
+  no-ops rather than erroring when the key is absent). No code change
+  needed: create a Google Cloud API key with YouTube Data API v3 enabled,
+  set `YOUTUBE_API_KEY` on Render, then re-test with one real application
+  carrying a real YouTube link.
+- **Live-class session recording (2026-11-23) — never run against a real
+  LiveKit room.** Built and test-verified (15 Jest cases, migration applied
+  cleanly), but the actual `StartEgress` call, the R2 upload, and the
+  `egress_ended` webhook have never fired for real — no live class existed
+  to test against this round. First real test: start a real/throwaway live
+  class, click Record, speak briefly, Stop, confirm a file lands in R2 and
+  the recording shows up once the class ends.
+- **Newsletter broadcast sending (2026-11-23) — never sent for real.** Built
+  and test-verified (16 Jest cases), but deliberately never triggered a real
+  send — unlike other features tested this session, there's no safe
+  throwaway version once there's a real confirmed subscriber on the list.
+  Test with a tiny, clearly-labeled subject once there's a way to target
+  just one subscriber safely (e.g. the project owner's own subscribed
+  address).
 - **Bulk certificate issuance (2026-11-23) — never actually clicked against
   real students.** Built, test-verified (32 Jest cases), and the read path
   (course roster + already-certified filtering) was live-confirmed, but the
@@ -1182,8 +1285,10 @@ not "no outstanding work."
 - ~~Delete unused `uploadFile()`/`removeFile()` in `apps/web/src/lib/storage.ts`~~ — done 2026-10-13.
 - Update `README.md`'s Quill and File-storage bullets to match current
   architecture (§9).
-- Breakout-room instructor moderation reaching individual breakout rooms, not just
-  the main room.
+- ~~Breakout-room instructor moderation reaching individual breakout rooms~~ —
+  re-checked 2026-11-23, already fully built (`LiveClassesService.moderate()`
+  resolves the target's real room before acting, `BreakoutsPanel.tsx` has a
+  working "Visit" button) — this entry was stale, not an actual gap.
 - Affiliate payout form's bank-name dropdown only covers Nigeria/Ghana/Kenya/South
   Africa (Paystack's own coverage) — explicitly confirmed with the project owner
   as an acceptable permanent limitation (free-text fallback everywhere else), not
@@ -1379,6 +1484,64 @@ export and is still live and correct.
 ---
 
 ## 15. Session handover log
+
+### 2026-11-23 — Stale-button fix, affiliate Brevo/YouTube live test, live-class recording, newsletter sending
+
+Same-day follow-up to the round right below this one. Six commits
+(`eed2c0b`→`63da875`).
+
+- `eed2c0b` — fixed a real bug: a second click on any of the webinar page's
+  four "Register" links (all pointing at `/webinar#register`) did nothing,
+  because `ScrollToTop.tsx`'s scroll-to-hash effect only re-ran when
+  `pathname`/`hash` changed in *value*, and re-pushing an identical URL
+  never does. Fixed by depending on `location.key` instead (unique per
+  navigation, even to an unchanged URL). Live-verified: click one Register
+  link, scroll away, click a different one — now reliably re-scrolls.
+- `871dce1` — another "--" sweep, 3 new instances found (all in the
+  previous round's own new `AdminCourseEditorPage.tsx`), fixed to colons.
+  Added a standing rule about this to §14 and to this assistant's own
+  cross-session memory file, so it's grepped for automatically on future
+  copy changes instead of being rediscovered each time.
+- Answered two questions without any code change: hover-icon tooltips
+  already work identically for admin-created courses (same shared
+  `TechnologyList` component every course uses); course cover images
+  intentionally live on Supabase Storage, not R2 (R2 is video-only by
+  design) — the project owner confirmed they only wanted confirmation
+  uploads persist, not a migration to R2.
+- **Affiliate Brevo/YouTube live test**, after the project owner added
+  credentials to Render. Submitted two real test applications (had to sign
+  out first each time — submitting while signed in as admin would have
+  attached the application to the real admin account via the authenticated
+  `apply()` path instead of creating a throwaway one via `applyNew()`; a
+  mid-session hard-reload was also needed once, because `useMe()`'s cached
+  "logged in" state didn't immediately reflect a fresh sign-out). YouTube
+  verification failed both times (`fetchStatus: 'failed'`); the project
+  owner confirmed afterward they'd only set `BREVO_API_KEY`, never
+  `YOUTUBE_API_KEY` — not a code bug, `YoutubeClientService` no-ops by
+  design when the key is absent. Both test applications were rejected
+  afterward (no delete path exists for affiliate applications).
+- `472b94c` — **live-class session recording** via LiveKit Egress, uploaded
+  to R2. Looked up LiveKit's current Egress API shape via a fresh web fetch
+  before building against it (the `StartRoomCompositeEgress` RPC this
+  codebase would otherwise have reached for is now deprecated in favor of
+  `StartEgress`+`TemplateSource`, and Egress needs a different JWT grant,
+  `roomRecord` not `roomAdmin`) rather than guessing from memory. 15 new
+  Jest cases; migration applied cleanly to production; never run against a
+  real live class (see §12).
+- `63da875` — **newsletter broadcast sending**, a new admin compose/send
+  page. Deliberately built as a direct send via the existing
+  `EmailService`/Resend (same fan-out shape as webinar reminders) rather
+  than a Brevo campaign, avoiding a second vendor dependency for the one
+  newsletter feature this codebase actually has. 16 new Jest cases; never
+  sent for real (see §12 — no safe throwaway version of emailing real
+  opted-in subscribers).
+- Re-confirmed the long-standing "breakout-room moderation doesn't reach
+  individual rooms" backlog item is already fully built and removed it from
+  §12 — the backlog entry had simply gone stale.
+
+This document (`memory.md`) is being updated as the very last step of this
+round, at the project owner's explicit request, since they're about to
+clear the session.
 
 ### 2026-11-20 to 2026-11-23 — Admin course editor, bulk certificate issuance, webinar popup split, assorted fixes
 

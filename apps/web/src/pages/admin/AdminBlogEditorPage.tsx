@@ -1,11 +1,12 @@
 import { useEffect, useRef, useState } from 'react';
-import type { FormEvent, ReactNode } from 'react';
+import type { FormEvent } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import type { AdminBlogPost, BlogLayoutPreset, BlogMediaUploadResult, BlogPostInput, BlogVideoPresignResult } from '@aiit/shared';
 import { apiFetch } from '@/lib/api';
 import { looksLikeHtml } from '@/lib/markdown';
 import { formatWhen, useAdminFetch } from './adminData';
 import { BlogPreviewModal } from './BlogPreviewModal';
+import { FilePickerButton } from './FilePickerButton';
 
 interface MediaItem extends BlogMediaUploadResult {
   name: string;
@@ -21,53 +22,6 @@ function mediaSnippet(item: MediaItem, bodyIsHtml: boolean): string {
   return bodyIsHtml
     ? `<figure class="article-media article-media--${item.kind}"><${item.kind} controls src="${item.url}"></${item.kind}></figure>`
     : `[${item.kind}: ${item.url}]`;
-}
-
-/**
- * A native <input type="file"> can't be restyled into a normal-looking
- * button -- its internal "Choose File" control + filename text are
- * browser-native and don't reliably center/align the way author CSS
- * expects (confirmed: they stayed pinned to the top of the box even with
- * `display:flex; align-items:center` on the input itself). Standard fix:
- * keep the real input in the DOM (visually-hidden, so it's still
- * focusable/accessible) and trigger it from a normal styled button.
- */
-function FilePickerButton({
-  label,
-  accept,
-  multiple,
-  disabled,
-  onFiles,
-  children,
-}: {
-  label: string;
-  accept: string;
-  multiple?: boolean;
-  disabled?: boolean;
-  onFiles: (files: FileList) => void;
-  children?: ReactNode;
-}) {
-  const ref = useRef<HTMLInputElement>(null);
-  return (
-    <div>
-      <button type="button" className="adm-btn adm-btn--ghost" disabled={disabled} onClick={() => ref.current?.click()}>
-        {label}
-      </button>
-      <input
-        ref={ref}
-        type="file"
-        className="visually-hidden"
-        accept={accept}
-        multiple={multiple}
-        disabled={disabled}
-        onChange={(e) => {
-          if (e.target.files && e.target.files.length > 0) onFiles(e.target.files);
-          e.target.value = '';
-        }}
-      />
-      {children}
-    </div>
-  );
 }
 
 const PRESET_INFO: Record<BlogLayoutPreset, { label: string; description: string }> = {

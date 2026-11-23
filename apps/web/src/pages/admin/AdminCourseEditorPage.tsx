@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 import type { FormEvent } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import type {
@@ -13,6 +13,7 @@ import type {
 import { apiFetch, ApiError } from '@/lib/api';
 import { CATALOGUE_CATEGORIES } from '@/data/catalogueCategories';
 import { useAdminFetch } from './adminData';
+import { FilePickerButton } from './FilePickerButton';
 
 const PRICING_OPTIONS: { value: CourseInput['pricing']; label: string }[] = [
   { value: 'paid', label: 'Paid' },
@@ -155,7 +156,6 @@ export default function AdminCourseEditorPage() {
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState<string>();
   const [notice, setNotice] = useState<string>();
-  const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (existing.status === 'ready') {
@@ -190,7 +190,6 @@ export default function AdminCourseEditorPage() {
         setError(
           `This image is ${dims.width}x${dims.height}px. Course covers must be exactly ${REQUIRED_COVER_WIDTH}x${REQUIRED_COVER_HEIGHT}px.`,
         );
-        if (fileInputRef.current) fileInputRef.current.value = '';
         return;
       }
       setUploading(true);
@@ -202,7 +201,6 @@ export default function AdminCourseEditorPage() {
       setError(err instanceof ApiError ? err.message : err instanceof Error ? err.message : 'Could not upload that image.');
     } finally {
       setUploading(false);
-      if (fileInputRef.current) fileInputRef.current.value = '';
     }
   }
 
@@ -468,13 +466,18 @@ export default function AdminCourseEditorPage() {
 
         <h2 className="adm-h2">Cover image</h2>
         <div className="adm-grid">
-          <label className="adm-field adm-field--wide">
+          <div className="adm-field adm-field--wide">
             <span>
               Upload a cover image -- must be exactly {REQUIRED_COVER_WIDTH}x{REQUIRED_COVER_HEIGHT}px (16:9, full-bleed, no letterboxing),
               same as every other course cover. A wrong-sized image is rejected, not resized.
             </span>
-            <input ref={fileInputRef} type="file" accept="image/jpeg,image/png,image/webp" onChange={(e) => handleCoverUpload(e.target.files)} disabled={uploading} />
-          </label>
+            <FilePickerButton
+              label={uploading ? 'Uploading…' : form.image ? 'Replace image' : 'Choose image'}
+              accept="image/jpeg,image/png,image/webp"
+              disabled={uploading}
+              onFiles={handleCoverUpload}
+            />
+          </div>
           {form.image ? (
             <div className="adm-field adm-field--wide">
               <span>Preview</span>

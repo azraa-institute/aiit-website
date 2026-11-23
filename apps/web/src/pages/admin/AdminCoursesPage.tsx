@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { Link } from 'react-router-dom';
 import type { AdminCourse } from '@aiit/shared';
 import { apiFetch } from '@/lib/api';
 import { useAdminFetch, useAdminInstructors } from './adminData';
@@ -43,9 +44,12 @@ function CourseRow({
   return (
     <li className="adm-card">
       <div className="adm-card__main">
-        <h3>{course.title}</h3>
+        <h3>
+          {course.title} <span className={`adm-status adm-status--${course.status}`}>{course.status === 'draft' ? 'Draft' : 'Published'}</span>
+        </h3>
         <p className="adm-card__meta">
-          {course.enrolled} student{course.enrolled === 1 ? '' : 's'} enrolled
+          {course.enrolled} student{course.enrolled === 1 ? '' : 's'} enrolled ·{' '}
+          <Link to={`/admin/courses/${course.id}`}>Edit course</Link>
         </p>
         <fieldset className="adm-checks">
           <legend className="visually-hidden">Instructors for {course.title}</legend>
@@ -88,6 +92,9 @@ export default function AdminCoursesPage() {
             course, its students and its classes in their own portal.
           </p>
         </div>
+        <Link to="/admin/courses/new" className="adm-btn adm-btn--primary">
+          New course
+        </Link>
       </div>
 
       {courses.status === 'loading' ? <p className="adm-muted">Loading courses…</p> : null}

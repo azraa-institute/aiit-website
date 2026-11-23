@@ -129,6 +129,102 @@ export interface CourseDetail extends CourseListItem {
   certification: string;
 }
 
+export type CourseStatus = 'draft' | 'published';
+
+/** GET /admin/courses/categories row -- an existing CourseCategory (the "Subcategory" picker in the course editor). */
+export interface AdminCourseCategoryOption {
+  id: string;
+  name: string;
+  domainId: string | null;
+}
+
+/** GET /admin/courses/domains row -- an existing CourseDomain, for the editor's optional "homepage rail" picker. */
+export interface AdminCourseDomainOption {
+  id: string;
+  slug: string;
+  name: string;
+}
+
+/**
+ * GET /admin/courses/:id -- the admin editor's full detail shape,
+ * independent of publish status (unlike the public CourseDetail above,
+ * which only ever resolves a published, non-deleted row).
+ */
+export interface AdminCourseDetail {
+  id: string;
+  slug: string;
+  title: string;
+  categoryId: string;
+  categoryName: string;
+  domainId: string | null;
+  catalogueCategory: CatalogueCategorySlug | null;
+  technologies: CourseTechnology[];
+  summary: string;
+  description: string;
+  priceUsdCents: number | null;
+  priceWasUsdCents: number | null;
+  pricing: PricingModel;
+  level: CourseLevel;
+  durationHours: number;
+  durationLabel: string;
+  badges: CourseBadge[];
+  instructorId: string | null;
+  image: string;
+  outcomes: string[];
+  requirements: string[];
+  audience: string[];
+  toolsCovered: string[];
+  certification: string;
+  status: CourseStatus;
+  publishedAt: string | null;
+  enrolledCount: number;
+  createdAt: string;
+}
+
+/**
+ * POST/PUT body for creating or updating a course. `categoryName` is a
+ * free-text "Subcategory" -- the service finds an existing CourseCategory
+ * by that name or creates one, same convention prisma/seed.ts already uses,
+ * so the editor never needs its own "manage categories" screen.
+ */
+export interface CourseInput {
+  slug: string;
+  title: string;
+  categoryName: string;
+  domainId?: string | null;
+  catalogueCategory: CatalogueCategorySlug;
+  technologies: CourseTechnology[];
+  summary: string;
+  description: string;
+  priceUsdCents: number | null;
+  priceWasUsdCents?: number | null;
+  pricing: PricingModel;
+  level: CourseLevel;
+  durationHours: number;
+  durationLabel: string;
+  badges: CourseBadge[];
+  // Deliberately no instructorId here -- who teaches a course is managed
+  // entirely by the existing AdminCoursesPage "Instructors" assignment
+  // (CourseInstructor join table via PUT /admin/courses/:id/instructors),
+  // not this content editor. Including it here would risk silently
+  // clearing that assignment on every unrelated content save.
+  image: string;
+  outcomes: string[];
+  requirements: string[];
+  audience: string[];
+  toolsCovered: string[];
+  certification: string;
+  status: CourseStatus;
+  publishedAt?: string | null;
+}
+
+/** POST /admin/courses/cover-image response -- the uploaded file's actual pixel dimensions, confirmed server-side. */
+export interface CourseImageUploadResult {
+  url: string;
+  width: number;
+  height: number;
+}
+
 export interface CurriculumLesson {
   slug: string;
   title: string;

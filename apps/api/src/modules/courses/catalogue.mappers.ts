@@ -39,6 +39,18 @@ export function mapBadge(badge: PrismaCourseBadge): CourseBadge {
   return BADGE_MAP[badge];
 }
 
+const REVERSE_LEVEL_MAP = Object.fromEntries(Object.entries(LEVEL_MAP).map(([k, v]) => [v, k])) as Record<CourseLevel, PrismaCourseLevel>;
+const REVERSE_BADGE_MAP = Object.fromEntries(Object.entries(BADGE_MAP).map(([k, v]) => [v, k])) as Record<CourseBadge, PrismaCourseBadge>;
+
+/** The admin course editor's own write path -- the one place that goes the other way, display string -> DB enum. */
+export function unmapLevel(level: CourseLevel): PrismaCourseLevel {
+  return REVERSE_LEVEL_MAP[level];
+}
+
+export function unmapBadge(badge: CourseBadge): PrismaCourseBadge {
+  return REVERSE_BADGE_MAP[badge];
+}
+
 export function mapDomain(domain: PrismaCourseDomain): CourseDomain {
   return {
     id: domain.id,

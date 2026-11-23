@@ -115,6 +115,8 @@ export interface AdminCourse {
   id: string;
   slug: string;
   title: string;
+  /** Draft rows are included here (not just published) so a newly-created course is still easy to find and finish editing. */
+  status: 'draft' | 'published';
   enrolled: number;
   instructors: { id: string; name: string | null }[];
 }

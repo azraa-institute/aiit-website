@@ -98,6 +98,7 @@ const AdminAdminsPage = lazy(() => import('@/pages/admin/AdminAdminsPage'));
 const AdminCertificatesPage = lazy(() => import('@/pages/admin/AdminCertificatesPage'));
 const AdminAuditPage = lazy(() => import('@/pages/admin/AdminAuditPage'));
 const AdminCoursesPage = lazy(() => import('@/pages/admin/AdminCoursesPage'));
+const AdminCourseEditorPage = lazy(() => import('@/pages/admin/AdminCourseEditorPage'));
 const AdminComplaintsPage = lazy(() => import('@/pages/admin/AdminComplaintsPage'));
 const AdminAnnouncementsPage = lazy(() => import('@/pages/admin/AdminAnnouncementsPage'));
 const AdminReportsPage = lazy(() => import('@/pages/admin/AdminReportsPage'));
@@ -379,6 +380,8 @@ export function App() {
                 <Route path="admins" element={<AdminAdminsPage />} />
                 <Route path="certificates" element={<AdminCertificatesPage />} />
                 <Route path="courses" element={<AdminCoursesPage />} />
+                <Route path="courses/new" element={<AdminCourseEditorPage />} />
+                <Route path="courses/:id" element={<AdminCourseEditorPage />} />
                 <Route path="timetables" element={<AdminTimetablesPage />} />
                 <Route path="classes" element={<AdminClassesPage />} />
                 <Route path="complaints" element={<AdminComplaintsPage />} />

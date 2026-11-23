@@ -1,7 +1,7 @@
 import { randomBytes } from 'node:crypto';
 import { BadRequestException, ConflictException, Injectable, NotFoundException } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
-import type { AdminCertificateRow, Certificate, Paginated } from '@aiit/shared';
+import type { AdminCertificateRow, BulkIssueCertificatesResult, Certificate, CertificateEligibleStudent, Paginated } from '@aiit/shared';
 import { PrismaService } from '../../common/prisma/prisma.service';
 import { AuditService } from '../../common/audit/audit.service';
 import { EnrollmentsService } from '../enrollments/enrollments.service';
@@ -107,6 +107,56 @@ export class CertificatesService {
     );
 
     return toCertificate(row);
+  }
+
+  /** @Roles('admin') at the controller. Feeds the bulk-issue panel: every learner actively enrolled in the course, flagged with whether they already hold a certificate for it so the UI can exclude them from selection instead of offering a re-issue that would 409. */
+  async eligibleForCourse(courseSlug: string): Promise<CertificateEligibleStudent[]> {
+    const course = await this.prisma.course.findFirst({
+      where: { slug: courseSlug, status: 'published', deletedAt: null },
+      select: { id: true },
+    });
+    if (!course) throw new NotFoundException('Course not found.');
+
+    const [enrollments, certificates] = await Promise.all([
+      this.prisma.enrollment.findMany({
+        where: { courseId: course.id, status: { not: 'cancelled' } },
+        select: { userId: true },
+      }),
+      this.prisma.certificate.findMany({
+        where: { courseId: course.id },
+        select: { userId: true },
+      }),
+    ]);
+    const certified = new Set(certificates.map((c) => c.userId));
+    const userIds = enrollments.map((e) => e.userId);
+
+    const [profiles, emails] = await Promise.all([
+      this.prisma.profile.findMany({ where: { id: { in: userIds } }, select: { id: true, name: true } }),
+      this.emailsFor(userIds),
+    ]);
+    const names = new Map(profiles.map((p) => [p.id, p.name]));
+
+    return userIds.map((userId) => ({
+      userId,
+      name: names.get(userId) ?? null,
+      email: emails.get(userId) ?? null,
+      hasCertificate: certified.has(userId),
+    }));
+  }
+
+  /** @Roles('admin') at the controller. Selecting many learners in the bulk-issue panel and issuing once, instead of the per-student drawer's one-at-a-time flow. Each learner is issued independently -- one already-certified or nameless learner in the batch doesn't block the rest. */
+  async issueBulk(courseSlug: string, userIds: string[]): Promise<BulkIssueCertificatesResult> {
+    const issued: BulkIssueCertificatesResult['issued'] = [];
+    const skipped: BulkIssueCertificatesResult['skipped'] = [];
+    for (const userId of new Set(userIds)) {
+      try {
+        const cert = await this.issue(courseSlug, userId);
+        issued.push({ userId, credentialId: cert.credentialId });
+      } catch (err) {
+        skipped.push({ userId, reason: err instanceof Error ? err.message : 'Could not issue a certificate.' });
+      }
+    }
+    return { issued, skipped };
   }
 
   /** @Roles('admin') at the controller. Browse-all view, separate from the per-student issuance in AdminStudentsPage's drawer -- this is where an admin finds a specific certificate without knowing which student it belongs to. */

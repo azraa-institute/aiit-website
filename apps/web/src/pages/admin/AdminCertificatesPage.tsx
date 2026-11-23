@@ -1,13 +1,153 @@
 import { Fragment, useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import type { AdminCertificateRow, Paginated } from '@aiit/shared';
+import type { AdminCertificateRow, BulkIssueCertificatesResult, CertificateEligibleStudent, Paginated } from '@aiit/shared';
 import { apiFetch } from '@/lib/api';
 import { cn } from '@/lib/cn';
 import { CopyButton } from '@/components/common/CopyButton';
-import { useAdminFetch } from './adminData';
+import { useAdminCourses, useAdminFetch } from './adminData';
 import { RevokeCertificateForm } from './RevokeCertificateForm';
 
 const PAGE_SIZE = 25;
+
+/** Pick a course, select from its actively-enrolled, not-yet-certified learners, and issue to all of them in one request -- instead of the per-student drawer's one-at-a-time flow (AdminStudentsPage.tsx). */
+function BulkIssuePanel({ onIssued }: { onIssued: () => void }) {
+  const courses = useAdminCourses();
+  const [courseSlug, setCourseSlug] = useState('');
+  const [students, setStudents] = useState<CertificateEligibleStudent[] | null>(null);
+  const [loadingStudents, setLoadingStudents] = useState(false);
+  const [loadError, setLoadError] = useState<string>();
+  const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [issuing, setIssuing] = useState(false);
+  const [result, setResult] = useState<BulkIssueCertificatesResult>();
+  const [error, setError] = useState<string>();
+
+  async function loadStudents(slug: string) {
+    setCourseSlug(slug);
+    setStudents(null);
+    setSelected(new Set());
+    setResult(undefined);
+    setError(undefined);
+    if (!slug) return;
+    setLoadingStudents(true);
+    setLoadError(undefined);
+    try {
+      const rows = await apiFetch<CertificateEligibleStudent[]>(`/courses/${slug}/certificates/eligible`);
+      setStudents(rows);
+    } catch (err) {
+      setLoadError(err instanceof Error ? err.message : 'Could not load this course’s students.');
+    } finally {
+      setLoadingStudents(false);
+    }
+  }
+
+  const eligible = (students ?? []).filter((s) => !s.hasCertificate);
+
+  function toggle(userId: string) {
+    setSelected((cur) => {
+      const next = new Set(cur);
+      if (next.has(userId)) next.delete(userId);
+      else next.add(userId);
+      return next;
+    });
+  }
+
+  function toggleAll() {
+    setSelected((cur) => (cur.size === eligible.length ? new Set() : new Set(eligible.map((s) => s.userId))));
+  }
+
+  async function issueSelected() {
+    setIssuing(true);
+    setError(undefined);
+    setResult(undefined);
+    try {
+      const res = await apiFetch<BulkIssueCertificatesResult>(`/courses/${courseSlug}/certificates/bulk`, {
+        method: 'POST',
+        body: JSON.stringify({ userIds: [...selected] }),
+      });
+      setResult(res);
+      setSelected(new Set());
+      await loadStudents(courseSlug);
+      onIssued();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Could not issue those certificates.');
+    } finally {
+      setIssuing(false);
+    }
+  }
+
+  return (
+    <div className="adm-card">
+      <div className="adm-card__main">
+        <h2 className="adm-h2">Bulk issue</h2>
+        <p className="adm-muted">
+          Pick a course, select learners from its roster, and issue certificates to all of them at once.
+        </p>
+
+        <label className="adm-field">
+          <span>Course</span>
+          {courses.status === 'ready' ? (
+            <select value={courseSlug} onChange={(e) => loadStudents(e.target.value)}>
+              <option value="">Select a course…</option>
+              {courses.data.map((c) => (
+                <option key={c.id} value={c.slug}>
+                  {c.title}
+                </option>
+              ))}
+            </select>
+          ) : (
+            <p className="adm-muted">Loading courses…</p>
+          )}
+        </label>
+
+        {loadingStudents ? <p className="adm-muted">Loading students…</p> : null}
+        {loadError ? <p className="adm-error" role="alert">{loadError}</p> : null}
+
+        {students && !loadingStudents ? (
+          students.length === 0 ? (
+            <p className="adm-muted">No one is actively enrolled in this course yet.</p>
+          ) : eligible.length === 0 ? (
+            <p className="adm-muted">Everyone enrolled in this course already has a certificate.</p>
+          ) : (
+            <>
+              <fieldset className="adm-checks">
+                <legend className="visually-hidden">Learners eligible for a certificate</legend>
+                <label className="adm-check">
+                  <input type="checkbox" checked={selected.size === eligible.length} onChange={toggleAll} />
+                  <span>Select all ({eligible.length})</span>
+                </label>
+                {eligible.map((s) => (
+                  <label key={s.userId} className="adm-check">
+                    <input type="checkbox" checked={selected.has(s.userId)} onChange={() => toggle(s.userId)} />
+                    <span>{s.name ?? s.email ?? s.userId.slice(0, 8)}</span>
+                  </label>
+                ))}
+              </fieldset>
+
+              {error ? <p className="adm-error" role="alert">{error}</p> : null}
+              {result ? (
+                <p className="adm-muted">
+                  Issued {result.issued.length} certificate{result.issued.length === 1 ? '' : 's'}
+                  {result.skipped.length > 0 ? `; ${result.skipped.length} skipped (${result.skipped.map((s) => s.reason).join('; ')})` : ''}.
+                </p>
+              ) : null}
+
+              <div className="adm-card__actions">
+                <button
+                  type="button"
+                  className="adm-btn adm-btn--primary"
+                  disabled={selected.size === 0 || issuing}
+                  onClick={issueSelected}
+                >
+                  {issuing ? 'Issuing…' : `Issue to ${selected.size} selected`}
+                </button>
+              </div>
+            </>
+          )
+        ) : null}
+      </div>
+    </div>
+  );
+}
 
 export default function AdminCertificatesPage() {
   const [params, setParams] = useSearchParams();
@@ -77,11 +217,14 @@ export default function AdminCertificatesPage() {
           <p className="adm-eyebrow">Credentials</p>
           <h1 className="adm-title">Certificates</h1>
           <p className="adm-intro">
-            Every certificate ever issued, across every student. Issuing a new one still happens from a student&apos;s own
-            page; this is where you find one without knowing which student it belongs to.
+            Every certificate ever issued, across every student. Issue one to a single learner from their own page, or
+            to many at once below; the table further down is where you find an existing one without knowing which
+            student it belongs to.
           </p>
         </div>
       </div>
+
+      <BulkIssuePanel onIssued={list.reload} />
 
       <div className="adm-toolbar">
         <label className="adm-field">

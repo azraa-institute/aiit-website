@@ -48,7 +48,8 @@ describe('CertificatesService', () => {
   let prisma: {
     course: { findFirst: jest.Mock };
     certificate: { findMany: jest.Mock; findUnique: jest.Mock; findFirst: jest.Mock; create: jest.Mock; update: jest.Mock; count: jest.Mock };
-    profile: { findUnique: jest.Mock };
+    profile: { findUnique: jest.Mock; findMany: jest.Mock };
+    enrollment: { findMany: jest.Mock };
     $queryRaw: jest.Mock;
   };
   let enrollments: { markCompleted: jest.Mock };
@@ -59,7 +60,8 @@ describe('CertificatesService', () => {
     prisma = {
       course: { findFirst: jest.fn() },
       certificate: { findMany: jest.fn(), findUnique: jest.fn(), findFirst: jest.fn(), create: jest.fn(), update: jest.fn(), count: jest.fn() },
-      profile: { findUnique: jest.fn() },
+      profile: { findUnique: jest.fn(), findMany: jest.fn() },
+      enrollment: { findMany: jest.fn() },
       $queryRaw: jest.fn().mockResolvedValue([]),
     };
     enrollments = { markCompleted: jest.fn() };
@@ -162,6 +164,64 @@ describe('CertificatesService', () => {
         '/portal/certificates',
       );
       expect(result.credentialId).toBe('AIIT-AB12CD34');
+    });
+  });
+
+  describe('eligibleForCourse', () => {
+    it('throws NotFoundException for a missing/unpublished course', async () => {
+      prisma.course.findFirst.mockResolvedValueOnce(null);
+      await expect(service.eligibleForCourse('missing')).rejects.toBeInstanceOf(NotFoundException);
+    });
+
+    it('lists every actively-enrolled learner, flagging who already has a certificate', async () => {
+      prisma.course.findFirst.mockResolvedValueOnce({ id: 'crs-1' });
+      prisma.enrollment.findMany.mockResolvedValueOnce([{ userId: 'user-1' }, { userId: 'user-2' }]);
+      prisma.certificate.findMany.mockResolvedValueOnce([{ userId: 'user-2' }]);
+      prisma.profile.findMany.mockResolvedValueOnce([
+        { id: 'user-1', name: 'Ada Lovelace' },
+        { id: 'user-2', name: 'Grace Hopper' },
+      ]);
+      prisma.$queryRaw.mockResolvedValueOnce([
+        { id: 'user-1', email: 'ada@example.com' },
+        { id: 'user-2', email: 'grace@example.com' },
+      ]);
+
+      const result = await service.eligibleForCourse('digital-and-tech-literacy-absolute-beginner');
+
+      expect(result).toEqual([
+        { userId: 'user-1', name: 'Ada Lovelace', email: 'ada@example.com', hasCertificate: false },
+        { userId: 'user-2', name: 'Grace Hopper', email: 'grace@example.com', hasCertificate: true },
+      ]);
+    });
+  });
+
+  describe('issueBulk', () => {
+    it('issues to every learner it can and reports the rest as skipped, without failing the whole batch', async () => {
+      prisma.course.findFirst.mockResolvedValue({ id: 'crs-1' });
+      prisma.certificate.findUnique
+        .mockResolvedValueOnce(null) // user-1: issuable
+        .mockResolvedValueOnce({ id: 'cert-existing' }); // user-2: already certified
+      prisma.profile.findUnique.mockResolvedValueOnce({ name: 'Ada Lovelace' });
+      prisma.certificate.create.mockResolvedValueOnce(CERTIFICATE_ROW);
+
+      const result = await service.issueBulk('digital-and-tech-literacy-absolute-beginner', ['user-1', 'user-2']);
+
+      expect(result.issued).toEqual([{ userId: 'user-1', credentialId: 'AIIT-AB12CD34' }]);
+      expect(result.skipped).toEqual([
+        { userId: 'user-2', reason: 'A certificate for this learner and course already exists.' },
+      ]);
+    });
+
+    it('de-duplicates repeated userIds before issuing', async () => {
+      prisma.course.findFirst.mockResolvedValue({ id: 'crs-1' });
+      prisma.certificate.findUnique.mockResolvedValueOnce(null);
+      prisma.profile.findUnique.mockResolvedValueOnce({ name: 'Ada Lovelace' });
+      prisma.certificate.create.mockResolvedValueOnce(CERTIFICATE_ROW);
+
+      const result = await service.issueBulk('digital-and-tech-literacy-absolute-beginner', ['user-1', 'user-1']);
+
+      expect(prisma.certificate.create).toHaveBeenCalledTimes(1);
+      expect(result.issued).toEqual([{ userId: 'user-1', credentialId: 'AIIT-AB12CD34' }]);
     });
   });
 
